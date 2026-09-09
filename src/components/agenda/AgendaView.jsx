@@ -264,7 +264,7 @@ export const AgendaView = () => {
               <span className="pulse-dot" />
               <span className="stat-card-label" style={{ color: 'var(--c-primary)' }}>En Sala de Espera</span>
             </div>
-            <div className="stat-icon-box" style={{ width: '38px', height: '38px', background: '#e0f6f5', color: 'var(--c-primary)' }}>
+            <div className="stat-icon-box" style={{ width: '38px', height: '38px', background: '#EBF3FD', color: 'var(--c-primary)' }}>
               <Clock size={18} />
             </div>
           </div>
@@ -891,7 +891,7 @@ export const AgendaView = () => {
                       minHeight: '74px',
                       gap: '12px',
                       padding: '4px 0',
-                      background: tIdx % 4 === 0 ? 'rgba(243, 251, 251, 0.4)' : 'transparent'
+                      background: tIdx % 4 === 0 ? 'rgba(245, 248, 254, 0.4)' : 'transparent'
                     }}
                   >
                     {/* Time Label */}
@@ -963,7 +963,7 @@ export const AgendaView = () => {
                               display: 'flex',
                               flexDirection: 'column',
                               justifyContent: 'space-between',
-                              boxShadow: isEnSala ? '0 4px 12px rgba(26, 158, 155, 0.15)' : 'var(--shadow-sm)',
+                              boxShadow: isEnSala ? '0 4px 12px rgba(7, 106, 188, 0.15)' : 'var(--shadow-sm)',
                               transition: 'var(--transition)'
                             }}
                             className="hover-subtle"
@@ -981,7 +981,7 @@ export const AgendaView = () => {
                               </div>
                             </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', fontSize: '0.72rem', color: 'var(--text-muted)', paddingTop: '4px', borderTop: '1px solid rgba(205, 238, 238, 0.5)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', fontSize: '0.72rem', color: 'var(--text-muted)', paddingTop: '4px', borderTop: '1px solid rgba(210, 227, 252, 0.5)' }}>
                               <span style={{ fontWeight: 600 }}>{app.patientInsurance}</span>
                               <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                                 {isEnSala && (

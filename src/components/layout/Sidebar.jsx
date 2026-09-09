@@ -74,7 +74,7 @@ export const Sidebar = () => {
             }}
           >
             <img
-              src="/citra-logo.png"
+              src="/citra-icon.png"
               alt="CITRA Logo"
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
@@ -114,7 +114,7 @@ export const Sidebar = () => {
         ))}
 
         {/* Portal del Paciente Switch Button */}
-        <div style={{ marginTop: '0.85rem', paddingTop: '0.85rem', borderTop: '1px solid rgba(205, 238, 238, 0.15)' }}>
+        <div style={{ marginTop: '0.85rem', paddingTop: '0.85rem', borderTop: '1px solid rgba(210, 227, 252, 0.15)' }}>
           <button
             type="button"
             className="btn btn-outline"
@@ -122,7 +122,7 @@ export const Sidebar = () => {
               width: '100%',
               color: '#ffffff',
               borderColor: 'var(--c-accent)',
-              background: 'rgba(111, 208, 204, 0.15)',
+              background: 'rgba(37, 124, 230, 0.15)',
               fontSize: '0.85rem',
               padding: '0.65rem 0.75rem',
               display: 'flex',
@@ -133,7 +133,7 @@ export const Sidebar = () => {
             onClick={() => setIsPatientPortalMode(true)}
             title="Ingresar a la vista de autogestión del paciente"
           >
-            <UserSquare2 size={18} color="#6FD0CC" />
+            <UserSquare2 size={18} color="#257CE6" />
             <span style={{ fontWeight: 800 }}>Portal del Paciente</span>
           </button>
         </div>

@@ -94,7 +94,7 @@ export const ConsentFormsModal = () => {
     >
       {mode === 'list' ? (
         <div>
-          <div style={{ background: '#e0f6f5', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #6FD0CC', marginBottom: '1rem', fontSize: '0.84rem', color: '#0C4E4C' }}>
+          <div style={{ background: '#EBF3FD', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #257CE6', marginBottom: '1rem', fontSize: '0.84rem', color: '#002182' }}>
             <strong>Marco Legal (Ley 26.529 Arts. 5 a 10):</strong> La declaración de voluntad del paciente debe ser libre, informada y emitida luego de recibir información clara sobre el procedimiento, riesgos y beneficios. El paciente conserva en todo momento el derecho a la revocación formal.
           </div>
 
@@ -104,7 +104,7 @@ export const ConsentFormsModal = () => {
                 key={cf.id}
                 style={{
                   background: cf.revoked ? '#fef2f2' : '#ffffff',
-                  border: `1px solid ${cf.revoked ? '#fca5a5' : '#CDEEEE'}`,
+                  border: `1px solid ${cf.revoked ? '#fca5a5' : '#D2E3FC'}`,
                   borderRadius: '10px',
                   padding: '1rem',
                   boxShadow: 'var(--shadow-sm)'
@@ -112,10 +112,10 @@ export const ConsentFormsModal = () => {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: '0.98rem', color: '#0C4E4C' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.98rem', color: '#002182' }}>
                       {cf.title}
                     </div>
-                    <div style={{ fontSize: '0.82rem', color: '#4e7a78', marginTop: '2px' }}>
+                    <div style={{ fontSize: '0.82rem', color: '#496386', marginTop: '2px' }}>
                       Paciente: <strong>{cf.patientName}</strong> (DNI {cf.patientDni}) · Fecha: {cf.date} · Médico: {cf.doctorName}
                     </div>
                   </div>
@@ -133,7 +133,7 @@ export const ConsentFormsModal = () => {
                   </span>
                 </div>
 
-                <div style={{ margin: '0.65rem 0', fontSize: '0.84rem', color: '#1e3a39', background: '#F3FBFB', padding: '0.65rem', borderRadius: '6px' }}>
+                <div style={{ margin: '0.65rem 0', fontSize: '0.84rem', color: '#172A4A', background: '#F5F8FE', padding: '0.65rem', borderRadius: '6px' }}>
                   <div><strong>Procedimiento:</strong> {cf.procedureType}</div>
                   <div><strong>Riesgos informados:</strong> {cf.risksExplained}</div>
                   <div><strong>Beneficios esperados:</strong> {cf.benefitsExpected}</div>
@@ -145,7 +145,7 @@ export const ConsentFormsModal = () => {
                   )}
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', color: '#4e7a78' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', color: '#496386' }}>
                   <span>Testigo / Asistente: {cf.witnessName || 'Sin testigo'}</span>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     {!cf.revoked && (

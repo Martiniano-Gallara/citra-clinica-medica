@@ -59,13 +59,13 @@ export const ClinicalAdendaModal = () => {
       <form onSubmit={handleSubmit}>
         <div
           style={{
-            background: '#e0f6f5',
-            border: '1px solid #6FD0CC',
+            background: '#EBF3FD',
+            border: '1px solid #257CE6',
             padding: '0.85rem 1rem',
             borderRadius: '8px',
             marginBottom: '1rem',
             fontSize: '0.86rem',
-            color: '#0C4E4C'
+            color: '#002182'
           }}
         >
           <div style={{ fontWeight: 800, marginBottom: '2px' }}>
@@ -92,7 +92,7 @@ export const ClinicalAdendaModal = () => {
           />
         </div>
 
-        <div style={{ fontSize: '0.8rem', color: '#4e7a78', fontStyle: 'italic' }}>
+        <div style={{ fontSize: '0.8rem', color: '#496386', fontStyle: 'italic' }}>
           La adenda se anexará con firma digital de <strong>{currentUser.name}</strong> y sello de tiempo inmutable.
         </div>
       </form>

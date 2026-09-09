@@ -201,14 +201,14 @@ export const ImagingView = () => {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  color: '#CDEEEE'
+                  color: '#D2E3FC'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                  <span style={{ fontWeight: 800, color: '#6FD0CC', fontSize: '0.9rem' }}>
+                  <span style={{ fontWeight: 800, color: '#257CE6', fontSize: '0.9rem' }}>
                     VISOR DICOM / PACS CITRA
                   </span>
-                  <span style={{ fontSize: '0.78rem', color: '#7ba8a6' }}>
+                  <span style={{ fontSize: '0.78rem', color: '#7994B8' }}>
                     {selectedStudy.modality} — {selectedStudy.bodyPart}
                   </span>
                 </div>
@@ -218,7 +218,7 @@ export const ImagingView = () => {
                   <button
                     type="button"
                     className="btn btn-sm"
-                    style={{ background: '#142c2d', color: '#CDEEEE', border: '1px solid #234848' }}
+                    style={{ background: '#142c2d', color: '#D2E3FC', border: '1px solid #234848' }}
                     onClick={() => setZoomLevel((z) => Math.min(2.5, z + 0.2))}
                     title="Zoom In"
                   >
@@ -227,7 +227,7 @@ export const ImagingView = () => {
                   <button
                     type="button"
                     className="btn btn-sm"
-                    style={{ background: '#142c2d', color: '#CDEEEE', border: '1px solid #234848' }}
+                    style={{ background: '#142c2d', color: '#D2E3FC', border: '1px solid #234848' }}
                     onClick={() => setZoomLevel((z) => Math.max(0.6, z - 0.2))}
                     title="Zoom Out"
                   >
@@ -236,7 +236,7 @@ export const ImagingView = () => {
                   <button
                     type="button"
                     className="btn btn-sm"
-                    style={{ background: '#142c2d', color: '#CDEEEE', border: '1px solid #234848' }}
+                    style={{ background: '#142c2d', color: '#D2E3FC', border: '1px solid #234848' }}
                     onClick={() => setRotation((r) => (r + 90) % 360)}
                     title="Rotar 90°"
                   >
@@ -245,7 +245,7 @@ export const ImagingView = () => {
                   <button
                     type="button"
                     className={`btn btn-sm ${isInverted ? 'btn-primary' : ''}`}
-                    style={{ background: isInverted ? 'var(--c-primary)' : '#142c2d', color: '#CDEEEE', border: '1px solid #234848' }}
+                    style={{ background: isInverted ? 'var(--c-primary)' : '#142c2d', color: '#D2E3FC', border: '1px solid #234848' }}
                     onClick={() => setIsInverted(!isInverted)}
                     title="Invertir Negativo"
                   >
@@ -255,7 +255,7 @@ export const ImagingView = () => {
                   <button
                     type="button"
                     className={`btn btn-sm ${measurementTool === 'ruler' ? 'btn-primary' : ''}`}
-                    style={{ background: measurementTool === 'ruler' ? 'var(--c-primary)' : '#142c2d', color: '#CDEEEE', border: '1px solid #234848' }}
+                    style={{ background: measurementTool === 'ruler' ? 'var(--c-primary)' : '#142c2d', color: '#D2E3FC', border: '1px solid #234848' }}
                     onClick={() => setMeasurementTool(measurementTool === 'ruler' ? 'none' : 'ruler')}
                     title="Calibrador milimétrico"
                   >
@@ -265,7 +265,7 @@ export const ImagingView = () => {
                   <button
                     type="button"
                     className="btn btn-sm"
-                    style={{ background: '#142c2d', color: '#CDEEEE', border: '1px solid #234848' }}
+                    style={{ background: '#142c2d', color: '#D2E3FC', border: '1px solid #234848' }}
                     onClick={resetViewer}
                     title="Restablecer Visor"
                   >
@@ -339,7 +339,7 @@ export const ImagingView = () => {
                     position: 'absolute',
                     top: '12px',
                     left: '14px',
-                    color: '#6FD0CC',
+                    color: '#257CE6',
                     fontSize: '0.75rem',
                     fontFamily: 'monospace',
                     lineHeight: 1.5,
@@ -358,7 +358,7 @@ export const ImagingView = () => {
                     position: 'absolute',
                     bottom: '12px',
                     right: '14px',
-                    color: '#CDEEEE',
+                    color: '#D2E3FC',
                     fontSize: '0.75rem',
                     fontFamily: 'monospace',
                     lineHeight: 1.5,
@@ -383,11 +383,11 @@ export const ImagingView = () => {
                   gap: '2rem',
                   alignItems: 'center',
                   fontSize: '0.78rem',
-                  color: '#CDEEEE'
+                  color: '#D2E3FC'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
-                  <Sun size={14} color="#6FD0CC" />
+                  <Sun size={14} color="#257CE6" />
                   <span>Brillo:</span>
                   <input
                     type="range"
@@ -400,7 +400,7 @@ export const ImagingView = () => {
                   <span>{brightness}%</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
-                  <Sliders size={14} color="#6FD0CC" />
+                  <Sliders size={14} color="#257CE6" />
                   <span>Contraste:</span>
                   <input
                     type="range"

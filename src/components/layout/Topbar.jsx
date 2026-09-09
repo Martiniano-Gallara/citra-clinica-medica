@@ -54,7 +54,7 @@ export const Topbar = () => {
           onClick={() => setGlobalSearchOpen(true)}
           type="button"
         >
-          <Search size={18} color="#1A9E9B" />
+          <Search size={18} color="#076ABC" />
           <span>Buscar pacientes, DNI, consultas, turnos, CUIR o facturas...</span>
           <span className="search-shortcut">⌘K / Ctrl+K</span>
         </button>
@@ -67,13 +67,13 @@ export const Topbar = () => {
             display: 'flex',
             alignItems: 'center',
             gap: '0.4rem',
-            background: '#F3FBFB',
-            border: '1px solid #CDEEEE',
+            background: '#F5F8FE',
+            border: '1px solid #D2E3FC',
             padding: '0.35rem 0.75rem',
             borderRadius: '20px',
             fontSize: '0.74rem',
             fontWeight: 700,
-            color: '#0C4E4C'
+            color: '#002182'
           }}
           title="Cumplimiento normativo vigente: ReNaPDiS, ARCA WSFE y SISA Argentina"
         >
@@ -87,7 +87,7 @@ export const Topbar = () => {
             className="branch-select-badge"
             onClick={() => setShowBranchMenu(!showBranchMenu)}
           >
-            <Building2 size={16} color="#1A9E9B" />
+            <Building2 size={16} color="#076ABC" />
             <span>{currentBranch?.name || 'Sede Central'}</span>
           </div>
 
@@ -106,7 +106,7 @@ export const Topbar = () => {
                 zIndex: 50
               }}
             >
-              <div style={{ padding: '0.4rem 0.6rem', fontSize: '0.75rem', fontWeight: 800, color: '#4e7a78', textTransform: 'uppercase' }}>
+              <div style={{ padding: '0.4rem 0.6rem', fontSize: '0.75rem', fontWeight: 800, color: '#496386', textTransform: 'uppercase' }}>
                 Seleccionar Sede
               </div>
               {clinicInfo.branches.map((b) => (
@@ -118,8 +118,8 @@ export const Topbar = () => {
                     cursor: 'pointer',
                     fontSize: '0.88rem',
                     fontWeight: b.id === currentBranchId ? 700 : 500,
-                    background: b.id === currentBranchId ? '#e0f6f5' : 'transparent',
-                    color: b.id === currentBranchId ? '#0C4E4C' : 'var(--text-main)',
+                    background: b.id === currentBranchId ? '#EBF3FD' : 'transparent',
+                    color: b.id === currentBranchId ? '#002182' : 'var(--text-main)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
@@ -131,9 +131,9 @@ export const Topbar = () => {
                 >
                   <div>
                     <div>{b.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#4e7a78' }}>{b.address}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#496386' }}>{b.address}</div>
                   </div>
-                  {b.id === currentBranchId && <CheckCircle2 size={16} color="#1A9E9B" />}
+                  {b.id === currentBranchId && <CheckCircle2 size={16} color="#076ABC" />}
                 </div>
               ))}
             </div>
@@ -168,7 +168,7 @@ export const Topbar = () => {
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
-                <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#0C4E4C' }}>
+                <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#002182' }}>
                   Alertas Sanitarias & Tareas ({pendingTasks.length})
                 </span>
               </div>
@@ -179,19 +179,19 @@ export const Topbar = () => {
                     key={t.id}
                     style={{
                       padding: '0.65rem',
-                      background: t.status === 'completed' ? '#f8fafc' : '#F3FBFB',
-                      border: `1px solid ${t.status === 'completed' ? '#e2e8f0' : '#CDEEEE'}`,
+                      background: t.status === 'completed' ? '#f8fafc' : '#F5F8FE',
+                      border: `1px solid ${t.status === 'completed' ? '#e2e8f0' : '#D2E3FC'}`,
                       borderRadius: 'var(--radius-md)',
                       fontSize: '0.84rem'
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <span style={{ fontWeight: 700, color: t.status === 'completed' ? '#94a3b8' : '#0C4E4C' }}>
+                      <span style={{ fontWeight: 700, color: t.status === 'completed' ? '#94a3b8' : '#002182' }}>
                         {t.title}
                       </span>
                       <span style={{ fontSize: '0.72rem', color: '#64748b' }}>{t.time}</span>
                     </div>
-                    <div style={{ fontSize: '0.78rem', color: '#4e7a78', marginTop: '2px' }}>
+                    <div style={{ fontSize: '0.78rem', color: '#496386', marginTop: '2px' }}>
                       {t.description}
                     </div>
                   </div>
@@ -245,7 +245,7 @@ export const Topbar = () => {
                   setShowQuickMenu(false);
                 }}
               >
-                <CalendarPlus size={18} color="#1A9E9B" />
+                <CalendarPlus size={18} color="#076ABC" />
                 <span>Nuevo Turno Médico</span>
               </div>
 
@@ -267,7 +267,7 @@ export const Topbar = () => {
                   setShowQuickMenu(false);
                 }}
               >
-                <Stethoscope size={18} color="#0C4E4C" />
+                <Stethoscope size={18} color="#002182" />
                 <span>Nueva Consulta (HCE)</span>
               </div>
 
@@ -310,7 +310,7 @@ export const Topbar = () => {
                   setShowQuickMenu(false);
                 }}
               >
-                <FileCheck2 size={18} color="#6FD0CC" />
+                <FileCheck2 size={18} color="#257CE6" />
                 <span>Consentimiento Informado</span>
               </div>
 
@@ -331,7 +331,7 @@ export const Topbar = () => {
                   setShowQuickMenu(false);
                 }}
               >
-                <UserPlus size={18} color="#1A9E9B" />
+                <UserPlus size={18} color="#076ABC" />
                 <span>Alta Nuevo Paciente</span>
               </div>
             </div>

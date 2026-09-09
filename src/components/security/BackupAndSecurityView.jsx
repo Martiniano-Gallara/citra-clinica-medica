@@ -29,7 +29,7 @@ export const BackupAndSecurityView = () => {
       <div className="page-header">
         <div className="page-title-group">
           <h1>
-            <Shield size={32} color="#1A9E9B" />
+            <Shield size={32} color="#076ABC" />
             <span>Seguridad, Cifrado & Backups (Ley 25.326)</span>
           </h1>
           <p>
@@ -59,11 +59,11 @@ export const BackupAndSecurityView = () => {
         <div className="kpi-card">
           <div className="kpi-top">
             <span className="kpi-label">Autenticación MFA / TOTP</span>
-            <div className="kpi-icon-box" style={{ background: '#e0f6f5', color: '#1A9E9B' }}>
+            <div className="kpi-icon-box" style={{ background: '#EBF3FD', color: '#076ABC' }}>
               <Key size={24} />
             </div>
           </div>
-          <div className="kpi-value" style={{ fontSize: '1.45rem', color: '#1A9E9B' }}>
+          <div className="kpi-value" style={{ fontSize: '1.45rem', color: '#076ABC' }}>
             100% Obligatorio
           </div>
           <div className="kpi-trend positive">
@@ -91,12 +91,12 @@ export const BackupAndSecurityView = () => {
       <div className="card" style={{ maxWidth: '850px', marginBottom: '2rem' }}>
         <div className="card-header">
           <div className="card-title">
-            <Database size={20} color="#1A9E9B" />
+            <Database size={20} color="#076ABC" />
             <span>Generador de Copia de Seguridad Cifrada (Snapshot AES-256)</span>
           </div>
         </div>
 
-        <p style={{ fontSize: '0.88rem', color: '#1e3a39', marginBottom: '1.25rem', lineHeight: 1.6 }}>
+        <p style={{ fontSize: '0.88rem', color: '#172A4A', marginBottom: '1.25rem', lineHeight: 1.6 }}>
           Genera un volcado completo de la base de datos de pacientes, historias clínicas, recetas y facturas, protegido mediante el estándar de cifrado militar <strong>AES-256</strong> con suma de verificación SHA-256.
         </p>
 
@@ -125,7 +125,7 @@ export const BackupAndSecurityView = () => {
           </div>
         </form>
 
-        <div style={{ background: '#F3FBFB', padding: '0.85rem 1rem', borderRadius: '8px', border: '1px solid #CDEEEE', fontSize: '0.8rem', color: '#4e7a78', marginTop: '1rem' }}>
+        <div style={{ background: '#F5F8FE', padding: '0.85rem 1rem', borderRadius: '8px', border: '1px solid #D2E3FC', fontSize: '0.8rem', color: '#496386', marginTop: '1rem' }}>
           <strong>Aviso de Seguridad:</strong> Conserve la clave en un administrador de contraseñas seguro. Sin esta clave, los datos clínicos no podrán ser recuperados en un procedimiento de Disaster Recovery.
         </div>
       </div>
@@ -134,12 +134,12 @@ export const BackupAndSecurityView = () => {
       <div className="card" style={{ maxWidth: '850px' }}>
         <div className="card-header">
           <div className="card-title">
-            <Shield size={20} color="#0C4E4C" />
+            <Shield size={20} color="#002182" />
             <span>Plan de Continuidad Operativa & DRP Sanitario</span>
           </div>
         </div>
 
-        <div style={{ fontSize: '0.88rem', color: '#1e3a39', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+        <div style={{ fontSize: '0.88rem', color: '#172A4A', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
           <div><strong>RPO (Recovery Point Objective):</strong> Menor a 15 minutos (Snapshots incrementales).</div>
           <div><strong>RTO (Recovery Time Objective):</strong> Menor a 1 hora en contingencia crítica.</div>
           <div><strong>Retención Legal de Historias Clínicas:</strong> 10 años corridos según Código Civil y Comercial de la Nación y Ley 26.529.</div>

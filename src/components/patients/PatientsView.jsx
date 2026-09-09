@@ -178,7 +178,7 @@ export const PatientsView = () => {
         <div className="stat-card-premium" style={{ padding: '1.15rem 1.25rem' }}>
           <div className="stat-card-top">
             <span className="stat-card-label">En Rehabilitación</span>
-            <div className="stat-icon-box" style={{ width: '38px', height: '38px', background: '#e0f6f5', color: 'var(--c-primary)' }}>
+            <div className="stat-icon-box" style={{ width: '38px', height: '38px', background: '#EBF3FD', color: 'var(--c-primary)' }}>
               <Activity size={18} />
             </div>
           </div>

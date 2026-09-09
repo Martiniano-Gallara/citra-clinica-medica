@@ -23,7 +23,7 @@ export const AuditLogsView = () => {
     switch (action) {
       case 'READ': return { bg: '#e0f2fe', text: '#0369a1', border: '#bae6fd' };
       case 'CREATE': return { bg: '#d1fae5', text: '#065f46', border: '#6ee7b7' };
-      case 'SIGN_DIGITAL': return { bg: '#e0f6f5', text: '#0C4E4C', border: '#6FD0CC' };
+      case 'SIGN_DIGITAL': return { bg: '#EBF3FD', text: '#002182', border: '#257CE6' };
       case 'UPDATE_ADENDA': return { bg: '#fef3c7', text: '#92400e', border: '#fde68a' };
       case 'EXPORT_HCE': return { bg: '#ede9fe', text: '#5b21b6', border: '#ddd6fe' };
       case 'ARCA_INVOICE': return { bg: '#fae8ff', text: '#86198f', border: '#f5d0fe' };
@@ -63,7 +63,7 @@ export const AuditLogsView = () => {
       <div className="page-header">
         <div className="page-title-group">
           <h1>
-            <ShieldCheck size={32} color="#1A9E9B" />
+            <ShieldCheck size={32} color="#076ABC" />
             <span>Auditoría de Accesos & Trazabilidad (Ley 25.326)</span>
           </h1>
           <p>
@@ -80,14 +80,14 @@ export const AuditLogsView = () => {
       </div>
 
       {/* Info Alert */}
-      <div style={{ background: '#e0f6f5', padding: '0.85rem 1.15rem', borderRadius: '8px', border: '1px solid #6FD0CC', marginBottom: '1.5rem', fontSize: '0.86rem', color: '#0C4E4C' }}>
+      <div style={{ background: '#EBF3FD', padding: '0.85rem 1.15rem', borderRadius: '8px', border: '1px solid #257CE6', marginBottom: '1.5rem', fontSize: '0.86rem', color: '#002182' }}>
         <strong>Protección de Datos Sensibles de Salud (Ley 25.326 / Habeas Data):</strong> Cada evento en la plataforma queda sellado criptográficamente con un Hash SHA-256 unívoco para garantizar que ningún registro de acceso pueda ser adulterado o suprimido.
       </div>
 
       {/* Filter Bar */}
       <div className="filter-bar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: '240px' }}>
-          <Search size={18} color="#1A9E9B" />
+          <Search size={18} color="#076ABC" />
           <input
             type="text"
             className="form-control"
@@ -98,7 +98,7 @@ export const AuditLogsView = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <Filter size={16} color="#1A9E9B" />
+          <Filter size={16} color="#076ABC" />
           <select
             className="form-control"
             style={{ width: 'auto' }}
@@ -141,8 +141,8 @@ export const AuditLogsView = () => {
                     <div style={{ color: '#64748b', fontSize: '0.76rem' }}>{log.timestamp.split('T')[1]?.substring(0, 8)} UTC</div>
                   </td>
                   <td>
-                    <div style={{ fontWeight: 800, color: '#0C4E4C' }}>{log.userName}</div>
-                    <div style={{ fontSize: '0.76rem', color: '#4e7a78' }}>{log.userRole}</div>
+                    <div style={{ fontWeight: 800, color: '#002182' }}>{log.userName}</div>
+                    <div style={{ fontSize: '0.76rem', color: '#496386' }}>{log.userRole}</div>
                   </td>
                   <td>
                     <span

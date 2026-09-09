@@ -123,7 +123,7 @@ export const DashboardView = () => {
     datasets: [
       {
         data: [38, 28, 16, 12, 6],
-        backgroundColor: ['#1A9E9B', '#6FD0CC', '#0C4E4C', '#2dd4bf', '#f59e0b'],
+        backgroundColor: ['#076ABC', '#257CE6', '#002182', '#2dd4bf', '#f59e0b'],
         borderWidth: 2,
         borderColor: '#ffffff'
       }
@@ -145,12 +145,12 @@ export const DashboardView = () => {
       {/* 1. HERO BANNER DE CONTROL CLÍNICO */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #083836 0%, #0C4E4C 50%, #1A9E9B 100%)',
+          background: 'linear-gradient(135deg, #001556 0%, #002182 50%, #076ABC 100%)',
           borderRadius: 'var(--radius-lg)',
           padding: '1.5rem 1.75rem',
           color: '#ffffff',
           marginBottom: '1.5rem',
-          boxShadow: '0 10px 25px -5px rgba(12, 78, 76, 0.25)',
+          boxShadow: '0 10px 25px -5px rgba(0, 33, 130, 0.25)',
           position: 'relative',
           overflow: 'hidden'
         }}
@@ -160,9 +160,9 @@ export const DashboardView = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
               <span
                 style={{
-                  background: 'rgba(111, 208, 204, 0.2)',
-                  border: '1px solid rgba(111, 208, 204, 0.4)',
-                  color: '#CDEEEE',
+                  background: 'rgba(37, 124, 230, 0.2)',
+                  border: '1px solid rgba(37, 124, 230, 0.4)',
+                  color: '#D2E3FC',
                   padding: '3px 12px',
                   borderRadius: '20px',
                   fontSize: '0.76rem',
@@ -177,7 +177,7 @@ export const DashboardView = () => {
                 SISTEMA OPERATIVO ACTIVO
               </span>
 
-              <span style={{ fontSize: '0.82rem', color: '#CDEEEE', fontWeight: 600 }}>
+              <span style={{ fontSize: '0.82rem', color: '#D2E3FC', fontWeight: 600 }}>
                 {currentBranch?.name || 'Sede Central Arroyito'} · Turno Mañana
               </span>
             </div>
@@ -185,7 +185,7 @@ export const DashboardView = () => {
             <h1 style={{ fontSize: '1.65rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff', margin: 0 }}>
               Centro Integral de Traumatología & Rehabilitación
             </h1>
-            <p style={{ fontSize: '0.86rem', color: '#CDEEEE', margin: 0, opacity: 0.95 }}>
+            <p style={{ fontSize: '0.86rem', color: '#D2E3FC', margin: 0, opacity: 0.95 }}>
               Panel de control médico centralizado · Gestión de consultas, rehabilitación y flujo asistencial
             </p>
           </div>
@@ -196,13 +196,13 @@ export const DashboardView = () => {
               background: 'rgba(0, 0, 0, 0.25)',
               padding: '6px',
               borderRadius: 'var(--radius-md)',
-              border: '1px solid rgba(205, 238, 238, 0.2)',
+              border: '1px solid rgba(210, 227, 252, 0.2)',
               display: 'flex',
               flexDirection: 'column',
               gap: '6px'
             }}
           >
-            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#CDEEEE', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#D2E3FC', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Simular Rol de Usuario:
             </div>
             <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
@@ -229,7 +229,7 @@ export const DashboardView = () => {
                       fontSize: '0.76rem',
                       fontWeight: isCurr ? 800 : 600,
                       background: isCurr ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
-                      color: isCurr ? '#0C4E4C' : '#ffffff',
+                      color: isCurr ? '#002182' : '#ffffff',
                       border: 'none',
                       cursor: 'pointer',
                       transition: 'var(--transition)'
@@ -350,7 +350,7 @@ export const DashboardView = () => {
               style={{
                 width: `${progressPercentage}%`,
                 height: '100%',
-                background: 'linear-gradient(90deg, #1A9E9B, #6FD0CC)',
+                background: 'linear-gradient(90deg, #076ABC, #257CE6)',
                 borderRadius: '10px',
                 transition: 'width 0.5s ease'
               }}
@@ -365,7 +365,7 @@ export const DashboardView = () => {
               <span className="pulse-dot" />
               <span className="stat-card-label" style={{ color: 'var(--c-primary)' }}>En Sala de Espera</span>
             </div>
-            <div className="stat-icon-box" style={{ background: '#e0f6f5', color: 'var(--c-primary)' }}>
+            <div className="stat-icon-box" style={{ background: '#EBF3FD', color: 'var(--c-primary)' }}>
               <Clock size={22} />
             </div>
           </div>
@@ -438,7 +438,7 @@ export const DashboardView = () => {
           <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h3 className="card-title">
-                <Users size={20} color="#1A9E9B" />
+                <Users size={20} color="#076ABC" />
                 <span>Atención Clínica de Hoy</span>
               </h3>
               <p className="card-subtitle">Consultas programadas y pacientes en sala de espera</p>
@@ -625,7 +625,7 @@ export const DashboardView = () => {
           <div className="card">
             <div className="card-header">
               <h3 className="card-title">
-                <Sparkles size={18} color="#1A9E9B" />
+                <Sparkles size={18} color="#076ABC" />
                 <span>Atajos Clínicos & Módulos</span>
               </h3>
               <p className="card-subtitle">Acceso directo para agilizar la atención</p>

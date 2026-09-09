@@ -66,20 +66,20 @@ export const PrescriptionDigitalModal = () => {
         </div>
       }
     >
-      <div className="printable-area" style={{ background: '#ffffff', color: '#0C4E4C', padding: '1.25rem', fontFamily: 'serif' }}>
+      <div className="printable-area" style={{ background: '#ffffff', color: '#002182', padding: '1.25rem', fontFamily: 'serif' }}>
         {/* Top Official ReNaPDiS Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #0C4E4C', paddingBottom: '0.85rem', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #002182', paddingBottom: '0.85rem', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
             <img
-              src="/citra-logo.png"
+              src="/citra-icon.png"
               alt="CITRA Logo"
               style={{ width: '56px', height: '56px', objectFit: 'contain' }}
             />
             <div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0C4E4C', fontFamily: 'sans-serif' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#002182', fontFamily: 'sans-serif' }}>
                 {clinicInfo.name}
               </div>
-              <div style={{ fontSize: '0.78rem', color: '#4e7a78', fontWeight: 700 }}>
+              <div style={{ fontSize: '0.78rem', color: '#496386', fontWeight: 700 }}>
                 {clinicInfo.tagline}
               </div>
               <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
@@ -89,13 +89,13 @@ export const PrescriptionDigitalModal = () => {
           </div>
 
           <div style={{ textAlign: 'right', fontFamily: 'sans-serif' }}>
-            <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#1A9E9B' }}>
+            <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#076ABC' }}>
               RECETA ELECTRÓNICA OFICIAL
             </div>
-            <div style={{ fontSize: '0.72rem', color: '#4e7a78' }}>
+            <div style={{ fontSize: '0.72rem', color: '#496386' }}>
               Plataforma ReNaPDiS: {clinicInfo.renapdisPlatformId}
             </div>
-            <div style={{ fontSize: '0.72rem', color: '#0C4E4C', fontWeight: 700, marginTop: '2px' }}>
+            <div style={{ fontSize: '0.72rem', color: '#002182', fontWeight: 700, marginTop: '2px' }}>
               CUIR: {rx.cuir}
             </div>
           </div>
@@ -107,8 +107,8 @@ export const PrescriptionDigitalModal = () => {
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
             gap: '1rem',
-            background: '#F3FBFB',
-            border: '1px solid #CDEEEE',
+            background: '#F5F8FE',
+            border: '1px solid #D2E3FC',
             padding: '0.85rem',
             borderRadius: '8px',
             marginBottom: '1rem',
@@ -128,7 +128,7 @@ export const PrescriptionDigitalModal = () => {
             <div><strong>REGISTRO SISA/REFEPS:</strong> {rx.sisaRefeps}</div>
             <div>
               <strong>ESTADO: </strong>
-              <span style={{ color: rx.dispensationStatus === 'Dispensada' ? '#065f46' : '#1A9E9B', fontWeight: 700 }}>
+              <span style={{ color: rx.dispensationStatus === 'Dispensada' ? '#065f46' : '#076ABC', fontWeight: 700 }}>
                 {rx.dispensationStatus} {rx.dispensedPharmacy ? `(${rx.dispensedPharmacy})` : ''}
               </span>
             </div>
@@ -136,27 +136,27 @@ export const PrescriptionDigitalModal = () => {
         </div>
 
         {/* Validity dates banner */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', background: '#e0f6f5', padding: '0.4rem 0.85rem', borderRadius: '6px', fontSize: '0.8rem', color: '#0C4E4C', marginBottom: '1rem', fontWeight: 600 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', background: '#EBF3FD', padding: '0.4rem 0.85rem', borderRadius: '6px', fontSize: '0.8rem', color: '#002182', marginBottom: '1rem', fontWeight: 600 }}>
           <span>Fecha de Emisión: <strong>{rx.issueDate}</strong></span>
           <span>Vencimiento (30 días): <strong>{rx.expirationDate}</strong></span>
         </div>
 
         {/* Prescriptions List Rp/ */}
-        <div style={{ marginBottom: '1.5rem', border: '1px solid #6FD0CC', background: '#ffffff', padding: '1rem', borderRadius: '8px' }}>
-          <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#0C4E4C', marginBottom: '0.75rem' }}>
+        <div style={{ marginBottom: '1.5rem', border: '1px solid #257CE6', background: '#ffffff', padding: '1rem', borderRadius: '8px' }}>
+          <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#002182', marginBottom: '0.75rem' }}>
             Rp/ (Prescripción por Denominación Común Internacional - DCI)
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
             {rx.medications.map((med, idx) => (
-              <div key={idx} style={{ paddingBottom: '0.65rem', borderBottom: idx < rx.medications.length - 1 ? '1px dashed #CDEEEE' : 'none' }}>
-                <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#0C4E4C' }}>
+              <div key={idx} style={{ paddingBottom: '0.65rem', borderBottom: idx < rx.medications.length - 1 ? '1px dashed #D2E3FC' : 'none' }}>
+                <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#002182' }}>
                   {idx + 1}. {med.dci} — {med.concentration}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#1e3a39', marginLeft: '1rem', marginTop: '2px' }}>
+                <div style={{ fontSize: '0.85rem', color: '#172A4A', marginLeft: '1rem', marginTop: '2px' }}>
                   <strong>Forma Farmacéutica:</strong> {med.form} | <strong>Cantidad:</strong> {med.quantityUnits}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#4e7a78', marginLeft: '1rem', fontStyle: 'italic' }}>
+                <div style={{ fontSize: '0.85rem', color: '#496386', marginLeft: '1rem', fontStyle: 'italic' }}>
                   Posología / Indicaciones: {med.instructions}
                 </div>
               </div>
@@ -165,24 +165,24 @@ export const PrescriptionDigitalModal = () => {
         </div>
 
         {/* QR Code and Cryptographic Signature Box */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #CDEEEE', paddingTop: '1rem', marginTop: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #D2E3FC', paddingTop: '1rem', marginTop: '1rem' }}>
           {/* QR Code for Pharmacy Scanner */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-            <div style={{ background: '#ffffff', padding: '6px', border: '1px solid #CDEEEE', borderRadius: '6px' }}>
+            <div style={{ background: '#ffffff', padding: '6px', border: '1px solid #D2E3FC', borderRadius: '6px' }}>
               <QRCodeSVG value={qrUrl} size={84} level="M" />
             </div>
-            <div style={{ fontSize: '0.72rem', color: '#4e7a78', maxWidth: '220px' }}>
+            <div style={{ fontSize: '0.72rem', color: '#496386', maxWidth: '220px' }}>
               <strong>Código QR de Validación Farmacéutica</strong>
               <div>Escaneable por farmacias adheridas para dispensa oficial.</div>
             </div>
           </div>
 
           {/* Digital Signature */}
-          <div style={{ textAlign: 'center', minWidth: '220px', borderTop: '1px solid #0C4E4C', paddingTop: '0.4rem' }}>
-            <div style={{ fontStyle: 'italic', color: '#1A9E9B', fontWeight: 800, fontSize: '0.95rem' }}>
+          <div style={{ textAlign: 'center', minWidth: '220px', borderTop: '1px solid #002182', paddingTop: '0.4rem' }}>
+            <div style={{ fontStyle: 'italic', color: '#076ABC', fontWeight: 800, fontSize: '0.95rem' }}>
               {rx.doctorName}
             </div>
-            <div style={{ fontSize: '0.78rem', color: '#0C4E4C', fontWeight: 600 }}>{rx.doctorLicense}</div>
+            <div style={{ fontSize: '0.78rem', color: '#002182', fontWeight: 600 }}>{rx.doctorLicense}</div>
             <div style={{ fontSize: '0.72rem', color: '#065f46', fontWeight: 700 }}>
               Firma Digital Verificada (X.509)
             </div>

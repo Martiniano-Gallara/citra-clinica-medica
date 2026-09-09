@@ -348,7 +348,7 @@ export const CommunicationsView = () => {
                       <span>CITRA Traumatología</span>
                       <CheckCircle2 size={13} color="#25D366" />
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: '#cdeeee' }}>Cuenta de empresa oficial verificada</div>
+                    <div style={{ fontSize: '0.7rem', color: '#D2E3FC' }}>Cuenta de empresa oficial verificada</div>
                   </div>
                 </div>
 

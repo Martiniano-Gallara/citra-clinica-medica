@@ -93,7 +93,7 @@ export const BillingView = () => {
       <div className="page-header">
         <div className="page-title-group">
           <h1>
-            <Receipt size={32} color="#1A9E9B" />
+            <Receipt size={32} color="#076ABC" />
             <span>Facturación ARCA (AFIP) & Honorarios Médicos</span>
           </h1>
           <p>
@@ -125,7 +125,7 @@ export const BillingView = () => {
         <div className="kpi-card">
           <div className="kpi-top">
             <span className="kpi-label">Facturación Total Emitida</span>
-            <div className="kpi-icon-box" style={{ background: '#e0f6f5', color: '#1A9E9B' }}>
+            <div className="kpi-icon-box" style={{ background: '#EBF3FD', color: '#076ABC' }}>
               <DollarSign size={24} />
             </div>
           </div>
@@ -158,7 +158,7 @@ export const BillingView = () => {
               <Building2 size={24} />
             </div>
           </div>
-          <div className="kpi-value" style={{ color: '#0C4E4C' }}>
+          <div className="kpi-value" style={{ color: '#002182' }}>
             ${totalRetencionClinica.toLocaleString()}
           </div>
           <div className="kpi-trend positive">
@@ -199,7 +199,7 @@ export const BillingView = () => {
           {/* Filters */}
           <div className="filter-bar">
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '240px' }}>
-              <Search size={18} color="#1A9E9B" />
+              <Search size={18} color="#076ABC" />
               <input
                 type="text"
                 className="form-control"
@@ -246,11 +246,11 @@ export const BillingView = () => {
                 {filteredInvoices.map((inv) => (
                   <tr key={inv.id}>
                     <td>
-                      <div style={{ fontWeight: 800, color: '#0C4E4C' }}>{inv.invoiceNumber}</div>
-                      <div style={{ fontSize: '0.74rem', color: '#4e7a78' }}>Pto Vta 0001 · CUIT {clinicInfo.cuit}</div>
+                      <div style={{ fontWeight: 800, color: '#002182' }}>{inv.invoiceNumber}</div>
+                      <div style={{ fontSize: '0.74rem', color: '#496386' }}>Pto Vta 0001 · CUIT {clinicInfo.cuit}</div>
                     </td>
                     <td>
-                      <div style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1A9E9B' }}>
+                      <div style={{ fontFamily: 'monospace', fontWeight: 700, color: '#076ABC' }}>
                         {inv.cae || '74291823901248'}
                       </div>
                       <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
@@ -259,15 +259,15 @@ export const BillingView = () => {
                     </td>
                     <td style={{ whiteSpace: 'nowrap' }}>{inv.date}</td>
                     <td>
-                      <div style={{ fontWeight: 700, color: '#0C4E4C' }}>{inv.patientName}</div>
-                      <div style={{ fontSize: '0.76rem', color: '#4e7a78' }}>DNI: {inv.dni || '-'}</div>
+                      <div style={{ fontWeight: 700, color: '#002182' }}>{inv.patientName}</div>
+                      <div style={{ fontSize: '0.76rem', color: '#496386' }}>DNI: {inv.dni || '-'}</div>
                     </td>
                     <td style={{ fontSize: '0.85rem' }}>{inv.concept}</td>
                     <td>
                       <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{inv.doctorName || 'Clínica CITRA'}</div>
                     </td>
                     <td>
-                      <div style={{ fontWeight: 900, color: '#0C4E4C', fontSize: '1.05rem' }}>
+                      <div style={{ fontWeight: 900, color: '#002182', fontSize: '1.05rem' }}>
                         ${inv.amount.toLocaleString()}
                       </div>
                     </td>
@@ -277,7 +277,7 @@ export const BillingView = () => {
                       </div>
                     </td>
                     <td>
-                      <span style={{ fontSize: '0.8rem', background: '#F3FBFB', border: '1px solid #CDEEEE', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
+                      <span style={{ fontSize: '0.8rem', background: '#F5F8FE', border: '1px solid #D2E3FC', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
                         {inv.paymentMethod}
                       </span>
                     </td>
@@ -385,12 +385,12 @@ export const BillingView = () => {
                     style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover' }}
                   />
                   <div>
-                    <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0C4E4C' }}>{doc.name}</h3>
-                    <div style={{ fontSize: '0.78rem', color: '#4e7a78' }}>{doc.specialtyName} · {doc.license}</div>
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#002182' }}>{doc.name}</h3>
+                    <div style={{ fontSize: '0.78rem', color: '#496386' }}>{doc.specialtyName} · {doc.license}</div>
                   </div>
                 </div>
 
-                <div style={{ background: '#F3FBFB', border: '1px solid #CDEEEE', borderRadius: '8px', padding: '0.85rem 1rem', marginBottom: '1rem', fontSize: '0.85rem' }}>
+                <div style={{ background: '#F5F8FE', border: '1px solid #D2E3FC', borderRadius: '8px', padding: '0.85rem 1rem', marginBottom: '1rem', fontSize: '0.85rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                     <span>Prestaciones Realizadas:</span>
                     <strong>{docInvoices.length} consultas</strong>
@@ -403,7 +403,7 @@ export const BillingView = () => {
                     <span>Porcentaje Acordado:</span>
                     <strong>{doc.feePercentage}%</strong>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #CDEEEE', paddingTop: '6px', marginTop: '6px', color: '#065f46', fontSize: '0.95rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #D2E3FC', paddingTop: '6px', marginTop: '6px', color: '#065f46', fontSize: '0.95rem' }}>
                     <span><strong>Total Neto a Liquidar:</strong></span>
                     <strong>${totalNeto.toLocaleString()}</strong>
                   </div>

@@ -167,7 +167,7 @@ export const PatientDetailModal = () => {
         {/* 1. TOP PATIENT HEADER BANNER */}
         <div
           style={{
-            background: 'linear-gradient(135deg, #0C4E4C 0%, #1A9E9B 100%)',
+            background: 'linear-gradient(135deg, #002182 0%, #076ABC 100%)',
             borderRadius: 'var(--radius-lg)',
             padding: '1.25rem 1.5rem',
             color: '#ffffff',
@@ -176,7 +176,7 @@ export const PatientDetailModal = () => {
             alignItems: 'center',
             flexWrap: 'wrap',
             gap: '1rem',
-            boxShadow: '0 4px 14px rgba(12, 78, 76, 0.15)'
+            boxShadow: '0 4px 14px rgba(0, 33, 130, 0.15)'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.15rem' }}>
@@ -188,7 +188,7 @@ export const PatientDetailModal = () => {
                 height: '64px',
                 borderRadius: '50%',
                 objectFit: 'cover',
-                border: '3px solid #6FD0CC',
+                border: '3px solid #257CE6',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
               }}
             />
@@ -211,8 +211,8 @@ export const PatientDetailModal = () => {
                 </span>
                 <span
                   style={{
-                    background: '#6FD0CC',
-                    color: '#0C4E4C',
+                    background: '#257CE6',
+                    color: '#002182',
                     padding: '2px 10px',
                     borderRadius: '12px',
                     fontSize: '0.78rem',
@@ -223,7 +223,7 @@ export const PatientDetailModal = () => {
                 </span>
               </div>
 
-              <div style={{ fontSize: '0.84rem', color: '#CDEEEE', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ fontSize: '0.84rem', color: '#D2E3FC', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <span>{calculateAge(patient.birthDate)} ({patient.birthDate})</span>
                 <span>•</span>
                 <span>Género: {patient.gender}</span>
@@ -251,7 +251,7 @@ export const PatientDetailModal = () => {
             <button
               type="button"
               className="btn btn-sm"
-              style={{ background: '#ffffff', color: '#0C4E4C', fontWeight: 800, border: 'none' }}
+              style={{ background: '#ffffff', color: '#002182', fontWeight: 800, border: 'none' }}
               onClick={() => {
                 setPatientFormModalData(patient);
                 setIsPatientFormModalOpen(true);
@@ -484,7 +484,7 @@ export const PatientDetailModal = () => {
                   {cons.prescriptions && cons.prescriptions.length > 0 && (
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                       {cons.prescriptions.map((rx, rIdx) => (
-                        <span key={rIdx} style={{ fontSize: '0.78rem', background: '#e0f6f5', color: '#0C4E4C', padding: '3px 8px', borderRadius: '4px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <span key={rIdx} style={{ fontSize: '0.78rem', background: '#EBF3FD', color: '#002182', padding: '3px 8px', borderRadius: '4px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           <Pill size={12} style={{ flexShrink: 0 }} />
                           <span>{rx.drugName} ({rx.presentation}) — {rx.dosage}</span>
                         </span>
@@ -540,7 +540,7 @@ export const PatientDetailModal = () => {
                       style={{
                         width: `${(plan.sessionsCompleted / plan.sessionsPrescribed) * 100}%`,
                         height: '100%',
-                        background: 'linear-gradient(90deg, #1A9E9B, #6FD0CC)',
+                        background: 'linear-gradient(90deg, #076ABC, #257CE6)',
                         borderRadius: '10px'
                       }}
                     />
@@ -669,7 +669,7 @@ export const PatientDetailModal = () => {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#e0f6f5', color: 'var(--c-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#EBF3FD', color: 'var(--c-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <FileText size={20} />
                     </div>
                     <div>

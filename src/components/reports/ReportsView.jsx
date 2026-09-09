@@ -60,8 +60,8 @@ export const ReportsView = () => {
         fill: true,
         label: 'Facturación Total ($)',
         data: [1420000, 1680000, 1890000, 2100000, 2450000, 2890000],
-        borderColor: '#1A9E9B',
-        backgroundColor: 'rgba(26, 158, 155, 0.15)',
+        borderColor: '#076ABC',
+        backgroundColor: 'rgba(7, 106, 188, 0.15)',
         tension: 0.35
       }
     ]
@@ -75,9 +75,9 @@ export const ReportsView = () => {
         label: 'Turnos',
         data: [54, 48, 39, 35, 28, 24],
         backgroundColor: [
-          '#0C4E4C',
-          '#1A9E9B',
-          '#6FD0CC',
+          '#002182',
+          '#076ABC',
+          '#257CE6',
           '#0d9488',
           '#14b8a6',
           '#99f6e4'
@@ -93,7 +93,7 @@ export const ReportsView = () => {
     datasets: [
       {
         data: [38, 24, 16, 12, 10],
-        backgroundColor: ['#0C4E4C', '#1A9E9B', '#6FD0CC', '#14b8a6', '#4e7a78'],
+        backgroundColor: ['#002182', '#076ABC', '#257CE6', '#14b8a6', '#496386'],
         borderWidth: 0
       }
     ]
@@ -106,12 +106,12 @@ export const ReportsView = () => {
       {
         label: 'Pacientes Recurrentes',
         data: [18, 22, 19, 25, 28],
-        backgroundColor: '#1A9E9B'
+        backgroundColor: '#076ABC'
       },
       {
         label: 'Pacientes Nuevos (1ra vez)',
         data: [6, 8, 5, 9, 7],
-        backgroundColor: '#6FD0CC'
+        backgroundColor: '#257CE6'
       }
     ]
   };
@@ -126,7 +126,7 @@ export const ReportsView = () => {
       <div className="page-header">
         <div className="page-title-group">
           <h1>
-            <BarChart3 size={32} color="#1A9E9B" />
+            <BarChart3 size={32} color="#076ABC" />
             <span>Estadísticas & Reportes Ejecutivos</span>
           </h1>
           <p>Métricas de productividad, volumen de pacientes, ingresos por especialidad y retención</p>

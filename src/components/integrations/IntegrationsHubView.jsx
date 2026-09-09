@@ -17,7 +17,7 @@ export const IntegrationsHubView = () => {
       endpoint: 'https://sisa.msal.gov.ar/ws/renapdis/v2',
       details: `ID de Plataforma Homologada: ${clinicInfo.renapdisPlatformId}. Emisión de CUIR y validación de farmacias activa.`,
       icon: 'Pill',
-      color: '#1A9E9B'
+      color: '#076ABC'
     },
     {
       id: 'arca',
@@ -28,7 +28,7 @@ export const IntegrationsHubView = () => {
       endpoint: 'https://servicios1.afip.gov.ar/wsfev1/service.asmx',
       details: `Punto de Venta N° ${clinicInfo.arcaPtoVta} habilitado para CUIT ${clinicInfo.cuit}. CAE en tiempo real.`,
       icon: 'Receipt',
-      color: '#0C4E4C'
+      color: '#002182'
     },
     {
       id: 'sisa',
@@ -50,7 +50,7 @@ export const IntegrationsHubView = () => {
       endpoint: 'https://fhir.salud.gob.ar/r4/citra',
       details: 'Mapeo de recursos Patient, Encounter, Condition y MedicationRequest según perfil nacional FHIR.',
       icon: 'Globe',
-      color: '#6FD0CC'
+      color: '#257CE6'
     }
   ];
 
@@ -68,7 +68,7 @@ export const IntegrationsHubView = () => {
       <div className="page-header">
         <div className="page-title-group">
           <h1>
-            <Network size={32} color="#1A9E9B" />
+            <Network size={32} color="#076ABC" />
             <span>Hub de Integraciones Sanitarias Oficiales</span>
           </h1>
           <p>
@@ -94,10 +94,10 @@ export const IntegrationsHubView = () => {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                 <div>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0C4E4C' }}>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#002182' }}>
                     {item.name}
                   </h3>
-                  <div style={{ fontSize: '0.78rem', color: '#4e7a78', fontWeight: 600 }}>
+                  <div style={{ fontSize: '0.78rem', color: '#496386', fontWeight: 600 }}>
                     {item.organism} · {item.normative}
                   </div>
                 </div>
@@ -121,7 +121,7 @@ export const IntegrationsHubView = () => {
                   </span>
               </div>
 
-              <div style={{ background: '#F3FBFB', border: '1px solid #CDEEEE', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.84rem', color: '#1e3a39' }}>
+              <div style={{ background: '#F5F8FE', border: '1px solid #D2E3FC', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.84rem', color: '#172A4A' }}>
                 {item.details}
                 <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#64748b', marginTop: '4px' }}>
                   Endpoint: {item.endpoint}
@@ -129,7 +129,7 @@ export const IntegrationsHubView = () => {
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid #CDEEEE', paddingTop: '0.85rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid #D2E3FC', paddingTop: '0.85rem' }}>
               <button
                 className="btn btn-outline btn-sm"
                 onClick={() => handleTestConnection(item.id, item.name)}

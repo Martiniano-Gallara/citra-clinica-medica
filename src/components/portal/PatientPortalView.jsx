@@ -57,7 +57,7 @@ export const PatientPortalView = () => {
       {/* Top Welcome Banner for Patient */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #0C4E4C 0%, #1A9E9B 100%)',
+          background: 'linear-gradient(135deg, #002182 0%, #076ABC 100%)',
           color: '#ffffff',
           borderRadius: '16px',
           padding: '1.75rem 2rem',
@@ -74,16 +74,16 @@ export const PatientPortalView = () => {
           <img
             src={patient.avatar}
             alt={patient.name}
-            style={{ width: '68px', height: '68px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #6FD0CC' }}
+            style={{ width: '68px', height: '68px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #257CE6' }}
           />
           <div>
-            <div style={{ fontSize: '0.8rem', color: '#CDEEEE', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 800 }}>
+            <div style={{ fontSize: '0.8rem', color: '#D2E3FC', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 800 }}>
               Portal Autogestión del Paciente
             </div>
             <h1 style={{ fontSize: '1.65rem', fontWeight: 900, margin: '2px 0' }}>
               Hola, {patient.name}
             </h1>
-            <div style={{ fontSize: '0.86rem', color: '#e0f6f5' }}>
+            <div style={{ fontSize: '0.86rem', color: '#EBF3FD' }}>
               DNI: {patient.dni} · Cobertura: {patient.insuranceName} ({patient.insurancePlan})
             </div>
           </div>
@@ -101,7 +101,7 @@ export const PatientPortalView = () => {
             }}
           >
             {patients.map((p) => (
-              <option key={p.id} value={p.id} style={{ color: '#0C4E4C' }}>
+              <option key={p.id} value={p.id} style={{ color: '#002182' }}>
                 Simular como: {p.name}
               </option>
             ))}
@@ -157,7 +157,7 @@ export const PatientPortalView = () => {
       {portalTab === 'appointments' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0C4E4C' }}>Mis Turnos Médicos</h2>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#002182' }}>Mis Turnos Médicos</h2>
             <button
               className="btn btn-primary"
               onClick={() => {
@@ -178,7 +178,7 @@ export const PatientPortalView = () => {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
             {myAppointments.length === 0 ? (
-              <div className="card" style={{ textAlign: 'center', padding: '3rem', color: '#4e7a78' }}>
+              <div className="card" style={{ textAlign: 'center', padding: '3rem', color: '#496386' }}>
                 No tienes turnos agendados en este momento.
               </div>
             ) : (
@@ -194,15 +194,15 @@ export const PatientPortalView = () => {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                    <div style={{ background: '#e0f6f5', color: '#1A9E9B', padding: '0.85rem', borderRadius: '12px', textAlign: 'center', minWidth: '75px' }}>
+                    <div style={{ background: '#EBF3FD', color: '#076ABC', padding: '0.85rem', borderRadius: '12px', textAlign: 'center', minWidth: '75px' }}>
                       <div style={{ fontSize: '1.2rem', fontWeight: 900 }}>{app.date.split('-')[2]}</div>
                       <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>Ago 2026</div>
                     </div>
                     <div>
-                      <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#0C4E4C' }}>
+                      <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#002182' }}>
                         {app.doctorName} — {app.specialtyName}
                       </div>
-                      <div style={{ fontSize: '0.84rem', color: '#4e7a78', marginTop: '2px' }}>
+                      <div style={{ fontSize: '0.84rem', color: '#496386', marginTop: '2px' }}>
                         Horario: {app.time} hs · Consultorio: {app.roomName}
                       </div>
                       <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
@@ -224,13 +224,13 @@ export const PatientPortalView = () => {
       {/* TAB 2: RECETAS ELECTRÓNICAS ReNaPDiS */}
       {portalTab === 'prescriptions' && (
         <div>
-          <div style={{ background: '#e0f6f5', padding: '0.85rem 1.15rem', borderRadius: '8px', border: '1px solid #6FD0CC', marginBottom: '1.5rem', fontSize: '0.86rem', color: '#0C4E4C' }}>
+          <div style={{ background: '#EBF3FD', padding: '0.85rem 1.15rem', borderRadius: '8px', border: '1px solid #257CE6', marginBottom: '1.5rem', fontSize: '0.86rem', color: '#002182' }}>
             <strong>Recetas Electrónicas Oficiales (Ley 27.553):</strong> Presenta el Código Único CUIR o el código QR directamente en cualquier farmacia adherida para la dispensa de tus medicamentos.
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {myPrescriptions.length === 0 ? (
-              <div className="card" style={{ textAlign: 'center', padding: '3rem', color: '#4e7a78' }}>
+              <div className="card" style={{ textAlign: 'center', padding: '3rem', color: '#496386' }}>
                 No registras recetas electrónicas emitidas recientemente.
               </div>
             ) : (
@@ -240,13 +240,13 @@ export const PatientPortalView = () => {
                   className="card"
                   style={{
                     padding: '1.35rem',
-                    borderLeft: '5px solid #1A9E9B'
+                    borderLeft: '5px solid #076ABC'
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                        <span style={{ fontWeight: 900, fontSize: '1.05rem', color: '#0C4E4C' }}>
+                        <span style={{ fontWeight: 900, fontSize: '1.05rem', color: '#002182' }}>
                           CUIR: {rx.cuir}
                         </span>
                         <span style={{ background: '#d1fae5', color: '#065f46', fontSize: '0.75rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
@@ -254,7 +254,7 @@ export const PatientPortalView = () => {
                           <span>ReNaPDiS Habilitada</span>
                         </span>
                       </div>
-                      <div style={{ fontSize: '0.82rem', color: '#4e7a78', marginTop: '2px' }}>
+                      <div style={{ fontSize: '0.82rem', color: '#496386', marginTop: '2px' }}>
                         Prescrito por <strong>{rx.doctorName}</strong> ({rx.doctorLicense}) · Emitida el {rx.issueDate} (Válida hasta {rx.expirationDate})
                       </div>
                     </div>
@@ -269,11 +269,11 @@ export const PatientPortalView = () => {
                   </div>
 
                   {/* Medications List */}
-                  <div style={{ background: '#F3FBFB', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #CDEEEE' }}>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0C4E4C', marginBottom: '4px' }}>
+                  <div style={{ background: '#F5F8FE', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #D2E3FC' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '4px' }}>
                       Medicamentos Prescriptos (DCI / Genéricos):
                     </div>
-                    <ul style={{ paddingLeft: '1.25rem', fontSize: '0.85rem', color: '#1e3a39' }}>
+                    <ul style={{ paddingLeft: '1.25rem', fontSize: '0.85rem', color: '#172A4A' }}>
                       {rx.medications.map((m, mIdx) => (
                         <li key={mIdx}>
                           <strong>{m.dci}</strong> ({m.concentration}) — {m.instructions}
@@ -303,10 +303,10 @@ export const PatientPortalView = () => {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                <FileText size={28} color="#1A9E9B" />
+                <FileText size={28} color="#076ABC" />
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#0C4E4C' }}>{file.name}</div>
-                  <div style={{ fontSize: '0.76rem', color: '#4e7a78' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#002182' }}>{file.name}</div>
+                  <div style={{ fontSize: '0.76rem', color: '#496386' }}>
                     {file.type} · {file.size} · {file.date}
                   </div>
                 </div>
@@ -326,14 +326,14 @@ export const PatientPortalView = () => {
       {/* TAB 4: SOLICITUD DE COPIA HCE (Ley 26.529) */}
       {portalTab === 'hce_request' && (
         <div className="card" style={{ maxWidth: '800px', padding: '1.75rem' }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0C4E4C', marginBottom: '0.75rem' }}>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#002182', marginBottom: '0.75rem' }}>
             Derecho a la Titularidad de la Historia Clínica (Ley 26.529 Art. 14)
           </h3>
-          <p style={{ fontSize: '0.88rem', color: '#1e3a39', lineHeight: 1.6, marginBottom: '1.25rem' }}>
+          <p style={{ fontSize: '0.88rem', color: '#172A4A', lineHeight: 1.6, marginBottom: '1.25rem' }}>
             El paciente es el titular indiscutible de la historia clínica. A su simple requerimiento debe suministrársele copia autenticada de la misma, dentro del plazo de cuarenta y ocho (48) horas hábiles.
           </p>
 
-          <div style={{ background: '#F3FBFB', padding: '1rem', borderRadius: '8px', border: '1px solid #CDEEEE', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+          <div style={{ background: '#F5F8FE', padding: '1rem', borderRadius: '8px', border: '1px solid #D2E3FC', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
             <div><strong>Titular:</strong> {patient.name}</div>
             <div><strong>DNI:</strong> {patient.dni}</div>
             <div><strong>Cantidad de Registros Clínicos Digitalizados:</strong> {myConsultations.length} actos médicos auditados</div>

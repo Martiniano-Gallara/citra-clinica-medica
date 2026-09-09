@@ -53,7 +53,7 @@ export const ConsultationPrintView = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #0f172a', paddingBottom: '1rem', marginBottom: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <img
-              src="/citra-logo.png"
+              src="/citra-icon.png"
               alt="CITRA Logo"
               style={{ width: '60px', height: '60px', objectFit: 'contain' }}
             />

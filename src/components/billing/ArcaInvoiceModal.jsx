@@ -85,7 +85,7 @@ export const ArcaInvoiceModal = () => {
       }
     >
       <form onSubmit={handleSubmit}>
-        <div style={{ background: '#e0f6f5', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #6FD0CC', marginBottom: '1.25rem', fontSize: '0.84rem', color: '#0C4E4C' }}>
+        <div style={{ background: '#EBF3FD', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #257CE6', marginBottom: '1.25rem', fontSize: '0.84rem', color: '#002182' }}>
           <strong>Conexión ARCA WebServices (WSFEv1):</strong> Emisión oficial de comprobante fiscal con validación de CUIT emisor <strong>{clinicInfo.cuit}</strong> en Punto de Venta <strong>N° {clinicInfo.arcaPtoVta}</strong>.
         </div>
 
@@ -163,7 +163,7 @@ export const ArcaInvoiceModal = () => {
             <input
               type="number"
               className="form-control"
-              style={{ fontWeight: 800, fontSize: '1.2rem', color: '#1A9E9B' }}
+              style={{ fontWeight: 800, fontSize: '1.2rem', color: '#076ABC' }}
               value={formData.amount}
               onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
               required
@@ -185,21 +185,21 @@ export const ArcaInvoiceModal = () => {
         {/* Honorarios breakdown */}
         <div
           style={{
-            background: '#F3FBFB',
-            border: '1px solid #CDEEEE',
+            background: '#F5F8FE',
+            border: '1px solid #D2E3FC',
             padding: '0.85rem 1.15rem',
             borderRadius: '8px',
             marginTop: '1rem',
             fontSize: '0.85rem'
           }}
         >
-          <div style={{ fontWeight: 700, color: '#0C4E4C', marginBottom: '4px' }}>
+          <div style={{ fontWeight: 700, color: '#002182', marginBottom: '4px' }}>
             Desglose de Liquidación de Honorarios Médicos ({formData.docHonorarioPercent}% convenido):
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#1e3a39' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#172A4A' }}>
             <span>Honorario Bruto: <strong>${honorariosCalc.honorarioBruto.toLocaleString()}</strong></span>
             <span>Retención IIBB (3.5%): <strong>-${honorariosCalc.retencion.toLocaleString()}</strong></span>
-            <span>Honorario Neto a Liquidar: <strong style={{ color: '#1A9E9B' }}>${honorariosCalc.honorarioNeto.toLocaleString()}</strong></span>
+            <span>Honorario Neto a Liquidar: <strong style={{ color: '#076ABC' }}>${honorariosCalc.honorarioNeto.toLocaleString()}</strong></span>
           </div>
         </div>
       </form>

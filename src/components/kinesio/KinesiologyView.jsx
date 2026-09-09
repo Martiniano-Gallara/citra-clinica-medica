@@ -116,7 +116,7 @@ export const KinesiologyView = () => {
         <div className="stat-card-premium" style={{ padding: '1.15rem 1.25rem' }}>
           <div className="stat-card-top">
             <span className="stat-card-label">Alivio Clínico (EVA)</span>
-            <div className="stat-icon-box" style={{ width: '38px', height: '38px', background: '#e0f6f5', color: 'var(--c-primary)' }}>
+            <div className="stat-icon-box" style={{ width: '38px', height: '38px', background: '#EBF3FD', color: 'var(--c-primary)' }}>
               <TrendingDown size={18} />
             </div>
           </div>
@@ -174,7 +174,7 @@ export const KinesiologyView = () => {
             className={`btn btn-sm ${activeTab === 'gym_live' ? 'btn-primary' : 'btn-outline'}`}
             onClick={() => setActiveTab('gym_live')}
           >
-            <Zap size={15} color="#1A9E9B" />
+            <Zap size={15} color="#076ABC" />
             Asistencia en Gimnasio / Box
           </button>
         </div>
@@ -264,7 +264,7 @@ export const KinesiologyView = () => {
                               style={{
                                 width: `${progress}%`,
                                 height: '100%',
-                                background: progress >= 100 ? '#10b981' : 'linear-gradient(90deg, #1A9E9B, #6FD0CC)',
+                                background: progress >= 100 ? '#10b981' : 'linear-gradient(90deg, #076ABC, #257CE6)',
                                 borderRadius: '4px'
                               }}
                             />
@@ -515,7 +515,7 @@ export const KinesiologyView = () => {
                       position: 'absolute',
                       top: '10px',
                       left: '10px',
-                      background: 'rgba(12, 78, 76, 0.85)',
+                      background: 'rgba(0, 33, 130, 0.85)',
                       color: '#ffffff',
                       padding: '3px 8px',
                       borderRadius: '6px',

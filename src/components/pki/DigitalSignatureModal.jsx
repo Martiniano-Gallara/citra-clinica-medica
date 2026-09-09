@@ -63,13 +63,13 @@ export const DigitalSignatureModal = () => {
       <div>
         <div
           style={{
-            background: '#e0f6f5',
+            background: '#EBF3FD',
             padding: '0.85rem 1rem',
             borderRadius: '8px',
-            border: '1px solid #6FD0CC',
+            border: '1px solid #257CE6',
             marginBottom: '1.25rem',
             fontSize: '0.86rem',
-            color: '#0C4E4C'
+            color: '#002182'
           }}
         >
           <strong>Marco Legal de Firma Digital (Ley 25.506 & Ley 27.446):</strong>
@@ -101,7 +101,7 @@ export const DigitalSignatureModal = () => {
         <div
           style={{
             background: '#ffffff',
-            border: '1px solid #CDEEEE',
+            border: '1px solid #D2E3FC',
             borderRadius: '10px',
             padding: '1.25rem',
             marginBottom: '1.25rem'
@@ -109,12 +109,12 @@ export const DigitalSignatureModal = () => {
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-              <KeyRound size={22} color="#1A9E9B" />
+              <KeyRound size={22} color="#076ABC" />
               <div>
-                <div style={{ fontWeight: 800, fontSize: '1rem', color: '#0C4E4C' }}>
+                <div style={{ fontWeight: 800, fontSize: '1rem', color: '#002182' }}>
                   Certificado X.509 v3 del Profesional
                 </div>
-                <div style={{ fontSize: '0.78rem', color: '#4e7a78' }}>
+                <div style={{ fontSize: '0.78rem', color: '#496386' }}>
                   Identificador SISA/REFEPS: {selectedDoc.sisaRefeps}
                 </div>
               </div>
@@ -132,20 +132,20 @@ export const DigitalSignatureModal = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem', fontSize: '0.84rem' }}>
             <div>
-              <span style={{ color: '#4e7a78' }}>Titular del Certificado:</span>
-              <div style={{ fontWeight: 700, color: '#0C4E4C' }}>{selectedDoc.name}</div>
+              <span style={{ color: '#496386' }}>Titular del Certificado:</span>
+              <div style={{ fontWeight: 700, color: '#002182' }}>{selectedDoc.name}</div>
             </div>
             <div>
-              <span style={{ color: '#4e7a78' }}>Dispositivo / Token:</span>
-              <div style={{ fontWeight: 700, color: '#0C4E4C' }}>{selectedDoc.digitalSignatureStatus}</div>
+              <span style={{ color: '#496386' }}>Dispositivo / Token:</span>
+              <div style={{ fontWeight: 700, color: '#002182' }}>{selectedDoc.digitalSignatureStatus}</div>
             </div>
             <div>
-              <span style={{ color: '#4e7a78' }}>Matrícula Certificada:</span>
-              <div style={{ fontWeight: 700, color: '#0C4E4C' }}>{selectedDoc.license}</div>
+              <span style={{ color: '#496386' }}>Matrícula Certificada:</span>
+              <div style={{ fontWeight: 700, color: '#002182' }}>{selectedDoc.license}</div>
             </div>
             <div>
-              <span style={{ color: '#4e7a78' }}>Vencimiento del Certificado:</span>
-              <div style={{ fontWeight: 700, color: '#1A9E9B' }}>{selectedDoc.certExpiration}</div>
+              <span style={{ color: '#496386' }}>Vencimiento del Certificado:</span>
+              <div style={{ fontWeight: 700, color: '#076ABC' }}>{selectedDoc.certExpiration}</div>
             </div>
           </div>
         </div>

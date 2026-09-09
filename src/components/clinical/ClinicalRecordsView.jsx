@@ -180,7 +180,7 @@ export const ClinicalRecordsView = () => {
         <div className="stat-card-premium" style={{ padding: '1.15rem 1.25rem' }}>
           <div className="stat-card-top">
             <span className="stat-card-label">Consultas de Hoy</span>
-            <div className="stat-icon-box" style={{ width: '38px', height: '38px', background: '#e0f6f5', color: 'var(--c-primary)' }}>
+            <div className="stat-icon-box" style={{ width: '38px', height: '38px', background: '#EBF3FD', color: 'var(--c-primary)' }}>
               <Calendar size={18} />
             </div>
           </div>
@@ -451,8 +451,8 @@ export const ClinicalRecordsView = () => {
                     <strong>Diagnóstico (CIE-10):</strong>
                     <span
                       style={{
-                        background: '#e0f6f5',
-                        color: '#0C4E4C',
+                        background: '#EBF3FD',
+                        color: '#002182',
                         padding: '3px 10px',
                         borderRadius: '6px',
                         fontWeight: 800,
@@ -495,9 +495,9 @@ export const ClinicalRecordsView = () => {
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '5px',
-                            background: '#e0f6f5',
-                            border: '1px solid #6FD0CC',
-                            color: '#0C4E4C',
+                            background: '#EBF3FD',
+                            border: '1px solid #257CE6',
+                            color: '#002182',
                             padding: '3px 10px',
                             borderRadius: '6px',
                             fontSize: '0.78rem',

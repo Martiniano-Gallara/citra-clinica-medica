@@ -1,67 +1,67 @@
 /* ===================================================================
-   CITRA SAAS DESIGN SYSTEM & APPLICATION STYLES
-   Palette: Custom Medical Teal / Mint Elegance
-   #F3FBFB | #CDEEEE | #6FD0CC | #1A9E9B | #0C4E4C
+   CITRA DESIGN SYSTEM & APPLICATION STYLES
+   Official Palette: CITRA Royal Navy & Medical Blue
+   #002182 (Logo Navy) | #001556 (Deep Navy) | #076ABC (Vibrant Blue) | #257CE6 | #D2E3FC | #F5F8FE
    =================================================================== */
 
 :root {
-  /* Exact User Color Palette */
-  --c-lightest: #F3FBFB;  /* Background / App canvas */
-  --c-soft: #CDEEEE;      /* Soft aqua borders & subtle surfaces */
-  --c-accent: #6FD0CC;    /* Vibrant mint cyan accent */
-  --c-primary: #1A9E9B;   /* Deep Medical Teal - Primary */
-  --c-dark: #0C4E4C;      /* Petroleum Dark Teal - Sidebar & Headers */
-  --c-darker: #083836;    /* Darker Teal for header & footer */
-  --c-dark-hover: #125e5c;
+  /* Exact CITRA Logo Color Palette */
+  --c-lightest: #F5F8FE;  /* Canvas / Clean light blue tint */
+  --c-soft: #D2E3FC;      /* Soft ice blue borders & subtle surfaces */
+  --c-accent: #257CE6;    /* Vibrant cobalt blue accent */
+  --c-primary: #076ABC;   /* Vibrant CITRA Medical Blue (Logo leaf) */
+  --c-dark: #002182;      /* Deep CITRA Navy (Logo letters) */
+  --c-darker: #001556;    /* Darkest Navy for header & footer */
+  --c-dark-hover: #001C6E;
 
   /* Semantic Brand Mappings */
-  --primary: #1A9E9B;
-  --primary-hover: #14807d;
-  --primary-light: #e6f7f7;
-  --primary-border: #6FD0CC;
-  --primary-gradient: linear-gradient(135deg, #1A9E9B 0%, #0C4E4C 100%);
-  --accent-gradient: linear-gradient(135deg, #6FD0CC 0%, #1A9E9B 100%);
+  --primary: #076ABC;
+  --primary-hover: #055294;
+  --primary-light: #EBF3FD;
+  --primary-border: #8EBEF5;
+  --primary-gradient: linear-gradient(135deg, #076ABC 0%, #002182 100%);
+  --accent-gradient: linear-gradient(135deg, #257CE6 0%, #076ABC 100%);
 
   /* Sidebar Palette */
-  --sidebar-bg: #0C4E4C;
-  --sidebar-header: #083836;
-  --sidebar-hover: #125e5c;
-  --sidebar-active: #1A9E9B;
-  --sidebar-active-gradient: linear-gradient(135deg, #1A9E9B 0%, #6FD0CC 100%);
-  --sidebar-text: #CDEEEE;
+  --sidebar-bg: #001B6B;
+  --sidebar-header: #001348;
+  --sidebar-hover: #00278A;
+  --sidebar-active: #076ABC;
+  --sidebar-active-gradient: linear-gradient(135deg, #076ABC 0%, #257CE6 100%);
+  --sidebar-text: #D2E3FC;
   --sidebar-text-active: #ffffff;
-  --sidebar-border: rgba(205, 238, 238, 0.15);
+  --sidebar-border: rgba(210, 227, 252, 0.15);
 
   /* Backgrounds & Surfaces */
-  --bg-app: #F3FBFB;
+  --bg-app: #F5F8FE;
   --bg-card: #ffffff;
-  --bg-subtle: #eef9f9;
-  --bg-hover: #e3f5f5;
+  --bg-subtle: #EDF3FD;
+  --bg-hover: #E1EDFC;
 
   /* Typography Colors */
-  --text-main: #0C4E4C;          /* Deepest Teal for high contrast headings */
-  --text-body: #1e3a39;          /* Readable dark slate-teal */
-  --text-muted: #4e7a78;         /* Medium teal-gray */
-  --text-subtle: #7ba8a6;
+  --text-main: #002182;          /* Deepest Navy for high contrast headings */
+  --text-body: #172A4A;          /* Readable dark slate-navy */
+  --text-muted: #496386;         /* Medium blue-gray */
+  --text-subtle: #7994B8;
   --text-inverted: #ffffff;
 
   /* Borders & Focus */
-  --border-color: #CDEEEE;
-  --border-subtle: #e2f4f4;
-  --border-focus: #1A9E9B;
+  --border-color: #D2E3FC;
+  --border-subtle: #E6EEFA;
+  --border-focus: #076ABC;
 
-  /* Status Badges - Cohesive with Teal & High Legibility */
-  --status-confirmado-bg: #e0f6f5;
-  --status-confirmado-text: #0C4E4C;
-  --status-confirmado-border: #6FD0CC;
+  /* Status Badges - Cohesive with CITRA Blue & High Legibility */
+  --status-confirmado-bg: #EBF3FD;
+  --status-confirmado-text: #002182;
+  --status-confirmado-border: #8EBEF5;
 
   --status-pendiente-bg: #fef3c7;
   --status-pendiente-text: #92400e;
   --status-pendiente-border: #fcd34d;
 
-  --status-ensala-bg: #e6f8f7;
-  --status-ensala-text: #1A9E9B;
-  --status-ensala-border: #6FD0CC;
+  --status-ensala-bg: #EBF3FD;
+  --status-ensala-text: #076ABC;
+  --status-ensala-border: #257CE6;
 
   --status-atendido-bg: #d1fae5;
   --status-atendido-text: #065f46;
@@ -71,15 +71,15 @@
   --status-cancelado-text: #991b1b;
   --status-cancelado-border: #fca5a5;
 
-  --status-ausente-bg: #e5eded;
-  --status-ausente-text: #4e7a78;
-  --status-ausente-border: #CDEEEE;
+  --status-ausente-bg: #EAF0FA;
+  --status-ausente-text: #496386;
+  --status-ausente-border: #D2E3FC;
 
   /* Elevation Shadows */
-  --shadow-sm: 0 1px 3px 0 rgba(12, 78, 76, 0.06);
-  --shadow-md: 0 4px 14px -2px rgba(12, 78, 76, 0.08), 0 2px 6px -1px rgba(12, 78, 76, 0.04);
-  --shadow-lg: 0 10px 25px -4px rgba(12, 78, 76, 0.12), 0 4px 10px -2px rgba(12, 78, 76, 0.06);
-  --shadow-xl: 0 20px 30px -6px rgba(12, 78, 76, 0.16), 0 8px 14px -3px rgba(12, 78, 76, 0.08);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 33, 130, 0.05);
+  --shadow-md: 0 4px 14px -2px rgba(0, 33, 130, 0.08), 0 2px 6px -1px rgba(0, 33, 130, 0.04);
+  --shadow-lg: 0 10px 25px -4px rgba(0, 33, 130, 0.12), 0 4px 10px -2px rgba(0, 33, 130, 0.06);
+  --shadow-xl: 0 20px 30px -6px rgba(0, 33, 130, 0.16), 0 8px 14px -3px rgba(0, 33, 130, 0.08);
 
   /* Dimensions & Spacings */
   --radius-sm: 8px;
@@ -260,9 +260,9 @@ button, input, select, textarea {
 
 .nav-item.active {
   background: var(--sidebar-active-gradient);
-  color: #0C4E4C;
+  color: #ffffff;
   font-weight: 800;
-  box-shadow: 0 4px 16px rgba(111, 208, 204, 0.35);
+  box-shadow: 0 4px 16px rgba(37, 124, 230, 0.35);
 }
 
 .nav-item-badge {
@@ -1109,3 +1109,83 @@ button, input, select, textarea {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===================================================================
+   MOBILE-FIRST INSTITUTIONAL & DRAWER RESPONSIVE SYSTEM
+   =================================================================== */
+
+@keyframes drawerFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes drawerSlideRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.mobile-drawer-overlay {
+  position: fixed;
+  top: 65px; /* Empieza debajo del header para que siga siendo visible */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  background-color: rgba(0, 21, 86, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: flex-end;
+  animation: drawerFadeIn 0.25s ease-out forwards;
+}
+
+.mobile-drawer-panel {
+  width: 85%;
+  max-width: 360px;
+  height: 100%;
+  background: #ffffff;
+  box-shadow: -10px 0 35px rgba(0, 21, 86, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  animation: drawerSlideRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Visibility helpers */
+.desktop-only {
+  display: flex !important;
+}
+
+.mobile-only {
+  display: none !important;
+}
+
+/* Hero Facade Background Positioning — muestra el logo del edificio en mobile */
+.hero-bg-facade {
+  background-position: center 30%;
+}
+
+@media (max-width: 899px) {
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only {
+    display: flex !important;
+  }
+
+  .hero-bg-facade {
+    background-position: 22% 38% !important;
+  }
+
+  /* Compact hero & container paddings on mobile */
+  .hero-container {
+    padding: 2.25rem 1rem 2rem !important;
+    gap: 1.75rem !important;
+  }
+
+  .section-container {
+    padding: 3rem 1rem !important;
+  }
+}
+
+

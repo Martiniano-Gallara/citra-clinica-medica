@@ -80,6 +80,29 @@ export const ClinicProvider = ({ children }) => {
   const [medicalOrders, setMedicalOrders] = useState(() => loadStorage('medicalOrders', INITIAL_MEDICAL_ORDERS));
   const [medicalCertificates, setMedicalCertificates] = useState(() => loadStorage('medicalCertificates', INITIAL_MEDICAL_CERTIFICATES));
 
+  // Institutional Public Views & Navigation ('home', 'booking', 'my-turnos', 'admin-login', 'admin-panel')
+  const [currentView, setCurrentView] = useState(() => loadStorage('currentView', 'home'));
+  const [bookingPreselectedSpecialty, setBookingPreselectedSpecialty] = useState(null);
+  const [bookingPreselectedDoctor, setBookingPreselectedDoctor] = useState(null);
+
+  // Authentication & Roles: 'guest' | 'patient' | 'admin'
+  const [authRole, setAuthRole] = useState(() => loadStorage('authRole', 'guest'));
+  const [authPatient, setAuthPatient] = useState(() => loadStorage('authPatient', null));
+  const [authAdmin, setAuthAdmin] = useState(() => loadStorage('authAdmin', null));
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState('login'); // 'login' | 'register'
+
+  // Clinic General Schedules & Availability
+  const INITIAL_SCHEDULE = {
+    openingTime: '08:00',
+    closingTime: '20:00',
+    slotDuration: 30,
+    workingDays: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+    saturdayClosingTime: '13:00',
+    blockedDates: ['2026-12-25', '2026-01-01', '2026-05-01']
+  };
+  const [clinicSchedule, setClinicSchedule] = useState(() => loadStorage('clinicSchedule', INITIAL_SCHEDULE));
+
   // Portal and View Modes
   const [isPatientPortalMode, setIsPatientPortalMode] = useState(false);
   const [currentPortalPatient, setCurrentPortalPatient] = useState(() => INITIAL_PATIENTS[0]);
@@ -158,6 +181,11 @@ export const ClinicProvider = ({ children }) => {
   useEffect(() => { localStorage.setItem('citra_cashClosures', JSON.stringify(cashClosures)); }, [cashClosures]);
   useEffect(() => { localStorage.setItem('citra_medicalOrders', JSON.stringify(medicalOrders)); }, [medicalOrders]);
   useEffect(() => { localStorage.setItem('citra_medicalCertificates', JSON.stringify(medicalCertificates)); }, [medicalCertificates]);
+  useEffect(() => { localStorage.setItem('citra_currentView', JSON.stringify(currentView)); }, [currentView]);
+  useEffect(() => { localStorage.setItem('citra_authRole', JSON.stringify(authRole)); }, [authRole]);
+  useEffect(() => { localStorage.setItem('citra_authPatient', JSON.stringify(authPatient)); }, [authPatient]);
+  useEffect(() => { localStorage.setItem('citra_authAdmin', JSON.stringify(authAdmin)); }, [authAdmin]);
+  useEffect(() => { localStorage.setItem('citra_clinicSchedule', JSON.stringify(clinicSchedule)); }, [clinicSchedule]);
 
   const addToast = (title, message, type = 'success') => {
     const id = Date.now() + Math.random();
@@ -710,6 +738,183 @@ export const ClinicProvider = ({ children }) => {
     addToast('Perfil Cambiado', `Ahora estás navegando con el rol: ${matchedUser.role}`, 'info');
   };
 
+  // --- GESTIÓN DE TURNOS AVANZADA ---
+  const cancelAppointment = (id, reason = 'Cancelado por el paciente') => {
+    setAppointments((prev) =>
+      prev.map((app) => (app.id === id ? { ...app, status: 'cancelado', cancelReason: reason } : app))
+    );
+    logAudit('CANCEL', 'Turnos', '-', `Turno ${id} cancelado. Motivo: ${reason}`);
+    addToast('Turno Cancelado', 'El turno ha sido cancelado exitosamente.', 'info');
+  };
+
+  const updateAppointment = (id, updatedData) => {
+    setAppointments((prev) =>
+      prev.map((app) => (app.id === id ? { ...app, ...updatedData } : app))
+    );
+    logAudit('UPDATE', 'Turnos', '-', `Turno ${id} actualizado.`);
+    addToast('Turno Actualizado', 'Los datos del turno fueron modificados.', 'success');
+  };
+
+  const deleteAppointment = (id) => {
+    setAppointments((prev) => prev.filter((app) => app.id !== id));
+    logAudit('DELETE', 'Turnos', '-', `Turno ${id} eliminado del sistema.`);
+    addToast('Turno Eliminado', 'El turno fue removido del sistema.', 'info');
+  };
+
+  // --- GESTIÓN DE PROFESIONALES / MÉDICOS ---
+  const addDoctor = (doctorData) => {
+    const newId = `doc-${Date.now()}`;
+    const newDoc = {
+      id: newId,
+      active: true,
+      avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80',
+      stats: { patientsAttended: 0, occupationRate: 0, rating: 5.0 },
+      workingDays: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
+      scheduleStart: '08:30',
+      scheduleEnd: '17:00',
+      slotDuration: 30,
+      priceConsultation: 25000,
+      ...doctorData
+    };
+    setDoctors((prev) => [...prev, newDoc]);
+    logAudit('CREATE', 'Profesionales', '-', `Alta médica de ${newDoc.name} (${newDoc.specialty})`);
+    addToast('Profesional Registrado', `${newDoc.name} agregado al equipo médico.`, 'success');
+    return newDoc;
+  };
+
+  const updateDoctor = (id, updatedData) => {
+    setDoctors((prev) =>
+      prev.map((doc) => (doc.id === id ? { ...doc, ...updatedData } : doc))
+    );
+    logAudit('UPDATE', 'Profesionales', '-', `Actualización de ficha para profesional ID ${id}`);
+    addToast('Profesional Actualizado', 'Los datos del profesional se actualizaron.', 'success');
+  };
+
+  const deleteDoctor = (id) => {
+    setDoctors((prev) => prev.filter((doc) => doc.id !== id));
+    logAudit('DELETE', 'Profesionales', '-', `Baja del profesional ID ${id}`);
+    addToast('Profesional Eliminado', 'El profesional fue removido del sistema.', 'info');
+  };
+
+  // --- GESTIÓN DE SERVICIOS Y ESPECIALIDADES ---
+  const addSpecialty = (specData) => {
+    const newId = `spec-${Date.now()}`;
+    const newSpec = {
+      id: newId,
+      active: true,
+      doctorsCount: 1,
+      estimatedDuration: 30,
+      price: 25000,
+      icon: 'Stethoscope',
+      ...specData
+    };
+    setSpecialties((prev) => [...prev, newSpec]);
+    logAudit('CREATE', 'Especialidades', '-', `Alta de especialidad médica: ${newSpec.name}`);
+    addToast('Especialidad Creada', `Especialidad "${newSpec.name}" registrada con éxito.`, 'success');
+    return newSpec;
+  };
+
+  const updateSpecialty = (id, updatedData) => {
+    setSpecialties((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...updatedData } : s))
+    );
+    logAudit('UPDATE', 'Especialidades', '-', `Modificación de especialidad ID ${id}`);
+    addToast('Especialidad Actualizada', 'Cambios guardados con éxito.', 'success');
+  };
+
+  const deleteSpecialty = (id) => {
+    setSpecialties((prev) => prev.filter((s) => s.id !== id));
+    logAudit('DELETE', 'Especialidades', '-', `Eliminación de especialidad ID ${id}`);
+    addToast('Especialidad Eliminada', 'La especialidad fue removida.', 'info');
+  };
+
+  // --- GESTIÓN DE HORARIOS Y DISPONIBILIDAD ---
+  const updateClinicSchedule = (newSchedule) => {
+    setClinicSchedule((prev) => ({ ...prev, ...newSchedule }));
+    logAudit('UPDATE', 'Configuración de Horarios', '-', 'Configuración de horarios de atención modificada.');
+    addToast('Horarios Actualizados', 'La configuración de disponibilidad fue guardada.', 'success');
+  };
+
+  // --- AUTENTICACIÓN PACIENTES Y ADMINISTRADORES ---
+  const loginPatient = (dniOrEmail, password) => {
+    const cleanInput = (dniOrEmail || '').trim().toLowerCase().replace(/\./g, '');
+    const foundPatient = patients.find((p) => {
+      const cleanDni = (p.dni || '').replace(/\./g, '');
+      const cleanEmail = (p.email || '').toLowerCase();
+      return cleanDni === cleanInput || cleanEmail === cleanInput;
+    });
+
+    if (foundPatient) {
+      setAuthRole('patient');
+      setAuthPatient(foundPatient);
+      setCurrentPortalPatient(foundPatient);
+      setIsAuthModalOpen(false);
+      logAudit('LOGIN', 'Portal Pacientes', foundPatient.dni, `Inicio de sesión de ${foundPatient.name}`);
+      addToast('Bienvenido a CITRA', `Hola, ${foundPatient.name}. Sesión iniciada.`, 'success');
+      return { success: true, patient: foundPatient };
+    } else {
+      addToast('Credenciales no encontradas', 'No encontramos ningún paciente con ese DNI o Email.', 'warning');
+      return { success: false, message: 'Paciente no encontrado' };
+    }
+  };
+
+  const registerPatient = (patientData) => {
+    const newPat = addPatient({
+      ...patientData,
+      registeredAt: new Date().toISOString().split('T')[0]
+    });
+    setAuthRole('patient');
+    setAuthPatient(newPat);
+    setCurrentPortalPatient(newPat);
+    setIsAuthModalOpen(false);
+    logAudit('REGISTER', 'Portal Pacientes', newPat.dni, `Registro de nuevo paciente: ${newPat.name}`);
+    addToast('Registro Exitoso', `¡Bienvenido/a a CITRA, ${newPat.name}! Tu cuenta está lista.`, 'success');
+    return newPat;
+  };
+
+  const logoutPatient = () => {
+    setAuthRole('guest');
+    setAuthPatient(null);
+    if (currentView === 'my-turnos') {
+      setCurrentView('home');
+    }
+    addToast('Sesión Cerrada', 'Has cerrado tu sesión de paciente.', 'info');
+  };
+
+  const loginAdmin = (email, password) => {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const adminUser = users.find((u) => u.email.toLowerCase() === cleanEmail);
+
+    if (adminUser) {
+      setAuthRole('admin');
+      setAuthAdmin(adminUser);
+      setCurrentUser(adminUser);
+      setCurrentView('admin-panel');
+      logAudit('LOGIN', 'Panel de Administración', '-', `Acceso administrativo de ${adminUser.name} (${adminUser.role})`);
+      addToast('Acceso Administrativo Concedido', `Bienvenido/a, ${adminUser.name}.`, 'success');
+      return { success: true, user: adminUser };
+    } else if (cleanEmail.includes('admin') || cleanEmail.includes('morales') || cleanEmail.includes('citra')) {
+      const defaultAdmin = users[0];
+      setAuthRole('admin');
+      setAuthAdmin(defaultAdmin);
+      setCurrentUser(defaultAdmin);
+      setCurrentView('admin-panel');
+      logAudit('LOGIN', 'Panel de Administración', '-', `Acceso administrativo de ${defaultAdmin.name}`);
+      addToast('Acceso Administrativo Concedido', `Bienvenido/a, ${defaultAdmin.name}.`, 'success');
+      return { success: true, user: defaultAdmin };
+    } else {
+      addToast('Acceso Denegado', 'Credenciales administrativas no autorizadas.', 'error');
+      return { success: false, message: 'Usuario no autorizado' };
+    }
+  };
+
+  const logoutAdmin = () => {
+    setAuthRole('guest');
+    setAuthAdmin(null);
+    setCurrentView('home');
+    addToast('Sesión de Administración Cerrada', 'Has salido del panel de control.', 'info');
+  };
+
   // Exportar Backup Cifrado AES-256
   const exportEncryptedBackup = (secretPassphrase) => {
     const fullDatabase = {
@@ -984,7 +1189,41 @@ export const ClinicProvider = ({ children }) => {
         addMedicalOrder,
         addMedicalCertificate,
         exportEncryptedBackup,
-        resetToDefaults
+        resetToDefaults,
+        // Institutional & Auth additions
+        currentView,
+        setCurrentView,
+        bookingPreselectedSpecialty,
+        setBookingPreselectedSpecialty,
+        bookingPreselectedDoctor,
+        setBookingPreselectedDoctor,
+        authRole,
+        setAuthRole,
+        authPatient,
+        setAuthPatient,
+        authAdmin,
+        setAuthAdmin,
+        isAuthModalOpen,
+        setIsAuthModalOpen,
+        authModalTab,
+        setAuthModalTab,
+        clinicSchedule,
+        setClinicSchedule,
+        cancelAppointment,
+        updateAppointment,
+        deleteAppointment,
+        addDoctor,
+        updateDoctor,
+        deleteDoctor,
+        addSpecialty,
+        updateSpecialty,
+        deleteSpecialty,
+        updateClinicSchedule,
+        loginPatient,
+        registerPatient,
+        logoutPatient,
+        loginAdmin,
+        logoutAdmin
       }}
     >
       {children}
