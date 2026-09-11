@@ -1160,21 +1160,12 @@ button, input, select, textarea {
   display: none !important;
 }
 
-/* Hero Facade Background Positioning — muestra el logo del edificio en mobile */
-.hero-bg-facade {
-  background-position: center 30%;
-}
-
 @media (max-width: 899px) {
   .desktop-only {
     display: none !important;
   }
   .mobile-only {
     display: flex !important;
-  }
-
-  .hero-bg-facade {
-    background-position: 22% 38% !important;
   }
 
   /* Compact hero & container paddings on mobile */

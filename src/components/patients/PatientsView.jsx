@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import {
   Users,
@@ -20,7 +20,13 @@ import {
   Heart,
   Droplet,
   CheckCircle2,
-  UserCheck
+  UserCheck,
+  ChevronDown,
+  ChevronUp,
+  MessageSquare,
+  Mail,
+  Calendar,
+  X
 } from 'lucide-react';
 import { PatientFormModal } from './PatientFormModal';
 import { PatientDetailModal } from './PatientDetailModal';
@@ -28,6 +34,9 @@ import { PatientDetailModal } from './PatientDetailModal';
 export const PatientsView = () => {
   const {
     patients,
+    scopedPatients,
+    isDoctor,
+    currentDoctor,
     healthInsurances,
     rehabPlans,
     appointments,
@@ -43,8 +52,13 @@ export const PatientsView = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [insuranceFilter, setInsuranceFilter] = useState('all');
-  const [genderFilter, setGenderFilter] = useState('all');
   const [allergyOnlyFilter, setAllergyOnlyFilter] = useState(false);
+  const [expandedPatientId, setExpandedPatientId] = useState(null);
+
+  // Strict Scoping: Doctor only sees patients attended by them
+  const effectivePatients = useMemo(() => {
+    return isDoctor ? scopedPatients : patients;
+  }, [isDoctor, scopedPatients, patients]);
 
   const calculateAge = (bDate) => {
     if (!bDate) return '-';
@@ -72,196 +86,321 @@ export const PatientsView = () => {
       .toUpperCase();
   };
 
-  const filteredPatients = patients.filter((pat) => {
-    const cleanQ = searchTerm.toLowerCase().trim();
-    const matchSearch =
-      cleanQ === '' ||
-      pat.name.toLowerCase().includes(cleanQ) ||
-      pat.dni.toLowerCase().includes(cleanQ) ||
-      pat.phone.includes(cleanQ) ||
-      pat.email.toLowerCase().includes(cleanQ) ||
-      pat.insuranceName.toLowerCase().includes(cleanQ) ||
-      (pat.antecedentes && pat.antecedentes.some((a) => a.toLowerCase().includes(cleanQ)));
+  const toggleExpand = (patientId) => {
+    setExpandedPatientId((prev) => (prev === patientId ? null : patientId));
+  };
 
-    const matchInsurance = insuranceFilter === 'all' || pat.insuranceId === insuranceFilter;
-    const matchGender = genderFilter === 'all' || pat.gender === genderFilter;
-    const matchAllergy = !allergyOnlyFilter || (pat.allergies && pat.allergies.length > 0);
+  const filteredPatients = useMemo(() => {
+    return effectivePatients.filter((pat) => {
+      const cleanQ = searchTerm.toLowerCase().trim();
+      const matchSearch =
+        cleanQ === '' ||
+        pat.name.toLowerCase().includes(cleanQ) ||
+        pat.dni.toLowerCase().includes(cleanQ) ||
+        pat.phone.includes(cleanQ) ||
+        pat.email.toLowerCase().includes(cleanQ) ||
+        pat.insuranceName.toLowerCase().includes(cleanQ) ||
+        (pat.antecedentes && pat.antecedentes.some((a) => a.toLowerCase().includes(cleanQ)));
 
-    return matchSearch && matchInsurance && matchGender && matchAllergy;
-  });
+      const matchInsurance = insuranceFilter === 'all' || pat.insuranceId === insuranceFilter;
+      const matchAllergy = !allergyOnlyFilter || (pat.allergies && pat.allergies.length > 0);
+
+      return matchSearch && matchInsurance && matchAllergy;
+    });
+  }, [effectivePatients, searchTerm, insuranceFilter, allergyOnlyFilter]);
+
+  const patientsWithAllergiesCount = effectivePatients.filter((p) => p.allergies && p.allergies.length > 0).length;
 
   const exportPatientsCSV = () => {
-    const headers = 'ID,Nombre,DNI,FechaNacimiento,Edad,Genero,GrupoSanguineo,Telefono,Email,ObraSocial,Plan,NumeroAfiliado,Alergias,UltimaVisita\n';
+    const headers = 'ID,Nombre,DNI,FechaNacimiento,Edad,Genero,GrupoSanguineo,Telefono,Email,ObraSocial,Plan,NumeroAfiliado,Alergias\n';
     const rows = filteredPatients.map((p) =>
-      `"${p.id}","${p.name}","${p.dni}","${p.birthDate}","${calculateAge(p.birthDate)}","${p.gender}","${p.bloodType || 'A+'}","${p.phone}","${p.email}","${p.insuranceName}","${p.insurancePlan}","${p.insuranceNumber || ''}","${(p.allergies || []).join(';') || 'Ninguna'}","${p.lastVisit || ''}"`
+      `"${p.id}","${p.name}","${p.dni}","${p.birthDate}","${calculateAge(p.birthDate)}","${p.gender}","${p.bloodType || 'A+'}","${p.phone}","${p.email}","${p.insuranceName}","${p.insurancePlan}","${p.insuranceNumber || ''}","${(p.allergies || []).join(';') || 'Ninguna'}"`
     ).join('\n');
     const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `CITRA_Padron_Pacientes_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `CITRA_Pacientes_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    addToast('Padrón Exportado', 'Se descargó el archivo CSV con los datos de pacientes.', 'success');
+    addToast('Padrón Exportado', 'Se descargó el archivo CSV de pacientes.', 'success');
   };
 
-  const patientsWithAllergiesCount = patients.filter((p) => p.allergies && p.allergies.length > 0).length;
+  const handleStartConsultation = (pat) => {
+    if (setIsNewConsultationModalOpen && setConsultationPreloadData) {
+      setConsultationPreloadData({
+        patientId: pat.id,
+        patientName: pat.name,
+        patientDni: pat.dni,
+        doctorId: currentDoctor?.id || 'doc-1',
+        doctorName: currentDoctor?.name || 'Dr. Alejandro Blanco',
+        specialtyName: currentDoctor?.specialty || 'Traumatología',
+        reason: 'Consulta médica programada'
+      });
+      setIsNewConsultationModalOpen(true);
+    }
+  };
+
+  const handleBookAppointment = (pat) => {
+    if (setIsAppointmentModalOpen && setAppointmentModalData) {
+      setAppointmentModalData({
+        patientId: pat.id,
+        patientName: pat.name,
+        patientDni: pat.dni,
+        patientPhone: pat.phone,
+        patientInsurance: pat.insuranceName,
+        doctorId: currentDoctor?.id || 'doc-1',
+        doctorName: currentDoctor?.name || 'Dr. Alejandro Blanco',
+        specialtyName: currentDoctor?.specialty || 'Traumatología',
+        roomName: currentDoctor?.roomName || 'Consultorio 102',
+        date: '2026-08-28',
+        time: '10:00',
+        duration: 30
+      });
+      setIsAppointmentModalOpen(true);
+    }
+  };
 
   return (
-    <div className="view-container">
-      {/* Modals */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      {/* Global Modals */}
       <PatientFormModal />
       <PatientDetailModal />
 
-      {/* 1. HERO HEADER */}
-      <div className="view-header" style={{ marginBottom: '1.25rem' }}>
-        <div>
-          <div className="badge-wrapper" style={{ marginBottom: '0.35rem' }}>
-            <span className="badge badge-teal">
-              <Users size={13} style={{ marginRight: '4px' }} />
-              Padrón Maestro de Pacientes & Historias Clínicas (Ley 26.529)
-            </span>
-          </div>
-          <h1 className="view-title">Padrón de Pacientes</h1>
-          <p className="view-subtitle">
-            Base integral de historias clínicas, coberturas médicas, antecedentes patológicos y trazabilidad asistencial.
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.65rem' }}>
-          <button type="button" className="btn btn-outline" onClick={exportPatientsCSV}>
-            <Download size={16} />
-            <span>Exportar CSV</span>
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => {
-              setPatientFormModalData(null);
-              setIsPatientFormModalOpen(true);
-            }}
-          >
-            <Plus size={18} />
-            <span>+ Nuevo Paciente</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 2. OPERATIONAL KPI BENTO STRIP */}
+      {/* 1. TOP HEADER (CLEAN & NON-SATURATED) */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '1rem',
-          marginBottom: '1.25rem'
-        }}
-      >
-        <div className="stat-card-premium" style={{ padding: '1.15rem 1.25rem' }}>
-          <div className="stat-card-top">
-            <span className="stat-card-label">Total en Padrón</span>
-            <div className="stat-icon-box" style={{ width: '38px', height: '38px' }}>
-              <Users size={18} />
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-            <div className="stat-card-value">{patients.length}</div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-              pacientes activos
-            </span>
-          </div>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-            100% con HCE digitalizada
-          </div>
-        </div>
-
-        <div className="stat-card-premium" style={{ padding: '1.15rem 1.25rem' }}>
-          <div className="stat-card-top">
-            <span className="stat-card-label">En Rehabilitación</span>
-            <div className="stat-icon-box" style={{ width: '38px', height: '38px', background: '#EBF3FD', color: 'var(--c-primary)' }}>
-              <Activity size={18} />
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-            <div className="stat-card-value" style={{ color: 'var(--c-dark)' }}>{rehabPlans.length}</div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--c-primary)', fontWeight: 700 }}>
-              planes activos
-            </span>
-          </div>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-            Seguimiento kinesiológico
-          </div>
-        </div>
-
-        <div className="stat-card-premium" style={{ padding: '1.15rem 1.25rem', borderLeft: '4px solid #ef4444' }}>
-          <div className="stat-card-top">
-            <span className="stat-card-label" style={{ color: '#b91c1c' }}>Alertas Clínicas</span>
-            <div className="stat-icon-box" style={{ width: '38px', height: '38px', background: '#fee2e2', color: '#dc2626' }}>
-              <AlertTriangle size={18} />
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-            <div className="stat-card-value" style={{ color: '#dc2626' }}>{patientsWithAllergiesCount}</div>
-            <span style={{ fontSize: '0.8rem', color: '#b91c1c', fontWeight: 700 }}>
-              con alergias declaradas
-            </span>
-          </div>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-            Penicilina, AINEs, Diclofenac
-          </div>
-        </div>
-
-        <div className="stat-card-premium" style={{ padding: '1.15rem 1.25rem' }}>
-          <div className="stat-card-top">
-            <span className="stat-card-label">Obras Sociales</span>
-            <div className="stat-icon-box" style={{ width: '38px', height: '38px', background: '#d1fae5', color: '#065f46' }}>
-              <Shield size={18} />
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-            <div className="stat-card-value" style={{ color: '#065f46' }}>{healthInsurances.length}</div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-              convenios activos
-            </span>
-          </div>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-            OSDE, Swiss, Apross, PAMI, Galeno
-          </div>
-        </div>
-      </div>
-
-      {/* 3. ADVANCED SEARCH & MULTI-FILTER TOOLBAR */}
-      <div
-        className="card"
-        style={{
-          padding: '0.85rem 1.25rem',
-          marginBottom: '1.25rem',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
-          gap: '1rem',
-          border: '1px solid var(--border-color)'
+          gap: '1rem'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: '280px', maxWidth: '420px', position: 'relative' }}>
-          <Search size={17} color="var(--text-muted)" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+        <div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '0.35rem' }}>
+            <span
+              style={{
+                background: '#ecfdf5',
+                color: '#065f46',
+                border: '1px solid #a7f3d0',
+                padding: '0.2rem 0.65rem',
+                borderRadius: '100px',
+                fontSize: '0.74rem',
+                fontWeight: 800,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <Users size={13} />
+              {isDoctor ? (currentDoctor?.name?.startsWith('Dr.') ? currentDoctor.name : `Dr. ${currentDoctor?.name || 'Alejandro Blanco'}`) : 'Padrón Central'}
+            </span>
+            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+              • {filteredPatients.length} pacientes registrados
+            </span>
+          </div>
+
+          <h1 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.25rem', letterSpacing: '-0.02em' }}>
+            {isDoctor ? 'Mis Pacientes' : 'Padrón de Pacientes'}
+          </h1>
+          <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
+            {isDoctor
+              ? `Pacientes bajo su seguimiento médico en ${currentDoctor?.specialty || 'Traumatología'}. Presione cualquier paciente para abrir su ficha completa.`
+              : 'Base de pacientes con historia clínica electrónica, coberturas y trazabilidad.'}
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.65rem' }}>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={exportPatientsCSV}
+            style={{ fontSize: '0.84rem' }}
+          >
+            <Download size={15} />
+            <span>Exportar CSV</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setPatientFormModalData(null);
+              setIsPatientFormModalOpen(true);
+            }}
+            style={{
+              background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+              color: '#ffffff',
+              border: 'none',
+              padding: '0.65rem 1.15rem',
+              borderRadius: '10px',
+              fontSize: '0.88rem',
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)'
+            }}
+          >
+            <Plus size={18} />
+            <span>Nuevo Paciente</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. OPERATIONAL SUMMARY KPI CARDS */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '1rem'
+        }}
+      >
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '14px',
+            border: '1px solid #e2e8f0',
+            padding: '1.15rem 1.25rem'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Total en Mi Padrón
+            </span>
+            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Users size={18} />
+            </div>
+          </div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.2rem' }}>
+            {effectivePatients.length}
+          </div>
+          <div style={{ fontSize: '0.74rem', color: '#16a34a', fontWeight: 600 }}>
+            100% con historia clínica abierta
+          </div>
+        </div>
+
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '14px',
+            border: '1px solid #e2e8f0',
+            padding: '1.15rem 1.25rem'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              En Rehabilitación
+            </span>
+            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Activity size={18} />
+            </div>
+          </div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.2rem' }}>
+            {rehabPlans.length}
+          </div>
+          <div style={{ fontSize: '0.74rem', color: '#059669', fontWeight: 600 }}>
+            Planes kinesiológicos activos
+          </div>
+        </div>
+
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '14px',
+            border: '1px solid #e2e8f0',
+            borderLeft: '4px solid #ef4444',
+            padding: '1.15rem 1.25rem'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Alertas Clínicas
+            </span>
+            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <AlertTriangle size={18} />
+            </div>
+          </div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#dc2626', marginBottom: '0.2rem' }}>
+            {patientsWithAllergiesCount}
+          </div>
+          <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
+            Pacientes con alergias declaradas
+          </div>
+        </div>
+
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '14px',
+            border: '1px solid #e2e8f0',
+            padding: '1.15rem 1.25rem'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Obras Sociales
+            </span>
+            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#f0fdf4', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Shield size={18} />
+            </div>
+          </div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#16a34a', marginBottom: '0.2rem' }}>
+            {healthInsurances.length}
+          </div>
+          <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
+            Convenios y prepagas aceptadas
+          </div>
+        </div>
+      </div>
+
+      {/* 3. SIMPLIFIED SEARCH & FILTER BAR */}
+      <div
+        style={{
+          background: '#ffffff',
+          borderRadius: '14px',
+          border: '1px solid #e2e8f0',
+          padding: '0.85rem 1.25rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem'
+        }}
+      >
+        <div style={{ position: 'relative', flex: 1, minWidth: '260px', maxWidth: '420px' }}>
+          <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
           <input
             type="text"
-            className="form-input"
-            style={{ paddingLeft: '34px', fontSize: '0.86rem', width: '100%' }}
-            placeholder="Buscar por nombre, DNI, teléfono, email o patología..."
+            placeholder="Buscar por paciente, DNI, teléfono..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.55rem 0.75rem 0.55rem 2.25rem',
+              borderRadius: '9px',
+              border: '1px solid #cbd5e1',
+              fontSize: '0.85rem',
+              outline: 'none',
+              boxSizing: 'border-box'
+            }}
           />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
           <select
-            className="form-select"
-            style={{ width: '190px', fontSize: '0.82rem', padding: '0.4rem 0.65rem' }}
             value={insuranceFilter}
             onChange={(e) => setInsuranceFilter(e.target.value)}
+            style={{
+              padding: '0.5rem 0.75rem',
+              borderRadius: '9px',
+              border: '1px solid #cbd5e1',
+              fontSize: '0.82rem',
+              background: '#ffffff',
+              color: '#334155'
+            }}
           >
             <option value="all">Todas las Obras Sociales</option>
             {healthInsurances.map((hi) => (
@@ -269,26 +408,15 @@ export const PatientsView = () => {
             ))}
           </select>
 
-          <select
-            className="form-select"
-            style={{ width: '145px', fontSize: '0.82rem', padding: '0.4rem 0.65rem' }}
-            value={genderFilter}
-            onChange={(e) => setGenderFilter(e.target.value)}
-          >
-            <option value="all">Todos los géneros</option>
-            <option value="Masculino">Masculino</option>
-            <option value="Femenino">Femenino</option>
-          </select>
-
           <button
             type="button"
             onClick={() => setAllergyOnlyFilter(!allergyOnlyFilter)}
             style={{
-              padding: '6px 12px',
+              padding: '0.45rem 0.85rem',
               borderRadius: '8px',
-              border: allergyOnlyFilter ? '1px solid #ef4444' : '1px solid var(--border-color)',
-              background: allergyOnlyFilter ? '#fee2e2' : '#ffffff',
-              color: allergyOnlyFilter ? '#b91c1c' : 'var(--text-main)',
+              border: allergyOnlyFilter ? '1.5px solid #ef4444' : '1px solid #cbd5e1',
+              background: allergyOnlyFilter ? '#fef2f2' : '#ffffff',
+              color: allergyOnlyFilter ? '#dc2626' : '#475569',
               fontSize: '0.8rem',
               fontWeight: 700,
               cursor: 'pointer',
@@ -297,21 +425,20 @@ export const PatientsView = () => {
               gap: '5px'
             }}
           >
-            <AlertTriangle size={14} color={allergyOnlyFilter ? '#dc2626' : '#64748b'} />
+            <AlertTriangle size={14} color={allergyOnlyFilter ? '#dc2626' : '#94a3b8'} />
             <span>Solo con Alergias ({patientsWithAllergiesCount})</span>
           </button>
 
-          {(searchTerm || insuranceFilter !== 'all' || genderFilter !== 'all' || allergyOnlyFilter) && (
+          {(searchTerm || insuranceFilter !== 'all' || allergyOnlyFilter) && (
             <button
               type="button"
               className="btn btn-outline btn-sm"
-              style={{ fontSize: '0.78rem' }}
               onClick={() => {
                 setSearchTerm('');
                 setInsuranceFilter('all');
-                setGenderFilter('all');
                 setAllergyOnlyFilter(false);
               }}
+              style={{ fontSize: '0.78rem' }}
             >
               Limpiar
             </button>
@@ -319,230 +446,317 @@ export const PatientsView = () => {
         </div>
       </div>
 
-      {/* 4. HIGH-PERFORMANCE PATIENT TABLE */}
-      <div className="card" style={{ padding: '1.25rem' }}>
-        <div className="table-responsive">
-          <table className="data-table">
+      {/* 4. CLEAN, NON-SATURATED PATIENT LIST (ACCORDION DETAILS ON ROW CLICK) */}
+      <div
+        style={{
+          background: '#ffffff',
+          borderRadius: '16px',
+          border: '1px solid #e2e8f0',
+          overflow: 'hidden',
+          boxShadow: '0 4px 15px rgba(0, 33, 130, 0.03)'
+        }}
+      >
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
             <thead>
-              <tr>
-                <th>Paciente & Filiación</th>
-                <th>DNI / Identificación</th>
-                <th>Obra Social / Prepaga</th>
-                <th>Contacto & WhatsApp</th>
-                <th>Alertas Médicas</th>
-                <th>Última Atención</th>
-                <th style={{ textAlign: 'right' }}>Acciones Clínicas</th>
+              <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#0f172a', fontWeight: 800 }}>
+                <th style={{ padding: '0.85rem 1.25rem' }}>Paciente</th>
+                <th style={{ padding: '0.85rem 1.25rem', width: '130px' }}>DNI</th>
+                <th style={{ padding: '0.85rem 1.25rem' }}>Obra Social & Plan</th>
+                <th style={{ padding: '0.85rem 1.25rem' }}>Contacto Directo</th>
+                <th style={{ padding: '0.85rem 1.25rem', width: '150px' }}>Alertas Clínicas</th>
+                <th style={{ padding: '0.85rem 1.25rem', textAlign: 'right', width: '140px' }}>Ficha</th>
               </tr>
             </thead>
             <tbody>
               {filteredPatients.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                    <Users size={36} color="var(--c-accent)" style={{ marginBottom: '0.5rem' }} />
-                    <div style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '1rem' }}>No se encontraron pacientes</div>
-                    <p style={{ fontSize: '0.84rem', marginTop: '2px' }}>Intenta ajustar los términos de búsqueda o filtros.</p>
+                  <td colSpan={6} style={{ padding: '3.5rem 1.5rem', textAlign: 'center', color: '#64748b' }}>
+                    <Users size={36} style={{ color: '#cbd5e1', marginBottom: '0.5rem' }} />
+                    <div style={{ fontWeight: 700, color: '#1e293b' }}>No se encontraron pacientes</div>
+                    <div style={{ fontSize: '0.82rem' }}>Intente ajustar el término de búsqueda o filtros.</div>
                   </td>
                 </tr>
               ) : (
                 filteredPatients.map((pat) => {
+                  const isExpanded = expandedPatientId === pat.id;
                   const hasAllergies = pat.allergies && pat.allergies.length > 0;
+
                   return (
-                    <tr key={pat.id} style={{ transition: 'var(--transition)' }}>
-                      {/* Patient Avatar & Name */}
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <img
-                            src={pat.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'}
-                            alt={pat.name}
-                            style={{
-                              width: '40px',
-                              height: '40px',
-                              borderRadius: '50%',
-                              objectFit: 'cover',
-                              border: '2px solid var(--c-accent)',
-                              flexShrink: 0
-                            }}
-                          />
-                          <div>
+                    <React.Fragment key={pat.id}>
+                      {/* Compact clean row */}
+                      <tr
+                        onClick={() => toggleExpand(pat.id)}
+                        style={{
+                          borderBottom: isExpanded ? 'none' : '1px solid #f1f5f9',
+                          background: isExpanded ? '#f0fdf4' : '#ffffff',
+                          cursor: 'pointer',
+                          transition: 'background 0.15s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isExpanded) e.currentTarget.style.background = '#f8fafc';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isExpanded) e.currentTarget.style.background = '#ffffff';
+                        }}
+                      >
+                        {/* Paciente */}
+                        <td style={{ padding: '0.9rem 1.25rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <img
+                              src={pat.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'}
+                              alt={pat.name}
+                              style={{
+                                width: '38px',
+                                height: '38px',
+                                borderRadius: '50%',
+                                objectFit: 'cover',
+                                border: '2px solid #D2E3FC',
+                                flexShrink: 0
+                              }}
+                            />
+                            <div>
+                              <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.94rem' }}>
+                                {pat.name}
+                              </div>
+                              <div style={{ fontSize: '0.74rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <span>{calculateAge(pat.birthDate)}</span>
+                                <span>•</span>
+                                <span>{pat.gender}</span>
+                                <span>•</span>
+                                <span style={{ fontWeight: 700, color: '#002182' }}>Grupo {pat.bloodType || 'A+'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* DNI */}
+                        <td style={{ padding: '0.9rem 1.25rem', whiteSpace: 'nowrap' }}>
+                          <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.9rem' }}>
+                            {pat.dni}
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                            HC #{pat.id.slice(-4)}
+                          </div>
+                        </td>
+
+                        {/* Obra Social */}
+                        <td style={{ padding: '0.9rem 1.25rem' }}>
+                          <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.88rem' }}>
+                            {pat.insuranceName}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: '#059669', fontWeight: 700 }}>
+                            Plan {pat.insurancePlan || 'Base'}
+                          </div>
+                        </td>
+
+                        {/* Contacto Directo */}
+                        <td style={{ padding: '0.9rem 1.25rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontWeight: 600, color: '#334155', fontSize: '0.84rem' }}>
+                              {pat.phone}
+                            </span>
+                            {pat.phone && (
+                              <a
+                                href={`https://wa.me/${pat.phone.replace(/[^0-9]/g, '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                  width: '24px',
+                                  height: '24px',
+                                  borderRadius: '50%',
+                                  background: '#dcfce7',
+                                  color: '#15803d',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  textDecoration: 'none'
+                                }}
+                                title="Abrir WhatsApp"
+                              >
+                                <MessageSquare size={12} />
+                              </a>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Alertas Médicas */}
+                        <td style={{ padding: '0.9rem 1.25rem' }}>
+                          {hasAllergies ? (
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: '#fee2e2',
+                                color: '#991b1b',
+                                border: '1px solid #fecaca',
+                                padding: '2px 8px',
+                                borderRadius: '6px',
+                                fontSize: '0.74rem',
+                                fontWeight: 800
+                              }}
+                            >
+                              <AlertTriangle size={12} color="#dc2626" />
+                              {pat.allergies[0]} {pat.allergies.length > 1 ? `(+${pat.allergies.length - 1})` : ''}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Sin alergias</span>
+                          )}
+                        </td>
+
+                        {/* Acciones & Toggle */}
+                        <td style={{ padding: '0.9rem 1.25rem', textAlign: 'right' }}>
+                          <div
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem' }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => toggleExpand(pat.id)}
+                              style={{
+                                background: isExpanded ? '#002182' : '#f1f5f9',
+                                color: isExpanded ? '#ffffff' : '#334155',
+                                border: '1px solid #cbd5e1',
+                                borderRadius: '8px',
+                                padding: '0.35rem 0.65rem',
+                                fontSize: '0.78rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              <span>{isExpanded ? 'Ocultar' : 'Ficha'}</span>
+                              {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* 5. EXPANDED PATIENT DETAIL ROW (SMOOTH ACCORDION) */}
+                      {isExpanded && (
+                        <tr style={{ background: '#f8fafc', borderBottom: '2px solid #cbd5e1' }}>
+                          <td colSpan={6} style={{ padding: '1.25rem 1.5rem' }}>
                             <div
                               style={{
-                                fontWeight: 800,
-                                fontSize: '0.92rem',
-                                color: 'var(--text-main)',
-                                cursor: 'pointer'
+                                background: '#ffffff',
+                                borderRadius: '12px',
+                                border: '1px solid #e2e8f0',
+                                padding: '1.25rem',
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                                gap: '1.25rem'
                               }}
-                              onClick={() => setSelectedPatientForDetail(pat)}
-                              className="hover-underline"
                             >
-                              {pat.name}
+                              {/* Filiación & Datos personales */}
+                              <div>
+                                <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                  <UserCheck size={14} /> Filiación & Identificación
+                                </div>
+                                <div style={{ fontSize: '0.85rem', color: '#0f172a', lineHeight: '1.6' }}>
+                                  <div><strong>Nombre:</strong> {pat.name}</div>
+                                  <div><strong>DNI:</strong> {pat.dni}</div>
+                                  <div><strong>Fecha de Nacimiento:</strong> {pat.birthDate} ({calculateAge(pat.birthDate)})</div>
+                                  <div><strong>Género:</strong> {pat.gender} · <strong>Grupo:</strong> {pat.bloodType || 'A+'}</div>
+                                  <div><strong>Fecha de Alta:</strong> {pat.registeredAt || '2023-01-15'}</div>
+                                </div>
+                              </div>
+
+                              {/* Cobertura & Contacto */}
+                              <div>
+                                <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                  <Shield size={14} /> Cobertura & Contacto
+                                </div>
+                                <div style={{ fontSize: '0.85rem', color: '#0f172a', lineHeight: '1.6' }}>
+                                  <div><strong>Obra Social:</strong> {pat.insuranceName}</div>
+                                  <div><strong>Plan:</strong> {pat.insurancePlan || 'Plan Base'}</div>
+                                  <div><strong>N° Carnet / Afiliado:</strong> {pat.insuranceNumber || '9381029381'}</div>
+                                  <div><strong>Teléfono:</strong> {pat.phone}</div>
+                                  <div><strong>Email:</strong> {pat.email}</div>
+                                </div>
+                              </div>
+
+                              {/* Antecedentes Clínicos & Acciones */}
+                              <div>
+                                <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                  <Stethoscope size={14} /> Antecedentes & Acciones
+                                </div>
+                                <div style={{ fontSize: '0.82rem', color: '#334155', marginBottom: '0.85rem', lineHeight: '1.4' }}>
+                                  <div><strong>Alergias:</strong> {pat.allergies && pat.allergies.length > 0 ? pat.allergies.join(', ') : 'Ninguna declarada'}</div>
+                                  <div><strong>Antecedentes:</strong> {pat.antecedentes && pat.antecedentes.length > 0 ? pat.antecedentes.join(', ') : 'Sin antecedentes de riesgo'}</div>
+                                  <div><strong>Última Visita:</strong> {pat.lastVisit || '2026-08-28'}</div>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleStartConsultation(pat)}
+                                    style={{
+                                      background: '#059669',
+                                      color: '#ffffff',
+                                      border: 'none',
+                                      borderRadius: '6px',
+                                      padding: '0.35rem 0.65rem',
+                                      fontSize: '0.76rem',
+                                      fontWeight: 800,
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
+                                    <Stethoscope size={13} /> Iniciar Consulta
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleBookAppointment(pat)}
+                                    style={{
+                                      background: '#076ABC',
+                                      color: '#ffffff',
+                                      border: 'none',
+                                      borderRadius: '6px',
+                                      padding: '0.35rem 0.65rem',
+                                      fontSize: '0.76rem',
+                                      fontWeight: 800,
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
+                                    <CalendarPlus size={13} /> Agendar Turno
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedPatientForDetail(pat)}
+                                    style={{
+                                      background: '#f1f5f9',
+                                      color: '#334155',
+                                      border: '1px solid #cbd5e1',
+                                      borderRadius: '6px',
+                                      padding: '0.35rem 0.65rem',
+                                      fontSize: '0.76rem',
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
+                                    <FileText size={13} /> Historial Completo
+                                  </button>
+                                </div>
+                              </div>
                             </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                              <span>{calculateAge(pat.birthDate)}</span>
-                              <span>•</span>
-                              <span>{pat.gender}</span>
-                              <span>•</span>
-                              <span style={{ fontWeight: 800, color: 'var(--c-dark)' }}>Grupo {pat.bloodType || 'A+'}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* DNI Column */}
-                      <td>
-                        <div style={{ fontWeight: 800, color: 'var(--c-dark)', fontSize: '0.9rem' }}>
-                          {pat.dni}
-                        </div>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                          Alta: {pat.registeredAt || '2023'}
-                        </span>
-                      </td>
-
-                      {/* Health Insurance & Plan */}
-                      <td>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <span style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '0.86rem' }}>
-                            {pat.insuranceName}
-                          </span>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--c-primary)', fontWeight: 700 }}>
-                            Plan {pat.insurancePlan || 'Base'} · N° {pat.insuranceNumber?.slice(-6) || 'Activo'}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Contact & WhatsApp */}
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: '0.84rem', color: 'var(--text-main)' }}>
-                              {pat.phone}
-                            </div>
-                            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                              {pat.email}
-                            </div>
-                          </div>
-                          <a
-                            href={`https://wa.me/${pat.phone?.replace(/[^0-9]/g, '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              width: '28px',
-                              height: '28px',
-                              borderRadius: '50%',
-                              background: '#dcfce7',
-                              color: '#15803d',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              textDecoration: 'none',
-                              flexShrink: 0
-                            }}
-                            title="Enviar WhatsApp"
-                          >
-                            <Send size={13} />
-                          </a>
-                        </div>
-                      </td>
-
-                      {/* Medical Alerts / Allergies */}
-                      <td>
-                        {hasAllergies ? (
-                          <div
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              background: '#fee2e2',
-                              color: '#991b1b',
-                              border: '1px solid #fecaca',
-                              padding: '2px 8px',
-                              borderRadius: '6px',
-                              fontSize: '0.75rem',
-                              fontWeight: 700
-                            }}
-                            title={pat.allergies.join(', ')}
-                          >
-                            <AlertTriangle size={12} color="#dc2626" />
-                            <span>{pat.allergies[0]} {pat.allergies.length > 1 ? `(+${pat.allergies.length - 1})` : ''}</span>
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>Sin alergias</span>
-                        )}
-                      </td>
-
-                      {/* Last Visit */}
-                      <td>
-                        <div style={{ fontWeight: 700, fontSize: '0.84rem', color: 'var(--text-main)' }}>
-                          {pat.lastVisit || 'Hoy'}
-                        </div>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                          Consulta evolutiva
-                        </span>
-                      </td>
-
-                      {/* Fast Action Buttons */}
-                      <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', gap: '5px', alignItems: 'center' }}>
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-primary"
-                            style={{ padding: '4px 10px', fontSize: '0.76rem' }}
-                            onClick={() => setSelectedPatientForDetail(pat)}
-                            title="Abrir Ficha Clínica Integral"
-                          >
-                            <Eye size={13} />
-                            <span>Ver Ficha</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline"
-                            style={{ padding: '4px 7px' }}
-                            onClick={() => {
-                              setAppointmentModalData({
-                                patientId: pat.id,
-                                patientName: pat.name,
-                                patientPhone: pat.phone,
-                                patientDni: pat.dni,
-                                patientInsurance: `${pat.insuranceName} (${pat.insurancePlan})`
-                              });
-                              setIsAppointmentModalOpen(true);
-                            }}
-                            title="Agendar Turno"
-                          >
-                            <CalendarPlus size={14} color="var(--c-primary)" />
-                          </button>
-
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline"
-                            style={{ padding: '4px 7px' }}
-                            onClick={() => {
-                              setConsultationPreloadData({
-                                patientId: pat.id,
-                                patientName: pat.name
-                              });
-                              setIsNewConsultationModalOpen(true);
-                            }}
-                            title="Nueva Consulta HCE"
-                          >
-                            <Stethoscope size={14} color="var(--c-primary)" />
-                          </button>
-
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline"
-                            style={{ padding: '4px 7px' }}
-                            onClick={() => {
-                              setPatientFormModalData(pat);
-                              setIsPatientFormModalOpen(true);
-                            }}
-                            title="Editar Datos"
-                          >
-                            <Edit2 size={13} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })
               )}

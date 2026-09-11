@@ -34,7 +34,7 @@ export const PrescriptionDigitalModal = () => {
     <Modal
       isOpen={!!selectedPrescriptionForView}
       onClose={() => setSelectedPrescriptionForView(null)}
-      title="Receta Electrónica Oficial ReNaPDiS — Ley Nacional 27.553"
+      title="Receta Médica Electrónica Oficial ReNaPDiS"
       size="lg"
       footer={
         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }} className="no-print">

@@ -30,7 +30,7 @@ export const DigitalSignatureModal = () => {
         subject: `CN=${selectedDoc.name}, SERIALNUMBER=CUIL 20-${selectedDoc.license.replace(/\D/g, '')}-4, C=AR`,
         validFrom: '2025-01-10 09:00:00 UTC',
         validTo: selectedDoc.certExpiration || '2027-11-15 18:00:00 UTC',
-        keyUsage: 'Digital Signature, Non-Repudiation (Ley 25.506 Art. 2 y 9)',
+        keyUsage: 'Digital Signature, Non-Repudiation (Firma Digital Certificada)',
         algorithm: 'SHA256withRSA (2048 bits)',
         ocspStatus: 'Good (No revocado según servidor OCSP oficial)',
         tsaProvider: 'Autoridad de Sellado de Tiempo ONTI Argentina'
@@ -46,7 +46,7 @@ export const DigitalSignatureModal = () => {
         setIsDigitalSignatureModalOpen(false);
         setVerificationResult(null);
       }}
-      title="Infraestructura de Firma Digital PKI (Ley Nacional 25.506)"
+      title="Infraestructura de Firma Digital PKI X.509"
       size="lg"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', width: '100%' }}>
@@ -72,7 +72,7 @@ export const DigitalSignatureModal = () => {
             color: '#002182'
           }}
         >
-          <strong>Marco Legal de Firma Digital (Ley 25.506 & Ley 27.446):</strong>
+          <strong>Validación de Firma Digital Criptográfica:</strong>
           <p style={{ marginTop: '3px' }}>
             La validez jurídica de los actos médicos y recetas electrónicas requiere el uso de certificados digitales emitidos por Certificadores Licenciados reconocidos por el Ente Licenciante (ONTI / Secretaría de Innovación Pública). No se admiten firmas escaneadas ni imágenes insertadas.
           </p>

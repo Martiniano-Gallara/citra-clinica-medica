@@ -45,8 +45,8 @@ export const PatientPortalView = () => {
   const myConsultations = consultations.filter((c) => c.patientId === patient.id || c.patientDni === patient.dni);
 
   const handleRequestHceCopy = () => {
-    logAudit('EXPORT_HCE', 'Portal Paciente', patient.dni, `Solicitud de copia fehaciente de historia clínica por el paciente según Ley 26.529 Art. 14.`);
-    addToast('Solicitud Registrada (Ley 26.529)', 'Se ha generado la constancia formal de entrega de copia de Historia Clínica dentro de las 48 hs hábiles.', 'success');
+    logAudit('EXPORT_HCE', 'Portal Paciente', patient.dni, `Solicitud de copia fehaciente de historia clínica por el paciente.`);
+    addToast('Solicitud Registrada', 'Se ha generado la constancia formal de entrega de copia de Historia Clínica dentro de las 48 hs hábiles.', 'success');
   };
 
   return (
@@ -149,7 +149,7 @@ export const PatientPortalView = () => {
           onClick={() => setPortalTab('hce_request')}
         >
           <Shield size={18} />
-          <span>Copia de Historia Clínica (Ley 26.529)</span>
+          <span>Copia de Historia Clínica</span>
         </button>
       </div>
 
@@ -225,7 +225,7 @@ export const PatientPortalView = () => {
       {portalTab === 'prescriptions' && (
         <div>
           <div style={{ background: '#EBF3FD', padding: '0.85rem 1.15rem', borderRadius: '8px', border: '1px solid #257CE6', marginBottom: '1.5rem', fontSize: '0.86rem', color: '#002182' }}>
-            <strong>Recetas Electrónicas Oficiales (Ley 27.553):</strong> Presenta el Código Único CUIR o el código QR directamente en cualquier farmacia adherida para la dispensa de tus medicamentos.
+            <strong>Recetas Electrónicas Oficiales:</strong> Presenta el Código Único CUIR o el código QR directamente en cualquier farmacia adherida para la dispensa de tus medicamentos.
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -327,7 +327,7 @@ export const PatientPortalView = () => {
       {portalTab === 'hce_request' && (
         <div className="card" style={{ maxWidth: '800px', padding: '1.75rem' }}>
           <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#002182', marginBottom: '0.75rem' }}>
-            Derecho a la Titularidad de la Historia Clínica (Ley 26.529 Art. 14)
+            Titularidad y Solicitud de Copia de Historia Clínica
           </h3>
           <p style={{ fontSize: '0.88rem', color: '#172A4A', lineHeight: 1.6, marginBottom: '1.25rem' }}>
             El paciente es el titular indiscutible de la historia clínica. A su simple requerimiento debe suministrársele copia autenticada de la misma, dentro del plazo de cuarenta y ocho (48) horas hábiles.

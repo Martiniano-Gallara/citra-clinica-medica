@@ -14,7 +14,7 @@ export const NewRehabPlanModal = () => {
   const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id || '');
   const [diagnosis, setDiagnosis] = useState('Post-Quirúrgico Reconstrucción LCA Rodilla Derecha');
   const [therapistName, setTherapistName] = useState('Lic. Valentina Rossi');
-  const [referringDoctor, setReferringDoctor] = useState('Dr. Alejandro Morales');
+  const [referringDoctor, setReferringDoctor] = useState('Dr. Alejandro Blanco');
   const [prescribedSessions, setPrescribedSessions] = useState(10);
   const [initialEvaScore, setInitialEvaScore] = useState(7);
   const [objective, setObjective] = useState('Alivio de dolor, recuperación completa del arco de movimiento y fortalecimiento 5/5.');

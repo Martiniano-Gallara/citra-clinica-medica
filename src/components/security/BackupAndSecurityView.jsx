@@ -30,7 +30,7 @@ export const BackupAndSecurityView = () => {
         <div className="page-title-group">
           <h1>
             <Shield size={32} color="#076ABC" />
-            <span>Seguridad, Cifrado & Backups (Ley 25.326)</span>
+            <span>Seguridad, Cifrado AES-256 & Respaldos</span>
           </h1>
           <p>
             Políticas de seguridad informática, cifrado simétrico AES-256 de base de datos y respaldos inmutables.
@@ -82,7 +82,7 @@ export const BackupAndSecurityView = () => {
             SHA-256 Hashed
           </div>
           <div className="kpi-trend positive">
-            <span>Ley 26.529 & 26.742 Cumplida</span>
+            <span>Inalterabilidad & No Repudio Activo</span>
           </div>
         </div>
       </div>
@@ -142,7 +142,7 @@ export const BackupAndSecurityView = () => {
         <div style={{ fontSize: '0.88rem', color: '#172A4A', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
           <div><strong>RPO (Recovery Point Objective):</strong> Menor a 15 minutos (Snapshots incrementales).</div>
           <div><strong>RTO (Recovery Time Objective):</strong> Menor a 1 hora en contingencia crítica.</div>
-          <div><strong>Retención Legal de Historias Clínicas:</strong> 10 años corridos según Código Civil y Comercial de la Nación y Ley 26.529.</div>
+          <div><strong>Retención Legal de Historias Clínicas:</strong> 10 años corridos con archivo inmutable cifrado.</div>
           <div><strong>Alojamiento de Servidores:</strong> Data Center Tier III con georredundancia nacional.</div>
         </div>
       </div>

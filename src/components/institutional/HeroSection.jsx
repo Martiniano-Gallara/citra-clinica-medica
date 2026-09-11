@@ -22,64 +22,98 @@ export const HeroSection = () => {
           padding: '2rem 1.25rem 3.5rem',
           textAlign: 'center',
           position: 'relative',
-          background: 'linear-gradient(180deg, #F5F8FE 0%, #ffffff 100%)',
+          background: 'radial-gradient(125% 90% at 50% 0%, #EDF4FE 0%, #F7FAFD 55%, #FFFFFF 100%)',
           boxSizing: 'border-box',
           overflow: 'hidden'
         }}
         className="hero-container"
       >
-        {/* Foto de la fachada de CITRA de fondo con difuminado suave y elegante */}
+        {/* Fondo Clean Medical Tech: Degradé suave, mesh ambient orbs y textura sutil */}
+        {/* Capa Plexus Network / Constelación Biomédica (Referencia) */}
         <div
-          className="hero-bg-facade"
+          aria-hidden="true"
           style={{
             position: 'absolute',
             inset: 0,
-            backgroundImage: 'url("./citra-fachada.jpg")',
+            backgroundImage: 'url("./citra-hero-plexus.jpg")',
             backgroundSize: 'cover',
+            backgroundPosition: 'left center',
             backgroundRepeat: 'no-repeat',
-            filter: 'blur(5px)',
-            transform: 'scale(1.08)',
+            opacity: 0.55,
+            mixBlendMode: 'multiply',
+            pointerEvents: 'none',
+            zIndex: 0,
+            maskImage: 'radial-gradient(ellipse 95% 90% at 20% 50%, black 35%, rgba(0, 0, 0, 0.6) 65%, transparent 100%)',
+            WebkitMaskImage: 'radial-gradient(ellipse 95% 90% at 20% 50%, black 35%, rgba(0, 0, 0, 0.6) 65%, transparent 100%)',
+            filter: 'contrast(1.08) saturate(1.15)'
+          }}
+        />
+
+        {/* Capa de textura reticular sutil (patrón médico tech) */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: 'radial-gradient(rgba(7, 106, 188, 0.08) 1.2px, transparent 1.2px)',
+            backgroundSize: '32px 32px',
+            opacity: 0.5,
+            maskImage: 'radial-gradient(ellipse 70% 60% at 50% 40%, black 20%, transparent 80%)',
+            WebkitMaskImage: 'radial-gradient(ellipse 70% 60% at 50% 40%, black 20%, transparent 80%)',
+            pointerEvents: 'none',
             zIndex: 0
           }}
         />
 
-        {/* Overlay translúcido difuminado para máxima legibilidad y armonía visual */}
+        {/* Halo luminoso central superior */}
         <div
+          aria-hidden="true"
           style={{
             position: 'absolute',
-            inset: 0,
-            background: 'linear-gradient(180deg, rgba(245, 248, 254, 0.68) 0%, rgba(255, 255, 255, 0.74) 50%, rgba(255, 255, 255, 0.94) 100%)',
-            backdropFilter: 'blur(3px)',
-            WebkitBackdropFilter: 'blur(3px)',
-            zIndex: 1
+            top: '-15%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '650px',
+            height: '420px',
+            borderRadius: '50%',
+            background: 'radial-gradient(ellipse at center, rgba(37, 124, 230, 0.12) 0%, rgba(7, 106, 188, 0.04) 50%, rgba(255, 255, 255, 0) 75%)',
+            filter: 'blur(40px)',
+            pointerEvents: 'none',
+            zIndex: 0
           }}
         />
 
-        {/* Decorative subtle background blurs */}
+        {/* Ambient Glow lateral izquierdo (celeste suave) */}
         <div
+          aria-hidden="true"
           style={{
             position: 'absolute',
-            top: '-10%',
-            right: '-5%',
-            width: '350px',
-            height: '350px',
+            top: '25%',
+            left: '-8%',
+            width: '380px',
+            height: '380px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(37, 124, 230, 0.12) 0%, rgba(255,255,255,0) 70%)',
+            background: 'radial-gradient(circle, rgba(7, 106, 188, 0.09) 0%, rgba(255, 255, 255, 0) 70%)',
+            filter: 'blur(50px)',
             pointerEvents: 'none',
-            zIndex: 1
+            zIndex: 0
           }}
         />
+
+        {/* Ambient Glow lateral derecho (azul institucional) */}
         <div
+          aria-hidden="true"
           style={{
             position: 'absolute',
-            bottom: '0',
-            left: '-5%',
-            width: '280px',
-            height: '280px',
+            bottom: '10%',
+            right: '-6%',
+            width: '420px',
+            height: '420px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(7, 106, 188, 0.08) 0%, rgba(255,255,255,0) 70%)',
+            background: 'radial-gradient(circle, rgba(0, 33, 130, 0.07) 0%, rgba(255, 255, 255, 0) 70%)',
+            filter: 'blur(50px)',
             pointerEvents: 'none',
-            zIndex: 1
+            zIndex: 0
           }}
         />
 

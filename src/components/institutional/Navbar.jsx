@@ -686,6 +686,45 @@ export const Navbar = () => {
                     );
                   })}
                 </div>
+
+                {/* Acceso a Administración en menú móvil */}
+                <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid #EDF3FD' }}>
+                  <button
+                    onClick={handleAdminAccessClick}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      background: '#F0F5FD',
+                      border: '1px solid #D2E3FC',
+                      padding: '0.72rem 0.85rem',
+                      borderRadius: '10px',
+                      fontSize: '0.92rem',
+                      fontWeight: 700,
+                      color: '#002182',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem'
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        background: '#076ABC',
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}
+                    >
+                      <Shield size={17} />
+                    </div>
+                    <span style={{ flex: 1 }}>Portal Administración</span>
+                  </button>
+                </div>
               </div>
             </div>
 

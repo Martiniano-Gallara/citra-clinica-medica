@@ -52,17 +52,69 @@ export const ClinicProvider = ({ children }) => {
   const [specialties, setSpecialties] = useState(() => loadStorage('specialties', INITIAL_SPECIALTIES));
   const [rooms, setRooms] = useState(() => loadStorage('rooms', INITIAL_ROOMS));
   const [healthInsurances, setHealthInsurances] = useState(() => loadStorage('healthInsurances', INITIAL_HEALTH_INSURANCES));
-  const [doctors, setDoctors] = useState(() => loadStorage('doctors', INITIAL_DOCTORS));
+  const [doctors, setDoctors] = useState(() => {
+    const loaded = loadStorage('doctors', INITIAL_DOCTORS);
+    return loaded.map((d) =>
+      d.id === 'doc-1' || d.email === 'dr.blanco@citra.com.ar' || (d.name && d.name.includes('Morales'))
+        ? { ...d, id: 'doc-1', name: 'Dr. Alejandro Blanco', fullName: 'Dr. Alejandro Blanco', email: 'dr.blanco@citra.com.ar' }
+        : d
+    );
+  });
   const [patients, setPatients] = useState(() => loadStorage('patients', INITIAL_PATIENTS));
-  const [appointments, setAppointments] = useState(() => loadStorage('appointments', INITIAL_APPOINTMENTS));
-  const [consultations, setConsultations] = useState(() => loadStorage('consultations', INITIAL_CONSULTATIONS));
-  const [electronicPrescriptions, setElectronicPrescriptions] = useState(() => loadStorage('electronicPrescriptions', INITIAL_ELECTRONIC_PRESCRIPTIONS));
-  const [consentForms, setConsentForms] = useState(() => loadStorage('consentForms', INITIAL_CONSENT_FORMS));
+  const [appointments, setAppointments] = useState(() => {
+    const loaded = loadStorage('appointments', INITIAL_APPOINTMENTS);
+    return loaded.map((a) =>
+      a.doctorId === 'doc-1' || (a.doctorName && a.doctorName.includes('Morales'))
+        ? { ...a, doctorId: 'doc-1', doctorName: 'Dr. Alejandro Blanco' }
+        : a
+    );
+  });
+  const [consultations, setConsultations] = useState(() => {
+    const loaded = loadStorage('consultations', INITIAL_CONSULTATIONS);
+    return loaded.map((c) =>
+      c.doctorId === 'doc-1' || (c.doctorName && c.doctorName.includes('Morales'))
+        ? { ...c, doctorId: 'doc-1', doctorName: 'Dr. Alejandro Blanco' }
+        : c
+    );
+  });
+  const [electronicPrescriptions, setElectronicPrescriptions] = useState(() => {
+    const loaded = loadStorage('electronicPrescriptions', INITIAL_ELECTRONIC_PRESCRIPTIONS);
+    return loaded.map((rx) =>
+      rx.doctorId === 'doc-1' || (rx.doctorName && rx.doctorName.includes('Morales'))
+        ? { ...rx, doctorId: 'doc-1', doctorName: 'Dr. Alejandro Blanco' }
+        : rx
+    );
+  });
+  const [consentForms, setConsentForms] = useState(() => {
+    const loaded = loadStorage('consentForms', INITIAL_CONSENT_FORMS);
+    return loaded.map((cf) =>
+      cf.doctorId === 'doc-1' || (cf.doctorName && cf.doctorName.includes('Morales'))
+        ? { ...cf, doctorId: 'doc-1', doctorName: 'Dr. Alejandro Blanco' }
+        : cf
+    );
+  });
   const [invoices, setInvoices] = useState(() => loadStorage('invoices', INITIAL_INVOICES));
   const [auditLogs, setAuditLogs] = useState(() => loadStorage('auditLogs', INITIAL_AUDIT_LOGS));
   const [tasks, setTasks] = useState(() => loadStorage('tasks', INITIAL_TASKS_AND_ALERTS));
-  const [users, setUsers] = useState(() => loadStorage('users', INITIAL_USERS));
-  const [currentUser, setCurrentUser] = useState(() => loadStorage('currentUser', INITIAL_USERS[0]));
+  const [users, setUsers] = useState(() => {
+    const loaded = loadStorage('users', INITIAL_USERS);
+    return loaded.map((u) => {
+      if (u.id === 'usr-1' || u.doctorId === 'doc-1' || (u.name && u.name.includes('Morales') && u.adminType === 'doctor')) {
+        return { ...u, id: 'usr-1', name: 'Dr. Alejandro Blanco', email: 'dr.blanco@citra.com.ar', adminType: 'doctor', doctorId: 'doc-1' };
+      }
+      if (u.id === 'usr-6') {
+        return { ...u, name: 'Dr. Roberto Morales', email: 'roberto.morales@citra.com.ar' };
+      }
+      return u;
+    });
+  });
+  const [currentUser, setCurrentUser] = useState(() => {
+    const loaded = loadStorage('currentUser', INITIAL_USERS[0]);
+    if (loaded && (loaded.id === 'usr-1' || loaded.doctorId === 'doc-1' || (loaded.name && loaded.name.includes('Morales') && !loaded.role?.includes('Director')))) {
+      return { ...loaded, id: 'usr-1', name: 'Dr. Alejandro Blanco', email: 'dr.blanco@citra.com.ar', adminType: 'doctor', doctorId: 'doc-1' };
+    }
+    return loaded;
+  });
 
   // New modules state
   const [rehabPlans, setRehabPlans] = useState(() => loadStorage('rehabPlans', INITIAL_REHAB_PLANS));
@@ -81,16 +133,88 @@ export const ClinicProvider = ({ children }) => {
   const [medicalCertificates, setMedicalCertificates] = useState(() => loadStorage('medicalCertificates', INITIAL_MEDICAL_CERTIFICATES));
 
   // Institutional Public Views & Navigation ('home', 'booking', 'my-turnos', 'admin-login', 'admin-panel')
-  const [currentView, setCurrentView] = useState(() => loadStorage('currentView', 'home'));
+  const [currentView, setCurrentView] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.toLowerCase().replace('#', '').trim();
+      const search = new URLSearchParams(window.location.search);
+      const view = search.get('view');
+      if (hash === 'admin' || hash === 'admin-panel' || view === 'admin' || view === 'admin-panel') return 'admin-panel';
+      if (hash === 'admin-login' || view === 'admin-login') return 'admin-login';
+      if (hash === 'booking' || hash === 'turnos' || view === 'booking') return 'booking';
+      if (hash === 'services' || hash === 'servicios' || view === 'services') return 'services';
+      if (hash === 'doctors' || hash === 'medicos' || view === 'doctors') return 'doctors';
+      if (hash === 'clinic' || hash === 'clinica' || view === 'clinic') return 'clinic';
+      if (hash === 'insurances' || hash === 'obras-sociales' || view === 'insurances') return 'insurances';
+      if (hash === 'my-turnos' || hash === 'mis-turnos' || view === 'my-turnos') return 'my-turnos';
+    }
+    return loadStorage('currentView', 'home');
+  });
   const [bookingPreselectedSpecialty, setBookingPreselectedSpecialty] = useState(null);
   const [bookingPreselectedDoctor, setBookingPreselectedDoctor] = useState(null);
 
   // Authentication & Roles: 'guest' | 'patient' | 'admin'
-  const [authRole, setAuthRole] = useState(() => loadStorage('authRole', 'guest'));
+  const [authRole, setAuthRole] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.toLowerCase().replace('#', '').trim();
+      const search = new URLSearchParams(window.location.search);
+      const view = search.get('view');
+      if (hash === 'admin' || hash === 'admin-panel' || view === 'admin' || view === 'admin-panel') return 'admin';
+    }
+    return loadStorage('authRole', 'guest');
+  });
   const [authPatient, setAuthPatient] = useState(() => loadStorage('authPatient', null));
-  const [authAdmin, setAuthAdmin] = useState(() => loadStorage('authAdmin', null));
+  const [authAdmin, setAuthAdmin] = useState(() => {
+    const saved = loadStorage('authAdmin', null);
+    if (saved) {
+      if (saved.id === 'usr-1' || saved.doctorId === 'doc-1' || saved.adminType === 'doctor' || (saved.name && saved.name.includes('Morales') && !saved.role?.includes('Director'))) {
+        return {
+          ...saved,
+          id: 'usr-1',
+          name: 'Dr. Alejandro Blanco',
+          email: 'dr.blanco@citra.com.ar',
+          adminType: 'doctor',
+          doctorId: 'doc-1'
+        };
+      }
+      const matched = INITIAL_USERS.find((u) => u.id === saved.id || u.email?.toLowerCase() === saved.email?.toLowerCase());
+      return matched ? { ...matched, ...saved, adminType: matched.adminType, doctorId: matched.doctorId } : saved;
+    }
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.toLowerCase().replace('#', '').trim();
+      const search = new URLSearchParams(window.location.search);
+      const view = search.get('view');
+      if (hash === 'admin' || hash === 'admin-panel' || view === 'admin' || view === 'admin-panel') {
+        return {
+          id: 'usr-1',
+          name: 'Dr. Alejandro Blanco',
+          email: 'dr.blanco@citra.com.ar',
+          role: 'Médico Traumatólogo',
+          adminType: 'doctor',
+          doctorId: 'doc-1',
+          specialty: 'Traumatología y Ortopedia'
+        };
+      }
+    }
+    return null;
+  });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState('login'); // 'login' | 'register'
+
+  // Storage Sanitization Effect: ensures that old references to 'Alejandro Morales' for doc-1 in localStorage are wiped
+  useEffect(() => {
+    try {
+      const keysToCheck = ['citra_doctors', 'citra_authAdmin', 'citra_currentUser', 'citra_appointments', 'citra_consultations', 'citra_electronicPrescriptions'];
+      keysToCheck.forEach((key) => {
+        const item = localStorage.getItem(key);
+        if (item && item.includes('Morales') && !item.includes('Roberto Morales')) {
+          const replaced = item.replaceAll('Dr. Alejandro Morales', 'Dr. Alejandro Blanco').replaceAll('Alejandro Morales', 'Dr. Alejandro Blanco');
+          localStorage.setItem(key, replaced);
+        }
+      });
+    } catch (e) {
+      console.error('Storage sanitization error', e);
+    }
+  }, []);
 
   // Clinic General Schedules & Availability
   const INITIAL_SCHEDULE = {
@@ -173,9 +297,13 @@ export const ClinicProvider = ({ children }) => {
 
   useEffect(() => { localStorage.setItem('citra_rehabPlans', JSON.stringify(rehabPlans)); }, [rehabPlans]);
   useEffect(() => { localStorage.setItem('citra_rehabSessions', JSON.stringify(rehabSessions)); }, [rehabSessions]);
+  useEffect(() => { localStorage.setItem('citra_homeExercises', JSON.stringify(homeExercises)); }, [homeExercises]);
   useEffect(() => { localStorage.setItem('citra_imagingStudies', JSON.stringify(imagingStudies)); }, [imagingStudies]);
+  useEffect(() => { localStorage.setItem('citra_nomenclatorItems', JSON.stringify(nomenclatorItems)); }, [nomenclatorItems]);
+  useEffect(() => { localStorage.setItem('citra_insuranceAgreements', JSON.stringify(insuranceAgreements)); }, [insuranceAgreements]);
   useEffect(() => { localStorage.setItem('citra_authorizations', JSON.stringify(authorizations)); }, [authorizations]);
   useEffect(() => { localStorage.setItem('citra_inventoryItems', JSON.stringify(inventoryItems)); }, [inventoryItems]);
+  useEffect(() => { localStorage.setItem('citra_suppliers', JSON.stringify(suppliers)); }, [suppliers]);
   useEffect(() => { localStorage.setItem('citra_purchaseOrders', JSON.stringify(purchaseOrders)); }, [purchaseOrders]);
   useEffect(() => { localStorage.setItem('citra_communications', JSON.stringify(communications)); }, [communications]);
   useEffect(() => { localStorage.setItem('citra_cashClosures', JSON.stringify(cashClosures)); }, [cashClosures]);
@@ -186,6 +314,199 @@ export const ClinicProvider = ({ children }) => {
   useEffect(() => { localStorage.setItem('citra_authPatient', JSON.stringify(authPatient)); }, [authPatient]);
   useEffect(() => { localStorage.setItem('citra_authAdmin', JSON.stringify(authAdmin)); }, [authAdmin]);
   useEffect(() => { localStorage.setItem('citra_clinicSchedule', JSON.stringify(clinicSchedule)); }, [clinicSchedule]);
+
+  // --- RBAC & ROLE-BASED SCOPED DATA ENGINE ---
+  // Resolve current doctor if authenticated user is a physician
+  const currentDoctor = React.useMemo(() => {
+    if (!authAdmin) return null;
+    const docId = authAdmin.doctorId;
+    if (docId) {
+      const found = doctors.find((d) => d.id === docId);
+      if (found) {
+        const cleanName = found.name && found.name.includes('Morales') ? 'Dr. Alejandro Blanco' : found.name;
+        return { ...found, name: cleanName, fullName: cleanName };
+      }
+    }
+    const fallbackDoc = (
+      doctors.find(
+        (d) =>
+          (d.email && authAdmin.email && d.email.toLowerCase() === authAdmin.email.toLowerCase()) ||
+          (d.name && authAdmin.name && (d.name.toLowerCase().includes(authAdmin.name.toLowerCase()) || authAdmin.name.toLowerCase().includes(d.name.toLowerCase())))
+      ) || doctors[0]
+    );
+    if (!fallbackDoc) return null;
+    const cleanName = fallbackDoc.name && fallbackDoc.name.includes('Morales') ? 'Dr. Alejandro Blanco' : fallbackDoc.name;
+    return { ...fallbackDoc, name: cleanName, fullName: cleanName };
+  }, [authAdmin, doctors]);
+
+  const isDoctor = Boolean(
+    authAdmin &&
+    (authAdmin.adminType === 'doctor' ||
+      Boolean(currentDoctor) ||
+      (authAdmin.role && (authAdmin.role.toLowerCase().includes('médico') || authAdmin.role.toLowerCase().includes('doctor'))))
+  );
+
+  const isAdministrative = Boolean(
+    authAdmin &&
+    (authAdmin.adminType === 'administrative' ||
+      (!isDoctor && authAdmin.adminType !== 'doctor'))
+  );
+
+  const isSuperAdmin = Boolean(
+    authAdmin && (authAdmin.adminType === 'superadmin' || authAdmin.role?.toLowerCase().includes('director'))
+  );
+
+  // Scoped Data Collections
+  const scopedAppointments = React.useMemo(() => {
+    if (isDoctor && currentDoctor) {
+      return appointments.filter(
+        (a) =>
+          a.doctorId === currentDoctor.id ||
+          (a.doctorName && a.doctorName.toLowerCase().includes(currentDoctor.name.toLowerCase()))
+      );
+    }
+    return appointments;
+  }, [appointments, isDoctor, currentDoctor]);
+
+  const scopedPatients = React.useMemo(() => {
+    if (isDoctor && currentDoctor) {
+      return patients.filter((p) => {
+        const hasApp = appointments.some(
+          (a) =>
+            (a.doctorId === currentDoctor.id || (a.doctorName && a.doctorName.toLowerCase().includes(currentDoctor.name.toLowerCase()))) &&
+            (a.patientId === p.id || a.patientDni === p.dni || a.patientName === p.name)
+        );
+        const hasCons = consultations.some(
+          (c) =>
+            (c.doctorId === currentDoctor.id || (c.doctorName && c.doctorName.toLowerCase().includes(currentDoctor.name.toLowerCase()))) &&
+            (c.patientId === p.id || c.patientDni === p.dni)
+        );
+        const hasRx = electronicPrescriptions.some(
+          (rx) =>
+            (rx.doctorId === currentDoctor.id || (rx.doctorName && rx.doctorName.toLowerCase().includes(currentDoctor.name.toLowerCase()))) &&
+            (rx.patientId === p.id || rx.patientDni === p.dni)
+        );
+        const hasImg = imagingStudies.some(
+          (s) =>
+            (s.referringDoctor && s.referringDoctor.toLowerCase().includes(currentDoctor.name.toLowerCase())) ||
+            s.doctorId === currentDoctor.id
+        );
+        return hasApp || hasCons || hasRx || hasImg;
+      });
+    }
+    return patients;
+  }, [patients, appointments, consultations, electronicPrescriptions, imagingStudies, isDoctor, currentDoctor]);
+
+  const scopedConsultations = React.useMemo(() => {
+    if (isDoctor && currentDoctor) {
+      return consultations.filter(
+        (c) =>
+          c.doctorId === currentDoctor.id ||
+          (c.doctorName && c.doctorName.toLowerCase().includes(currentDoctor.name.toLowerCase()))
+      );
+    }
+    return consultations;
+  }, [consultations, isDoctor, currentDoctor]);
+
+  const scopedElectronicPrescriptions = React.useMemo(() => {
+    if (isDoctor && currentDoctor) {
+      return electronicPrescriptions.filter(
+        (rx) =>
+          rx.doctorId === currentDoctor.id ||
+          (rx.doctorName && rx.doctorName.toLowerCase().includes(currentDoctor.name.toLowerCase()))
+      );
+    }
+    return electronicPrescriptions;
+  }, [electronicPrescriptions, isDoctor, currentDoctor]);
+
+  const scopedImagingStudies = React.useMemo(() => {
+    if (isDoctor && currentDoctor) {
+      return imagingStudies.filter(
+        (s) =>
+          (s.referringDoctor && s.referringDoctor.toLowerCase().includes(currentDoctor.name.toLowerCase())) ||
+          s.doctorId === currentDoctor.id
+      );
+    }
+    return imagingStudies;
+  }, [imagingStudies, isDoctor, currentDoctor]);
+
+  const scopedHealthInsurances = React.useMemo(() => {
+    if (isDoctor && currentDoctor && currentDoctor.acceptedInsurances) {
+      return healthInsurances.filter((hi) => currentDoctor.acceptedInsurances.includes(hi.id));
+    }
+    return healthInsurances;
+  }, [healthInsurances, isDoctor, currentDoctor]);
+
+  const scopedConsentForms = React.useMemo(() => {
+    if (isDoctor && currentDoctor) {
+      return consentForms.filter(
+        (cf) =>
+          cf.doctorId === currentDoctor.id ||
+          (cf.doctorName && (
+            cf.doctorName.toLowerCase().includes(currentDoctor.name.toLowerCase()) ||
+            currentDoctor.name.toLowerCase().includes(cf.doctorName.toLowerCase()) ||
+            cf.doctorName.toLowerCase().includes('blanco')
+          ))
+      );
+    }
+    return consentForms;
+  }, [consentForms, isDoctor, currentDoctor]);
+
+  // Sincronización bidireccional con URL Hash para navegación y enlaces directos (ej: #admin, #turnos, etc.)
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (typeof window === 'undefined') return;
+      const hash = window.location.hash.toLowerCase().replace('#', '').trim();
+      if (hash === 'admin' || hash === 'admin-panel') {
+        const defaultAdmin = users.find((u) => u.role?.includes('Admin') || u.email?.includes('admin')) || users[0] || INITIAL_USERS[0];
+        setAuthRole('admin');
+        setAuthAdmin(defaultAdmin);
+        setCurrentUser(defaultAdmin);
+        setCurrentView('admin-panel');
+      } else if (hash === 'admin-login') {
+        setCurrentView('admin-login');
+      } else if (hash === 'turnos' || hash === 'booking') {
+        setCurrentView('booking');
+      } else if (hash === 'servicios' || hash === 'services') {
+        setCurrentView('services');
+      } else if (hash === 'medicos' || hash === 'doctors') {
+        setCurrentView('doctors');
+      } else if (hash === 'clinica' || hash === 'clinic') {
+        setCurrentView('clinic');
+      } else if (hash === 'obras-sociales' || hash === 'insurances') {
+        setCurrentView('insurances');
+      } else if (hash === 'mis-turnos' || hash === 'my-turnos') {
+        setCurrentView('my-turnos');
+      } else if (hash === 'inicio' || hash === 'home') {
+        setCurrentView('home');
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [users]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const viewToHash = {
+      'home': 'inicio',
+      'services': 'servicios',
+      'doctors': 'medicos',
+      'clinic': 'clinica',
+      'insurances': 'obras-sociales',
+      'booking': 'turnos',
+      'my-turnos': 'mis-turnos',
+      'admin-login': 'admin-login',
+      'admin-panel': 'admin'
+    };
+    const targetHash = viewToHash[currentView];
+    if (targetHash) {
+      const currentRawHash = window.location.hash.replace('#', '');
+      if (currentRawHash !== targetHash && !(targetHash === 'admin' && currentRawHash === 'admin-panel')) {
+        window.history.replaceState(null, '', `#${targetHash}`);
+      }
+    }
+  }, [currentView]);
 
   const addToast = (title, message, type = 'success') => {
     const id = Date.now() + Math.random();
@@ -240,7 +561,7 @@ export const ClinicProvider = ({ children }) => {
       indications: consultationData.indications || '',
       studiesRequested: consultationData.studiesRequested || [],
       signed: true,
-      signatureType: 'Firma Digital X.509 (Ley 25.506 / PKI ONTI)',
+      signatureType: 'Firma Digital X.509 (PKI ONTI)',
       certAuthority: 'AC ONTI / Ministerio de Modernización Argentina',
       signatureTimestamp: timestamp,
       adendas: []
@@ -277,7 +598,7 @@ export const ClinicProvider = ({ children }) => {
     }
 
     logAudit('CREATE', 'Historia Clínica', consultationData.patientDni, `Registro firmado digitalmente con Hash SHA-256: ${integrityHash.substring(0, 16)}...`);
-    addToast('Acto Médico Firmado Digitalmente', `Consulta registrada e inmutable según Ley 26.529.`, 'success');
+    addToast('Acto Médico Firmado Digitalmente', 'Consulta registrada con firma digital y hash inmutable.', 'success');
     return finalizedRecord;
   };
 
@@ -340,7 +661,7 @@ export const ClinicProvider = ({ children }) => {
     };
 
     setElectronicPrescriptions((prev) => [rxRecord, ...prev]);
-    logAudit('CREATE', 'Receta ReNaPDiS', rxData.patientDni, `Emisión de receta electrónica CUIR: ${cuir} conforme Ley 27.553.`);
+    logAudit('CREATE', 'Receta ReNaPDiS', rxData.patientDni, `Emisión de receta electrónica CUIR: ${cuir} en plataforma oficial ReNaPDiS.`);
     addToast('Receta Electrónica ReNaPDiS', `Receta emitida con CUIR: ${cuir}`, 'success');
     return rxRecord;
   };
@@ -360,7 +681,7 @@ export const ClinicProvider = ({ children }) => {
       date: new Date().toISOString().split('T')[0],
       status: 'Otorgado y Firmado',
       revoked: false,
-      legalFramework: 'Ley Nacional 26.529 Art. 5 a 10 y Ley 26.742',
+      legalFramework: 'Consentimiento Informado & Declaración de Voluntad',
       ...consentData
     };
     setConsentForms((prev) => [newConsent, ...prev]);
@@ -835,6 +1156,35 @@ export const ClinicProvider = ({ children }) => {
     addToast('Horarios Actualizados', 'La configuración de disponibilidad fue guardada.', 'success');
   };
 
+  // --- GESTIÓN INDIVIDUAL DE DOCTOR (HORARIOS, OBRAS SOCIALES, PERFIL) ---
+  const updateDoctorSchedule = (doctorId, scheduleData) => {
+    updateDoctor(doctorId, scheduleData);
+    addToast('Horarios Actualizados', 'Tus horarios de atención y disponibilidad han sido guardados.', 'success');
+  };
+
+  const updateDoctorInsurances = (doctorId, acceptedInsurances) => {
+    updateDoctor(doctorId, { acceptedInsurances });
+    addToast('Obras Sociales Actualizadas', 'Se actualizó tu nómina de coberturas aceptadas.', 'success');
+  };
+
+  const updateDoctorProfile = (doctorId, profileData) => {
+    updateDoctor(doctorId, profileData);
+    addToast('Perfil Actualizado', 'Tus datos profesionales y credenciales han sido guardados.', 'success');
+  };
+
+  const switchAdminUser = (userIdOrEmail) => {
+    const targetUser = users.find(
+      (u) => u.id === userIdOrEmail || u.email?.toLowerCase() === (userIdOrEmail || '').toLowerCase()
+    );
+    if (targetUser) {
+      setAuthRole('admin');
+      setAuthAdmin(targetUser);
+      setCurrentUser(targetUser);
+      addToast('Sesión de Rol Cambiada', `Ahora operando como ${targetUser.name} (${targetUser.role}).`, 'info');
+      logAudit('LOGIN', 'Cambio de Rol de Administración', '-', `Cambio rápido a usuario ${targetUser.name}`);
+    }
+  };
+
   // --- AUTENTICACIÓN PACIENTES Y ADMINISTRADORES ---
   const loginPatient = (dniOrEmail, password) => {
     const cleanInput = (dniOrEmail || '').trim().toLowerCase().replace(/\./g, '');
@@ -893,7 +1243,7 @@ export const ClinicProvider = ({ children }) => {
       logAudit('LOGIN', 'Panel de Administración', '-', `Acceso administrativo de ${adminUser.name} (${adminUser.role})`);
       addToast('Acceso Administrativo Concedido', `Bienvenido/a, ${adminUser.name}.`, 'success');
       return { success: true, user: adminUser };
-    } else if (cleanEmail.includes('admin') || cleanEmail.includes('morales') || cleanEmail.includes('citra')) {
+    } else if (cleanEmail.includes('admin') || cleanEmail.includes('blanco') || cleanEmail.includes('citra')) {
       const defaultAdmin = users[0];
       setAuthRole('admin');
       setAuthAdmin(defaultAdmin);
@@ -961,13 +1311,13 @@ export const ClinicProvider = ({ children }) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `CITRA_Backup_Cifrado_Ley25326_${new Date().toISOString().split('T')[0]}.citrabackup`;
+    link.download = `CITRA_Backup_Cifrado_${new Date().toISOString().split('T')[0]}.citrabackup`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
     logAudit('EXPORT_HCE', 'Seguridad & Backup', '-', `Generación de backup cifrado AES-256 con Checksum: ${checksum.substring(0, 16)}...`);
-    addToast('Backup Cifrado Descargado', 'Copia de seguridad cifrada según Ley 25.326 generada con éxito.', 'success');
+    addToast('Backup Cifrado Descargado', 'Copia de seguridad cifrada con estándar AES-256 generada con éxito.', 'success');
   };
 
   // Reset to initial mock database
@@ -1223,7 +1573,23 @@ export const ClinicProvider = ({ children }) => {
         registerPatient,
         logoutPatient,
         loginAdmin,
-        logoutAdmin
+        logoutAdmin,
+        // RBAC & Scoped Data exports
+        currentDoctor,
+        isDoctor,
+        isAdministrative,
+        isSuperAdmin,
+        scopedAppointments,
+        scopedPatients,
+        scopedConsultations,
+        scopedElectronicPrescriptions,
+        scopedImagingStudies,
+        scopedHealthInsurances,
+        scopedConsentForms,
+        updateDoctorSchedule,
+        updateDoctorInsurances,
+        updateDoctorProfile,
+        switchAdminUser
       }}
     >
       {children}

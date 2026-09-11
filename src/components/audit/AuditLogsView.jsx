@@ -51,7 +51,7 @@ export const AuditLogsView = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `CITRA_Auditoria_Seguridad_Ley25326_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `CITRA_Auditoria_Seguridad_Inmutable_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -64,7 +64,7 @@ export const AuditLogsView = () => {
         <div className="page-title-group">
           <h1>
             <ShieldCheck size={32} color="#076ABC" />
-            <span>Auditoría de Accesos & Trazabilidad (Ley 25.326)</span>
+            <span>Auditoría de Accesos & Trazabilidad Inmutable</span>
           </h1>
           <p>
             Registro inmutable y cronológico de cada acceso, consulta, firma digital y exportación de datos sensibles de salud.
@@ -74,14 +74,14 @@ export const AuditLogsView = () => {
         <div className="page-actions-group">
           <button className="btn btn-outline" onClick={handleExportCSV}>
             <FileSpreadsheet size={16} />
-            <span>Exportar Registro Legal CSV</span>
+            <span>Exportar Registro Auditado CSV</span>
           </button>
         </div>
       </div>
 
       {/* Info Alert */}
       <div style={{ background: '#EBF3FD', padding: '0.85rem 1.15rem', borderRadius: '8px', border: '1px solid #257CE6', marginBottom: '1.5rem', fontSize: '0.86rem', color: '#002182' }}>
-        <strong>Protección de Datos Sensibles de Salud (Ley 25.326 / Habeas Data):</strong> Cada evento en la plataforma queda sellado criptográficamente con un Hash SHA-256 unívoco para garantizar que ningún registro de acceso pueda ser adulterado o suprimido.
+        <strong>Protección y Cifrado de Datos de Salud:</strong> Cada evento en la plataforma queda sellado criptográficamente con un Hash SHA-256 unívoco para garantizar que ningún registro de acceso pueda ser adulterado o suprimido.
       </div>
 
       {/* Filter Bar */}

@@ -87,7 +87,7 @@ export const NewRehabSessionModal = () => {
             </div>
             <div>
               <h3 className="modal-title">Evolución de Sesión Kinesiológica #{nextSessionNumber}</h3>
-              <p className="modal-subtitle">Registro clínico con firma digital inmutable (Ley 26.529)</p>
+              <p className="modal-subtitle">Registro clínico con firma digital inmutable</p>
             </div>
           </div>
           <button
@@ -239,7 +239,7 @@ export const NewRehabSessionModal = () => {
             {/* Legal Notice */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)', background: 'var(--bg-subtle)', padding: '0.65rem', borderRadius: '6px' }}>
               <ShieldCheck size={16} color="var(--primary)" />
-              <span>Esta evolución quedará sellada con firma digital criptográfica según Ley 25.506 e incorporada a la HCE inmutable.</span>
+              <span>Esta evolución quedará sellada con firma digital criptográfica e incorporada a la HCE inmutable.</span>
             </div>
           </div>
 

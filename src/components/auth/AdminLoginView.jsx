@@ -47,8 +47,9 @@ export const AdminLoginView = () => {
     loginAdmin(adminUser.email, 'citra2026');
   };
 
-  const directorUser = users.find((u) => u.role.includes('Director')) || users[0];
-  const adminUser = users.find((u) => u.email.includes('admin')) || users[2] || users[0];
+  const doctorUser = users.find((u) => u.adminType === 'doctor' || u.email?.includes('blanco')) || users[0];
+  const adminUser = users.find((u) => u.adminType === 'administrative' || u.email?.includes('admin')) || users[2];
+  const directorUser = users.find((u) => u.adminType === 'superadmin' || u.role?.includes('Director')) || users[5] || users[0];
 
   return (
     <div
@@ -194,52 +195,16 @@ export const AdminLoginView = () => {
               <Sparkles size={15} color="#076ABC" />
               Acceso Rápido Demo (1-Click)
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <button
-                type="button"
-                onClick={() => handleDemoAdmin(directorUser)}
-                style={{
-                  background: '#ffffff',
-                  border: '1px solid #D2E3FC',
-                  padding: '0.6rem 0.8rem',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  cursor: 'pointer',
-                  textAlign: 'left'
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#002182' }}>
-                    {directorUser.name}
-                  </div>
-                  <div style={{ fontSize: '0.73rem', color: '#496386' }}>
-                    {directorUser.role} · {directorUser.email}
-                  </div>
-                </div>
-                <span
-                  style={{
-                    background: '#076ABC',
-                    color: '#ffffff',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    padding: '0.25rem 0.6rem',
-                    borderRadius: '6px'
-                  }}
-                >
-                  Entrar
-                </span>
-              </button>
-
-              {adminUser && adminUser.id !== directorUser.id && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              {/* Doctor 1-click */}
+              {doctorUser && (
                 <button
                   type="button"
-                  onClick={() => handleDemoAdmin(adminUser)}
+                  onClick={() => handleDemoAdmin(doctorUser)}
                   style={{
-                    background: '#ffffff',
-                    border: '1px solid #D2E3FC',
-                    padding: '0.6rem 0.8rem',
+                    background: '#f0fdf4',
+                    border: '1.5px solid #86efac',
+                    padding: '0.65rem 0.85rem',
                     borderRadius: '10px',
                     display: 'flex',
                     alignItems: 'center',
@@ -249,24 +214,110 @@ export const AdminLoginView = () => {
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#002182' }}>
-                      {adminUser.name}
+                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <span>🩺 {doctorUser.name}</span>
+                      <span style={{ fontSize: '0.68rem', background: '#dcfce7', color: '#15803d', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>
+                        MÉDICO
+                      </span>
                     </div>
-                    <div style={{ fontSize: '0.73rem', color: '#496386' }}>
-                      {adminUser.role} · {adminUser.email}
+                    <div style={{ fontSize: '0.72rem', color: '#15803d' }}>
+                      {doctorUser.role} · Vista aislada 10 módulos
                     </div>
                   </div>
                   <span
                     style={{
-                      background: '#002182',
+                      background: '#16a34a',
                       color: '#ffffff',
                       fontSize: '0.72rem',
-                      fontWeight: 700,
-                      padding: '0.25rem 0.6rem',
+                      fontWeight: 800,
+                      padding: '0.3rem 0.65rem',
                       borderRadius: '6px'
                     }}
                   >
-                    Entrar
+                    Entrar como Dr.
+                  </span>
+                </button>
+              )}
+
+              {/* Administrative 1-click */}
+              {adminUser && (
+                <button
+                  type="button"
+                  onClick={() => handleDemoAdmin(adminUser)}
+                  style={{
+                    background: '#ffffff',
+                    border: '1px solid #D2E3FC',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    textAlign: 'left'
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#002182', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <span>💼 {adminUser.name}</span>
+                      <span style={{ fontSize: '0.68rem', background: '#eff6ff', color: '#2563eb', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>
+                        ADMINISTRACIÓN
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: '#496386' }}>
+                      {adminUser.role} · Facturación y recepción
+                    </div>
+                  </div>
+                  <span
+                    style={{
+                      background: '#076ABC',
+                      color: '#ffffff',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      padding: '0.3rem 0.65rem',
+                      borderRadius: '6px'
+                    }}
+                  >
+                    Entrar Admin
+                  </span>
+                </button>
+              )}
+
+              {/* Director 1-click */}
+              {directorUser && directorUser.id !== doctorUser?.id && directorUser.id !== adminUser?.id && (
+                <button
+                  type="button"
+                  onClick={() => handleDemoAdmin(directorUser)}
+                  style={{
+                    background: '#faf5ff',
+                    border: '1px solid #e9d5ff',
+                    padding: '0.55rem 0.85rem',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    textAlign: 'left'
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6b21a8' }}>
+                      🏛️ {directorUser.name}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#7e22ce' }}>
+                      {directorUser.role} · Auditoría general
+                    </div>
+                  </div>
+                  <span
+                    style={{
+                      background: '#7c3aed',
+                      color: '#ffffff',
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      padding: '0.2rem 0.55rem',
+                      borderRadius: '6px'
+                    }}
+                  >
+                    Director
                   </span>
                 </button>
               )}
@@ -357,7 +408,7 @@ export const AdminLoginView = () => {
               lineHeight: 1.5
             }}
           >
-            Sistema de seguridad conforme a Ley 25.326 de Protección de Datos Personales y Ley 26.529 de Derechos del Paciente.
+            Sistema de seguridad con cifrado AES-256 y firma digital criptográfica homologada.
           </div>
         </div>
       </div>

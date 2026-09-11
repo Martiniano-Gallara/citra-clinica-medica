@@ -12,7 +12,7 @@ export const IntegrationsHubView = () => {
       id: 'renapdis',
       name: 'ReNaPDiS — Receta Electrónica Nacional',
       organism: 'Ministerio de Salud de la Nación (MSAL)',
-      normative: 'Ley 27.553 / Decreto 98/2023',
+      normative: 'Homologación ReNaPDiS / MSAL',
       status: 'Conectado & Homologado',
       endpoint: 'https://sisa.msal.gov.ar/ws/renapdis/v2',
       details: `ID de Plataforma Homologada: ${clinicInfo.renapdisPlatformId}. Emisión de CUIR y validación de farmacias activa.`,
