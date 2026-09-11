@@ -2,16 +2,26 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="./citra-logo.png" />
+    <link rel="icon" type="image/png" href="./citra-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CITRA — Centro Integral de Traumatología & Rehabilitación Arroyito</title>
     <meta name="description" content="Sistema SaaS de gestión clínica integral para CITRA - Centro Integral de Traumatología y Rehabilitación Arroyito." />
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Clean stale service workers from previous projects on localhost -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (var reg of registrations) {
+            reg.unregister();
+          }
+        });
+      }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="./assets/index-DmW8gXG7.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-CN5IiTFC.css">
+    <script type="module" crossorigin src="./assets/index-iRUcWIz3.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DyTXeih1.css">
   </head>
   <body>
     <div id="root"></div>
