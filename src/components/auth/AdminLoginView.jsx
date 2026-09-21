@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import {
-  ShieldAlert,
   Lock,
   Mail,
   ArrowLeft,
   KeyRound,
-  CheckCircle2,
+  Eye,
+  EyeOff,
   AlertTriangle,
-  Building2,
   Sparkles,
-  Server,
-  UserCheck,
   Stethoscope,
-  Briefcase
+  Briefcase,
+  ShieldCheck,
+  X,
+  CheckCircle2
 } from 'lucide-react';
 
 export const AdminLoginView = () => {
@@ -21,6 +21,7 @@ export const AdminLoginView = () => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -29,6 +30,7 @@ export const AdminLoginView = () => {
   const [recoveryEmail, setRecoveryEmail] = useState('');
   const [recoveryMsg, setRecoveryMsg] = useState('');
   const [recoverySuccess, setRecoverySuccess] = useState(false);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -46,7 +48,7 @@ export const AdminLoginView = () => {
       if (!res.success) {
         setErrorMsg('Credenciales inválidas. Este portal es exclusivo para personal administrativo y directivo.');
       }
-    }, 400);
+    }, 350);
   };
 
   const handleRecoverySubmit = async (e) => {
@@ -55,20 +57,27 @@ export const AdminLoginView = () => {
       setRecoveryMsg('Por favor ingresa tu correo institucional.');
       return;
     }
+    setRecoveryLoading(true);
     const res = await resetUserPassword(recoveryEmail);
+    setRecoveryLoading(false);
     if (res.success) {
       setRecoverySuccess(true);
-      setRecoveryMsg(`Se ha generado la solicitud de recuperación. Si el correo ${recoveryEmail} existe en la nómina, recibirás las credenciales temporales.`);
+      setRecoveryMsg(`Se ha generado la solicitud. Si el correo ${recoveryEmail} existe en la nómina, recibirás las credenciales temporales.`);
     } else {
       setRecoverySuccess(false);
-      setRecoveryMsg('No se encontró personal registrado con ese correo.');
+      setRecoveryMsg('No se encontró personal registrado con ese correo institucional.');
     }
   };
 
   const handleDemoAdmin = (adminUser) => {
+    if (!adminUser) return;
     setEmail(adminUser.email);
     setPassword('citra2026');
-    loginAdmin(adminUser.email, 'citra2026');
+    setLoading(true);
+    setTimeout(() => {
+      loginAdmin(adminUser.email, 'citra2026');
+      setLoading(false);
+    }, 250);
   };
 
   const doctorUser = users.find((u) => u.adminType === 'doctor' || u.email?.includes('blanco')) || users[0];
@@ -79,35 +88,46 @@ export const AdminLoginView = () => {
     <div
       style={{
         minHeight: '100vh',
-        background: 'radial-gradient(circle at 10% 20%, #001556 0%, #002182 50%, #052625 100%)',
+        background: 'radial-gradient(circle at 50% 15%, #002182 0%, #001344 60%, #020718 100%)',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: '1.5rem',
-        position: 'relative'
+        padding: '2rem 1rem',
+        position: 'relative',
+        fontFamily: 'inherit'
       }}
     >
       {/* Top back button */}
       <button
+        type="button"
         onClick={() => setCurrentView('home')}
         style={{
           position: 'absolute',
           top: '1.5rem',
           left: '1.5rem',
-          background: 'rgba(255, 255, 255, 0.12)',
-          border: '1px solid rgba(255, 255, 255, 0.25)',
+          background: 'rgba(255, 255, 255, 0.08)',
+          border: '1px solid rgba(255, 255, 255, 0.18)',
           color: '#ffffff',
-          borderRadius: '10px',
+          borderRadius: '12px',
           padding: '0.6rem 1.1rem',
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem',
           cursor: 'pointer',
           fontSize: '0.86rem',
-          fontWeight: 700,
-          backdropFilter: 'blur(8px)',
-          transition: 'all 0.2s'
+          fontWeight: 600,
+          backdropFilter: 'blur(10px)',
+          transition: 'all 0.2s ease',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.16)';
+          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.35)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.18)';
         }}
       >
         <ArrowLeft size={16} />
@@ -118,346 +138,503 @@ export const AdminLoginView = () => {
       <div
         style={{
           width: '100%',
-          maxWidth: '480px',
+          maxWidth: '460px',
           background: '#ffffff',
           borderRadius: '24px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(37, 124, 230, 0.3)',
-          overflow: 'hidden'
+          boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+          overflow: 'hidden',
+          padding: '2.5rem 2rem 2rem',
+          boxSizing: 'border-box'
         }}
       >
-        {/* Header with Security Badge */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, #002182 0%, #001556 100%)',
-            padding: '2.5rem 2rem 1.75rem',
-            color: '#ffffff',
-            textAlign: 'center',
-            borderBottom: '3px solid #076ABC',
-            position: 'relative'
-          }}
-        >
-          <div
+        {/* Logo & Header */}
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <img
+            src="./citra-logo.png"
+            alt="CITRA Centro Integral de Traumatología & Rehabilitación"
             style={{
-              background: '#ffffff',
-              padding: '0.75rem 1.5rem',
-              borderRadius: '16px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              height: '52px',
+              maxWidth: '220px',
+              objectFit: 'contain',
               margin: '0 auto 1.25rem',
-              boxShadow: '0 8px 25px rgba(0, 0, 0, 0.25)',
-              border: '2px solid #257CE6'
+              display: 'block'
             }}
-          >
-            <img
-              src="./citra-logo.png"
-              alt="CITRA Centro Integral de Traumatología & Rehabilitación"
-              style={{ height: '64px', maxWidth: '240px', objectFit: 'contain', display: 'block' }}
-            />
-          </div>
+          />
 
           <div
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.4rem',
-              background: 'rgba(239, 68, 68, 0.2)',
-              border: '1px solid rgba(239, 68, 68, 0.4)',
-              color: '#fca5a5',
-              padding: '0.3rem 0.8rem',
+              background: '#eff6ff',
+              border: '1px solid #bfdbfe',
+              color: '#1d4ed8',
+              padding: '0.28rem 0.75rem',
               borderRadius: '100px',
               fontSize: '0.72rem',
-              fontWeight: 800,
-              letterSpacing: '0.06em',
-              marginBottom: '0.6rem'
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              marginBottom: '0.65rem'
             }}
           >
-            ACCESO RESTRINGIDO · AUDITADO
+            <Lock size={12} />
+            Acceso Restringido · Personal
           </div>
 
-          <h1 style={{ margin: 0, fontSize: '1.65rem', fontWeight: 900, letterSpacing: '-0.02em' }}>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: '1.55rem',
+              fontWeight: 800,
+              color: '#0f172a',
+              letterSpacing: '-0.02em'
+            }}
+          >
             Portal de Administración
           </h1>
-          <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', color: '#D2E3FC' }}>
+          <p
+            style={{
+              margin: '0.35rem 0 0',
+              fontSize: '0.84rem',
+              color: '#64748b',
+              lineHeight: 1.4
+            }}
+          >
             CITRA · Centro Integral de Traumatología & Rehabilitación
           </p>
         </div>
 
-        {/* Content body */}
-        <div style={{ padding: '2rem' }}>
-          {errorMsg && (
-            <div
-              style={{
-                background: '#fef2f2',
-                border: '1px solid #fecaca',
-                color: '#991b1b',
-                padding: '0.85rem 1rem',
-                borderRadius: '12px',
-                fontSize: '0.85rem',
-                marginBottom: '1.25rem',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '0.6rem'
-              }}
-            >
-              <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
-              <div>{errorMsg}</div>
-            </div>
-          )}
-
-          {/* Quick Demo Access Box */}
+        {/* Quick Demo Access Box (Streamlined 3-column buttons) */}
+        <div
+          style={{
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: '16px',
+            padding: '0.85rem 1rem',
+            marginBottom: '1.5rem'
+          }}
+        >
           <div
             style={{
-              background: '#F5F8FE',
-              border: '1.5px dashed #257CE6',
-              borderRadius: '14px',
-              padding: '1rem',
-              marginBottom: '1.5rem'
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '0.65rem'
             }}
           >
-            <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#002182', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <Sparkles size={15} color="#076ABC" />
-              Acceso Rápido Demo (1-Click)
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              {/* Doctor 1-click */}
-              {doctorUser && (
-                <button
-                  type="button"
-                  onClick={() => handleDemoAdmin(doctorUser)}
-                  style={{
-                    background: '#f0fdf4',
-                    border: '1.5px solid #86efac',
-                    padding: '0.65rem 0.85rem',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer',
-                    textAlign: 'left'
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                        <Stethoscope size={14} color="#15803d" /> {doctorUser.name}
-                      </span>
-                      <span style={{ fontSize: '0.68rem', background: '#dcfce7', color: '#15803d', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>
-                        MÉDICO
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '0.72rem', color: '#15803d' }}>
-                      {doctorUser.role} · Vista aislada 10 módulos
-                    </div>
-                  </div>
-                  <span
-                    style={{
-                      background: '#16a34a',
-                      color: '#ffffff',
-                      fontSize: '0.72rem',
-                      fontWeight: 800,
-                      padding: '0.3rem 0.65rem',
-                      borderRadius: '6px'
-                    }}
-                  >
-                    Entrar como Dr.
-                  </span>
-                </button>
-              )}
-
-              {/* Administrative 1-click */}
-              {adminUser && (
-                <button
-                  type="button"
-                  onClick={() => handleDemoAdmin(adminUser)}
-                  style={{
-                    background: '#ffffff',
-                    border: '1px solid #D2E3FC',
-                    padding: '0.65rem 0.85rem',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer',
-                    textAlign: 'left'
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#002182', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                        <Briefcase size={14} color="#076ABC" /> {adminUser.name}
-                      </span>
-                      <span style={{ fontSize: '0.68rem', background: '#eff6ff', color: '#2563eb', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>
-                        ADMINISTRACIÓN
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '0.72rem', color: '#496386' }}>
-                      {adminUser.role} · Facturación y recepción
-                    </div>
-                  </div>
-                  <span
-                    style={{
-                      background: '#076ABC',
-                      color: '#ffffff',
-                      fontSize: '0.72rem',
-                      fontWeight: 800,
-                      padding: '0.3rem 0.65rem',
-                      borderRadius: '6px'
-                    }}
-                  >
-                    Entrar Admin
-                  </span>
-                </button>
-              )}
-
-              {/* Director 1-click */}
-              {directorUser && directorUser.id !== doctorUser?.id && directorUser.id !== adminUser?.id && (
-                <button
-                  type="button"
-                  onClick={() => handleDemoAdmin(directorUser)}
-                  style={{
-                    background: '#faf5ff',
-                    border: '1px solid #e9d5ff',
-                    padding: '0.55rem 0.85rem',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer',
-                    textAlign: 'left'
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6b21a8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Building2 size={14} color="#7c3aed" /> {directorUser.name}
-                    </div>
-                    <div style={{ fontSize: '0.7rem', color: '#7e22ce' }}>
-                      {directorUser.role} · Auditoría general
-                    </div>
-                  </div>
-                  <span
-                    style={{
-                      background: '#7c3aed',
-                      color: '#ffffff',
-                      fontSize: '0.7rem',
-                      fontWeight: 700,
-                      padding: '0.2rem 0.55rem',
-                      borderRadius: '6px'
-                    }}
-                  >
-                    Director
-                  </span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '1.25rem' }}>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#002182', marginBottom: '0.4rem' }}>
-                Correo Institucional o Usuario
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Mail size={17} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#7994B8' }} />
-                <input
-                  type="text"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@citra.com.ar"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem 0.75rem 0.75rem 2.4rem',
-                    borderRadius: '10px',
-                    border: '1.5px solid #D2E3FC',
-                    fontSize: '0.9rem',
-                    outline: 'none'
-                  }}
-                />
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#002182', marginBottom: '0.4rem' }}>
-                Contraseña Administrativa
-              </label>
-              <div style={{ position: 'relative' }}>
-                <KeyRound size={17} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#7994B8' }} />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem 0.75rem 0.75rem 2.4rem',
-                    borderRadius: '10px',
-                    border: '1.5px solid #D2E3FC',
-                    fontSize: '0.9rem',
-                    outline: 'none'
-                  }}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.25rem' }}>
-              <button
-                type="button"
-                onClick={() => { setIsRecovering(true); setRecoveryMsg(''); setRecoverySuccess(false); }}
-                style={{ background: 'none', border: 'none', color: '#076ABC', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
-              >
-                ¿Olvidaste tu contraseña administrativa?
-              </button>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
+            <span
               style={{
-                width: '100%',
-                background: 'linear-gradient(135deg, #002182 0%, #076ABC 100%)',
-                color: '#ffffff',
-                border: 'none',
-                padding: '0.9rem',
-                borderRadius: '12px',
+                fontSize: '0.72rem',
                 fontWeight: 800,
-                fontSize: '0.95rem',
-                cursor: loading ? 'not-allowed' : 'pointer',
+                color: '#076abc',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                boxShadow: '0 4px 15px rgba(0, 33, 130, 0.35)'
+                gap: '0.35rem'
               }}
             >
-              <Lock size={18} />
-              {loading ? 'Verificando credenciales...' : 'Ingresar al Panel de Gestión'}
-            </button>
-          </form>
+              <Sparkles size={13} color="#076abc" />
+              Acceso Rápido Demo (1-Click)
+            </span>
+            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Probar perfil</span>
+          </div>
 
-          {/* Compliance notice */}
           <div
             style={{
-              marginTop: '1.75rem',
-              paddingTop: '1.25rem',
-              borderTop: '1px solid #EDF3FD',
-              textAlign: 'center',
-              fontSize: '0.72rem',
-              color: '#7994B8',
-              lineHeight: 1.5
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '0.5rem'
             }}
           >
-            Sistema de seguridad con cifrado AES-256 y firma digital criptográfica homologada.
+            {/* Doctor */}
+            {doctorUser && (
+              <button
+                type="button"
+                onClick={() => handleDemoAdmin(doctorUser)}
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #dcfce7',
+                  borderRadius: '12px',
+                  padding: '0.65rem 0.4rem',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  transition: 'all 0.15s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.2rem',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#86efac';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 10px rgba(22, 163, 74, 0.12)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#dcfce7';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+                }}
+              >
+                <div
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '8px',
+                    background: '#f0fdf4',
+                    color: '#16a34a',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Stethoscope size={15} />
+                </div>
+                <div style={{ fontSize: '0.76rem', fontWeight: 700, color: '#14532d', whiteSpace: 'nowrap' }}>
+                  Dr. Blanco
+                </div>
+                <div style={{ fontSize: '0.66rem', color: '#16a34a', fontWeight: 600 }}>
+                  Médico
+                </div>
+              </button>
+            )}
+
+            {/* Admin */}
+            {adminUser && (
+              <button
+                type="button"
+                onClick={() => handleDemoAdmin(adminUser)}
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #dbeafe',
+                  borderRadius: '12px',
+                  padding: '0.65rem 0.4rem',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  transition: 'all 0.15s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.2rem',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#93c5fd';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 10px rgba(37, 99, 235, 0.12)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#dbeafe';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+                }}
+              >
+                <div
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '8px',
+                    background: '#eff6ff',
+                    color: '#2563eb',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Briefcase size={15} />
+                </div>
+                <div style={{ fontSize: '0.76rem', fontWeight: 700, color: '#1e3a8a', whiteSpace: 'nowrap' }}>
+                  Lic. Quiroga
+                </div>
+                <div style={{ fontSize: '0.66rem', color: '#2563eb', fontWeight: 600 }}>
+                  Admin
+                </div>
+              </button>
+            )}
+
+            {/* Director */}
+            {directorUser && (
+              <button
+                type="button"
+                onClick={() => handleDemoAdmin(directorUser)}
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #f3e8ff',
+                  borderRadius: '12px',
+                  padding: '0.65rem 0.4rem',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  transition: 'all 0.15s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.2rem',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#d8b4fe';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 10px rgba(124, 58, 237, 0.12)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#f3e8ff';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+                }}
+              >
+                <div
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '8px',
+                    background: '#faf5ff',
+                    color: '#7c3aed',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <ShieldCheck size={15} />
+                </div>
+                <div style={{ fontSize: '0.76rem', fontWeight: 700, color: '#581c87', whiteSpace: 'nowrap' }}>
+                  Dr. Morales
+                </div>
+                <div style={{ fontSize: '0.66rem', color: '#7c3aed', fontWeight: 600 }}>
+                  Director
+                </div>
+              </button>
+            )}
           </div>
+        </div>
+
+        {/* Error Alert */}
+        {errorMsg && (
+          <div
+            style={{
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              color: '#991b1b',
+              padding: '0.75rem 0.9rem',
+              borderRadius: '12px',
+              fontSize: '0.84rem',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.6rem'
+            }}
+          >
+            <AlertTriangle size={17} style={{ flexShrink: 0 }} />
+            <div>{errorMsg}</div>
+          </div>
+        )}
+
+        {/* Login Form */}
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '1.15rem' }}>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                color: '#1e293b',
+                marginBottom: '0.4rem'
+              }}
+            >
+              Correo Institucional o Usuario
+            </label>
+            <div style={{ position: 'relative' }}>
+              <Mail
+                size={17}
+                style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#94a3b8'
+                }}
+              />
+              <input
+                type="text"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@citra.com.ar"
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  padding: '0.75rem 0.75rem 0.75rem 2.4rem',
+                  borderRadius: '12px',
+                  border: '1.5px solid #e2e8f0',
+                  background: '#f8fafc',
+                  fontSize: '0.9rem',
+                  color: '#0f172a',
+                  outline: 'none',
+                  transition: 'all 0.2s ease'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#002182';
+                  e.target.style.background = '#ffffff';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e2e8f0';
+                  e.target.style.background = '#f8fafc';
+                }}
+              />
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '1rem' }}>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                color: '#1e293b',
+                marginBottom: '0.4rem'
+              }}
+            >
+              Contraseña Administrativa
+            </label>
+            <div style={{ position: 'relative' }}>
+              <KeyRound
+                size={17}
+                style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#94a3b8'
+                }}
+              />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••••••"
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  padding: '0.75rem 2.5rem 0.75rem 2.4rem',
+                  borderRadius: '12px',
+                  border: '1.5px solid #e2e8f0',
+                  background: '#f8fafc',
+                  fontSize: '0.9rem',
+                  color: '#0f172a',
+                  outline: 'none',
+                  transition: 'all 0.2s ease'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#002182';
+                  e.target.style.background = '#ffffff';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e2e8f0';
+                  e.target.style.background = '#f8fafc';
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  color: '#94a3b8',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.25rem' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setIsRecovering(true);
+                setRecoveryMsg('');
+                setRecoverySuccess(false);
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#076abc',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                padding: 0
+              }}
+            >
+              ¿Olvidaste tu contraseña administrativa?
+            </button>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%',
+              background: 'linear-gradient(135deg, #002182 0%, #076abc 100%)',
+              color: '#ffffff',
+              border: 'none',
+              padding: '0.85rem 1rem',
+              borderRadius: '12px',
+              fontWeight: 800,
+              fontSize: '0.94rem',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              boxShadow: '0 4px 14px rgba(0, 33, 130, 0.3)',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 6px 18px rgba(0, 33, 130, 0.4)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 14px rgba(0, 33, 130, 0.3)';
+            }}
+          >
+            <Lock size={17} />
+            {loading ? 'Verificando...' : 'Ingresar al Panel de Gestión'}
+          </button>
+        </form>
+
+        {/* Security badge footer */}
+        <div
+          style={{
+            marginTop: '1.5rem',
+            paddingTop: '1rem',
+            borderTop: '1px solid #f1f5f9',
+            textAlign: 'center',
+            fontSize: '0.72rem',
+            color: '#94a3b8'
+          }}
+        >
+          🔒 Acceso restringido y auditado · CITRA 2026
         </div>
       </div>
 
-      {/* Modal de Recuperación de Contraseña Administrativa */}
+      {/* Recovery Modal */}
       {isRecovering && (
         <div
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 21, 86, 0.75)',
+            background: 'rgba(0, 19, 68, 0.75)',
             backdropFilter: 'blur(8px)',
             display: 'flex',
             alignItems: 'center',
@@ -479,32 +656,66 @@ export const AdminLoginView = () => {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ margin: '0 0 0.5rem', color: '#002182', fontSize: '1.3rem', fontWeight: 900 }}>
+            <button
+              type="button"
+              onClick={() => setIsRecovering(false)}
+              style={{
+                position: 'absolute',
+                top: '1.25rem',
+                right: '1.25rem',
+                background: '#f1f5f9',
+                border: 'none',
+                borderRadius: '8px',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#64748b'
+              }}
+            >
+              <X size={16} />
+            </button>
+
+            <h3 style={{ margin: '0 0 0.5rem', color: '#0f172a', fontSize: '1.25rem', fontWeight: 800 }}>
               Recuperación de Contraseña
             </h3>
             <p style={{ margin: '0 0 1.25rem', color: '#64748b', fontSize: '0.85rem', lineHeight: 1.5 }}>
-              Ingresa tu correo institucional registrado. Se validará tu cuenta y se enviará la clave de recuperación segura.
+              Ingresa tu correo institucional registrado. Se validará tu cuenta y se enviarán las instrucciones para restablecer tu clave.
             </p>
 
             {recoveryMsg && (
               <div
                 style={{
-                  background: recoverySuccess ? '#F0FDF4' : '#FEF2F2',
-                  border: `1px solid ${recoverySuccess ? '#86EFAC' : '#FECACA'}`,
-                  color: recoverySuccess ? '#166534' : '#991B1B',
-                  padding: '0.85rem',
+                  background: recoverySuccess ? '#f0fdf4' : '#fef2f2',
+                  border: `1px solid ${recoverySuccess ? '#86efac' : '#fecaca'}`,
+                  color: recoverySuccess ? '#166534' : '#991b1b',
+                  padding: '0.75rem 0.9rem',
                   borderRadius: '10px',
                   fontSize: '0.84rem',
-                  marginBottom: '1rem'
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
                 }}
               >
-                {recoveryMsg}
+                {recoverySuccess ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+                <div>{recoveryMsg}</div>
               </div>
             )}
 
             <form onSubmit={handleRecoverySubmit}>
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.35rem' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    color: '#1e293b',
+                    marginBottom: '0.35rem'
+                  }}
+                >
                   Correo Institucional
                 </label>
                 <input
@@ -515,9 +726,10 @@ export const AdminLoginView = () => {
                   required
                   style={{
                     width: '100%',
+                    boxSizing: 'border-box',
                     padding: '0.75rem',
                     borderRadius: '10px',
-                    border: '1.5px solid #D2E3FC',
+                    border: '1.5px solid #e2e8f0',
                     fontSize: '0.9rem',
                     outline: 'none'
                   }}
@@ -527,19 +739,20 @@ export const AdminLoginView = () => {
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <button
                   type="submit"
+                  disabled={recoveryLoading}
                   style={{
                     flex: 1,
-                    background: 'linear-gradient(135deg, #002182 0%, #076ABC 100%)',
+                    background: 'linear-gradient(135deg, #002182 0%, #076abc 100%)',
                     color: '#ffffff',
                     border: 'none',
                     padding: '0.75rem',
                     borderRadius: '10px',
                     fontWeight: 800,
                     fontSize: '0.88rem',
-                    cursor: 'pointer'
+                    cursor: recoveryLoading ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  Solicitar Clave
+                  {recoveryLoading ? 'Enviando...' : 'Solicitar Clave'}
                 </button>
                 <button
                   type="button"

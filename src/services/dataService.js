@@ -544,11 +544,7 @@ export const dataService = {
               }
             }
           )
-          .subscribe((status) => {
-            if (status === 'CHANNEL_ERROR') {
-              console.warn(`[CITRA Realtime] Canal ${tableName} en espera de conexión.`);
-            }
-          });
+          .subscribe();
 
         return () => {
           try {
@@ -557,8 +553,7 @@ export const dataService = {
             // ignore channel removal error on unmount
           }
         };
-      } catch (err) {
-        console.warn(`[CITRA Realtime] Error al inicializar suscripción para ${tableName}:`, err);
+      } catch {
         return () => {};
       }
     }

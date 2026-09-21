@@ -155,7 +155,6 @@ export const ClinicProvider = ({ children }) => {
       if (hash === 'booking' || hash === 'turnos' || view === 'booking') return 'booking';
       if (hash === 'services' || hash === 'servicios' || view === 'services') return 'services';
       if (hash === 'doctors' || hash === 'medicos' || view === 'doctors') return 'doctors';
-      if (hash === 'clinic' || hash === 'clinica' || view === 'clinic') return 'clinic';
       if (hash === 'insurances' || hash === 'obras-sociales' || view === 'insurances') return 'insurances';
       if (hash === 'my-turnos' || hash === 'mis-turnos' || hash === 'portal' || view === 'my-turnos') return 'my-turnos';
     }
@@ -498,8 +497,6 @@ export const ClinicProvider = ({ children }) => {
         setCurrentView('services');
       } else if (hash === 'medicos' || hash === 'doctors') {
         setCurrentView('doctors');
-      } else if (hash === 'clinica' || hash === 'clinic') {
-        setCurrentView('clinic');
       } else if (hash === 'obras-sociales' || hash === 'insurances') {
         setCurrentView('insurances');
       } else if (hash === 'mis-turnos' || hash === 'my-turnos') {
@@ -519,7 +516,6 @@ export const ClinicProvider = ({ children }) => {
       'home': 'inicio',
       'services': 'servicios',
       'doctors': 'medicos',
-      'clinic': 'clinica',
       'insurances': 'obras-sociales',
       'booking': 'turnos',
       'my-turnos': 'mis-turnos',

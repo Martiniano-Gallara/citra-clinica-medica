@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import {
   X,
@@ -29,6 +29,17 @@ export const UserAuthModal = () => {
     patients,
     resetUserPassword
   } = useClinic();
+
+  // Bloquear scroll de fondo cuando el modal está abierto
+  useEffect(() => {
+    if (isAuthModalOpen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [isAuthModalOpen]);
 
   // Login form state
   const [loginInput, setLoginInput] = useState('');

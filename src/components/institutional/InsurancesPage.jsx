@@ -8,17 +8,13 @@ import {
   ChevronDown,
   Sparkles,
   HelpCircle,
-  Building2,
-  Phone,
   Check,
   X,
   ExternalLink,
-  MessageSquare,
   Stethoscope,
   Activity,
   Zap
 } from 'lucide-react';
-import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
 const INSURANCE_LOGOS = {
   'OSDE': '/logos/logo-osde.png',
@@ -31,7 +27,7 @@ const INSURANCE_LOGOS = {
 export const InsurancesPage = () => {
   const { healthInsurances, setCurrentView } = useClinic();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('prepagas');
   const [expandedId, setExpandedId] = useState(null);
   const [expandedFaq, setExpandedFaq] = useState(null);
 
@@ -51,7 +47,6 @@ export const InsurancesPage = () => {
   };
 
   const filterTabs = [
-    { id: 'all', label: 'Todas las Coberturas' },
     { id: 'prepagas', label: 'Prepagas' },
     { id: 'sociales', label: 'Obras Sociales' },
     { id: 'particular', label: 'Particular' }
@@ -135,7 +130,7 @@ export const InsurancesPage = () => {
             }}
           >
             <ShieldCheck size={13} color="#00F0FF" />
-            <span>CITRA · CONVENIOS SANITARIOS & OBRAS SOCIALES</span>
+            <span>COBERTURAS CITRA</span>
           </div>
 
           <h1
@@ -171,79 +166,8 @@ export const InsurancesPage = () => {
               opacity: 0.95
             }}
           >
-            Convenios directos en Arroyito para consultas médicas especializadas, kinesiología, radiología digital y rehabilitación activa sin trámites innecesarios.
+            Convenios directos y atención médica sin trámites innecesarios en Arroyito.
           </p>
-
-          {/* Quick Metrics Bar — 4 Tarjetas Glassmorphism */}
-          <div className="services-metrics-grid" style={{ marginBottom: '1.25rem' }}>
-            <div className="services-metric-card">
-              <div
-                className="services-metric-icon-wrap"
-                style={{
-                  background: 'radial-gradient(circle, rgba(37, 124, 230, 0.28) 0%, rgba(7, 106, 188, 0.12) 100%)',
-                  borderColor: 'rgba(96, 165, 250, 0.3)'
-                }}
-              >
-                <ShieldCheck size={20} color="#60A5FA" />
-              </div>
-              <div className="services-metric-content">
-                <div className="services-metric-value">+30 Coberturas</div>
-                <div className="services-metric-label">Convenios Directos</div>
-                <div className="services-metric-sub">Prepagas & Obras Soc.</div>
-              </div>
-            </div>
-
-            <div className="services-metric-card">
-              <div
-                className="services-metric-icon-wrap"
-                style={{
-                  background: 'radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.1) 100%)',
-                  borderColor: 'rgba(52, 211, 153, 0.3)'
-                }}
-              >
-                <Sparkles size={20} color="#34D399" />
-              </div>
-              <div className="services-metric-content">
-                <div className="services-metric-value">Sin Trámites</div>
-                <div className="services-metric-label">Validación Online</div>
-                <div className="services-metric-sub">En recepción in situ</div>
-              </div>
-            </div>
-
-            <div className="services-metric-card">
-              <div
-                className="services-metric-icon-wrap"
-                style={{
-                  background: 'radial-gradient(circle, rgba(168, 85, 247, 0.26) 0%, rgba(126, 34, 206, 0.1) 100%)',
-                  borderColor: 'rgba(192, 132, 252, 0.3)'
-                }}
-              >
-                <CheckCircle2 size={20} color="#C084FC" />
-              </div>
-              <div className="services-metric-content">
-                <div className="services-metric-value">0% Copago</div>
-                <div className="services-metric-label">Planes Preferentes</div>
-                <div className="services-metric-sub">OSDE, PAMI y más</div>
-              </div>
-            </div>
-
-            <div className="services-metric-card">
-              <div
-                className="services-metric-icon-wrap"
-                style={{
-                  background: 'radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, rgba(180, 83, 9, 0.1) 100%)',
-                  borderColor: 'rgba(251, 191, 36, 0.3)'
-                }}
-              >
-                <Building2 size={20} color="#FBBF24" />
-              </div>
-              <div className="services-metric-content">
-                <div className="services-metric-value">Integral</div>
-                <div className="services-metric-label">Carlos Pontin 556</div>
-                <div className="services-metric-sub">Consultas y Kinesio</div>
-              </div>
-            </div>
-          </div>
 
           {/* Quick Selectors Bar — Botones Glassmorphic de Marcas Populares */}
           <div
@@ -311,7 +235,7 @@ export const InsurancesPage = () => {
             <Search size={18} color="#076ABC" style={{ position: 'absolute', left: '1.1rem', top: '50%', transform: 'translateY(-50%)' }} />
             <input
               type="text"
-              placeholder="Buscar por obra social, prepaga o plan (ej. OSDE, 210, Apross, PAMI)..."
+              placeholder="Buscar cobertura..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
@@ -682,44 +606,7 @@ export const InsurancesPage = () => {
           )}
         </div>
 
-        {/* Compromiso Asistencial CITRA — Tarjeta con Barra Degradé Superior */}
-        <div className="trust-commitment-card" style={{ marginBottom: '2.5rem' }}>
-          <div className="trust-commitment-badge">
-            <ShieldCheck size={14} color="#076ABC" />
-            <span>GARANTÍAS DE ATENCIÓN EN CITRA</span>
-          </div>
-          <div className="trust-grid">
-            <div className="trust-item">
-              <div className="trust-icon-box" style={{ background: '#EBF3FD', color: '#076ABC' }}>
-                <Check size={18} />
-              </div>
-              <div className="trust-content">
-                <span className="trust-title">Validación Online</span>
-                <span className="trust-desc">Verificación directa en recepción sin autorizaciones previas</span>
-              </div>
-            </div>
 
-            <div className="trust-item">
-              <div className="trust-icon-box" style={{ background: '#ECFDF5', color: '#059669' }}>
-                <Sparkles size={18} />
-              </div>
-              <div className="trust-content">
-                <span className="trust-title">Gestión de Kinesiología</span>
-                <span className="trust-desc">Tramitamos tus pedidos médicos ante tu obra social</span>
-              </div>
-            </div>
-
-            <div className="trust-item">
-              <div className="trust-icon-box" style={{ background: '#EFF6FF', color: '#2563EB' }}>
-                <CheckCircle2 size={18} />
-              </div>
-              <div className="trust-content">
-                <span className="trust-title">Aranceles Transparentes</span>
-                <span className="trust-desc">Copagos institucionales claros y factura oficial para reintegros</span>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Preguntas Frecuentes (FAQs) */}
         <div style={{ marginBottom: '2.5rem' }}>
@@ -786,91 +673,7 @@ export const InsurancesPage = () => {
           </div>
         </div>
 
-        {/* Ficha de Asistencia Directa & WhatsApp */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, #001556 0%, #002182 100%)',
-            borderRadius: '20px',
-            border: '1.5px solid rgba(37, 124, 230, 0.3)',
-            padding: '1.5rem',
-            color: '#ffffff',
-            boxShadow: '0 10px 30px rgba(0, 21, 86, 0.25)',
-            position: 'relative',
-            overflow: 'hidden'
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              top: '-30%',
-              right: '-10%',
-              width: '250px',
-              height: '250px',
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(0, 240, 255, 0.15) 0%, transparent 70%)',
-              filter: 'blur(40px)',
-              pointerEvents: 'none'
-            }}
-          />
 
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#60A5FA', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-              MESA DE ENTRADA & ATENCIÓN AL PACIENTE
-            </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#ffffff', margin: '0 0 0.5rem' }}>
-              ¿No encontrás tu obra social o plan particular?
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: '#BFDBFE', margin: '0 0 1.25rem', maxWidth: '580px', lineHeight: 1.45 }}>
-              Nuestro equipo verifica tu cobertura al instante y te informa los aranceles vigentes para tu consulta o tratamiento.
-            </p>
-
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <a
-                href="https://wa.me/5493576450214?text=Hola%20CITRA,%20quisiera%20consultar%20por%20la%20cobertura%20de%20mi%20obra%20social"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  background: '#25D366',
-                  color: '#ffffff',
-                  padding: '0.75rem 1.25rem',
-                  borderRadius: '12px',
-                  fontWeight: 800,
-                  fontSize: '0.88rem',
-                  textDecoration: 'none',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  boxShadow: '0 4px 14px rgba(37, 211, 102, 0.3)',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <WhatsAppIcon size={18} color="#ffffff" />
-                Consultar por WhatsApp
-              </a>
-
-              <a
-                href="tel:03576450214"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  color: '#ffffff',
-                  border: '1px solid rgba(210, 227, 252, 0.25)',
-                  padding: '0.75rem 1.25rem',
-                  borderRadius: '12px',
-                  fontWeight: 800,
-                  fontSize: '0.88rem',
-                  textDecoration: 'none',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <Phone size={16} color="#93C5FD" />
-                (03576) 450214
-              </a>
-            </div>
-          </div>
-        </div>
 
       </section>
     </div>

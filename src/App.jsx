@@ -8,7 +8,6 @@ import { InstitutionalHome } from './components/institutional/InstitutionalHome'
 import { ServicesPage } from './components/institutional/ServicesPage';
 import { InsurancesPage } from './components/institutional/InsurancesPage';
 import { DoctorsPage } from './components/institutional/DoctorsPage';
-import { ClinicPage } from './components/institutional/ClinicPage';
 import { Footer } from './components/institutional/Footer';
 import { AppointmentBookingWizard } from './components/booking/AppointmentBookingWizard';
 import { PatientUnifiedPortal } from './components/portal/PatientUnifiedPortal';
@@ -59,16 +58,6 @@ const MainLayout = () => {
           </div>
         );
 
-      case 'clinic':
-        return (
-          <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-            <Navbar />
-            <main style={{ flex: 1 }}>
-              <ClinicPage />
-            </main>
-            <Footer />
-          </div>
-        );
 
       case 'insurances':
         return (

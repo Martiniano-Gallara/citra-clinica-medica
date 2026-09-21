@@ -14,7 +14,6 @@ import {
   Clock,
   MapPin,
   ChevronDown,
-  Building2,
   Home,
   Users,
   ShieldCheck,
@@ -62,7 +61,6 @@ export const Navbar = () => {
     { id: 'home', label: 'Inicio', icon: Home },
     { id: 'services', label: 'Servicios', icon: Stethoscope },
     { id: 'doctors', label: 'Equipo Médico', icon: Users },
-    { id: 'clinic', label: 'La Clínica', icon: Building2 },
     { id: 'insurances', label: 'Obras Sociales', icon: ShieldCheck },
     { id: 'contact', label: 'Contacto', icon: PhoneCall }
   ];
