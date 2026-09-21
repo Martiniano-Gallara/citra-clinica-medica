@@ -3,9 +3,41 @@
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-html, body, #root {
+/* 1. Inmunidad ante accesibilidad de texto ampliado en móviles (evita que el tamaño de fuente del sistema agrande la web) */
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100% !important;
+  -moz-text-size-adjust: 100% !important;
+  -ms-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+}
+
+body, #root, * {
+  -webkit-text-size-adjust: 100% !important;
+  -moz-text-size-adjust: 100% !important;
+  -ms-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+}
+
+/* 2. Desactivar gestos de zoom táctil (doble toque y pinzas) a nivel motor CSS */
+html, body {
   width: 100%;
   min-height: 100vh;
   margin: 0;
   padding: 0;
+  touch-action: pan-x pan-y;
+  -webkit-touch-action: pan-x pan-y;
+  overscroll-behavior-y: none;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* 3. Evitar auto-zoom forzado de iOS Safari al enfocar inputs, selects o textareas */
+@media screen and (max-width: 768px) {
+  input, select, textarea, .form-control, .form-input, .form-select {
+    font-size: 16px !important;
+  }
 }
