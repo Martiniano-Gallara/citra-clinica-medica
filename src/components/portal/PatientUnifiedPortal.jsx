@@ -13,7 +13,8 @@ import {
   X,
   ShieldCheck,
   LogOut,
-  User
+  User,
+  ChevronRight
 } from 'lucide-react';
 
 export const PatientUnifiedPortal = () => {
@@ -184,93 +185,312 @@ export const PatientUnifiedPortal = () => {
     }
   };
 
+  const getInitials = (name) => {
+    if (!name) return 'P';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return name.substring(0, 2).toUpperCase();
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: '#F5F8FE', padding: '1.5rem 1rem 4rem' }}>
+      <style>{`
+        .citra-portal-banner {
+          background: linear-gradient(135deg, #001756 0%, #002B99 45%, #076ABC 100%);
+          color: #ffffff;
+          border-radius: 22px;
+          padding: 1.65rem 1.85rem;
+          margin-bottom: 1.75rem;
+          box-shadow: 0 16px 36px -8px rgba(0, 33, 130, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          position: relative;
+          overflow: hidden;
+        }
+        .portal-banner-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+          margin-bottom: 1.25rem;
+          position: relative;
+          z-index: 2;
+        }
+        .portal-badge-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          background: rgba(255, 255, 255, 0.12);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          padding: 0.28rem 0.75rem;
+          border-radius: 100px;
+          font-size: 0.72rem;
+          font-weight: 800;
+          letter-spacing: 0.04em;
+          color: #ffffff;
+        }
+        .portal-logout-btn {
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          color: #ffffff;
+          padding: 0.38rem 0.85rem;
+          border-radius: 10px;
+          font-size: 0.78rem;
+          font-weight: 700;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .portal-logout-btn:hover {
+          background: rgba(255, 255, 255, 0.22);
+          border-color: rgba(255, 255, 255, 0.4);
+          transform: translateY(-1px);
+        }
+        .portal-banner-main {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1.25rem;
+          position: relative;
+          z-index: 2;
+        }
+        .portal-patient-identity {
+          display: flex;
+          align-items: center;
+          gap: 1.15rem;
+          min-width: 0;
+        }
+        .portal-monogram {
+          width: 52px;
+          height: 52px;
+          border-radius: 16px;
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.08) 100%);
+          border: 1.5px solid rgba(255, 255, 255, 0.3);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 900;
+          font-size: 1.22rem;
+          color: #ffffff;
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+          flex-shrink: 0;
+        }
+        .portal-patient-greeting {
+          font-size: 0.78rem;
+          font-weight: 700;
+          color: #93C5FD;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          margin-bottom: 2px;
+        }
+        .portal-patient-name {
+          margin: 0 0 0.45rem;
+          font-size: 1.75rem;
+          font-weight: 900;
+          letter-spacing: -0.025em;
+          line-height: 1.15;
+          color: #ffffff;
+        }
+        .portal-chips-row {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+        }
+        .portal-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          background: rgba(255, 255, 255, 0.12);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          padding: 3px 10px;
+          border-radius: 8px;
+          font-size: 0.78rem;
+          font-weight: 700;
+          color: #ffffff;
+        }
+        .portal-new-appointment-btn {
+          background: #ffffff;
+          color: #002182;
+          border: none;
+          padding: 0.82rem 1.4rem;
+          border-radius: 14px;
+          font-size: 0.92rem;
+          font-weight: 900;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.65rem;
+          cursor: pointer;
+          box-shadow: 0 8px 24px rgba(0, 21, 86, 0.25), 0 2px 6px rgba(0, 0, 0, 0.08);
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+        .portal-new-appointment-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 12px 28px rgba(0, 21, 86, 0.35), 0 4px 10px rgba(0, 0, 0, 0.12);
+        }
+        @media (max-width: 680px) {
+          .citra-portal-banner {
+            padding: 1.35rem 1.25rem;
+            border-radius: 18px;
+          }
+          .portal-banner-main {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1.15rem;
+          }
+          .portal-patient-name {
+            font-size: 1.45rem;
+          }
+          .portal-new-appointment-btn {
+            width: 100%;
+            padding: 0.85rem 1.25rem;
+          }
+        }
+      `}</style>
       <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
         
-        {/* TOP WELCOME BANNER (SIN IMAGEN DE PERFIL) */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, #002182 0%, #076ABC 100%)',
-            color: '#ffffff',
-            borderRadius: '20px',
-            padding: '1.75rem 2rem',
-            marginBottom: '1.75rem',
-            boxShadow: '0 10px 30px rgba(0, 33, 130, 0.15)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '1.25rem'
-          }}
-        >
-          <div>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                background: 'rgba(255, 255, 255, 0.18)',
-                padding: '0.25rem 0.65rem',
-                borderRadius: '100px',
-                fontSize: '0.72rem',
-                fontWeight: 800,
-                letterSpacing: '0.04em',
-                marginBottom: '0.4rem'
-              }}
-            >
-              <ShieldCheck size={14} />
-              PORTAL DEL PACIENTE · CITRA
-            </div>
-            <h1 style={{ margin: 0, fontSize: '1.65rem', fontWeight: 900, letterSpacing: '-0.02em' }}>
-              Hola, {authPatient.name}
-            </h1>
-            <p style={{ margin: '0.3rem 0 0', fontSize: '0.86rem', color: '#D2E3FC' }}>
-              DNI: {authPatient.dni} · Cobertura: {authPatient.insuranceName || 'Particular'} ({authPatient.insurancePlan || 'Estándar'})
-            </p>
-          </div>
+        {/* TOP WELCOME BANNER (REDiseñado Premium CITRA) */}
+        <div className="citra-portal-banner">
+          {/* Ambient Lighting Accents */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '-70px',
+              right: '-50px',
+              width: '260px',
+              height: '260px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(37, 124, 230, 0.35) 0%, rgba(7, 106, 188, 0) 70%)',
+              pointerEvents: 'none'
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '-60px',
+              left: '20%',
+              width: '220px',
+              height: '220px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 70%)',
+              pointerEvents: 'none'
+            }}
+          />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => setCurrentView('booking')}
-              style={{
-                background: '#ffffff',
-                color: '#002182',
-                border: 'none',
-                padding: '0.7rem 1.25rem',
-                borderRadius: '12px',
-                fontSize: '0.88rem',
-                fontWeight: 800,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-              }}
-            >
-              <CalendarPlus size={16} color="#076ABC" />
-              Sacar Nuevo Turno
-            </button>
+          {/* Top Row: Portal Badge on Left, Logout on Right */}
+          <div className="portal-banner-top">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+              <div className="portal-badge-pill">
+                <ShieldCheck size={13} color="#93C5FD" />
+                <span>PORTAL DEL PACIENTE · CITRA</span>
+              </div>
+
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: 'rgba(16, 185, 129, 0.18)',
+                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                  padding: '0.25rem 0.65rem',
+                  borderRadius: '100px',
+                  fontSize: '0.7rem',
+                  fontWeight: 800,
+                  color: '#A7F3D0'
+                }}
+              >
+                <span
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: '#34D399',
+                    boxShadow: '0 0 6px #34D399'
+                  }}
+                />
+                <span>Sesión Activa</span>
+              </div>
+            </div>
 
             <button
               onClick={logoutPatient}
-              style={{
-                background: 'rgba(255, 255, 255, 0.15)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                color: '#ffffff',
-                padding: '0.7rem 1.1rem',
-                borderRadius: '12px',
-                fontSize: '0.85rem',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.45rem',
-                cursor: 'pointer'
-              }}
+              title="Cerrar sesión segura del portal"
+              className="portal-logout-btn"
             >
-              <LogOut size={16} />
-              Cerrar Sesión
+              <LogOut size={13} />
+              <span>Cerrar Sesión</span>
             </button>
+          </div>
+
+          {/* Main Content Row: Patient Info + Hero CTA */}
+          <div className="portal-banner-main">
+            {/* Left Column: Monogram + Name + Badges */}
+            <div className="portal-patient-identity">
+              <div className="portal-monogram">
+                {getInitials(authPatient.name)}
+              </div>
+
+              <div>
+                <div className="portal-patient-greeting">
+                  Bienvenido/a al portal clínico
+                </div>
+                <h1 className="portal-patient-name">
+                  Hola, {authPatient.name}
+                </h1>
+
+                {/* Patient Chips */}
+                <div className="portal-chips-row">
+                  <div className="portal-chip">
+                    <User size={13} color="#93C5FD" />
+                    <span>DNI {authPatient.dni}</span>
+                  </div>
+
+                  <div className="portal-chip" style={{ background: 'rgba(255, 255, 255, 0.15)', borderColor: 'rgba(255, 255, 255, 0.25)' }}>
+                    <ShieldCheck size={13} color="#34D399" />
+                    <span>{authPatient.insuranceName || 'Particular'} {authPatient.insurancePlan ? `(${authPatient.insurancePlan})` : ''}</span>
+                  </div>
+
+                  <div className="portal-chip" style={{ background: 'rgba(255, 255, 255, 0.08)', borderColor: 'rgba(255, 255, 255, 0.15)', color: '#D2E3FC' }}>
+                    <MapPin size={13} color="#60A5FA" />
+                    <span>Sede Arroyito</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Hero CTA "Sacar Nuevo Turno" */}
+            <div>
+              <button
+                onClick={() => setCurrentView('booking')}
+                className="portal-new-appointment-btn"
+              >
+                <div
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '8px',
+                    background: '#EBF3FD',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <CalendarPlus size={16} color="#076ABC" />
+                </div>
+                <span>Sacar Nuevo Turno</span>
+                <ChevronRight size={15} color="#076ABC" />
+              </button>
+            </div>
           </div>
         </div>
 
