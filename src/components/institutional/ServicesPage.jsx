@@ -395,8 +395,14 @@ export const ServicesPage = () => {
             ))}
           </div>
 
-          {/* Quick Metrics Bar — Tarjetas Glassmorphism Rediseñadas con Íconos y Profundidad */}
-          <div className="services-metrics-grid">
+          {/* Quick Metrics Bar — 2 Tarjetas Glassmorphism */}
+          <div
+            className="services-metrics-grid"
+            style={{
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+              maxWidth: '640px'
+            }}
+          >
             <div className="services-metric-card">
               <div
                 className="services-metric-icon-wrap"
@@ -418,23 +424,6 @@ export const ServicesPage = () => {
               <div
                 className="services-metric-icon-wrap"
                 style={{
-                  background: 'radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.1) 100%)',
-                  borderColor: 'rgba(52, 211, 153, 0.3)'
-                }}
-              >
-                <Activity size={20} color="#34D399" />
-              </div>
-              <div className="services-metric-content">
-                <div className="services-metric-value">180 m²</div>
-                <div className="services-metric-label">Gimnasio</div>
-                <div className="services-metric-sub">Biomecánica y rehab</div>
-              </div>
-            </div>
-
-            <div className="services-metric-card">
-              <div
-                className="services-metric-icon-wrap"
-                style={{
                   background: 'radial-gradient(circle, rgba(168, 85, 247, 0.26) 0%, rgba(126, 34, 206, 0.1) 100%)',
                   borderColor: 'rgba(192, 132, 252, 0.3)'
                 }}
@@ -445,23 +434,6 @@ export const ServicesPage = () => {
                 <div className="services-metric-value">Digital</div>
                 <div className="services-metric-label">Rayos X & Eco</div>
                 <div className="services-metric-sub">Diagnóstico directo</div>
-              </div>
-            </div>
-
-            <div className="services-metric-card">
-              <div
-                className="services-metric-icon-wrap"
-                style={{
-                  background: 'radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, rgba(180, 83, 9, 0.1) 100%)',
-                  borderColor: 'rgba(251, 191, 36, 0.3)'
-                }}
-              >
-                <ShieldCheck size={20} color="#FBBF24" />
-              </div>
-              <div className="services-metric-content">
-                <div className="services-metric-value">Integral</div>
-                <div className="services-metric-label">Cuerpo Médico</div>
-                <div className="services-metric-sub">Equipo multidisciplinario</div>
               </div>
             </div>
           </div>
