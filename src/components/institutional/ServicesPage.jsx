@@ -26,7 +26,7 @@ import {
 
 export const ServicesPage = () => {
   const { setCurrentView, setBookingPreselectedSpecialty } = useClinic();
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [activeCategory, setActiveCategory] = useState('especialidades');
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedId, setExpandedId] = useState(null);
 
@@ -43,7 +43,6 @@ export const ServicesPage = () => {
   };
 
   const serviceCategories = [
-    { id: 'all', label: 'Todos (13)' },
     { id: 'especialidades', label: 'Especialidades' },
     { id: 'rehabilitacion', label: 'Rehabilitación' },
     { id: 'diagnostico', label: 'Diagnóstico' },
@@ -282,7 +281,7 @@ export const ServicesPage = () => {
   ];
 
   const filteredCards = serviceCards.filter((c) => {
-    const matchesCategory = activeCategory === 'all' || c.category === activeCategory;
+    const matchesCategory = c.category === activeCategory;
     const matchesSearch =
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.shortDesc.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -412,7 +411,7 @@ export const ServicesPage = () => {
           <Search size={17} color="#076ABC" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
           <input
             type="text"
-            placeholder="Buscar por especialidad o síntoma (ej. rodilla, migraña, yeso)..."
+            placeholder="Buscar servicio..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
