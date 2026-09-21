@@ -8,10 +8,25 @@ import {
   ChevronDown,
   Sparkles,
   HelpCircle,
-  FileCheck,
-  CreditCard,
-  Building2
+  Building2,
+  Phone,
+  Check,
+  X,
+  ExternalLink,
+  MessageSquare,
+  Stethoscope,
+  Activity,
+  Zap
 } from 'lucide-react';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
+
+const INSURANCE_LOGOS = {
+  'OSDE': '/logos/logo-osde.png',
+  'Swiss Medical': '/logos/logo-swiss-medical.png',
+  'Galeno': '/logos/logo-galeno.png',
+  'Apross': '/logos/logo-apross.png',
+  'PAMI': '/logos/logo-pami.png'
+};
 
 export const InsurancesPage = () => {
   const { healthInsurances, setCurrentView } = useClinic();
@@ -19,6 +34,21 @@ export const InsurancesPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [expandedId, setExpandedId] = useState(null);
   const [expandedFaq, setExpandedFaq] = useState(null);
+
+  const getResolvedLogo = (hi) => {
+    if (hi.logo && typeof hi.logo === 'string' && hi.logo.trim() !== '') return hi.logo;
+    for (const [key, path] of Object.entries(INSURANCE_LOGOS)) {
+      if (hi.name.toLowerCase().includes(key.toLowerCase())) return path;
+    }
+    return null;
+  };
+
+  const getCategoryLabel = (name) => {
+    const n = name.toLowerCase();
+    if (n.includes('particular')) return 'Particular';
+    if (n.includes('apross') || n.includes('pami')) return 'Obra Social';
+    return 'Prepaga Nacional';
+  };
 
   const filterTabs = [
     { id: 'all', label: 'Todas las Coberturas' },
@@ -61,182 +91,321 @@ export const InsurancesPage = () => {
 
   const faqs = [
     {
-      q: '¿Qué necesito presentar el día del turno?',
-      a: 'Tu DNI original y tu credencial médica (física o desde la app oficial en el celular). Si tu obra social requiere Token de seguridad, tenelo listo al registrarte en recepción.'
+      q: '¿Qué necesito presentar el día de mi turno?',
+      a: 'Tu DNI original y tu credencial médica (física o desde la app oficial en el celular). Si tu cobertura requiere Token o código de validación, tenelo listo al momento del ingreso en recepción.'
     },
     {
-      q: '¿Cómo se autoriza Kinesiología y Fisioterapia?',
-      a: 'Nuestro equipo administrativo transmite los pedidos médicos electrónicamente a OSDE, Swiss Medical, Apross, PAMI y demás entidades para que no tengas que hacer trámites externos.'
+      q: '¿Cómo se autorizan las sesiones de Kinesiología y Fisioterapia?',
+      a: 'En CITRA gestionamos la autorización de forma electrónica directa con las obras sociales y prepagas para que no tengas que desplazarte ni hacer trámites adicionales.'
     },
     {
-      q: '¿Se atienden consultas y tratamientos de forma particular?',
-      a: 'Sí. Contamos con aranceles institucionales accesibles tanto para consultas médicas como para sesiones kinésicas y radiología. Emitimos factura oficial para reintegro.'
+      q: '¿Puedo atenderme en CITRA de manera particular?',
+      a: 'Sí. Disponemos de aranceles institucionales preferenciales para consultas médicas, sesiones de rehabilitación motora y radiología digital. Emitimos factura oficial para reintegro.'
     }
   ];
 
   return (
     <div style={{ background: '#ffffff', minHeight: '100vh' }}>
-      {/* Header Banner — Compacto y Mobile-First */}
-      <section
-        style={{
-          background: 'linear-gradient(135deg, #001556 0%, #002182 100%)',
-          color: '#ffffff',
-          padding: '2.5rem 1.25rem 1.75rem',
-          position: 'relative'
-        }}
-      >
-        <div style={{ maxWidth: '850px', margin: '0 auto' }}>
+      {/* Header Banner — Rediseño Premium: Atmósfera Tech, Glassmorphism y Métricas */}
+      <section className="services-hero-banner">
+        {/* Fondo con microretícula y halos de iluminación ambiental */}
+        <div aria-hidden="true" className="services-hero-grid-bg" />
+        <div aria-hidden="true" className="services-hero-glow-cyan" />
+        <div aria-hidden="true" className="services-hero-glow-blue" />
+
+        <div style={{ maxWidth: '1020px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+          {/* Badge institucional superior */}
           <div
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.4rem',
-              background: 'rgba(37, 124, 230, 0.18)',
-              border: '1px solid rgba(142, 190, 245, 0.35)',
-              color: '#D2E3FC',
-              padding: '0.3rem 0.8rem',
+              gap: '0.45rem',
+              background: 'rgba(37, 124, 230, 0.16)',
+              border: '1px solid rgba(142, 190, 245, 0.32)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              color: '#E0F2FE',
+              padding: '0.35rem 0.85rem',
               borderRadius: '100px',
-              fontSize: '0.72rem',
+              fontSize: '0.74rem',
               fontWeight: 800,
-              letterSpacing: '0.04em',
-              marginBottom: '0.65rem'
+              letterSpacing: '0.05em',
+              marginBottom: '0.85rem',
+              boxShadow: '0 2px 10px rgba(0, 19, 72, 0.25)'
             }}
           >
-            <ShieldCheck size={12} color="#8EBEF5" />
-            CONVENIOS SANITARIOS & OBRAS SOCIALES
+            <ShieldCheck size={13} color="#00F0FF" />
+            <span>CITRA · CONVENIOS SANITARIOS & OBRAS SOCIALES</span>
           </div>
 
           <h1
             style={{
-              fontSize: 'clamp(1.75rem, 4vw, 2.6rem)',
+              fontSize: 'clamp(1.85rem, 4.5vw, 2.85rem)',
               fontWeight: 900,
-              letterSpacing: '-0.02em',
-              margin: '0 0 0.45rem',
-              lineHeight: 1.15
+              letterSpacing: '-0.03em',
+              margin: '0 0 0.65rem',
+              lineHeight: 1.15,
+              color: '#ffffff'
             }}
           >
-            Obras Sociales & Prepagas
+            Obras Sociales &{' '}
+            <span
+              style={{
+                background: 'linear-gradient(135deg, #60A5FA 0%, #38BDF8 50%, #A5F3FC 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            >
+              Prepagas
+            </span>
           </h1>
 
           <p
             style={{
-              fontSize: '0.92rem',
-              color: '#D2E3FC',
-              maxWidth: '600px',
-              lineHeight: 1.45,
+              fontSize: 'clamp(0.88rem, 2.2vw, 0.96rem)',
+              color: '#BFDBFE',
+              maxWidth: '680px',
+              lineHeight: 1.5,
               margin: '0 0 1.25rem',
-              opacity: 0.92
+              fontWeight: 500,
+              opacity: 0.95
             }}
           >
-            Convenios directos para consultas médicas, kinesiología, radiología y tratamientos en Arroyito.
+            Convenios directos en Arroyito para consultas médicas especializadas, kinesiología, radiología digital y rehabilitación activa sin trámites innecesarios.
           </p>
 
-          {/* Quick Logos Chips Bar */}
+          {/* Quick Metrics Bar — 4 Tarjetas Glassmorphism */}
+          <div className="services-metrics-grid" style={{ marginBottom: '1.25rem' }}>
+            <div className="services-metric-card">
+              <div
+                className="services-metric-icon-wrap"
+                style={{
+                  background: 'radial-gradient(circle, rgba(37, 124, 230, 0.28) 0%, rgba(7, 106, 188, 0.12) 100%)',
+                  borderColor: 'rgba(96, 165, 250, 0.3)'
+                }}
+              >
+                <ShieldCheck size={20} color="#60A5FA" />
+              </div>
+              <div className="services-metric-content">
+                <div className="services-metric-value">+30 Coberturas</div>
+                <div className="services-metric-label">Convenios Directos</div>
+                <div className="services-metric-sub">Prepagas & Obras Soc.</div>
+              </div>
+            </div>
+
+            <div className="services-metric-card">
+              <div
+                className="services-metric-icon-wrap"
+                style={{
+                  background: 'radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.1) 100%)',
+                  borderColor: 'rgba(52, 211, 153, 0.3)'
+                }}
+              >
+                <Sparkles size={20} color="#34D399" />
+              </div>
+              <div className="services-metric-content">
+                <div className="services-metric-value">Sin Trámites</div>
+                <div className="services-metric-label">Validación Online</div>
+                <div className="services-metric-sub">En recepción in situ</div>
+              </div>
+            </div>
+
+            <div className="services-metric-card">
+              <div
+                className="services-metric-icon-wrap"
+                style={{
+                  background: 'radial-gradient(circle, rgba(168, 85, 247, 0.26) 0%, rgba(126, 34, 206, 0.1) 100%)',
+                  borderColor: 'rgba(192, 132, 252, 0.3)'
+                }}
+              >
+                <CheckCircle2 size={20} color="#C084FC" />
+              </div>
+              <div className="services-metric-content">
+                <div className="services-metric-value">0% Copago</div>
+                <div className="services-metric-label">Planes Preferentes</div>
+                <div className="services-metric-sub">OSDE, PAMI y más</div>
+              </div>
+            </div>
+
+            <div className="services-metric-card">
+              <div
+                className="services-metric-icon-wrap"
+                style={{
+                  background: 'radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, rgba(180, 83, 9, 0.1) 100%)',
+                  borderColor: 'rgba(251, 191, 36, 0.3)'
+                }}
+              >
+                <Building2 size={20} color="#FBBF24" />
+              </div>
+              <div className="services-metric-content">
+                <div className="services-metric-value">Integral</div>
+                <div className="services-metric-label">Carlos Pontin 556</div>
+                <div className="services-metric-sub">Consultas y Kinesio</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Selectors Bar — Botones Glassmorphic de Marcas Populares */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              overflowX: 'auto',
+              paddingTop: '0.85rem',
+              borderTop: '1px solid rgba(210, 227, 252, 0.18)',
+              scrollbarWidth: 'none',
+              WebkitOverflowScrolling: 'touch'
+            }}
+          >
+            <span style={{ fontSize: '0.74rem', color: '#93C5FD', fontWeight: 700, whiteSpace: 'nowrap', marginRight: '0.2rem' }}>
+              Populares:
+            </span>
+            {[
+              { name: 'OSDE', color: '#00529b' },
+              { name: 'Swiss Medical', color: '#e11d48' },
+              { name: 'Galeno', color: '#2563eb' },
+              { name: 'Apross', color: '#00A896' },
+              { name: 'PAMI', color: '#002B49' },
+              { name: 'Medicus', color: '#7c3aed' }
+            ].map((brand, i) => {
+              const isActive = searchTerm.toLowerCase() === brand.name.toLowerCase();
+              return (
+                <button
+                  key={i}
+                  onClick={() => setSearchTerm(isActive ? '' : brand.name)}
+                  style={{
+                    background: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.12)',
+                    color: isActive ? '#002182' : '#ffffff',
+                    border: isActive ? '1px solid #ffffff' : '1px solid rgba(255, 255, 255, 0.2)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                    padding: '0.32rem 0.75rem',
+                    borderRadius: '100px',
+                    fontSize: '0.74rem',
+                    fontWeight: 800,
+                    whiteSpace: 'nowrap',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    transition: 'all 0.15s ease',
+                    boxShadow: isActive ? '0 3px 10px rgba(0, 0, 0, 0.25)' : 'none'
+                  }}
+                >
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isActive ? brand.color : '#38BDF8' }} />
+                  <span>{brand.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Main Content Area */}
+      <section style={{ maxWidth: '880px', margin: '0 auto', padding: '2rem 1.25rem 3.5rem' }}>
+        
+        {/* Search Bar & Category Filters */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ position: 'relative', marginBottom: '0.85rem' }}>
+            <Search size={18} color="#076ABC" style={{ position: 'absolute', left: '1.1rem', top: '50%', transform: 'translateY(-50%)' }} />
+            <input
+              type="text"
+              placeholder="Buscar por obra social, prepaga o plan (ej. OSDE, 210, Apross, PAMI)..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%',
+                background: '#ffffff',
+                border: '1.5px solid #D2E3FC',
+                borderRadius: '14px',
+                padding: '0.78rem 2.6rem 0.78rem 2.75rem',
+                fontSize: '0.9rem',
+                color: '#002182',
+                fontWeight: 600,
+                outline: 'none',
+                boxSizing: 'border-box',
+                boxShadow: '0 2px 8px rgba(0, 33, 130, 0.03)',
+                transition: 'all 0.2s ease'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#076ABC';
+                e.target.style.boxShadow = '0 4px 14px rgba(7, 106, 188, 0.12)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#D2E3FC';
+                e.target.style.boxShadow = '0 2px 8px rgba(0, 33, 130, 0.03)';
+              }}
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                style={{
+                  position: 'absolute',
+                  right: '0.85rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: '#EBF3FD',
+                  border: 'none',
+                  color: '#076ABC',
+                  borderRadius: '50%',
+                  width: '26px',
+                  height: '26px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Category Filter Pills */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
               overflowX: 'auto',
-              paddingTop: '0.85rem',
-              borderTop: '1px solid rgba(210, 227, 252, 0.15)',
-              scrollbarWidth: 'none',
-              WebkitOverflowScrolling: 'touch'
+              paddingBottom: '0.35rem',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none'
             }}
           >
-            {['OSDE', 'Swiss Medical', 'Galeno', 'Apross', 'PAMI'].map((name, i) => (
-              <span
-                key={i}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  padding: '0.35rem 0.75rem',
-                  borderRadius: '8px',
-                  fontSize: '0.74rem',
-                  fontWeight: 800,
-                  color: '#ffffff',
-                  whiteSpace: 'nowrap',
-                  border: '1px solid rgba(255, 255, 255, 0.15)'
-                }}
-              >
-                {name}
-              </span>
-            ))}
+            {filterTabs.map((tab) => {
+              const isSelected = selectedCategory === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => { setSelectedCategory(tab.id); setExpandedId(null); }}
+                  style={{
+                    background: isSelected ? 'linear-gradient(135deg, #076ABC 0%, #002182 100%)' : '#F5F8FE',
+                    color: isSelected ? '#ffffff' : '#002182',
+                    border: isSelected ? '1.5px solid #076ABC' : '1.5px solid #D2E3FC',
+                    padding: '0.45rem 0.95rem',
+                    borderRadius: '100px',
+                    fontSize: '0.82rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    transition: 'all 0.15s ease',
+                    boxShadow: isSelected ? '0 3px 10px rgba(7, 106, 188, 0.25)' : 'none'
+                  }}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
-        </div>
-      </section>
-
-      {/* Main Content Area */}
-      <section style={{ maxWidth: '850px', margin: '0 auto', padding: '1.75rem 1.25rem 3.5rem' }}>
-        
-        {/* Search Bar */}
-        <div style={{ marginBottom: '1.25rem', position: 'relative' }}>
-          <Search size={17} color="#076ABC" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
-          <input
-            type="text"
-            placeholder="Buscar por obra social, prepaga o plan (ej. OSDE, 210, Apross)..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              background: '#F5F8FE',
-              border: '1.5px solid #D2E3FC',
-              borderRadius: '12px',
-              padding: '0.7rem 1rem 0.7rem 2.6rem',
-              fontSize: '0.88rem',
-              color: '#002182',
-              outline: 'none',
-              boxSizing: 'border-box',
-              transition: 'all 0.2s ease'
-            }}
-            onFocus={(e) => (e.target.style.borderColor = '#076ABC')}
-            onBlur={(e) => (e.target.style.borderColor = '#D2E3FC')}
-          />
-        </div>
-
-        {/* Category Filters Pills */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            overflowX: 'auto',
-            paddingBottom: '0.75rem',
-            marginBottom: '1.5rem',
-            WebkitOverflowScrolling: 'touch',
-            scrollbarWidth: 'none'
-          }}
-        >
-          {filterTabs.map((tab) => {
-            const isSelected = selectedCategory === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => { setSelectedCategory(tab.id); setExpandedId(null); }}
-                style={{
-                  background: isSelected ? '#076ABC' : '#F5F8FE',
-                  color: isSelected ? '#ffffff' : '#002182',
-                  border: isSelected ? '1.5px solid #076ABC' : '1.5px solid #D2E3FC',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '100px',
-                  fontSize: '0.84rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                  transition: 'all 0.15s ease',
-                  boxShadow: isSelected ? '0 3px 10px rgba(7, 106, 188, 0.25)' : 'none'
-                }}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
         </div>
 
         {/* Header Summary */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem', padding: '0 0.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem', padding: '0 0.25rem' }}>
           <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#496386' }}>
-            Mostrando {filteredInsurances.length} {filteredInsurances.length === 1 ? 'convenio' : 'convenios'}
+            Mostrando {filteredInsurances.length} {filteredInsurances.length === 1 ? 'convenio habilitado' : 'convenios habilitados'}
           </span>
           <button
             onClick={() => setExpandedId(expandedId ? null : (filteredInsurances[0]?.id || null))}
@@ -254,106 +423,143 @@ export const InsurancesPage = () => {
           </button>
         </div>
 
-        {/* Insurances List — ACORDEONES COMPACTOS */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '2.5rem' }}>
+        {/* Insurances List — Acordeones Rediseñados con Logos Reales y Tarjetas Elevadas */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2.5rem' }}>
           {filteredInsurances.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '3rem 1rem', background: '#F5F8FE', borderRadius: '16px', border: '1.5px dashed #D2E3FC' }}>
-              <ShieldCheck size={36} color="#7994B8" style={{ margin: '0 auto 0.75rem' }} />
-              <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#002182', marginBottom: '0.25rem' }}>
-                No encontramos coberturas para "{searchTerm}"
+            <div style={{ textAlign: 'center', padding: '3.5rem 1rem', background: '#F8FAFD', borderRadius: '18px', border: '1.5px dashed #D2E3FC' }}>
+              <ShieldCheck size={40} color="#7994B8" style={{ margin: '0 auto 0.85rem' }} />
+              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#002182', marginBottom: '0.3rem' }}>
+                No encontramos convenios para "{searchTerm}"
               </div>
-              <div style={{ fontSize: '0.82rem', color: '#496386' }}>
-                Probá buscando por otro nombre o comunicate con nuestra mesa de entrada.
+              <div style={{ fontSize: '0.84rem', color: '#496386', maxWidth: '420px', margin: '0 auto' }}>
+                Probá buscando por otro nombre o contactá a nuestra mesa de entrada para verificar tu plan particular.
               </div>
             </div>
           ) : (
             filteredInsurances.map((hi) => {
               const isExpanded = expandedId === hi.id;
+              const logoSrc = getResolvedLogo(hi);
+              const category = getCategoryLabel(hi.name);
 
               return (
                 <div
                   key={hi.id}
                   style={{
-                    background: isExpanded ? '#ffffff' : '#F5F8FE',
-                    border: isExpanded ? '1.5px solid #076ABC' : '1.5px solid #D2E3FC',
-                    borderRadius: '14px',
+                    background: isExpanded ? '#ffffff' : '#F9FBFE',
+                    border: isExpanded ? '1.5px solid #076ABC' : '1.5px solid #DCE7F7',
+                    borderRadius: '16px',
                     overflow: 'hidden',
-                    transition: 'all 0.2s ease',
-                    boxShadow: isExpanded ? '0 6px 20px rgba(7, 106, 188, 0.1)' : '0 1px 3px rgba(0, 33, 130, 0.02)'
+                    transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+                    boxShadow: isExpanded ? '0 8px 24px rgba(7, 106, 188, 0.12)' : '0 2px 6px rgba(0, 33, 130, 0.02)'
                   }}
                 >
-                  {/* Fila colapsada (~68px de alto) */}
+                  {/* Fila Principal */}
                   <div
                     onClick={() => toggleExpand(hi.id)}
                     style={{
-                      padding: '0.75rem 0.95rem',
+                      padding: '0.85rem 1rem',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.75rem',
+                      gap: '0.85rem',
                       cursor: 'pointer',
                       userSelect: 'none'
                     }}
                   >
-                    {/* Logo en caja blanca de 42px */}
+                    {/* Contenedor de Logo Oficial en Caja Blanca */}
                     <div
                       style={{
-                        width: '42px',
-                        height: '42px',
-                        borderRadius: '10px',
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
                         background: '#ffffff',
-                        border: '1px solid #D2E3FC',
+                        border: '1.5px solid #D2E3FC',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        padding: '3px',
+                        padding: '4px',
                         flexShrink: 0,
-                        boxShadow: '0 1px 4px rgba(0, 33, 130, 0.05)'
+                        boxShadow: '0 2px 6px rgba(0, 33, 130, 0.05)',
+                        overflow: 'hidden'
                       }}
                     >
-                      {hi.logo ? (
+                      {logoSrc ? (
                         <img
-                          src={hi.logo}
+                          src={logoSrc}
                           alt={hi.name}
                           style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.nextSibling) {
+                              e.currentTarget.nextSibling.style.display = 'flex';
+                            }
+                          }}
                         />
-                      ) : (
-                        <span style={{ fontSize: '0.9rem', fontWeight: 900, color: hi.logoColor || '#076ABC' }}>
-                          {hi.name.substring(0, 2).toUpperCase()}
-                        </span>
-                      )}
+                      ) : null}
+                      <span
+                        style={{
+                          display: logoSrc ? 'none' : 'flex',
+                          fontSize: '0.92rem',
+                          fontWeight: 900,
+                          color: hi.logoColor || '#076ABC'
+                        }}
+                      >
+                        {hi.name.substring(0, 2).toUpperCase()}
+                      </span>
                     </div>
 
-                    {/* Nombre y datos */}
+                    {/* Información y Datos de Cobertura */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.12rem' }}>
-                        <span style={{ fontSize: '0.95rem', fontWeight: 800, color: '#002182', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap', marginBottom: '0.2rem' }}>
+                        <span style={{ fontSize: '0.98rem', fontWeight: 900, color: '#002182' }}>
                           {hi.name}
                         </span>
+                        
                         <span
                           style={{
                             fontSize: '0.66rem',
                             fontWeight: 800,
-                            background: hi.copay === 0 ? 'rgba(22, 163, 74, 0.12)' : '#EBF3FD',
-                            color: hi.copay === 0 ? '#15803d' : '#002182',
+                            background: '#EBF3FD',
+                            color: '#076ABC',
                             padding: '0.12rem 0.45rem',
-                            borderRadius: '100px',
-                            whiteSpace: 'nowrap',
-                            flexShrink: 0
+                            borderRadius: '6px',
+                            whiteSpace: 'nowrap'
                           }}
                         >
-                          {hi.copay === 0 ? 'Sin Copago' : `Copago $${hi.copay?.toLocaleString('es-AR')}`}
+                          {category}
+                        </span>
+
+                        <span
+                          style={{
+                            fontSize: '0.66rem',
+                            fontWeight: 800,
+                            background: hi.copay === 0 ? 'rgba(22, 163, 74, 0.12)' : '#EFF6FF',
+                            color: hi.copay === 0 ? '#15803d' : '#2563EB',
+                            border: `1px solid ${hi.copay === 0 ? 'rgba(22, 163, 74, 0.25)' : '#BFDBFE'}`,
+                            padding: '0.12rem 0.45rem',
+                            borderRadius: '100px',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {hi.copay === 0 ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                              <Check size={11} /> Sin Copago
+                            </span>
+                          ) : (
+                            `Copago $${hi.copay?.toLocaleString('es-AR')}`
+                          )}
                         </span>
                       </div>
-                      <div style={{ fontSize: '0.74rem', color: '#496386', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {hi.plans ? `Planes: ${hi.plans.join(', ')}` : 'Convenio activo y validación directa'}
+
+                      <div style={{ fontSize: '0.76rem', color: '#496386', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {hi.plans ? `Planes: ${hi.plans.join(', ')}` : 'Convenio activo con validación digital'}
                       </div>
                     </div>
 
-                    {/* Flecha indicadora */}
+                    {/* Botón Circular Flecha */}
                     <div
                       style={{
-                        width: '28px',
-                        height: '28px',
+                        width: '30px',
+                        height: '30px',
                         borderRadius: '50%',
                         background: isExpanded ? '#EBF3FD' : '#ffffff',
                         border: '1px solid #D2E3FC',
@@ -366,24 +572,42 @@ export const InsurancesPage = () => {
                         flexShrink: 0
                       }}
                     >
-                      <ChevronDown size={15} />
+                      <ChevronDown size={16} />
                     </div>
                   </div>
 
-                  {/* Cuerpo expandido */}
+                  {/* Cuerpo Expandido con Prestaciones y CTA */}
                   {isExpanded && (
                     <div
                       style={{
-                        padding: '0 0.95rem 0.95rem',
+                        padding: '0.75rem 1rem 1rem',
                         borderTop: '1px solid #EDF3FD',
                         background: '#ffffff'
                       }}
                     >
-                      {/* Planes detallados */}
+                      {/* Chips de Prestaciones Cubiertas */}
+                      <div style={{ marginBottom: '0.85rem' }}>
+                        <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.4rem' }}>
+                          Prestaciones Habilitadas en Sede:
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                          <span style={{ fontSize: '0.74rem', fontWeight: 700, background: '#EFF6FF', color: '#1E40AF', padding: '0.2rem 0.6rem', borderRadius: '6px', border: '1px solid #DBEAFE', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                            <Stethoscope size={13} color="#1E40AF" /> Consultas Traumatología & Esp.
+                          </span>
+                          <span style={{ fontSize: '0.74rem', fontWeight: 700, background: '#ECFDF5', color: '#065F46', padding: '0.2rem 0.6rem', borderRadius: '6px', border: '1px solid #A7F3D0', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                            <Activity size={13} color="#065F46" /> Kinesiología & Fisioterapia
+                          </span>
+                          <span style={{ fontSize: '0.74rem', fontWeight: 700, background: '#F5F3FF', color: '#5B21B6', padding: '0.2rem 0.6rem', borderRadius: '6px', border: '1px solid #DDD6FE', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                            <Zap size={13} color="#5B21B6" /> Radiología Digital & Ecografía
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Planes Habilitados */}
                       {hi.plans && (
-                        <div style={{ marginTop: '0.75rem', marginBottom: '0.65rem' }}>
-                          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
-                            Planes Habilitados en CITRA:
+                        <div style={{ marginBottom: '0.85rem' }}>
+                          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.35rem' }}>
+                            Planes con Cobertura:
                           </div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
                             {hi.plans.map((p, pIdx) => (
@@ -392,7 +616,7 @@ export const InsurancesPage = () => {
                                 style={{
                                   fontSize: '0.74rem',
                                   fontWeight: 800,
-                                  background: '#F5F8FE',
+                                  background: '#F8FAFD',
                                   color: '#002182',
                                   border: '1px solid #D2E3FC',
                                   padding: '0.2rem 0.55rem',
@@ -406,47 +630,48 @@ export const InsurancesPage = () => {
                         </div>
                       )}
 
-                      {/* Nota de validación */}
+                      {/* Nota de Admisión Rápida */}
                       <div
                         style={{
-                          background: '#F5F8FE',
+                          background: '#F8FAFD',
                           borderRadius: '10px',
-                          padding: '0.55rem 0.75rem',
+                          padding: '0.65rem 0.85rem',
                           border: '1px solid #D2E3FC',
-                          marginBottom: '0.85rem',
-                          fontSize: '0.76rem',
+                          marginBottom: '0.95rem',
+                          fontSize: '0.78rem',
                           color: '#496386',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '0.4rem'
+                          gap: '0.5rem'
                         }}
                       >
-                        <CheckCircle2 size={14} color="#076ABC" style={{ flexShrink: 0 }} />
-                        <span>Presentá tu DNI y credencial médica (o app digital con Token) en recepción.</span>
+                        <CheckCircle2 size={16} color="#076ABC" style={{ flexShrink: 0 }} />
+                        <span>Presentá tu DNI y credencial médica (o app digital con Token) en la mesa de recepción.</span>
                       </div>
 
-                      {/* Botón de turno */}
+                      {/* Botón Directo para Sacar Turno */}
                       <button
                         onClick={handleBook}
                         style={{
                           width: '100%',
-                          background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                          background: 'linear-gradient(135deg, #257CE6 0%, #076ABC 100%)',
                           color: '#ffffff',
                           border: 'none',
-                          padding: '0.75rem 1rem',
-                          borderRadius: '10px',
+                          padding: '0.85rem 1.2rem',
+                          borderRadius: '12px',
                           fontWeight: 800,
-                          fontSize: '0.88rem',
+                          fontSize: '0.92rem',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           gap: '0.5rem',
                           cursor: 'pointer',
-                          boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)',
-                          minHeight: '44px'
+                          boxShadow: '0 4px 14px rgba(7, 106, 188, 0.3)',
+                          minHeight: '46px',
+                          transition: 'all 0.2s ease'
                         }}
                       >
-                        <CalendarPlus size={16} />
+                        <CalendarPlus size={18} />
                         Sacar Turno con {hi.name}
                       </button>
                     </div>
@@ -457,23 +682,66 @@ export const InsurancesPage = () => {
           )}
         </div>
 
-        {/* FAQs en Acordeones Compactos */}
-        <div style={{ marginTop: '2rem' }}>
-          <div style={{ fontSize: '0.86rem', fontWeight: 900, color: '#002182', marginBottom: '0.75rem', paddingLeft: '0.25rem' }}>
-            Preguntas Frecuentes sobre Coberturas
+        {/* Compromiso Asistencial CITRA — Tarjeta con Barra Degradé Superior */}
+        <div className="trust-commitment-card" style={{ marginBottom: '2.5rem' }}>
+          <div className="trust-commitment-badge">
+            <ShieldCheck size={14} color="#076ABC" />
+            <span>GARANTÍAS DE ATENCIÓN EN CITRA</span>
           </div>
+          <div className="trust-grid">
+            <div className="trust-item">
+              <div className="trust-icon-box" style={{ background: '#EBF3FD', color: '#076ABC' }}>
+                <Check size={18} />
+              </div>
+              <div className="trust-content">
+                <span className="trust-title">Validación Online</span>
+                <span className="trust-desc">Verificación directa en recepción sin autorizaciones previas</span>
+              </div>
+            </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div className="trust-item">
+              <div className="trust-icon-box" style={{ background: '#ECFDF5', color: '#059669' }}>
+                <Sparkles size={18} />
+              </div>
+              <div className="trust-content">
+                <span className="trust-title">Gestión de Kinesiología</span>
+                <span className="trust-desc">Tramitamos tus pedidos médicos ante tu obra social</span>
+              </div>
+            </div>
+
+            <div className="trust-item">
+              <div className="trust-icon-box" style={{ background: '#EFF6FF', color: '#2563EB' }}>
+                <CheckCircle2 size={18} />
+              </div>
+              <div className="trust-content">
+                <span className="trust-title">Aranceles Transparentes</span>
+                <span className="trust-desc">Copagos institucionales claros y factura oficial para reintegros</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Preguntas Frecuentes (FAQs) */}
+        <div style={{ marginBottom: '2.5rem' }}>
+          <div style={{ fontSize: '0.74rem', fontWeight: 900, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.3rem' }}>
+            PREGUNTAS FRECUENTES
+          </div>
+          <h2 style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.55rem)', fontWeight: 900, color: '#002182', margin: '0 0 1rem', letterSpacing: '-0.02em' }}>
+            Dudas Habituales sobre Coberturas
+          </h2>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
             {faqs.map((faq, idx) => {
               const isOpen = expandedFaq === idx;
               return (
                 <div
                   key={idx}
                   style={{
-                    background: '#F5F8FE',
-                    border: '1px solid #D2E3FC',
-                    borderRadius: '12px',
-                    overflow: 'hidden'
+                    background: '#F8FAFD',
+                    border: '1.5px solid #E2EDFC',
+                    borderRadius: '14px',
+                    overflow: 'hidden',
+                    transition: 'all 0.2s ease'
                   }}
                 >
                   <button
@@ -482,14 +750,14 @@ export const InsurancesPage = () => {
                       width: '100%',
                       background: 'transparent',
                       border: 'none',
-                      padding: '0.75rem 0.9rem',
+                      padding: '0.9rem 1.1rem',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      gap: '0.5rem',
+                      gap: '0.75rem',
                       cursor: 'pointer',
                       textAlign: 'left',
-                      fontSize: '0.82rem',
+                      fontSize: '0.88rem',
                       fontWeight: 800,
                       color: '#002182'
                     }}
@@ -503,18 +771,104 @@ export const InsurancesPage = () => {
                         color: '#076ABC'
                       }}
                     >
-                      <ChevronDown size={15} />
+                      <ChevronDown size={16} />
                     </div>
                   </button>
 
                   {isOpen && (
-                    <div style={{ padding: '0 0.9rem 0.8rem', fontSize: '0.78rem', color: '#496386', lineHeight: 1.45, borderTop: '1px solid #EDF3FD' }}>
-                      <p style={{ margin: '0.5rem 0 0' }}>{faq.a}</p>
+                    <div style={{ padding: '0 1.1rem 1rem', fontSize: '0.82rem', color: '#496386', lineHeight: 1.5, borderTop: '1px solid #EDF3FD' }}>
+                      <p style={{ margin: '0.6rem 0 0' }}>{faq.a}</p>
                     </div>
                   )}
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* Ficha de Asistencia Directa & WhatsApp */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, #001556 0%, #002182 100%)',
+            borderRadius: '20px',
+            border: '1.5px solid rgba(37, 124, 230, 0.3)',
+            padding: '1.5rem',
+            color: '#ffffff',
+            boxShadow: '0 10px 30px rgba(0, 21, 86, 0.25)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              top: '-30%',
+              right: '-10%',
+              width: '250px',
+              height: '250px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(0, 240, 255, 0.15) 0%, transparent 70%)',
+              filter: 'blur(40px)',
+              pointerEvents: 'none'
+            }}
+          />
+
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#60A5FA', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+              MESA DE ENTRADA & ATENCIÓN AL PACIENTE
+            </div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#ffffff', margin: '0 0 0.5rem' }}>
+              ¿No encontrás tu obra social o plan particular?
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: '#BFDBFE', margin: '0 0 1.25rem', maxWidth: '580px', lineHeight: 1.45 }}>
+              Nuestro equipo verifica tu cobertura al instante y te informa los aranceles vigentes para tu consulta o tratamiento.
+            </p>
+
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <a
+                href="https://wa.me/5493576450214?text=Hola%20CITRA,%20quisiera%20consultar%20por%20la%20cobertura%20de%20mi%20obra%20social"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  background: '#25D366',
+                  color: '#ffffff',
+                  padding: '0.75rem 1.25rem',
+                  borderRadius: '12px',
+                  fontWeight: 800,
+                  fontSize: '0.88rem',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  boxShadow: '0 4px 14px rgba(37, 211, 102, 0.3)',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <WhatsAppIcon size={18} color="#ffffff" />
+                Consultar por WhatsApp
+              </a>
+
+              <a
+                href="tel:03576450214"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  color: '#ffffff',
+                  border: '1px solid rgba(210, 227, 252, 0.25)',
+                  padding: '0.75rem 1.25rem',
+                  borderRadius: '12px',
+                  fontWeight: 800,
+                  fontSize: '0.88rem',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <Phone size={16} color="#93C5FD" />
+                (03576) 450214
+              </a>
+            </div>
           </div>
         </div>
 

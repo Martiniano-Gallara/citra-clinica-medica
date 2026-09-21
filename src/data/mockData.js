@@ -82,7 +82,7 @@ export const INITIAL_HEALTH_INSURANCES = [
   { id: 'hi-3', name: 'Galeno', logo: '/logos/logo-galeno.png', plans: ['Plata', 'Oro', 'Azul'], copay: 2000, status: 'Activa', logoColor: '#2563eb' },
   { id: 'hi-4', name: 'Apross', logo: '/logos/logo-apross.png', plans: ['Obligatorio', 'Voluntario'], copay: 1200, status: 'Activa', logoColor: '#00A896' },
   { id: 'hi-5', name: 'PAMI', logo: '/logos/logo-pami.png', plans: ['General', 'Veteranos'], copay: 0, status: 'Activa', logoColor: '#002B49' },
-  { id: 'hi-6', name: 'Medicus', logo: '', plans: ['Celeste', 'Azul'], copay: 1800, status: 'Activa', logoColor: '#7c3aed' },
+  { id: 'hi-6', name: 'Medicus', logo: '/logos/logo-medicus.svg', plans: ['Celeste', 'Azul'], copay: 1800, status: 'Activa', logoColor: '#0A2C5C' },
   { id: 'hi-7', name: 'Particular / Privado', logo: '', plans: ['Arancel Pleno'], copay: 22000, status: 'Activa', logoColor: '#475569' }
 ];
 

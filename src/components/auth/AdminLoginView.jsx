@@ -11,23 +11,31 @@ import {
   Building2,
   Sparkles,
   Server,
-  UserCheck
+  UserCheck,
+  Stethoscope,
+  Briefcase
 } from 'lucide-react';
 
 export const AdminLoginView = () => {
-  const { loginAdmin, setCurrentView, users } = useClinic();
+  const { loginAdmin, setCurrentView, users, resetUserPassword } = useClinic();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Recovery modal state
+  const [isRecovering, setIsRecovering] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoveryMsg, setRecoveryMsg] = useState('');
+  const [recoverySuccess, setRecoverySuccess] = useState(false);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setErrorMsg('');
 
-    if (!email.trim()) {
-      setErrorMsg('Ingresa tu correo o usuario administrativo.');
+    if (!email.trim() || !password.trim()) {
+      setErrorMsg('Ingresa tu correo y contraseña administrativa de seguridad.');
       return;
     }
 
@@ -39,6 +47,22 @@ export const AdminLoginView = () => {
         setErrorMsg('Credenciales inválidas. Este portal es exclusivo para personal administrativo y directivo.');
       }
     }, 400);
+  };
+
+  const handleRecoverySubmit = async (e) => {
+    e.preventDefault();
+    if (!recoveryEmail.trim()) {
+      setRecoveryMsg('Por favor ingresa tu correo institucional.');
+      return;
+    }
+    const res = await resetUserPassword(recoveryEmail);
+    if (res.success) {
+      setRecoverySuccess(true);
+      setRecoveryMsg(`Se ha generado la solicitud de recuperación. Si el correo ${recoveryEmail} existe en la nómina, recibirás las credenciales temporales.`);
+    } else {
+      setRecoverySuccess(false);
+      setRecoveryMsg('No se encontró personal registrado con ese correo.');
+    }
   };
 
   const handleDemoAdmin = (adminUser) => {
@@ -214,8 +238,10 @@ export const AdminLoginView = () => {
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <span>🩺 {doctorUser.name}</span>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                        <Stethoscope size={14} color="#15803d" /> {doctorUser.name}
+                      </span>
                       <span style={{ fontSize: '0.68rem', background: '#dcfce7', color: '#15803d', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>
                         MÉDICO
                       </span>
@@ -257,8 +283,10 @@ export const AdminLoginView = () => {
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#002182', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <span>💼 {adminUser.name}</span>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#002182', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                        <Briefcase size={14} color="#076ABC" /> {adminUser.name}
+                      </span>
                       <span style={{ fontSize: '0.68rem', background: '#eff6ff', color: '#2563eb', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>
                         ADMINISTRACIÓN
                       </span>
@@ -300,8 +328,8 @@ export const AdminLoginView = () => {
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6b21a8' }}>
-                      🏛️ {directorUser.name}
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6b21a8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Building2 size={14} color="#7c3aed" /> {directorUser.name}
                     </div>
                     <div style={{ fontSize: '0.7rem', color: '#7e22ce' }}>
                       {directorUser.role} · Auditoría general
@@ -371,6 +399,16 @@ export const AdminLoginView = () => {
               </div>
             </div>
 
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.25rem' }}>
+              <button
+                type="button"
+                onClick={() => { setIsRecovering(true); setRecoveryMsg(''); setRecoverySuccess(false); }}
+                style={{ background: 'none', border: 'none', color: '#076ABC', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+              >
+                ¿Olvidaste tu contraseña administrativa?
+              </button>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
@@ -412,6 +450,118 @@ export const AdminLoginView = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de Recuperación de Contraseña Administrativa */}
+      {isRecovering && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 21, 86, 0.75)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+            zIndex: 9999
+          }}
+          onClick={() => setIsRecovering(false)}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '20px',
+              maxWidth: '440px',
+              width: '100%',
+              padding: '2rem',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.3)',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: '0 0 0.5rem', color: '#002182', fontSize: '1.3rem', fontWeight: 900 }}>
+              Recuperación de Contraseña
+            </h3>
+            <p style={{ margin: '0 0 1.25rem', color: '#64748b', fontSize: '0.85rem', lineHeight: 1.5 }}>
+              Ingresa tu correo institucional registrado. Se validará tu cuenta y se enviará la clave de recuperación segura.
+            </p>
+
+            {recoveryMsg && (
+              <div
+                style={{
+                  background: recoverySuccess ? '#F0FDF4' : '#FEF2F2',
+                  border: `1px solid ${recoverySuccess ? '#86EFAC' : '#FECACA'}`,
+                  color: recoverySuccess ? '#166534' : '#991B1B',
+                  padding: '0.85rem',
+                  borderRadius: '10px',
+                  fontSize: '0.84rem',
+                  marginBottom: '1rem'
+                }}
+              >
+                {recoveryMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleRecoverySubmit}>
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.35rem' }}>
+                  Correo Institucional
+                </label>
+                <input
+                  type="email"
+                  value={recoveryEmail}
+                  onChange={(e) => setRecoveryEmail(e.target.value)}
+                  placeholder="profesional@citra.com.ar"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    borderRadius: '10px',
+                    border: '1.5px solid #D2E3FC',
+                    fontSize: '0.9rem',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1,
+                    background: 'linear-gradient(135deg, #002182 0%, #076ABC 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '0.75rem',
+                    borderRadius: '10px',
+                    fontWeight: 800,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Solicitar Clave
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsRecovering(false)}
+                  style={{
+                    background: '#f1f5f9',
+                    border: 'none',
+                    color: '#475569',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '10px',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

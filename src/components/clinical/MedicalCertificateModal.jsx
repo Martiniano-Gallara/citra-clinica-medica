@@ -22,7 +22,8 @@ import {
   AlertCircle,
   Check,
   Lock,
-  Building2
+  Building2,
+  Briefcase
 } from 'lucide-react';
 
 export const MedicalCertificateModal = () => {
@@ -60,8 +61,6 @@ export const MedicalCertificateModal = () => {
     { label: 'Apto Físico Deportivo', cie: 'Z02.5 - Examen Médico para Participación en Deportes Competitivos', days: 0, type: 'Certificado de Apto Físico Deportivo Traumatológico' },
     { label: 'Asistencia a Consulta', cie: 'Z76.0 - Emisión de Certificado Médico / Asistencia a Consultorio', days: 0, type: 'Certificado de Asistencia a Consulta Médica' }
   ];
-
-  if (!isMedicalCertificateModalOpen) return null;
 
   const selectedPatient = patients.find((p) => p.id === selectedPatientId) || patients[0];
 
@@ -105,6 +104,12 @@ export const MedicalCertificateModal = () => {
     }
   };
 
+  function numberToWords(num) {
+    const units = ['', 'un', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve', 'veinte', 'veintiuno'];
+    if (num <= 21) return units[num] || String(num);
+    return String(num);
+  }
+
   // Generate formal legal text
   const defaultFormalText = useMemo(() => {
     if (certificateType.includes('Apto Físico')) {
@@ -120,13 +125,9 @@ export const MedicalCertificateModal = () => {
     return `Por la presente CERTIFICO que el/la paciente ha sido examinado/a en el día de la fecha, presentando cuadro clínico compatible con ${diagnosis}. Por tal motivo, se prescribe REPOSO LABORAL Y FÍSICO ABSOLUTO por el término de ${restDays} (${numberToWords(restDays)}) días, a partir del ${formatDateSpanish(restStartDate)} hasta el ${formatDateSpanish(restEndDate)} inclusive, debiendo reincorporarse a sus actividades habituales el día ${formatDateSpanish(returnToWorkDate)}.`;
   }, [certificateType, diagnosis, restDays, restStartDate, restEndDate, returnToWorkDate]);
 
-  function numberToWords(num) {
-    const units = ['', 'un', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve', 'veinte', 'veintiuno'];
-    if (num <= 21) return units[num] || String(num);
-    return String(num);
-  }
-
   const certificateBodyText = customContent || defaultFormalText;
+
+  if (!isMedicalCertificateModalOpen) return null;
 
   // Apply quick preset
   const handleApplyPreset = (preset) => {
@@ -151,7 +152,7 @@ export const MedicalCertificateModal = () => {
     const cleanPhone = selectedPatient.phone.replace(/[^0-9]/g, '');
     const certNumber = `CERT-2026-${Math.floor(1000 + Math.random() * 9000)}`;
     const msg = encodeURIComponent(
-      `Hola ${selectedPatient.name}, adjuntamos su *Certificado Médico Oficial* de CITRA Clínica Médica emitido por ${doctorName}.\n\n📄 *Tipo:* ${certificateType}\n🩺 *Diagnóstico:* ${diagnosis}\n⏱️ *Período:* ${restDays} días (hasta el ${formatDateSpanish(restEndDate)})\n🔐 *Verificación Online:* https://citra.com.ar/validar/${certNumber}\n\n_Documento firmado digitalmente con validez oficial plena._`
+      `Hola ${selectedPatient.name}, adjuntamos su *Certificado Médico Oficial* de CITRA Clínica Médica emitido por ${doctorName}.\n\n*Tipo:* ${certificateType}\n*Diagnóstico:* ${diagnosis}\n*Período:* ${restDays} días (hasta el ${formatDateSpanish(restEndDate)})\n*Verificación Online:* https://citra.com.ar/validar/${certNumber}\n\n_Documento firmado digitalmente con validez oficial plena._`
     );
     window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');
   };
@@ -557,8 +558,12 @@ export const MedicalCertificateModal = () => {
                       fontWeight: 700
                     }}
                   >
-                    <span>📅 Fin del Reposo: <strong>{formatDateSpanish(restEndDate)}</strong></span>
-                    <span>💼 Reincorporación Laboral: <strong style={{ color: '#059669' }}>{formatDateSpanish(returnToWorkDate)}</strong></span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                      <Calendar size={13} /> Fin del Reposo: <strong>{formatDateSpanish(restEndDate)}</strong>
+                    </span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                      <Briefcase size={13} color="#059669" /> Reincorporación Laboral: <strong style={{ color: '#059669' }}>{formatDateSpanish(returnToWorkDate)}</strong>
+                    </span>
                   </div>
                 </div>
               )}

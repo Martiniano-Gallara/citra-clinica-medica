@@ -20,7 +20,9 @@ import {
   ChevronDown,
   Search,
   Stethoscope,
-  ArrowRight
+  ArrowRight,
+  Users,
+  Check
 } from 'lucide-react';
 
 export const ServicesPage = () => {
@@ -57,7 +59,7 @@ export const ServicesPage = () => {
       name: 'Traumatología',
       icon: Bone,
       badge: 'Médica',
-      shortDesc: 'Huesos, articulaciones, fracturas y lesiones deportivas.',
+      shortDesc: 'Huesos, fracturas y lesiones',
       description: 'Diagnóstico, tratamiento y seguimiento médico y quirúrgico de patologías óseas, articulares, fracturas, esguinces, artrosis y lesiones deportivas.',
       features: [
         'Traumatología general, articular y de columna',
@@ -74,7 +76,7 @@ export const ServicesPage = () => {
       name: 'Neurología',
       icon: Brain,
       badge: 'Médica',
-      shortDesc: 'Cefaleas crónicas, migrañas y sistema nervioso.',
+      shortDesc: 'Cefaleas, migrañas y nervios',
       description: 'Abordaje integral y diagnóstico de afecciones del sistema nervioso central y periférico, cefaleas crónicas, neuropatías y trastornos motores.',
       features: [
         'Evaluación clínica neurológica completa',
@@ -91,7 +93,7 @@ export const ServicesPage = () => {
       name: 'Reumatología',
       icon: Activity,
       badge: 'Médica',
-      shortDesc: 'Artritis, artrosis severa y patologías autoinmunes.',
+      shortDesc: 'Artritis y dolor articular',
       description: 'Tratamiento especializado de patologías inflamatorias y autoinmunes que afectan articulaciones, tendones y músculos, preservando la movilidad.',
       features: [
         'Artritis reumatoidea, lúpica y espondiloartritis',
@@ -108,7 +110,7 @@ export const ServicesPage = () => {
       name: 'Nutrición',
       icon: Apple,
       badge: 'Médica',
-      shortDesc: 'Planes antiinflamatorios, masa muscular y bioimpedancia.',
+      shortDesc: 'Planes a medida y nutrición',
       description: 'Planes alimentarios personalizados orientados a modular la inflamación sistémica, favorecer la recuperación de tejidos y optimizar el rendimiento físico.',
       features: [
         'Nutrición antiinflamatoria osteoarticular',
@@ -127,7 +129,7 @@ export const ServicesPage = () => {
       name: 'Kinesiología',
       icon: Dumbbell,
       badge: 'Rehabilitación',
-      shortDesc: 'Recuperación motora activa en gimnasio biomecánico.',
+      shortDesc: 'Rehabilitación y gimnasio',
       description: 'Recuperación funcional y motora activa con planes individualizados para restablecer la movilidad, fuerza muscular y estabilidad articular.',
       features: [
         'Rehabilitación pre y post-quirúrgica',
@@ -144,7 +146,7 @@ export const ServicesPage = () => {
       name: 'Fisioterapia',
       icon: Zap,
       badge: 'Rehabilitación',
-      shortDesc: 'Magnetoterapia, ultrasonido y electroanalgesia TENS.',
+      shortDesc: 'Magneto, ultrasonido y TENS',
       description: 'Terapia instrumental de avanzada para analgesia, desinflamación profunda y aceleración biológica de cicatrización tisular.',
       features: [
         'Magnetoterapia de alta potencia',
@@ -161,7 +163,7 @@ export const ServicesPage = () => {
       name: 'Osteopatía',
       icon: Layers,
       badge: 'Rehabilitación',
-      shortDesc: 'Terapia manual biomecánica y desbloqueo articular.',
+      shortDesc: 'Terapia manual y desbloqueo',
       description: 'Terapia manual global orientada a restablecer el equilibrio biomecánico y la movilidad de todos los tejidos y estructuras corporales.',
       features: [
         'Técnicas manuales estructurales y viscerales',
@@ -175,10 +177,10 @@ export const ServicesPage = () => {
     {
       id: 'esp-8',
       category: 'rehabilitacion',
-      name: 'ATM (Mandíbula & Bruxismo)',
+      name: 'ATM & Bruxismo',
       icon: Smile,
       badge: 'Rehabilitación',
-      shortDesc: 'Bruxismo, dolor mandibular y contracturas cervicales.',
+      shortDesc: 'Bruxismo y dolor mandibular',
       description: 'Tratamiento kinésico específico de disfunciones temporomandibulares, bruxismo, dolor orofacial y contracturas cervicales asociadas.',
       features: [
         'Terapia manual intra y extraoral',
@@ -192,10 +194,10 @@ export const ServicesPage = () => {
     {
       id: 'esp-9',
       category: 'rehabilitacion',
-      name: 'Piso Pélvico Femenino',
+      name: 'Piso Pélvico',
       icon: Heart,
       badge: 'Rehabilitación',
-      shortDesc: 'Biofeedback, recuperación postparto e incontinencia.',
+      shortDesc: 'Postparto e incontinencia',
       description: 'Fisioterapia uroginecológica y pelviperineal para la prevención y rehabilitación de disfunciones del suelo pélvico en mujeres.',
       features: [
         'Tratamiento de incontinencia urinaria',
@@ -214,7 +216,7 @@ export const ServicesPage = () => {
       name: 'Radiología Digital',
       icon: ScanLine,
       badge: 'Diagnóstico',
-      shortDesc: 'Rayos X directos de alta resolución con entrega inmediata.',
+      shortDesc: 'Rayos X y entrega inmediata',
       description: 'Radiología digital directa de alta definición con mínima dosis de exposición y revelado instantáneo para estudios osteoarticulares y de columna.',
       features: [
         'Radiografías digitales de todos los segmentos',
@@ -231,7 +233,7 @@ export const ServicesPage = () => {
       name: 'Estudio de la Pisada',
       icon: Footprints,
       badge: 'Diagnóstico',
-      shortDesc: 'Baropodometría computarizada y plantillas ortopédicas.',
+      shortDesc: 'Baropodometría y plantillas',
       description: 'Baropodometría computarizada y análisis biomecánico estático y dinámico de presiones plantares durante la marcha y la carrera.',
       features: [
         'Análisis computarizado de marcha y apoyo',
@@ -250,7 +252,7 @@ export const ServicesPage = () => {
       name: 'Ozonoterapia',
       icon: Sparkles,
       badge: 'Tratamientos',
-      shortDesc: 'Terapias biológicas regenerativas y alivio articular.',
+      shortDesc: 'Alivio del dolor y regeneración',
       description: 'Terapia biológica con ozono medicinal con potente efecto analgésico, antiinflamatorio, antioxidante y oxigenador tisular.',
       features: [
         'Infiltraciones articulares y paravertebrales',
@@ -267,7 +269,7 @@ export const ServicesPage = () => {
       name: 'Medicina Estética',
       icon: Sparkles,
       badge: 'Tratamientos',
-      shortDesc: 'Bioestimulación de colágeno y revitalización no quirúrgica.',
+      shortDesc: 'Bioestimulación y colágeno',
       description: 'Procedimientos médicos no quirúrgicos orientados a la bioestimulación celular, revitalización dérmica, tonificación y bienestar integral.',
       features: [
         'Bioestimulación de colágeno y ácido hialurónico',
@@ -291,86 +293,176 @@ export const ServicesPage = () => {
 
   return (
     <div style={{ background: '#ffffff', minHeight: '100vh' }}>
-      {/* Header Banner — Ultra compacto y limpio en mobile */}
-      <section
-        style={{
-          background: 'linear-gradient(135deg, #001556 0%, #002182 100%)',
-          color: '#ffffff',
-          padding: '2.5rem 1.25rem 1.75rem',
-          position: 'relative'
-        }}
-      >
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      {/* Header Banner — Rediseño Premium: Glassmorphism, atmósfera tech y métricas de alto impacto */}
+      <section className="services-hero-banner">
+        {/* Fondo interactivo con microretícula y halos de iluminación ambiental */}
+        <div aria-hidden="true" className="services-hero-grid-bg" />
+        <div aria-hidden="true" className="services-hero-glow-cyan" />
+        <div aria-hidden="true" className="services-hero-glow-blue" />
+
+        <div style={{ maxWidth: '1020px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <div
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.4rem',
-              background: 'rgba(37, 124, 230, 0.18)',
-              border: '1px solid rgba(37, 124, 230, 0.35)',
-              color: '#D2E3FC',
-              padding: '0.3rem 0.8rem',
+              gap: '0.45rem',
+              background: 'rgba(37, 124, 230, 0.16)',
+              border: '1px solid rgba(142, 190, 245, 0.32)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              color: '#E0F2FE',
+              padding: '0.35rem 0.85rem',
               borderRadius: '100px',
-              fontSize: '0.72rem',
+              fontSize: '0.74rem',
               fontWeight: 800,
-              letterSpacing: '0.04em',
-              marginBottom: '0.65rem'
+              letterSpacing: '0.05em',
+              marginBottom: '0.85rem',
+              boxShadow: '0 2px 10px rgba(0, 19, 72, 0.25)'
             }}
           >
-            <Sparkles size={12} color="#257CE6" />
-            CITRA · SERVICIOS ESPECIALIZADOS
+            <Sparkles size={13} color="#00F0FF" />
+            <span>CITRA · SERVICIOS ESPECIALIZADOS</span>
           </div>
 
           <h1
             style={{
-              fontSize: 'clamp(1.75rem, 4vw, 2.6rem)',
+              fontSize: 'clamp(1.85rem, 4.5vw, 2.85rem)',
               fontWeight: 900,
-              letterSpacing: '-0.02em',
-              margin: '0 0 0.45rem',
-              lineHeight: 1.15
+              letterSpacing: '-0.03em',
+              margin: '0 0 0.65rem',
+              lineHeight: 1.15,
+              color: '#ffffff'
             }}
           >
-            Servicios Médicos & Terapias
+            Servicios Médicos &{' '}
+            <span
+              style={{
+                background: 'linear-gradient(135deg, #60A5FA 0%, #38BDF8 50%, #A5F3FC 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            >
+              Terapias de Avanzada
+            </span>
           </h1>
 
           <p
             style={{
-              fontSize: '0.92rem',
-              color: '#D2E3FC',
-              maxWidth: '620px',
-              lineHeight: 1.45,
+              fontSize: 'clamp(0.88rem, 2.2vw, 0.96rem)',
+              color: '#BFDBFE',
+              maxWidth: '680px',
+              lineHeight: 1.5,
               margin: '0 0 1.25rem',
-              opacity: 0.9
+              fontWeight: 500,
+              opacity: 0.95
             }}
           >
-            Atención clínica especializada, kinesiología, diagnóstico por imágenes y tratamientos en Arroyito.
+            Atención clínica especializada, kinesiología en gimnasio biomecánico de 180 m², diagnóstico por imágenes digital y rehabilitación personalizada en Arroyito.
           </p>
 
-          {/* Quick Metrics Bar — Compact Chips Grid en 1 línea / 4 chips */}
+          {/* Micro-pills temáticas para escaneabilidad rápida */}
           <div
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: '0.5rem',
-              paddingTop: '1rem',
-              borderTop: '1px solid rgba(210, 227, 252, 0.15)'
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.4rem',
+              marginBottom: '1.25rem'
             }}
           >
-            <div style={{ background: 'rgba(255, 255, 255, 0.07)', padding: '0.5rem 0.35rem', borderRadius: '10px', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#257CE6' }}>13</div>
-              <div style={{ fontSize: '0.68rem', color: '#D2E3FC', fontWeight: 700 }}>Servicios</div>
+            {[
+              'Traumatología',
+              'Kinesiología Biomecánica',
+              'Rayos X & Ecografía Digital',
+              'Especialidades Médicas'
+            ].map((tag) => (
+              <span
+                key={tag}
+                style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  color: '#D2E3FC',
+                  background: 'rgba(255, 255, 255, 0.07)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  padding: '0.2rem 0.55rem',
+                  borderRadius: '6px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <Check size={11} color="#93C5FD" /> {tag}
+              </span>
+            ))}
+          </div>
+
+          {/* Quick Metrics Bar — Tarjetas Glassmorphism Rediseñadas con Íconos y Profundidad */}
+          <div className="services-metrics-grid">
+            <div className="services-metric-card">
+              <div
+                className="services-metric-icon-wrap"
+                style={{
+                  background: 'radial-gradient(circle, rgba(37, 124, 230, 0.28) 0%, rgba(7, 106, 188, 0.12) 100%)',
+                  borderColor: 'rgba(96, 165, 250, 0.3)'
+                }}
+              >
+                <Layers size={20} color="#60A5FA" />
+              </div>
+              <div className="services-metric-content">
+                <div className="services-metric-value">13 Áreas</div>
+                <div className="services-metric-label">Especialidades</div>
+                <div className="services-metric-sub">Atención integral</div>
+              </div>
             </div>
-            <div style={{ background: 'rgba(255, 255, 255, 0.07)', padding: '0.5rem 0.35rem', borderRadius: '10px', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#257CE6' }}>180 m²</div>
-              <div style={{ fontSize: '0.68rem', color: '#D2E3FC', fontWeight: 700 }}>Gimnasio</div>
+
+            <div className="services-metric-card">
+              <div
+                className="services-metric-icon-wrap"
+                style={{
+                  background: 'radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.1) 100%)',
+                  borderColor: 'rgba(52, 211, 153, 0.3)'
+                }}
+              >
+                <Activity size={20} color="#34D399" />
+              </div>
+              <div className="services-metric-content">
+                <div className="services-metric-value">180 m²</div>
+                <div className="services-metric-label">Gimnasio</div>
+                <div className="services-metric-sub">Biomecánica y rehab</div>
+              </div>
             </div>
-            <div style={{ background: 'rgba(255, 255, 255, 0.07)', padding: '0.5rem 0.35rem', borderRadius: '10px', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#257CE6' }}>Digital</div>
-              <div style={{ fontSize: '0.68rem', color: '#D2E3FC', fontWeight: 700 }}>Rayos X</div>
+
+            <div className="services-metric-card">
+              <div
+                className="services-metric-icon-wrap"
+                style={{
+                  background: 'radial-gradient(circle, rgba(168, 85, 247, 0.26) 0%, rgba(126, 34, 206, 0.1) 100%)',
+                  borderColor: 'rgba(192, 132, 252, 0.3)'
+                }}
+              >
+                <ScanLine size={20} color="#C084FC" />
+              </div>
+              <div className="services-metric-content">
+                <div className="services-metric-value">Digital</div>
+                <div className="services-metric-label">Rayos X & Eco</div>
+                <div className="services-metric-sub">Diagnóstico directo</div>
+              </div>
             </div>
-            <div style={{ background: 'rgba(255, 255, 255, 0.07)', padding: '0.5rem 0.35rem', borderRadius: '10px', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#257CE6' }}>Integral</div>
-              <div style={{ fontSize: '0.68rem', color: '#D2E3FC', fontWeight: 700 }}>Equipo</div>
+
+            <div className="services-metric-card">
+              <div
+                className="services-metric-icon-wrap"
+                style={{
+                  background: 'radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, rgba(180, 83, 9, 0.1) 100%)',
+                  borderColor: 'rgba(251, 191, 36, 0.3)'
+                }}
+              >
+                <ShieldCheck size={20} color="#FBBF24" />
+              </div>
+              <div className="services-metric-content">
+                <div className="services-metric-value">Integral</div>
+                <div className="services-metric-label">Cuerpo Médico</div>
+                <div className="services-metric-sub">Equipo multidisciplinario</div>
+              </div>
             </div>
           </div>
         </div>
@@ -667,47 +759,62 @@ export const ServicesPage = () => {
           )}
         </div>
 
-        {/* Pilares Institucionales — Versión Ultra Compacta en 1 sola tarjeta unificada */}
-        <div
-          style={{
-            marginTop: '2.5rem',
-            background: '#F5F8FE',
-            borderRadius: '16px',
-            border: '1.5px solid #D2E3FC',
-            padding: '1.25rem 1.15rem'
-          }}
-        >
-          <div style={{ fontSize: '0.76rem', fontWeight: 900, color: '#002182', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.85rem' }}>
-            Compromiso Asistencial CITRA
+        {/* Compromiso Asistencial CITRA — Rediseño Moderno con Texto Reducido e Impactante */}
+        <div className="trust-commitment-card">
+          <div className="trust-commitment-badge">
+            <ShieldCheck size={15} color="#076ABC" />
+            <span>Compromiso Asistencial CITRA</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem' }}>
-              <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#EBF3FD', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#076ABC', flexShrink: 0, marginTop: '2px' }}>
-                <ShieldCheck size={16} />
+
+          <div className="trust-grid">
+            <div className="trust-item">
+              <div
+                className="trust-icon-box"
+                style={{
+                  background: '#EBF3FD',
+                  color: '#076ABC',
+                  border: '1px solid #D2E3FC'
+                }}
+              >
+                <ShieldCheck size={18} />
               </div>
-              <div>
-                <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.86rem' }}>Atención Personalizada</div>
-                <div style={{ fontSize: '0.75rem', color: '#496386', lineHeight: 1.35 }}>Plan terapéutico y seguimiento médico adaptado a tus necesidades.</div>
+              <div className="trust-content">
+                <div className="trust-title">Atención Personalizada</div>
+                <div className="trust-desc">Plan y seguimiento a tu medida</div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem' }}>
-              <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#EBF3FD', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#076ABC', flexShrink: 0, marginTop: '2px' }}>
-                <Clock size={16} />
+            <div className="trust-item">
+              <div
+                className="trust-icon-box"
+                style={{
+                  background: '#ECFDF5',
+                  color: '#059669',
+                  border: '1px solid #A7F3D0'
+                }}
+              >
+                <Users size={18} />
               </div>
-              <div>
-                <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.86rem' }}>Equipo Multidisciplinario</div>
-                <div style={{ fontSize: '0.75rem', color: '#496386', lineHeight: 1.35 }}>Médicos, kinesiólogos y nutricionistas integrados en el mismo centro.</div>
+              <div className="trust-content">
+                <div className="trust-title">Equipo Integrado</div>
+                <div className="trust-desc">Médicos y kinesiólogos en el centro</div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem' }}>
-              <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#EBF3FD', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#076ABC', flexShrink: 0, marginTop: '2px' }}>
-                <Sparkles size={16} />
+            <div className="trust-item">
+              <div
+                className="trust-icon-box"
+                style={{
+                  background: '#F5F3FF',
+                  color: '#7C3AED',
+                  border: '1px solid #DDD6FE'
+                }}
+              >
+                <Zap size={18} />
               </div>
-              <div>
-                <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.86rem' }}>Tecnología de Precisión</div>
-                <div style={{ fontSize: '0.75rem', color: '#496386', lineHeight: 1.35 }}>Gimnasio de 180 m², baropodometría y radiología digital directa.</div>
+              <div className="trust-content">
+                <div className="trust-title">Tecnología Médica</div>
+                <div className="trust-desc">Gimnasio 180 m² y Rayos X digital</div>
               </div>
             </div>
           </div>

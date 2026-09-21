@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
 import {
   Calendar,
   Users,
@@ -676,7 +677,7 @@ export const DashboardView = () => {
                 onClick={() => setActiveTab('communications')}
               >
                 <div className="stat-icon-box" style={{ width: '38px', height: '38px', flexShrink: 0 }}>
-                  <MessageSquare size={18} />
+                  <WhatsAppIcon size={18} color="#25D366" />
                 </div>
                 <div>
                   <div style={{ fontWeight: 800, fontSize: '0.84rem', color: 'var(--text-main)' }}>WhatsApp API</div>

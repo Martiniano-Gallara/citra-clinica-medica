@@ -12,7 +12,9 @@ import {
   ShieldCheck,
   CheckCircle2,
   AlertCircle,
-  Sparkles
+  Sparkles,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 export const UserAuthModal = () => {
@@ -24,13 +26,21 @@ export const UserAuthModal = () => {
     loginPatient,
     registerPatient,
     healthInsurances,
-    patients
+    patients,
+    resetUserPassword
   } = useClinic();
 
   // Login form state
   const [loginInput, setLoginInput] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Recovery form state
+  const [recoverInput, setRecoverInput] = useState('');
+  const [recoverMsg, setRecoverMsg] = useState('');
+  const [recoverSuccess, setRecoverSuccess] = useState(false);
+  const [recoverLoading, setRecoverLoading] = useState(false);
 
   // Register form state
   const [regName, setRegName] = useState('');
@@ -41,6 +51,7 @@ export const UserAuthModal = () => {
   const [regInsuranceNumber, setRegInsuranceNumber] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regError, setRegError] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
 
   if (!isAuthModalOpen) return null;
 
@@ -48,22 +59,42 @@ export const UserAuthModal = () => {
     e.preventDefault();
     setLoginError('');
 
-    if (!loginInput.trim()) {
-      setLoginError('Ingresa tu DNI o Correo Electrónico');
+    if (!loginInput.trim() || !loginPassword.trim()) {
+      setLoginError('Por favor ingresá tu DNI o Correo Electrónico y tu contraseña.');
       return;
     }
 
     const res = loginPatient(loginInput, loginPassword);
     if (!res.success) {
-      setLoginError('No encontramos un paciente registrado con esos datos. Si es tu primera vez, haz clic en "Crear Cuenta".');
+      setLoginError(res.message === 'Contraseña incorrecta' ? 'Contraseña incorrecta. Verificá tu clave o restablecela.' : 'Los datos ingresados no coinciden con ninguna cuenta.');
+    }
+  };
+
+  const handleRecoverSubmit = async (e) => {
+    e.preventDefault();
+    setRecoverMsg('');
+    if (!recoverInput.trim()) {
+      setRecoverMsg('Por favor ingresá tu DNI o Correo Electrónico.');
+      return;
+    }
+    setRecoverLoading(true);
+    const res = await resetUserPassword(recoverInput);
+    setRecoverLoading(false);
+    if (res.success) {
+      setRecoverSuccess(true);
+      setRecoverMsg('Se han emitido las instrucciones de recuperación seguras.');
+    } else {
+      setRecoverSuccess(false);
+      setRecoverMsg('No encontramos ninguna cuenta asociada a esos datos.');
     }
   };
 
   const handleQuickDemoLogin = () => {
-    const demoPatient = patients[0] || { dni: '34.892.110', email: 'juan.perez@gmail.com' };
-    setLoginInput(demoPatient.dni);
+    const demoPatient = patients[0] || { dni: '34892110', email: 'demo@citra.com.ar' };
+    const dniVal = demoPatient.dni || '34892110';
+    setLoginInput(dniVal);
     setLoginPassword('demo1234');
-    loginPatient(demoPatient.dni, 'demo1234');
+    loginPatient(dniVal, 'demo1234');
   };
 
   const handleRegisterSubmit = (e) => {
@@ -71,14 +102,19 @@ export const UserAuthModal = () => {
     setRegError('');
 
     if (!regName.trim() || !regDni.trim() || !regEmail.trim()) {
-      setRegError('Por favor completa los campos requeridos (Nombre, DNI, Email).');
+      setRegError('Por favor completá los campos obligatorios (Nombre, DNI, Email).');
+      return;
+    }
+
+    if (!regPassword.trim() || regPassword.length < 6) {
+      setRegError('La contraseña de tu cuenta debe tener al menos 6 caracteres.');
       return;
     }
 
     const cleanDni = regDni.trim().replace(/\./g, '');
     const exists = patients.some((p) => (p.dni || '').replace(/\./g, '') === cleanDni);
     if (exists) {
-      setRegError('Ya existe una cuenta con este DNI. Por favor inicia sesión.');
+      setRegError('Ya existe una cuenta con este DNI. Por favor iniciá sesión.');
       return;
     }
 
@@ -86,11 +122,11 @@ export const UserAuthModal = () => {
       name: regName.trim(),
       dni: regDni.trim(),
       email: regEmail.trim(),
-      phone: regPhone.trim() || '+54 9 11 0000-0000',
+      phone: regPhone.trim() || '',
       insuranceName: regInsurance,
       insurancePlan: regInsurance === 'Particular' ? 'Sin cobertura' : 'Plan Estándar',
-      insuranceNumber: regInsuranceNumber.trim() || 'N/A',
-      password: regPassword || '123456',
+      insuranceNumber: regInsuranceNumber.trim() || '',
+      password: regPassword.trim(),
       bloodType: 'N/E',
       allergies: []
     });
@@ -101,13 +137,14 @@ export const UserAuthModal = () => {
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 33, 130, 0.65)',
-        backdropFilter: 'blur(6px)',
+        backgroundColor: 'rgba(0, 21, 86, 0.72)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
         zIndex: 9999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '1.25rem'
+        padding: '1rem'
       }}
       onClick={() => setIsAuthModalOpen(false)}
     >
@@ -116,87 +153,123 @@ export const UserAuthModal = () => {
           background: '#ffffff',
           borderRadius: '20px',
           width: '100%',
-          maxWidth: '520px',
-          maxHeight: '92vh',
+          maxWidth: '480px',
+          maxHeight: '94vh',
           overflowY: 'auto',
-          boxShadow: '0 25px 50px -12px rgba(0, 33, 130, 0.35)',
+          boxShadow: '0 24px 60px rgba(0, 21, 86, 0.35)',
           border: '1px solid #D2E3FC',
           position: 'relative'
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header decoration banner */}
+        {/* Encabezado Superior con Identidad Institucional */}
         <div
           style={{
-            background: 'linear-gradient(135deg, #002182 0%, #076ABC 100%)',
-            padding: '1.75rem 2rem 1.25rem',
+            background: 'linear-gradient(135deg, #001556 0%, #002182 100%)',
+            padding: '1.5rem 1.75rem 1.25rem',
             color: '#ffffff',
             borderTopLeftRadius: '19px',
             borderTopRightRadius: '19px',
-            position: 'relative'
+            position: 'relative',
+            overflow: 'hidden'
           }}
         >
-          <button
-            onClick={() => setIsAuthModalOpen(false)}
+          {/* Luz ambiental sutil */}
+          <div
+            aria-hidden="true"
             style={{
               position: 'absolute',
-              top: '1.25rem',
-              right: '1.25rem',
-              background: 'rgba(255, 255, 255, 0.2)',
-              border: 'none',
+              top: '-40%',
+              right: '-20%',
+              width: '200px',
+              height: '200px',
               borderRadius: '50%',
-              width: '36px',
-              height: '36px',
+              background: 'radial-gradient(circle, rgba(0, 240, 255, 0.2) 0%, transparent 70%)',
+              filter: 'blur(30px)',
+              pointerEvents: 'none'
+            }}
+          />
+
+          {/* Botón Cerrar */}
+          <button
+            onClick={() => setIsAuthModalOpen(false)}
+            aria-label="Cerrar modal"
+            style={{
+              position: 'absolute',
+              top: '1.1rem',
+              right: '1.1rem',
+              background: 'rgba(255, 255, 255, 0.12)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '50%',
+              width: '34px',
+              height: '34px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#ffffff',
               cursor: 'pointer',
-              transition: 'background 0.2s ease'
+              transition: 'all 0.2s ease'
             }}
           >
-            <X size={20} />
+            <X size={18} />
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '0.85rem' }}>
+          {/* Logo y Badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
             <div
               style={{
                 background: '#ffffff',
-                padding: '0.4rem 0.8rem',
-                borderRadius: '12px',
+                padding: '0.35rem 0.65rem',
+                borderRadius: '10px',
                 display: 'inline-flex',
                 alignItems: 'center',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.12)'
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
               }}
             >
               <img
-                src="./citra-logo.png"
-                alt="CITRA Clínica Médica"
-                style={{ height: '38px', maxWidth: '160px', objectFit: 'contain', display: 'block' }}
+                src="/citra-logo.png"
+                alt="CITRA"
+                style={{ height: '28px', maxWidth: '120px', objectFit: 'contain', display: 'block' }}
               />
             </div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.15)', padding: '0.3rem 0.75rem', borderRadius: '100px', fontSize: '0.74rem', fontWeight: 700, letterSpacing: '0.05em' }}>
-              <ShieldCheck size={14} color="#257CE6" />
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                background: 'rgba(37, 124, 230, 0.22)',
+                border: '1px solid rgba(142, 190, 245, 0.35)',
+                padding: '0.25rem 0.65rem',
+                borderRadius: '100px',
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                color: '#D2E3FC',
+                letterSpacing: '0.04em'
+              }}
+            >
+              <ShieldCheck size={13} color="#38BDF8" />
               PORTAL DEL PACIENTE
             </div>
           </div>
-          <h2 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 800 }}>
+
+          <h2 style={{ margin: '0 0 0.25rem', fontSize: '1.35rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
             {authModalTab === 'login' ? 'Iniciar Sesión' : 'Registro de Paciente'}
           </h2>
-          <p style={{ margin: '0.35rem 0 0', fontSize: '0.85rem', color: '#D2E3FC' }}>
+          <p style={{ margin: 0, fontSize: '0.84rem', color: '#BFDBFE', lineHeight: 1.4 }}>
             {authModalTab === 'login'
-              ? 'Accedé para gestionar tus turnos médicos y consultas.'
-              : 'Registrate en menos de 1 minuto para sacar y consultar turnos.'}
+              ? 'Accedé a tu cuenta para gestionar turnos y estudios.'
+              : 'Completá tus datos para agendar consultas en menos de 1 minuto.'}
           </p>
 
-          {/* Tab Switcher */}
+          {/* Selector de Pestañas (Tabs) */}
           <div
             style={{
               display: 'flex',
-              background: 'rgba(0, 0, 0, 0.2)',
+              background: 'rgba(0, 0, 0, 0.25)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
               borderRadius: '12px',
               padding: '4px',
-              marginTop: '1.25rem',
+              marginTop: '1.1rem',
               gap: '4px'
             }}
           >
@@ -205,19 +278,20 @@ export const UserAuthModal = () => {
               onClick={() => { setAuthModalTab('login'); setLoginError(''); }}
               style={{
                 flex: 1,
-                padding: '0.6rem 0.5rem',
+                padding: '0.55rem 0.5rem',
                 borderRadius: '8px',
                 border: 'none',
                 background: authModalTab === 'login' ? '#ffffff' : 'transparent',
                 color: authModalTab === 'login' ? '#002182' : '#ffffff',
-                fontWeight: 700,
-                fontSize: '0.85rem',
+                fontWeight: 800,
+                fontSize: '0.84rem',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '0.4rem',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s ease',
+                boxShadow: authModalTab === 'login' ? '0 2px 8px rgba(0, 0, 0, 0.15)' : 'none'
               }}
             >
               <LogIn size={15} />
@@ -228,19 +302,20 @@ export const UserAuthModal = () => {
               onClick={() => { setAuthModalTab('register'); setRegError(''); }}
               style={{
                 flex: 1,
-                padding: '0.6rem 0.5rem',
+                padding: '0.55rem 0.5rem',
                 borderRadius: '8px',
                 border: 'none',
                 background: authModalTab === 'register' ? '#ffffff' : 'transparent',
                 color: authModalTab === 'register' ? '#002182' : '#ffffff',
-                fontWeight: 700,
-                fontSize: '0.85rem',
+                fontWeight: 800,
+                fontSize: '0.84rem',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '0.4rem',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s ease',
+                boxShadow: authModalTab === 'register' ? '0 2px 8px rgba(0, 0, 0, 0.15)' : 'none'
               }}
             >
               <UserPlus size={15} />
@@ -249,118 +324,61 @@ export const UserAuthModal = () => {
           </div>
         </div>
 
-        {/* Form Body */}
-        <div style={{ padding: '1.75rem 2rem' }}>
-          {authModalTab === 'login' ? (
-            <form onSubmit={handleLoginSubmit}>
-              {loginError && (
+        {/* Cuerpo del Formulario */}
+        <div style={{ padding: '1.5rem 1.75rem 1.75rem' }}>
+          {authModalTab === 'recover' ? (
+            <form onSubmit={handleRecoverSubmit}>
+              <div style={{ marginBottom: '1.25rem' }}>
+                <h4 style={{ margin: '0 0 0.35rem', color: '#002182', fontSize: '1.15rem', fontWeight: 800 }}>
+                  Recuperación de Contraseña
+                </h4>
+                <p style={{ margin: 0, fontSize: '0.84rem', color: '#64748b', lineHeight: 1.5 }}>
+                  Ingresá tu DNI o Correo Electrónico asociado a tu ficha de paciente. Te enviaremos las instrucciones de acceso seguro.
+                </p>
+              </div>
+
+              {recoverMsg && (
                 <div
                   style={{
-                    background: '#fef2f2',
-                    border: '1px solid #fecaca',
-                    color: '#991b1b',
-                    padding: '0.75rem 1rem',
+                    background: recoverSuccess ? '#f0fdf4' : '#fef2f2',
+                    border: `1px solid ${recoverSuccess ? '#86efac' : '#fecaca'}`,
+                    color: recoverSuccess ? '#166534' : '#991b1b',
+                    padding: '0.75rem 0.95rem',
                     borderRadius: '10px',
-                    fontSize: '0.85rem',
+                    fontSize: '0.84rem',
                     marginBottom: '1.25rem',
                     display: 'flex',
                     alignItems: 'flex-start',
                     gap: '0.5rem'
                   }}
                 >
-                  <AlertCircle size={17} style={{ flexShrink: 0, marginTop: '2px' }} />
-                  <div>{loginError}</div>
+                  <CheckCircle2 size={17} style={{ flexShrink: 0, marginTop: '1px' }} />
+                  <div>{recoverMsg}</div>
                 </div>
               )}
 
-              {/* Demo Account Quick Access Card */}
-              <div
-                style={{
-                  background: '#F5F8FE',
-                  border: '1px dashed #076ABC',
-                  borderRadius: '12px',
-                  padding: '0.85rem 1rem',
-                  marginBottom: '1.25rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '0.75rem'
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#002182', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <Sparkles size={14} color="#076ABC" />
-                    Cuenta de Demostración
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#496386', marginTop: '2px' }}>
-                    DNI: 34.892.110 (Juan Ignacio Pérez)
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleQuickDemoLogin}
-                  style={{
-                    background: '#076ABC',
-                    color: '#ffffff',
-                    border: 'none',
-                    padding: '0.4rem 0.85rem',
-                    borderRadius: '8px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  Ingresar Demo
-                </button>
-              </div>
-
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#002182', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, color: '#002182', marginBottom: '0.35rem' }}>
                   DNI o Correo Electrónico
                 </label>
                 <div style={{ position: 'relative' }}>
                   <Mail size={17} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#7994B8' }} />
                   <input
                     type="text"
-                    value={loginInput}
-                    onChange={(e) => setLoginInput(e.target.value)}
-                    placeholder="Ej: 34.892.110 o juan@gmail.com"
+                    required
+                    value={recoverInput}
+                    onChange={(e) => setRecoverInput(e.target.value)}
+                    placeholder="Ej: 34892110 o paciente@gmail.com"
                     style={{
                       width: '100%',
-                      padding: '0.7rem 0.75rem 0.7rem 2.4rem',
+                      padding: '0.72rem 0.85rem 0.72rem 2.45rem',
                       borderRadius: '10px',
                       border: '1.5px solid #D2E3FC',
-                      fontSize: '0.9rem',
-                      outline: 'none'
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#002182' }}>
-                    Contraseña
-                  </label>
-                  <span style={{ fontSize: '0.75rem', color: '#076ABC', cursor: 'pointer' }}>
-                    ¿Olvidaste tu clave?
-                  </span>
-                </div>
-                <div style={{ position: 'relative' }}>
-                  <Lock size={17} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#7994B8' }} />
-                  <input
-                    type="password"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    placeholder="••••••••"
-                    style={{
-                      width: '100%',
-                      padding: '0.7rem 0.75rem 0.7rem 2.4rem',
-                      borderRadius: '10px',
-                      border: '1.5px solid #D2E3FC',
-                      fontSize: '0.9rem',
-                      outline: 'none'
+                      fontSize: '0.88rem',
+                      color: '#002182',
+                      fontWeight: 600,
+                      outline: 'none',
+                      boxSizing: 'border-box'
                     }}
                   />
                 </div>
@@ -368,35 +386,223 @@ export const UserAuthModal = () => {
 
               <button
                 type="submit"
+                disabled={recoverLoading}
                 style={{
                   width: '100%',
-                  background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                  background: 'linear-gradient(135deg, #257CE6 0%, #076ABC 100%)',
                   color: '#ffffff',
                   border: 'none',
-                  padding: '0.85rem',
-                  borderRadius: '10px',
+                  padding: '0.85rem 1rem',
+                  borderRadius: '12px',
                   fontWeight: 800,
-                  fontSize: '0.95rem',
+                  fontSize: '0.92rem',
+                  cursor: recoverLoading ? 'not-allowed' : 'pointer',
+                  marginBottom: '0.75rem',
+                  boxShadow: '0 4px 14px rgba(7, 106, 188, 0.3)'
+                }}
+              >
+                {recoverLoading ? 'Enviando...' : 'Restablecer Clave'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAuthModalTab('login')}
+                style={{
+                  width: '100%',
+                  background: '#f8fafc',
+                  border: '1px solid #D2E3FC',
+                  color: '#002182',
+                  padding: '0.7rem',
+                  borderRadius: '12px',
+                  fontWeight: 700,
+                  fontSize: '0.84rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Volver al Inicio de Sesión
+              </button>
+            </form>
+          ) : authModalTab === 'login' ? (
+            <form onSubmit={handleLoginSubmit}>
+              {loginError && (
+                <div
+                  style={{
+                    background: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    color: '#991b1b',
+                    padding: '0.75rem 0.95rem',
+                    borderRadius: '10px',
+                    fontSize: '0.82rem',
+                    marginBottom: '1.25rem',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '0.5rem',
+                    lineHeight: 1.4
+                  }}
+                >
+                  <AlertCircle size={17} style={{ flexShrink: 0, marginTop: '1px' }} />
+                  <div>{loginError}</div>
+                </div>
+              )}
+
+              {/* Campo DNI o Email */}
+              <div style={{ marginBottom: '1.15rem' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, color: '#002182', marginBottom: '0.35rem' }}>
+                  DNI o Correo Electrónico
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Mail size={17} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#7994B8' }} />
+                  <input
+                    type="text"
+                    required
+                    value={loginInput}
+                    onChange={(e) => setLoginInput(e.target.value)}
+                    placeholder="Ingresá tu DNI o email"
+                    style={{
+                      width: '100%',
+                      padding: '0.72rem 0.85rem 0.72rem 2.45rem',
+                      borderRadius: '10px',
+                      border: '1.5px solid #D2E3FC',
+                      fontSize: '0.88rem',
+                      color: '#002182',
+                      fontWeight: 600,
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      transition: 'border-color 0.2s ease'
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = '#076ABC')}
+                    onBlur={(e) => (e.target.style.borderColor = '#D2E3FC')}
+                  />
+                </div>
+              </div>
+
+              {/* Campo Contraseña con Toggle de Ver/Ocultar */}
+              <div style={{ marginBottom: '1.35rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#002182' }}>
+                    Contraseña
+                  </label>
+                  <span
+                    onClick={() => { setAuthModalTab('recover'); setRecoverMsg(''); setRecoverSuccess(false); }}
+                    style={{ fontSize: '0.75rem', color: '#076ABC', fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    ¿Olvidaste tu clave?
+                  </span>
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <Lock size={17} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#7994B8' }} />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="Ingresá tu contraseña"
+                    style={{
+                      width: '100%',
+                      padding: '0.72rem 2.5rem 0.72rem 2.45rem',
+                      borderRadius: '10px',
+                      border: '1.5px solid #D2E3FC',
+                      fontSize: '0.88rem',
+                      color: '#002182',
+                      fontWeight: 600,
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      transition: 'border-color 0.2s ease'
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = '#076ABC')}
+                    onBlur={(e) => (e.target.style.borderColor = '#D2E3FC')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label="Ver contraseña"
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: '#7994B8',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Botón Principal de Inicio de Sesión */}
+              <button
+                type="submit"
+                style={{
+                  width: '100%',
+                  background: 'linear-gradient(135deg, #257CE6 0%, #076ABC 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '0.85rem 1rem',
+                  borderRadius: '12px',
+                  fontWeight: 800,
+                  fontSize: '0.92rem',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '0.5rem',
-                  boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)'
+                  boxShadow: '0 4px 14px rgba(7, 106, 188, 0.3)',
+                  minHeight: '46px',
+                  transition: 'all 0.2s ease'
                 }}
               >
                 <LogIn size={18} />
                 Ingresar a Mi Cuenta
               </button>
 
-              <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.85rem', color: '#496386' }}>
+              {/* Enlace para cambiar a Registro */}
+              <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.84rem', color: '#496386' }}>
                 ¿Primera vez en CITRA?{' '}
                 <button
                   type="button"
                   onClick={() => { setAuthModalTab('register'); setRegError(''); }}
-                  style={{ background: 'none', border: 'none', color: '#076ABC', fontWeight: 800, cursor: 'pointer', padding: 0 }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#076ABC',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    padding: 0
+                  }}
                 >
                   Registrate aquí
+                </button>
+              </div>
+
+              {/* Botón Sutil de Acceso Rápido Demo (Sin datos verídicos falsos) */}
+              <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #EDF3FD', textAlign: 'center' }}>
+                <button
+                  type="button"
+                  onClick={handleQuickDemoLogin}
+                  style={{
+                    background: '#F8FAFD',
+                    border: '1px solid #D2E3FC',
+                    color: '#076ABC',
+                    padding: '0.45rem 0.95rem',
+                    borderRadius: '100px',
+                    fontSize: '0.76rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Sparkles size={13} color="#076ABC" />
+                  Acceso rápido de prueba (Demo)
                 </button>
               </div>
             </form>
@@ -408,47 +614,53 @@ export const UserAuthModal = () => {
                     background: '#fef2f2',
                     border: '1px solid #fecaca',
                     color: '#991b1b',
-                    padding: '0.75rem 1rem',
+                    padding: '0.75rem 0.95rem',
                     borderRadius: '10px',
-                    fontSize: '0.85rem',
-                    marginBottom: '1.25rem',
+                    fontSize: '0.82rem',
+                    marginBottom: '1.15rem',
                     display: 'flex',
                     alignItems: 'flex-start',
-                    gap: '0.5rem'
+                    gap: '0.5rem',
+                    lineHeight: 1.4
                   }}
                 >
-                  <AlertCircle size={17} style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <AlertCircle size={17} style={{ flexShrink: 0, marginTop: '1px' }} />
                   <div>{regError}</div>
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem', marginBottom: '0.85rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                    Nombre Completo *
-                  </label>
-                  <div style={{ position: 'relative' }}>
-                    <User size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#7994B8' }} />
-                    <input
-                      type="text"
-                      required
-                      value={regName}
-                      onChange={(e) => setRegName(e.target.value)}
-                      placeholder="Ej: Lucía Gómez"
-                      style={{
-                        width: '100%',
-                        padding: '0.65rem 0.6rem 0.65rem 2.2rem',
-                        borderRadius: '9px',
-                        border: '1.5px solid #D2E3FC',
-                        fontSize: '0.85rem',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
+              {/* Nombre Completo */}
+              <div style={{ marginBottom: '0.9rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#002182', marginBottom: '0.3rem' }}>
+                  Nombre Completo *
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <User size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#7994B8' }} />
+                  <input
+                    type="text"
+                    required
+                    value={regName}
+                    onChange={(e) => setRegName(e.target.value)}
+                    placeholder="Nombre y apellido"
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.75rem 0.65rem 2.25rem',
+                      borderRadius: '10px',
+                      border: '1.5px solid #D2E3FC',
+                      fontSize: '0.85rem',
+                      color: '#002182',
+                      fontWeight: 600,
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
                 </div>
+              </div>
 
+              {/* DNI y Teléfono */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '0.75rem', marginBottom: '0.9rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#002182', marginBottom: '0.3rem' }}>
                     DNI *
                   </label>
                   <input
@@ -456,71 +668,81 @@ export const UserAuthModal = () => {
                     required
                     value={regDni}
                     onChange={(e) => setRegDni(e.target.value)}
-                    placeholder="Ej: 38.250.914"
+                    placeholder="Número de documento (sin puntos)"
                     style={{
                       width: '100%',
                       padding: '0.65rem 0.75rem',
-                      borderRadius: '9px',
+                      borderRadius: '10px',
                       border: '1.5px solid #D2E3FC',
                       fontSize: '0.85rem',
-                      outline: 'none'
+                      color: '#002182',
+                      fontWeight: 600,
+                      outline: 'none',
+                      boxSizing: 'border-box'
                     }}
                   />
                 </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem', marginBottom: '0.85rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                    Correo Electrónico *
-                  </label>
-                  <div style={{ position: 'relative' }}>
-                    <Mail size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#7994B8' }} />
-                    <input
-                      type="email"
-                      required
-                      value={regEmail}
-                      onChange={(e) => setRegEmail(e.target.value)}
-                      placeholder="tuemail@ejemplo.com"
-                      style={{
-                        width: '100%',
-                        padding: '0.65rem 0.6rem 0.65rem 2.2rem',
-                        borderRadius: '9px',
-                        border: '1.5px solid #D2E3FC',
-                        fontSize: '0.85rem',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-                </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#002182', marginBottom: '0.3rem' }}>
                     Teléfono / WhatsApp *
                   </label>
                   <div style={{ position: 'relative' }}>
                     <Phone size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#7994B8' }} />
                     <input
                       type="tel"
+                      required
                       value={regPhone}
                       onChange={(e) => setRegPhone(e.target.value)}
-                      placeholder="+54 9 11 4455-6677"
+                      placeholder="Cód. área y número"
                       style={{
                         width: '100%',
-                        padding: '0.65rem 0.6rem 0.65rem 2.2rem',
-                        borderRadius: '9px',
+                        padding: '0.65rem 0.75rem 0.65rem 2.25rem',
+                        borderRadius: '10px',
                         border: '1.5px solid #D2E3FC',
                         fontSize: '0.85rem',
-                        outline: 'none'
+                        color: '#002182',
+                        fontWeight: 600,
+                        outline: 'none',
+                        boxSizing: 'border-box'
                       }}
                     />
                   </div>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.85rem', marginBottom: '0.85rem' }}>
+              {/* Correo Electrónico */}
+              <div style={{ marginBottom: '0.9rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#002182', marginBottom: '0.3rem' }}>
+                  Correo Electrónico *
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Mail size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#7994B8' }} />
+                  <input
+                    type="email"
+                    required
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    placeholder="nombre@correo.com"
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.75rem 0.65rem 2.25rem',
+                      borderRadius: '10px',
+                      border: '1.5px solid #D2E3FC',
+                      fontSize: '0.85rem',
+                      color: '#002182',
+                      fontWeight: 600,
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Obra Social y N° de Afiliado */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '0.75rem', marginBottom: '0.9rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#002182', marginBottom: '0.3rem' }}>
                     Obra Social o Prepaga
                   </label>
                   <select
@@ -529,11 +751,14 @@ export const UserAuthModal = () => {
                     style={{
                       width: '100%',
                       padding: '0.65rem 0.75rem',
-                      borderRadius: '9px',
+                      borderRadius: '10px',
                       border: '1.5px solid #D2E3FC',
                       fontSize: '0.85rem',
+                      color: '#002182',
+                      fontWeight: 600,
                       outline: 'none',
-                      background: '#ffffff'
+                      background: '#ffffff',
+                      boxSizing: 'border-box'
                     }}
                   >
                     <option value="Particular">Particular (Sin Obra Social)</option>
@@ -546,7 +771,7 @@ export const UserAuthModal = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#002182', marginBottom: '0.3rem' }}>
                     N° de Afiliado
                   </label>
                   <div style={{ position: 'relative' }}>
@@ -555,73 +780,111 @@ export const UserAuthModal = () => {
                       type="text"
                       value={regInsuranceNumber}
                       onChange={(e) => setRegInsuranceNumber(e.target.value)}
-                      placeholder="Ej: 310-9281-01"
+                      placeholder="Número de credencial (opcional)"
                       style={{
                         width: '100%',
-                        padding: '0.65rem 0.6rem 0.65rem 2.2rem',
-                        borderRadius: '9px',
+                        padding: '0.65rem 0.75rem 0.65rem 2.25rem',
+                        borderRadius: '10px',
                         border: '1.5px solid #D2E3FC',
                         fontSize: '0.85rem',
-                        outline: 'none'
+                        color: '#002182',
+                        fontWeight: 600,
+                        outline: 'none',
+                        boxSizing: 'border-box'
                       }}
                     />
                   </div>
                 </div>
               </div>
 
+              {/* Contraseña con Toggle */}
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#002182', marginBottom: '0.3rem' }}>
                   Crear Contraseña *
                 </label>
                 <div style={{ position: 'relative' }}>
                   <Lock size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#7994B8' }} />
                   <input
-                    type="password"
+                    type={showRegPassword ? 'text' : 'password'}
                     required
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
-                    placeholder="Crea una contraseña segura"
+                    placeholder="Mínimo 6 caracteres"
                     style={{
                       width: '100%',
-                      padding: '0.65rem 0.6rem 0.65rem 2.2rem',
-                      borderRadius: '9px',
+                      padding: '0.65rem 2.5rem 0.65rem 2.25rem',
+                      borderRadius: '10px',
                       border: '1.5px solid #D2E3FC',
                       fontSize: '0.85rem',
-                      outline: 'none'
+                      color: '#002182',
+                      fontWeight: 600,
+                      outline: 'none',
+                      boxSizing: 'border-box'
                     }}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegPassword(!showRegPassword)}
+                    aria-label="Ver contraseña"
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: '#7994B8',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {showRegPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
               </div>
 
+              {/* Botón Submit Registro */}
               <button
                 type="submit"
                 style={{
                   width: '100%',
-                  background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                  background: 'linear-gradient(135deg, #257CE6 0%, #076ABC 100%)',
                   color: '#ffffff',
                   border: 'none',
-                  padding: '0.85rem',
-                  borderRadius: '10px',
+                  padding: '0.85rem 1rem',
+                  borderRadius: '12px',
                   fontWeight: 800,
-                  fontSize: '0.95rem',
+                  fontSize: '0.92rem',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '0.5rem',
-                  boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)'
+                  boxShadow: '0 4px 14px rgba(7, 106, 188, 0.3)',
+                  minHeight: '46px',
+                  transition: 'all 0.2s ease'
                 }}
               >
                 <CheckCircle2 size={18} />
                 Completar Registro y Continuar
               </button>
 
-              <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.85rem', color: '#496386' }}>
+              <div style={{ textAlign: 'center', marginTop: '1.15rem', fontSize: '0.84rem', color: '#496386' }}>
                 ¿Ya tenés cuenta?{' '}
                 <button
                   type="button"
                   onClick={() => { setAuthModalTab('login'); setLoginError(''); }}
-                  style={{ background: 'none', border: 'none', color: '#076ABC', fontWeight: 800, cursor: 'pointer', padding: 0 }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#076ABC',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    padding: 0
+                  }}
                 >
                   Iniciá sesión aquí
                 </button>

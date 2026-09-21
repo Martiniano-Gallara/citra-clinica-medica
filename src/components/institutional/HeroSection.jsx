@@ -28,25 +28,11 @@ export const HeroSection = () => {
         }}
         className="hero-container"
       >
-        {/* Fondo Clean Medical Tech: Degradé suave, mesh ambient orbs y textura sutil */}
-        {/* Capa Plexus Network / Constelación Biomédica (Referencia) */}
+        {/* Fondo Clean Medical Tech: Plexus dinámico con movimiento sutil, mesh halos y partículas */}
+        {/* Capa Plexus Network / Constelación Biomédica Animada */}
         <div
           aria-hidden="true"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage: 'url("./citra-hero-plexus.jpg")',
-            backgroundSize: 'cover',
-            backgroundPosition: 'left center',
-            backgroundRepeat: 'no-repeat',
-            opacity: 0.55,
-            mixBlendMode: 'multiply',
-            pointerEvents: 'none',
-            zIndex: 0,
-            maskImage: 'radial-gradient(ellipse 95% 90% at 20% 50%, black 35%, rgba(0, 0, 0, 0.6) 65%, transparent 100%)',
-            WebkitMaskImage: 'radial-gradient(ellipse 95% 90% at 20% 50%, black 35%, rgba(0, 0, 0, 0.6) 65%, transparent 100%)',
-            filter: 'contrast(1.08) saturate(1.15)'
-          }}
+          className="hero-plexus-layer"
         />
 
         {/* Capa de textura reticular sutil (patrón médico tech) */}
@@ -65,55 +51,93 @@ export const HeroSection = () => {
           }}
         />
 
-        {/* Halo luminoso central superior */}
+        {/* Halo luminoso central superior animado */}
         <div
           aria-hidden="true"
-          style={{
-            position: 'absolute',
-            top: '-15%',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '650px',
-            height: '420px',
-            borderRadius: '50%',
-            background: 'radial-gradient(ellipse at center, rgba(37, 124, 230, 0.12) 0%, rgba(7, 106, 188, 0.04) 50%, rgba(255, 255, 255, 0) 75%)',
-            filter: 'blur(40px)',
-            pointerEvents: 'none',
-            zIndex: 0
-          }}
+          className="hero-halo-layer"
         />
 
-        {/* Ambient Glow lateral izquierdo (celeste suave) */}
+        {/* Ambient Glow lateral izquierdo animado (celeste suave) */}
         <div
           aria-hidden="true"
-          style={{
-            position: 'absolute',
-            top: '25%',
-            left: '-8%',
-            width: '380px',
-            height: '380px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(7, 106, 188, 0.09) 0%, rgba(255, 255, 255, 0) 70%)',
-            filter: 'blur(50px)',
-            pointerEvents: 'none',
-            zIndex: 0
-          }}
+          className="hero-orb-left-layer"
         />
 
-        {/* Ambient Glow lateral derecho (azul institucional) */}
+        {/* Ambient Glow lateral derecho animado (azul institucional) */}
         <div
           aria-hidden="true"
+          className="hero-orb-right-layer"
+        />
+
+        {/* Micro-partículas luminosas flotantes (movimiento sutil orgánico) */}
+        <div
+          aria-hidden="true"
+          className="hero-particle"
           style={{
-            position: 'absolute',
-            bottom: '10%',
-            right: '-6%',
-            width: '420px',
-            height: '420px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(0, 33, 130, 0.07) 0%, rgba(255, 255, 255, 0) 70%)',
-            filter: 'blur(50px)',
-            pointerEvents: 'none',
-            zIndex: 0
+            width: '6px',
+            height: '6px',
+            top: '32%',
+            left: '18%',
+            '--px': '22px',
+            '--py': '-45px',
+            animationDuration: '18s',
+            animationDelay: '0s'
+          }}
+        />
+        <div
+          aria-hidden="true"
+          className="hero-particle"
+          style={{
+            width: '7px',
+            height: '7px',
+            top: '58%',
+            left: '26%',
+            '--px': '-26px',
+            '--py': '-55px',
+            animationDuration: '22s',
+            animationDelay: '3.5s'
+          }}
+        />
+        <div
+          aria-hidden="true"
+          className="hero-particle"
+          style={{
+            width: '5px',
+            height: '5px',
+            top: '46%',
+            left: '11%',
+            '--px': '28px',
+            '--py': '-40px',
+            animationDuration: '19s',
+            animationDelay: '7s'
+          }}
+        />
+        <div
+          aria-hidden="true"
+          className="hero-particle"
+          style={{
+            width: '6px',
+            height: '6px',
+            top: '24%',
+            left: '78%',
+            '--px': '-24px',
+            '--py': '-50px',
+            animationDuration: '24s',
+            animationDelay: '2s'
+          }}
+        />
+        <div
+          aria-hidden="true"
+          className="hero-particle"
+          style={{
+            width: '5px',
+            height: '5px',
+            top: '66%',
+            left: '84%',
+            '--px': '-20px',
+            '--py': '-42px',
+            animationDuration: '26s',
+            animationDelay: '8s'
           }}
         />
 

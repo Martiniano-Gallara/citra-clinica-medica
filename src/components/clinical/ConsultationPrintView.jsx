@@ -1,38 +1,31 @@
 import React from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
 import {
   Printer,
-  FileCheck2,
-  Stethoscope,
+  FileText,
   X,
   QrCode,
-  Lock,
-  Share2,
-  ShieldCheck,
-  Calendar,
-  Building,
-  AlertCircle
+  Download,
+  CheckCircle2
 } from 'lucide-react';
 
 export const ConsultationPrintView = () => {
   const {
     selectedConsultationForPrint,
     setSelectedConsultationForPrint,
-    clinicInfo,
-    patients,
-    currentDoctor,
-    isDoctor
+    patients
   } = useClinic();
 
   if (!selectedConsultationForPrint) return null;
 
   const cons = selectedConsultationForPrint;
   const pat = patients.find((p) => p.id === cons.patientId) || {
-    name: cons.patientName,
-    dni: cons.patientDni || '34.892.110',
-    insuranceName: 'OSDE',
-    insurancePlan: '310',
-    insuranceNumber: '310-892110-01'
+    name: cons.patientName || 'Paciente',
+    dni: cons.patientDni || '-',
+    insuranceName: 'Particular',
+    insurancePlan: '',
+    insuranceNumber: ''
   };
 
   const handlePrint = () => {
@@ -41,7 +34,7 @@ export const ConsultationPrintView = () => {
 
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(
-      `Estimado/a ${pat.name}: Adjuntamos copia oficial de su Evolución Médica & Informe Clínico emitido el ${cons.date} en CITRA Clínica Médica por el ${cons.doctorName}. Documento firmado digitalmente con validez legal plena.`
+      `Estimado/a ${pat.name}: Le compartimos el informe médico de su atención del ${cons.date} en CITRA Clínica Médica.`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
@@ -50,73 +43,109 @@ export const ConsultationPrintView = () => {
 
   return (
     <div
-      className="modal-overlay"
+      className="modal-overlay consultation-print-overlay"
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 18, 66, 0.82)',
-        backdropFilter: 'blur(10px)',
+        backgroundColor: 'rgba(15, 23, 42, 0.75)',
+        backdropFilter: 'blur(8px)',
         zIndex: 9999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '1.25rem',
+        padding: '1.5rem',
         overflowY: 'auto'
       }}
       onClick={() => setSelectedConsultationForPrint(null)}
     >
+      <style>{`
+        @media print {
+          body {
+            background: #ffffff !important;
+          }
+          .consultation-print-overlay {
+            position: static !important;
+            background: transparent !important;
+            backdrop-filter: none !important;
+            padding: 0 !important;
+            display: block !important;
+          }
+          .consultation-print-modal {
+            box-shadow: none !important;
+            border: none !important;
+            max-width: 100% !important;
+            max-height: none !important;
+            border-radius: 0 !important;
+            overflow: visible !important;
+          }
+          .consultation-print-header,
+          .consultation-print-footer {
+            display: none !important;
+          }
+          .consultation-print-sheet-wrapper {
+            padding: 0 !important;
+            overflow: visible !important;
+          }
+          .consultation-print-sheet {
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            padding: 0 !important;
+            max-width: 100% !important;
+          }
+        }
+      `}</style>
+
       <div
-        className="modal-content"
+        className="modal-content consultation-print-modal"
         style={{
           width: '100%',
           maxWidth: '860px',
-          background: '#ffffff',
-          borderRadius: '24px',
-          boxShadow: '0 30px 60px -15px rgba(0, 21, 86, 0.45), 0 0 0 1px rgba(7, 106, 188, 0.25)',
+          background: '#f8fafc',
+          borderRadius: '16px',
+          boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.35)',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          maxHeight: '94vh',
-          animation: 'modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+          maxHeight: '94vh'
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* MODAL TOP CONTROLS */}
+        {/* MODAL ACTION BAR */}
         <div
+          className="consultation-print-header"
           style={{
-            background: 'linear-gradient(135deg, #001f66 0%, #001242 100%)',
-            padding: '1.15rem 1.75rem',
-            color: '#ffffff',
+            background: '#ffffff',
+            padding: '1rem 1.75rem',
+            borderBottom: '1px solid #e2e8f0',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            borderBottom: '3px solid #076ABC',
             flexShrink: 0
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <div
               style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '10px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.25)',
+                width: '38px',
+                height: '38px',
+                borderRadius: '8px',
+                background: '#eff6ff',
+                color: '#1d4ed8',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                color: '#93C5FD'
+                justifyContent: 'center'
               }}
             >
-              <FileCheck2 size={22} />
+              <FileText size={20} />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900 }}>
-                Informe Clínico & Evolución Médica Homologada
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>
+                Informe de Consulta Médica
               </h3>
-              <div style={{ fontSize: '0.78rem', color: '#D2E3FC', marginTop: '2px' }}>
-                Documento Clínico Oficial · Firma Digital X.509 Verificada
-              </div>
+              <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748b' }}>
+                Vista previa para descarga en PDF e impresión clínica
+              </p>
             </div>
           </div>
 
@@ -125,20 +154,21 @@ export const ConsultationPrintView = () => {
               type="button"
               onClick={handleShareWhatsApp}
               style={{
-                background: '#ecfdf5',
-                border: '1px solid #a7f3d0',
-                color: '#065f46',
-                padding: '0.45rem 0.95rem',
+                background: '#ffffff',
+                border: '1px solid #cbd5e1',
+                color: '#0f172a',
+                padding: '0.45rem 0.85rem',
                 borderRadius: '8px',
                 fontSize: '0.8rem',
-                fontWeight: 800,
+                fontWeight: 700,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '5px'
+                gap: '6px'
               }}
             >
-              <Share2 size={14} /> WhatsApp
+              <WhatsAppIcon size={15} color="#25D366" />
+              <span>WhatsApp</span>
             </button>
 
             <button
@@ -148,7 +178,7 @@ export const ConsultationPrintView = () => {
                 background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
                 color: '#ffffff',
                 border: 'none',
-                padding: '0.45rem 1.15rem',
+                padding: '0.48rem 1.15rem',
                 borderRadius: '8px',
                 fontSize: '0.82rem',
                 fontWeight: 800,
@@ -156,19 +186,20 @@ export const ConsultationPrintView = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                boxShadow: '0 4px 12px rgba(7, 106, 188, 0.3)'
+                boxShadow: '0 2px 8px rgba(7, 106, 188, 0.25)'
               }}
             >
-              <Printer size={15} /> Imprimir Documento Oficial
+              <Download size={15} />
+              <span>Descargar PDF / Imprimir</span>
             </button>
 
             <button
               type="button"
               onClick={() => setSelectedConsultationForPrint(null)}
               style={{
-                background: 'rgba(255, 255, 255, 0.12)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                color: '#ffffff',
+                background: '#f1f5f9',
+                border: '1px solid #e2e8f0',
+                color: '#64748b',
                 width: '34px',
                 height: '34px',
                 borderRadius: '8px',
@@ -183,166 +214,160 @@ export const ConsultationPrintView = () => {
           </div>
         </div>
 
-        {/* PRINTABLE OFFICIAL MEDICAL DOCUMENT */}
-        <div style={{ padding: '1.75rem', overflowY: 'auto', flex: 1 }}>
+        {/* PRINTABLE DOCUMENT SHEET */}
+        <div
+          className="consultation-print-sheet-wrapper"
+          style={{ padding: '1.75rem', overflowY: 'auto', flex: 1 }}
+        >
           <div
-            className="printable-area"
+            className="consultation-print-sheet"
             style={{
               background: '#ffffff',
-              border: '2px solid #002182',
-              borderRadius: '16px',
-              padding: '2.5rem',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              padding: '2.75rem 3rem',
               color: '#0f172a',
-              position: 'relative',
-              boxShadow: '0 10px 30px rgba(0, 33, 130, 0.06)'
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+              maxWidth: '800px',
+              margin: '0 auto',
+              lineHeight: 1.5,
+              fontSize: '0.88rem'
             }}
           >
-            {/* WATERMARK */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%) rotate(-30deg)',
-                fontSize: '4.5rem',
-                fontWeight: 900,
-                color: 'rgba(0, 33, 130, 0.03)',
-                pointerEvents: 'none',
-                whiteSpace: 'nowrap',
-                letterSpacing: '0.2em'
-              }}
-            >
-              CITRA · DOCUMENTO MÉDICO OFICIAL
-            </div>
-
             {/* INSTITUTIONAL HEADER */}
             <div
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'flex-start',
-                borderBottom: '2.5px solid #002182',
-                paddingBottom: '1.25rem',
+                borderBottom: '2px solid #0f172a',
+                paddingBottom: '1rem',
                 marginBottom: '1.5rem'
               }}
             >
               <div>
-                <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#002182', letterSpacing: '-0.02em' }}>
+                <div style={{ fontSize: '1.55rem', fontWeight: 900, color: '#002182', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
                   CITRA CLÍNICA MÉDICA
                 </div>
-                <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#076ABC' }}>
-                  CENTRO INTEGRAL DE TRAUMATOLOGÍA Y REHABILITACIÓN ARROYITO (CÓRDOBA)
+                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '3px' }}>
+                  Centro Integral de Traumatología & Especialidades Médicas
                 </div>
-                <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '3px' }}>
-                  Av. San Martín 450, Arroyito, Pcia. de Córdoba · Tel: (03576) 450-200 · CUIT: 30-71829340-8<br />
-                  Habilitación RUGEPRESA Disp. N° 8491/22 · Ministerio de Salud de Córdoba · SISA REFES N° 0414002
+                <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '4px' }}>
+                  Av. San Martín 450 · Arroyito, Córdoba · Tel: (03576) 450-200 · www.citra.com.ar
                 </div>
               </div>
 
               <div style={{ textAlign: 'right' }}>
-                <div
-                  style={{
-                    background: '#F5F8FE',
-                    border: '1.5px solid #BFDBFE',
-                    padding: '4px 10px',
-                    borderRadius: '6px',
-                    fontSize: '0.76rem',
-                    fontWeight: 800,
-                    color: '#002182',
-                    display: 'inline-block'
-                  }}
-                >
-                  ACTO MÉDICO ID: {cons.id.toUpperCase()}
+                <div style={{ fontSize: '0.86rem', fontWeight: 900, color: '#0f172a', textTransform: 'uppercase' }}>
+                  Historia Clínica
                 </div>
-                <div style={{ fontSize: '0.76rem', color: '#0f172a', fontWeight: 700, marginTop: '4px' }}>
-                  FECHA: {cons.date} ({cons.time} hs)
+                <div style={{ fontSize: '0.78rem', color: '#475569', marginTop: '2px' }}>
+                  Fecha: <strong>{cons.date}</strong> · {cons.time} hs
                 </div>
-                <div style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 700 }}>
-                  ✓ Asiento Registrado e Inmutable
+                <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
+                  Folio: <strong>{cons.id?.toUpperCase()}</strong>
                 </div>
               </div>
             </div>
 
-            {/* PATIENT & PHYSICIAN INFORMATION BOX */}
+            {/* PATIENT & DOCTOR DATA */}
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: '1.1fr 1fr',
+                gridTemplateColumns: '1fr 1fr',
                 gap: '1.25rem',
                 background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
                 padding: '1rem 1.25rem',
-                borderRadius: '12px',
-                border: '1.5px solid #e2e8f0',
                 marginBottom: '1.5rem',
-                fontSize: '0.86rem'
+                fontSize: '0.84rem'
               }}
             >
               <div>
-                <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#002182', textTransform: 'uppercase', marginBottom: '4px' }}>
-                  Datos del Paciente Titular
+                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>
+                  Datos del Paciente
                 </div>
-                <div><strong>PACIENTE:</strong> {pat.name}</div>
+                <div><strong>Paciente:</strong> {pat.name}</div>
                 <div><strong>DNI:</strong> {pat.dni}</div>
-                <div><strong>COBERTURA:</strong> {pat.insuranceName} ({pat.insurancePlan || 'Plan Médico'})</div>
-                <div><strong>N° AFILIADO:</strong> {pat.insuranceNumber || '310-892110-01'}</div>
+                <div>
+                  <strong>Cobertura:</strong> {pat.insuranceName || 'Particular'}
+                  {pat.insurancePlan && ` (${pat.insurancePlan})`}
+                </div>
+                {pat.insuranceNumber && <div><strong>N° Afiliado:</strong> {pat.insuranceNumber}</div>}
               </div>
 
               <div>
-                <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#002182', textTransform: 'uppercase', marginBottom: '4px' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>
                   Profesional Interviniente
                 </div>
-                <div><strong>PROFESIONAL:</strong> {cons.doctorName}</div>
-                <div><strong>ESPECIALIDAD:</strong> {cons.specialtyName || 'Traumatología y Ortopedia'}</div>
-                <div><strong>MATRÍCULA PROVINCIAL:</strong> {cons.doctorLicense || 'M.P. 34.892 (CMPC)'}</div>
-                <div><strong>REGISTRO NACIONAL:</strong> {cons.sisaRefeps || 'REFEPS-MN-114829'}</div>
+                <div><strong>Médico:</strong> {cons.doctorName}</div>
+                <div><strong>Especialidad:</strong> {cons.specialtyName || 'Traumatología y Ortopedia'}</div>
+                <div><strong>Matrícula:</strong> {cons.doctorLicense || 'M.P. 34.892'}</div>
+                {cons.sisaRefeps && <div><strong>Registro:</strong> {cons.sisaRefeps}</div>}
               </div>
             </div>
 
-            {/* 1. MOTIVO DE CONSULTA & DIAGNÓSTICO CIE-10 */}
-            <div style={{ marginBottom: '1.25rem' }}>
+            {/* MOTIVO DE CONSULTA Y DIAGNÓSTICO */}
+            <div style={{ marginBottom: '1.35rem' }}>
               <div
                 style={{
+                  fontSize: '0.78rem',
                   fontWeight: 800,
-                  fontSize: '0.86rem',
-                  borderBottom: '1.5px solid #002182',
-                  paddingBottom: '0.3rem',
-                  marginBottom: '0.6rem',
                   color: '#002182',
-                  textTransform: 'uppercase'
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  borderBottom: '1px solid #e2e8f0',
+                  paddingBottom: '0.35rem',
+                  marginBottom: '0.55rem'
                 }}
               >
-                1. Motivo de Consulta & Diagnóstico Clínico (CIE-10)
+                Motivo de Consulta y Diagnóstico (CIE-10)
               </div>
-              <div style={{ fontSize: '0.86rem', marginBottom: '0.35rem' }}>
-                <strong>Motivo Principal:</strong> {cons.reason}
+              <div style={{ marginBottom: '0.35rem' }}>
+                <strong style={{ color: '#475569' }}>Motivo de consulta:</strong>{' '}
+                <span>{cons.reason || 'Control médico general'}</span>
               </div>
-              <div style={{ fontSize: '0.86rem' }}>
-                <strong>Diagnóstico Principal (CIE-10):</strong> <span style={{ color: '#002182', fontWeight: 700 }}>{cons.diagnosis}</span>
+              <div>
+                <strong style={{ color: '#475569' }}>Diagnóstico principal:</strong>{' '}
+                <span style={{ fontWeight: 800, color: '#0f172a' }}>{cons.diagnosis || 'Consulta Médica'}</span>
               </div>
               {cons.secondaryDiagnosis && (
-                <div style={{ fontSize: '0.84rem', color: '#475569', marginTop: '3px' }}>
-                  <strong>Diagnóstico Secundario:</strong> {cons.secondaryDiagnosis}
+                <div style={{ marginTop: '2px', color: '#64748b', fontSize: '0.82rem' }}>
+                  <strong style={{ color: '#475569' }}>Diagnóstico secundario:</strong> {cons.secondaryDiagnosis}
                 </div>
               )}
             </div>
 
-            {/* 2. SIGNOS VITALES */}
+            {/* SIGNOS VITALES */}
             {cons.vitals && (
-              <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ marginBottom: '1.35rem' }}>
                 <div
                   style={{
+                    fontSize: '0.78rem',
                     fontWeight: 800,
-                    fontSize: '0.86rem',
-                    borderBottom: '1.5px solid #002182',
-                    paddingBottom: '0.3rem',
-                    marginBottom: '0.6rem',
                     color: '#002182',
-                    textTransform: 'uppercase'
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    borderBottom: '1px solid #e2e8f0',
+                    paddingBottom: '0.35rem',
+                    marginBottom: '0.55rem'
                   }}
                 >
-                  2. Signos Vitales & Medición Antropométrica
+                  Signos Vitales y Parámetros Antropométricos
                 </div>
-                <div style={{ display: 'flex', gap: '1.25rem', fontSize: '0.84rem', flexWrap: 'wrap', background: '#f8fafc', padding: '0.6rem 0.85rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '1.25rem',
+                    flexWrap: 'wrap',
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px',
+                    padding: '0.55rem 0.85rem',
+                    fontSize: '0.82rem'
+                  }}
+                >
                   <span><strong>T.A.:</strong> {cons.vitals.bpSystolic}/{cons.vitals.bpDiastolic} mmHg</span>
                   <span><strong>F.C.:</strong> {cons.vitals.heartRate} lpm</span>
                   <span><strong>Temp.:</strong> {cons.vitals.temperature} °C</span>
@@ -353,86 +378,117 @@ export const ConsultationPrintView = () => {
               </div>
             )}
 
-            {/* 3. EVOLUCIÓN MÉDICA & EXAMEN FÍSICO TRAUMATOLÓGICO */}
-            <div style={{ marginBottom: '1.25rem' }}>
+            {/* EVOLUCIÓN CLÍNICA Y EXAMEN FÍSICO */}
+            <div style={{ marginBottom: '1.35rem' }}>
               <div
                 style={{
+                  fontSize: '0.78rem',
                   fontWeight: 800,
-                  fontSize: '0.86rem',
-                  borderBottom: '1.5px solid #002182',
-                  paddingBottom: '0.3rem',
-                  marginBottom: '0.6rem',
                   color: '#002182',
-                  textTransform: 'uppercase'
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  borderBottom: '1px solid #e2e8f0',
+                  paddingBottom: '0.35rem',
+                  marginBottom: '0.55rem'
                 }}
               >
-                3. Evolución Médica & Examen Físico Especializado
+                Evolución Clínica y Examen Físico
               </div>
-              <p style={{ fontSize: '0.86rem', lineHeight: 1.65, textAlign: 'justify', margin: 0, color: '#1e293b' }}>
-                {cons.evolution}
+              <p style={{ margin: 0, color: '#1e293b', lineHeight: 1.6, textAlign: 'justify' }}>
+                {cons.evolution || cons.physicalExam || 'Evolución clínica favorable sin complicaciones inmediatas.'}
               </p>
             </div>
 
-            {/* 4. RECETA MÉDICA DIGITAL (Rp/) */}
+            {/* PRESCRIPCIÓN MÉDICA (Rp/) */}
             {cons.prescriptions && cons.prescriptions.length > 0 && (
-              <div style={{ marginBottom: '1.25rem', border: '1.5px solid #BFDBFE', background: '#F5F8FE', padding: '1rem', borderRadius: '10px' }}>
-                <div style={{ fontWeight: 900, fontSize: '0.95rem', color: '#002182', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>Rp/ (PRESCRIPCIÓN MÉDICA DIGITAL OFICIAL)</span>
-                  <span style={{ fontSize: '0.72rem', background: '#059669', color: '#ffffff', padding: '2px 8px', borderRadius: '100px' }}>
-                    ReNaPDiS Válida
-                  </span>
+              <div style={{ marginBottom: '1.35rem' }}>
+                <div
+                  style={{
+                    fontSize: '0.78rem',
+                    fontWeight: 800,
+                    color: '#002182',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    borderBottom: '1px solid #e2e8f0',
+                    paddingBottom: '0.35rem',
+                    marginBottom: '0.55rem'
+                  }}
+                >
+                  Prescripción Médica (Rp/)
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {cons.prescriptions.map((p, idx) => (
-                    <div key={idx} style={{ fontSize: '0.86rem', color: '#0f172a' }}>
-                      <strong>{idx + 1}. {p.medication || p.name || p.drugName}</strong> {p.dosage || p.presentation ? `(${p.dosage || p.presentation})` : ''}
-                      <div style={{ fontSize: '0.8rem', color: '#475569', marginLeft: '1rem' }}>
-                        Frecuencia: {p.frequency || p.instructions || '-'} · Duración: {p.duration || '-'}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                  {cons.prescriptions.map((p, idx) => {
+                    const drugName = p.drugName || p.dci || p.name || p.medication || p.title || 'Medicamento prescrito';
+                    const presentation = p.presentation || p.form || p.concentration || '';
+                    const dosage = p.dosage || p.instructions || p.frequency || '';
+                    const duration = p.duration ? `· Duración: ${p.duration}` : '';
+
+                    return (
+                      <div
+                        key={idx}
+                        style={{
+                          background: '#f8fafc',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '6px',
+                          padding: '0.55rem 0.85rem'
+                        }}
+                      >
+                        <div style={{ fontWeight: 800, color: '#0f172a' }}>
+                          {idx + 1}. {drugName} {presentation ? `(${presentation})` : ''}
+                        </div>
+                        {dosage && (
+                          <div style={{ fontSize: '0.8rem', color: '#475569', marginTop: '2px' }}>
+                            Indicación: {dosage} {duration}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {/* 5. INDICACIONES & ESTUDIOS */}
+            {/* INDICACIONES MÉDICAS */}
             {cons.indications && (
-              <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ marginBottom: '1.35rem' }}>
                 <div
                   style={{
+                    fontSize: '0.78rem',
                     fontWeight: 800,
-                    fontSize: '0.86rem',
-                    borderBottom: '1.5px solid #002182',
-                    paddingBottom: '0.3rem',
-                    marginBottom: '0.5rem',
                     color: '#002182',
-                    textTransform: 'uppercase'
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    borderBottom: '1px solid #e2e8f0',
+                    paddingBottom: '0.35rem',
+                    marginBottom: '0.55rem'
                   }}
                 >
-                  5. Indicaciones Terapéuticas & Pautas de Alarma
+                  Indicaciones Médicas y Pautas de Cuidado
                 </div>
-                <div style={{ fontSize: '0.85rem', lineHeight: 1.6, whiteSpace: 'pre-line', color: '#334155' }}>
+                <div style={{ color: '#334155', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
                   {cons.indications}
                 </div>
               </div>
             )}
 
+            {/* ESTUDIOS SOLICITADOS */}
             {cons.studiesRequested && cons.studiesRequested.length > 0 && (
-              <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ marginBottom: '1.35rem' }}>
                 <div
                   style={{
+                    fontSize: '0.78rem',
                     fontWeight: 800,
-                    fontSize: '0.86rem',
-                    borderBottom: '1.5px solid #002182',
-                    paddingBottom: '0.3rem',
-                    marginBottom: '0.5rem',
                     color: '#002182',
-                    textTransform: 'uppercase'
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    borderBottom: '1px solid #e2e8f0',
+                    paddingBottom: '0.35rem',
+                    marginBottom: '0.55rem'
                   }}
                 >
-                  6. Solicitud de Prácticas y Estudios Complementarios
+                  Estudios Solicitados
                 </div>
-                <ul style={{ paddingLeft: '1.25rem', fontSize: '0.85rem', margin: 0 }}>
+                <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#334155' }}>
                   {cons.studiesRequested.map((s, idx) => (
                     <li key={idx} style={{ marginBottom: '2px' }}>{s}</li>
                   ))}
@@ -440,107 +496,94 @@ export const ConsultationPrintView = () => {
               </div>
             )}
 
-            {/* ADENDAS FECHADAS (ART. 13 LEY 26.529) */}
+            {/* ADENDAS CLÍNICAS */}
             {cons.adendas && cons.adendas.length > 0 && (
-              <div style={{ marginBottom: '1.5rem', border: '1.5px solid #fef08a', background: '#fefce8', padding: '0.85rem 1rem', borderRadius: '10px' }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#854d0e', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
-                  Adendas Médicas & Rectificaciones Registradas
+              <div style={{ marginBottom: '1.35rem' }}>
+                <div
+                  style={{
+                    fontSize: '0.78rem',
+                    fontWeight: 800,
+                    color: '#002182',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    borderBottom: '1px solid #e2e8f0',
+                    paddingBottom: '0.35rem',
+                    marginBottom: '0.55rem'
+                  }}
+                >
+                  Adendas Clínicas Fechadas
                 </div>
                 {cons.adendas.map((ad, idx) => (
-                  <div key={idx} style={{ fontSize: '0.82rem', color: '#713f12', marginBottom: '6px', lineHeight: 1.5 }}>
-                    <strong>Adenda #{idx + 1} ({ad.date} {ad.time} hs):</strong> {ad.adendaText} — <em>Firmada por {ad.doctorName} ({ad.doctorLicense})</em>
+                  <div
+                    key={idx}
+                    style={{
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px',
+                      padding: '0.5rem 0.75rem',
+                      marginBottom: '6px',
+                      fontSize: '0.82rem'
+                    }}
+                  >
+                    <div>
+                      <strong>Adenda #{idx + 1} ({ad.date} {ad.time} hs):</strong> {ad.adendaText}
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '2px' }}>
+                      Asentado por {ad.doctorName} ({ad.doctorLicense})
+                    </div>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* PROFESSIONAL SIGNATURE & STAMP */}
+            {/* SIGNATURE & LEGAL INTEGRITY FOOTER */}
             <div
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'flex-end',
-                marginTop: '2.5rem',
+                marginTop: '3rem',
                 paddingTop: '1.25rem',
-                borderTop: '1.5px dashed #cbd5e1'
+                borderTop: '1px solid #cbd5e1'
               }}
             >
-              <div style={{ fontSize: '0.74rem', color: '#64748b', maxWidth: '380px', lineHeight: 1.5 }}>
-                <div style={{ fontWeight: 800, color: '#002182', marginBottom: '2px' }}>
-                  CONSTANCIA DE VALIDEZ LEGAL Y PROBATORIA
+              <div style={{ maxWidth: '380px', fontSize: '0.74rem', color: '#64748b', lineHeight: 1.5 }}>
+                <div style={{ fontWeight: 800, color: '#0f172a', marginBottom: '2px' }}>
+                  Registro Oficial de Historia Clínica
                 </div>
-                Documento oficial extendido con validez probatoria plena y firma digital. Archivo y guarda institucional garantizada por 10 años. Asiento registrado en auditoría inmutable.
-              </div>
-
-              <div style={{ textAlign: 'center', minWidth: '240px' }}>
-                <div style={{ fontFamily: 'cursive', fontSize: '1.25rem', color: '#002182', fontWeight: 800, height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {cons.doctorName}
-                </div>
-                <div style={{ borderTop: '1.5px solid #0f172a', paddingTop: '4px', fontSize: '0.82rem', fontWeight: 800 }}>
-                  {cons.doctorName}
-                </div>
-                <div style={{ fontSize: '0.74rem', color: '#475569', fontWeight: 700 }}>
-                  {cons.doctorLicense || 'M.P. 34.892 (Consejo de Médicos de Córdoba)'}
-                </div>
-                <div style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 700 }}>
-                  🔒 Firma Digital X.509 Criptográfica (AC ONTI Raíz)
-                </div>
-                <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
-                  Sello de Tiempo: {cons.signatureTimestamp || cons.date}
-                </div>
-              </div>
-            </div>
-
-            {/* SECURITY FOOTER WITH QR CODE */}
-            <div
-              style={{
-                marginTop: '1.5rem',
-                borderTop: '1px solid #e2e8f0',
-                paddingTop: '0.85rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                fontSize: '0.72rem',
-                color: '#64748b'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    background: '#F5F8FE',
-                    border: '1px solid #BFDBFE',
-                    borderRadius: '6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#002182'
-                  }}
-                >
-                  <QrCode size={24} />
-                </div>
-                <div>
-                  <div><strong>Verificación de Inalterabilidad Documental</strong></div>
-                  <div>Hash SHA-256: {hashDisplay.substring(0, 32)}...</div>
-                  <div>Validar online en https://citra.com.ar/validar/hce/{cons.id}</div>
+                Documento médico electrónico con validez legal según Ley Nacional N° 25.506 y Ley N° 26.529.
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '3px' }}>
+                  ID Verificación: {hashDisplay.substring(0, 28)}...
                 </div>
               </div>
 
-              <div style={{ textAlign: 'right' }}>
-                <div><strong>CITRA CENTRO MÉDICO ARROYITO (CÓRDOBA)</strong></div>
-                <div>Sistema de Historia Clínica Electrónica Homologada</div>
+              <div style={{ textAlign: 'center', minWidth: '220px' }}>
+                <div style={{ borderTop: '1.5px solid #0f172a', paddingTop: '6px' }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.86rem', color: '#0f172a' }}>
+                    {cons.doctorName}
+                  </div>
+                  <div style={{ fontSize: '0.76rem', color: '#475569' }}>
+                    {cons.specialtyName || 'Traumatología y Ortopedia'}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                    {cons.doctorLicense || 'M.P. 34.892 · M.N. 114.829'}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                    <CheckCircle2 size={12} color="#059669" /> Firma Digital Registrada
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* MODAL FOOTER */}
+        {/* MODAL BOTTOM CLOSE */}
         <div
+          className="consultation-print-footer"
           style={{
-            background: '#f8fafc',
+            background: '#ffffff',
             borderTop: '1px solid #e2e8f0',
-            padding: '0.85rem 1.75rem',
+            padding: '0.75rem 1.75rem',
             display: 'flex',
             justifyContent: 'flex-end',
             alignItems: 'center',
@@ -549,7 +592,7 @@ export const ConsultationPrintView = () => {
         >
           <button
             type="button"
-            className="btn btn-outline"
+            className="btn btn-outline btn-sm"
             onClick={() => setSelectedConsultationForPrint(null)}
           >
             Cerrar

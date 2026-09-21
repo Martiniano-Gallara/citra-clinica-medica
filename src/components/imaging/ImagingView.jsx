@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
 import {
   Eye,
   Plus,
@@ -203,17 +204,30 @@ export const ImagingView = () => {
 
   // Get modality tag styling
   const getModalityBadge = (modality) => {
-    const mod = modality.toLowerCase();
+    const mod = (modality || '').toLowerCase();
     if (mod.includes('resonancia') || mod.includes('rmn')) {
-      return { label: 'RMN', bg: '#ede9fe', color: '#6d28d9', border: '#ddd6fe', emoji: '🦵' };
+      return { label: 'RMN', bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' };
     }
     if (mod.includes('tomografía') || mod.includes('tac')) {
-      return { label: 'TAC', bg: '#fef3c7', color: '#b45309', border: '#fde68a', emoji: '🧠' };
+      return { label: 'TAC', bg: '#fef3c7', color: '#b45309', border: '#fde68a' };
     }
     if (mod.includes('ecografía') || mod.includes('eco')) {
-      return { label: 'ECO', bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', emoji: '💪' };
+      return { label: 'ECO', bg: '#ecfdf5', color: '#047857', border: '#a7f3d0' };
     }
-    return { label: 'RX', bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd', emoji: '🦴' };
+    return { label: 'RX', bg: '#f1f5f9', color: '#334155', border: '#cbd5e1' };
+  };
+
+  const formatMeasurementKey = (key) => {
+    const map = {
+      lcaThickness: 'Grosor Neo-LCA',
+      patellaIndex: 'Índice Insall-Salvati',
+      trochlearAngle: 'Ángulo Troclear',
+      focoFibrilar: 'Foco Fibrilar',
+      bolsaSubacromial: 'Bolsa Subacromial',
+      protrusionDiscal: 'Protrusión Discal',
+      canalMedular: 'Canal Medular'
+    };
+    return map[key] || key;
   };
 
   return (
@@ -229,59 +243,13 @@ export const ImagingView = () => {
         }}
       >
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
-            <span
-              style={{
-                background: '#ecfdf5',
-                color: '#065f46',
-                border: '1px solid #a7f3d0',
-                padding: '0.2rem 0.65rem',
-                borderRadius: '100px',
-                fontSize: '0.74rem',
-                fontWeight: 800,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px'
-              }}
-            >
-              <Stethoscope size={13} />
-              {isDoctor ? `Dr. Alejandro Blanco (${doctorSpecialty})` : 'Servicio de Imágenes & PACS'}
-            </span>
-            <span
-              style={{
-                background: '#eff6ff',
-                color: '#1e40af',
-                border: '1px solid #bfdbfe',
-                padding: '0.2rem 0.65rem',
-                borderRadius: '100px',
-                fontSize: '0.72rem',
-                fontWeight: 800
-              }}
-            >
-              CMPC M.P. 34.892 · PROTOCOLO TRAUMATOLOGÍA
-            </span>
-            <span
-              style={{
-                background: '#f8fafc',
-                color: '#475569',
-                border: '1px solid #e2e8f0',
-                padding: '0.2rem 0.65rem',
-                borderRadius: '100px',
-                fontSize: '0.72rem',
-                fontWeight: 700
-              }}
-            >
-              VISOR PACS / DICOM INTEGRADO
-            </span>
-          </div>
-
           <h1 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.25rem', letterSpacing: '-0.02em' }}>
             {isDoctor ? 'Mis Estudios & Radiología' : 'Diagnóstico por Imágenes & PACS'}
           </h1>
           <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
             {isDoctor
-              ? `Estudios diagnósticos (RMN, RX, TAC, Ecografía) solicitados e informados para tus pacientes (${filteredStudies.length} estudios registrados).`
-              : 'Visualización radiológica de alta resolución, mediciones traumatológicas e informes con firma digital X.509.'}
+              ? 'Estudios diagnósticos (RMN, RX, TAC, Ecografía) e informes de pacientes.'
+              : 'Visualización radiológica de alta resolución, mediciones traumatológicas e informes médicos.'}
           </p>
         </div>
 
@@ -334,7 +302,7 @@ export const ImagingView = () => {
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Estudios del Paciente
+              Total de Estudios
             </span>
             <div
               style={{
@@ -355,7 +323,7 @@ export const ImagingView = () => {
             {metrics.total}
           </div>
           <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-            Estudios en historial traumatológico
+            Estudios registrados en sistema
           </div>
         </div>
 
@@ -389,14 +357,14 @@ export const ImagingView = () => {
                 fontSize: '0.9rem'
               }}
             >
-              🦵
+              <Activity size={18} />
             </div>
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a' }}>
             {metrics.rmnCount}
           </div>
           <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-            Protocolo ligamentario y meniscal
+            Protocolo ligamentario y articular
           </div>
         </div>
 
@@ -430,18 +398,18 @@ export const ImagingView = () => {
                 fontSize: '0.9rem'
               }}
             >
-              🦴
+              <Maximize2 size={18} />
             </div>
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a' }}>
             {metrics.rxTacCount}
           </div>
           <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-            Columna 3D, mortaja y articulaciones
+            Evaluación ósea y estructural
           </div>
         </div>
 
-        {/* Card 4: Informados y Validados */}
+        {/* Card 4: Informados */}
         <div
           style={{
             background: '#ffffff',
@@ -456,7 +424,7 @@ export const ImagingView = () => {
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Informados 100%
+              Estudios Informados
             </span>
             <div
               style={{
@@ -476,8 +444,8 @@ export const ImagingView = () => {
           <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#059669' }}>
             {metrics.informedCount} / {metrics.total}
           </div>
-          <div style={{ fontSize: '0.74rem', color: '#059669', fontWeight: 700 }}>
-            ✓ Firma Digital X.509 Verificada
+          <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
+            Informes médicos concluidos
           </div>
         </div>
       </div>
@@ -537,10 +505,10 @@ export const ImagingView = () => {
           </span>
           {[
             { key: 'all', label: 'Todos' },
-            { key: 'resonancia', label: '🦵 RMN' },
-            { key: 'radiografía', label: '🦴 RX' },
-            { key: 'tomografía', label: '🧠 TAC' },
-            { key: 'ecografía', label: '💪 Eco' }
+            { key: 'resonancia', label: 'RMN' },
+            { key: 'radiografía', label: 'RX' },
+            { key: 'tomografía', label: 'TAC' },
+            { key: 'ecografía', label: 'Ecografía' }
           ].map((pill) => {
             const isActive = modalityFilter === pill.key;
             return (
@@ -649,18 +617,18 @@ export const ImagingView = () => {
                   style={{
                     background: '#f8fafc',
                     borderBottom: '1px solid #e2e8f0',
-                    color: '#64748b',
-                    fontSize: '0.74rem',
+                    color: '#475569',
+                    fontSize: '0.8rem',
                     fontWeight: 800,
                     textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
+                    letterSpacing: '0.04em'
                   }}
                 >
-                  <th style={{ padding: '0.85rem 1.25rem', width: '22%' }}>Paciente</th>
-                  <th style={{ padding: '0.85rem 1rem', width: '26%' }}>Estudio & Región</th>
-                  <th style={{ padding: '0.85rem 1rem', width: '18%' }}>Fecha & Centro</th>
-                  <th style={{ padding: '0.85rem 1rem', width: '18%' }}>Conclusión</th>
-                  <th style={{ padding: '0.85rem 1.25rem', textAlign: 'right', width: '16%' }}>Acciones</th>
+                  <th style={{ padding: '0.9rem 1.25rem', width: '22%' }}>Paciente</th>
+                  <th style={{ padding: '0.9rem 1rem', width: '24%' }}>Estudio & Región</th>
+                  <th style={{ padding: '0.9rem 1rem', width: '16%' }}>Fecha & Centro</th>
+                  <th style={{ padding: '0.9rem 1rem', width: '24%' }}>Conclusión</th>
+                  <th style={{ padding: '0.9rem 1.25rem', textAlign: 'right', width: '14%' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -688,136 +656,109 @@ export const ImagingView = () => {
                         }}
                       >
                         {/* 1. Paciente */}
-                        <td style={{ padding: '0.85rem 1.25rem', verticalAlign: 'middle' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div
-                              style={{
-                                width: '38px',
-                                height: '38px',
-                                borderRadius: '50%',
-                                background: '#eff6ff',
-                                color: '#1d4ed8',
-                                border: '1px solid #bfdbfe',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: 800,
-                                fontSize: '0.82rem',
-                                flexShrink: 0
-                              }}
-                            >
-                              {getInitials(study.patientName)}
+                        <td style={{ padding: '1rem 1.25rem', verticalAlign: 'middle' }}>
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#0f172a' }}>
+                              {study.patientName}
                             </div>
-                            <div>
-                              <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a' }}>
-                                {study.patientName}
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginTop: '2px' }}>
-                                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                  DNI {study.patientDni}
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: '0.68rem',
-                                    fontWeight: 700,
-                                    background: '#f1f5f9',
-                                    color: '#475569',
-                                    padding: '0.1rem 0.45rem',
-                                    borderRadius: '4px',
-                                    border: '1px solid #e2e8f0'
-                                  }}
-                                >
-                                  {insurance}
-                                </span>
-                              </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '3px' }}>
+                              <span style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                                DNI {study.patientDni}
+                              </span>
+                              <span
+                                style={{
+                                  fontSize: '0.75rem',
+                                  fontWeight: 700,
+                                  background: '#f1f5f9',
+                                  color: '#334155',
+                                  padding: '0.15rem 0.5rem',
+                                  borderRadius: '5px',
+                                  border: '1px solid #e2e8f0'
+                                }}
+                              >
+                                {insurance}
+                              </span>
                             </div>
                           </div>
                         </td>
 
                         {/* 2. Estudio & Región */}
-                        <td style={{ padding: '0.85rem 1rem', verticalAlign: 'middle' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '3px' }}>
+                        <td style={{ padding: '1rem 1rem', verticalAlign: 'middle' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '4px' }}>
                             <span
                               style={{
                                 background: modBadge.bg,
                                 color: modBadge.color,
                                 border: `1px solid ${modBadge.border}`,
-                                padding: '0.15rem 0.5rem',
+                                padding: '0.15rem 0.55rem',
                                 borderRadius: '6px',
-                                fontSize: '0.72rem',
+                                fontSize: '0.78rem',
                                 fontWeight: 800,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '3px'
+                                letterSpacing: '0.02em'
                               }}
                             >
-                              <span>{modBadge.emoji}</span>
                               {modBadge.label}
                             </span>
-                            <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
-                              {study.seriesCount || 3} series • {study.fileSize || '32 MB'}
+                            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                              {study.seriesCount || 3} series
                             </span>
                           </div>
-                          <div style={{ fontWeight: 700, fontSize: '0.86rem', color: '#1e293b' }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#1e293b' }}>
                             {study.bodyPart}
                           </div>
                         </td>
 
                         {/* 3. Fecha & Centro */}
-                        <td style={{ padding: '0.85rem 1rem', verticalAlign: 'middle' }}>
-                          <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#0f172a' }}>
+                        <td style={{ padding: '1rem 1rem', verticalAlign: 'middle' }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#0f172a' }}>
                             {study.date}
                           </div>
-                          <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Building size={12} />
-                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '160px' }}>
+                          <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Building size={13} />
+                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px' }} title={study.center}>
                               {study.center}
                             </span>
                           </div>
                         </td>
 
                         {/* 4. Conclusión / Estado */}
-                        <td style={{ padding: '0.85rem 1rem', verticalAlign: 'middle' }}>
+                        <td style={{ padding: '1rem 1rem', verticalAlign: 'middle' }}>
                           <div
                             style={{
-                              fontSize: '0.8rem',
+                              fontSize: '0.86rem',
                               color: '#334155',
-                              lineHeight: 1.35,
+                              lineHeight: 1.4,
                               display: '-webkit-box',
                               WebkitLineClamp: 2,
                               WebkitBoxOrient: 'vertical',
                               overflow: 'hidden',
-                              marginBottom: '3px'
+                              marginBottom: '5px'
                             }}
                           >
                             {study.conclusion}
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span
-                              style={{
-                                background: '#ecfdf5',
-                                color: '#059669',
-                                padding: '0.1rem 0.45rem',
-                                borderRadius: '100px',
-                                fontSize: '0.68rem',
-                                fontWeight: 800,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '3px'
-                              }}
-                            >
-                              <Check size={11} />
-                              X.509 Válido
-                            </span>
-                            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                              ID: {study.id}
-                            </span>
-                          </div>
+                          <span
+                            style={{
+                              background: study.status === 'Informado' ? '#ecfdf5' : '#fffbeb',
+                              color: study.status === 'Informado' ? '#059669' : '#b45309',
+                              border: study.status === 'Informado' ? '1px solid #a7f3d0' : '1px solid #fde68a',
+                              padding: '0.15rem 0.55rem',
+                              borderRadius: '100px',
+                              fontSize: '0.75rem',
+                              fontWeight: 800,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <Check size={12} />
+                            {study.status || 'Informado'}
+                          </span>
                         </td>
 
                         {/* 5. Acciones */}
-                        <td style={{ padding: '0.85rem 1.25rem', verticalAlign: 'middle', textAlign: 'right' }}>
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+                        <td style={{ padding: '1rem 1.25rem', verticalAlign: 'middle', textAlign: 'right' }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                             {/* Open PACS Modal Button */}
                             <button
                               type="button"
@@ -827,18 +768,18 @@ export const ImagingView = () => {
                                 background: '#076ABC',
                                 color: '#ffffff',
                                 border: 'none',
-                                padding: '0.45rem 0.85rem',
+                                padding: '0.5rem 0.95rem',
                                 borderRadius: '8px',
-                                fontSize: '0.8rem',
+                                fontSize: '0.82rem',
                                 fontWeight: 800,
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '5px',
+                                gap: '6px',
                                 cursor: 'pointer',
                                 boxShadow: '0 2px 6px rgba(7, 106, 188, 0.2)'
                               }}
                             >
-                              <Eye size={14} />
+                              <Eye size={15} />
                               Visor PACS
                             </button>
 
@@ -851,8 +792,8 @@ export const ImagingView = () => {
                                 background: '#f8fafc',
                                 border: '1px solid #cbd5e1',
                                 color: '#059669',
-                                width: '32px',
-                                height: '32px',
+                                width: '34px',
+                                height: '34px',
                                 borderRadius: '8px',
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -860,7 +801,7 @@ export const ImagingView = () => {
                                 cursor: 'pointer'
                               }}
                             >
-                              <Share2 size={14} />
+                              <WhatsAppIcon size={16} color="#25D366" />
                             </button>
 
                             {/* Expand Row Toggle */}
@@ -870,13 +811,13 @@ export const ImagingView = () => {
                                 e.stopPropagation();
                                 toggleRow(study.id);
                               }}
-                              title={isExpanded ? 'Colapsar detalles' : 'Ver informe completo'}
+                              title={isExpanded ? 'Ocultar informe' : 'Ver informe completo'}
                               style={{
                                 background: isExpanded ? '#e2e8f0' : '#f8fafc',
                                 border: '1px solid #cbd5e1',
                                 color: '#475569',
-                                width: '32px',
-                                height: '32px',
+                                width: '34px',
+                                height: '34px',
                                 borderRadius: '8px',
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -898,108 +839,91 @@ export const ImagingView = () => {
                               style={{
                                 background: '#ffffff',
                                 border: '1px solid #cbd5e1',
-                                borderRadius: '10px',
-                                padding: '1.25rem',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                                borderRadius: '12px',
+                                padding: '1.5rem',
+                                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.04)',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '1.1rem'
+                                gap: '1.25rem'
                               }}
                             >
-                              {/* Header inside detail */}
+                              {/* 1. Header inside detail */}
                               <div
                                 style={{
                                   display: 'flex',
                                   justifyContent: 'space-between',
                                   alignItems: 'center',
                                   flexWrap: 'wrap',
-                                  gap: '0.75rem',
-                                  borderBottom: '1px solid #f1f5f9',
-                                  paddingBottom: '0.85rem'
+                                  gap: '1rem',
+                                  borderBottom: '1px solid #e2e8f0',
+                                  paddingBottom: '1rem'
                                 }}
                               >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
                                   <div
                                     style={{
                                       background: '#ecfdf5',
                                       color: '#065f46',
                                       border: '1px solid #a7f3d0',
-                                      padding: '0.25rem 0.65rem',
+                                      padding: '0.3rem 0.75rem',
                                       borderRadius: '100px',
-                                      fontSize: '0.74rem',
+                                      fontSize: '0.8rem',
                                       fontWeight: 800,
                                       display: 'inline-flex',
                                       alignItems: 'center',
-                                      gap: '4px'
+                                      gap: '5px'
                                     }}
                                   >
-                                    <FileCheck size={13} />
+                                    <FileCheck size={15} />
                                     Informe Radiológico Oficial
                                   </div>
-                                  <span style={{ fontSize: '0.82rem', color: '#64748b' }}>
-                                    Informado por: <strong style={{ color: '#0f172a' }}>{study.radiologist}</strong>
+                                  <span style={{ fontSize: '0.88rem', color: '#475569' }}>
+                                    Informado por: <strong style={{ color: '#0f172a' }}>{study.radiologist}</strong> · <span style={{ color: '#64748b' }}>{study.center}</span>
                                   </span>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                  {editingStudyId !== study.id ? (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => handleStartEdit(study, e)}
-                                      style={{
-                                        background: '#f8fafc',
-                                        border: '1px solid #cbd5e1',
-                                        color: '#334155',
-                                        padding: '0.35rem 0.75rem',
-                                        borderRadius: '6px',
-                                        fontSize: '0.78rem',
-                                        fontWeight: 700,
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '4px',
-                                        cursor: 'pointer'
-                                      }}
-                                    >
-                                      <Edit3 size={13} />
-                                      Editar Observación
-                                    </button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => setEditingStudyId(null)}
-                                      style={{
-                                        background: '#f8fafc',
-                                        border: '1px solid #cbd5e1',
-                                        color: '#64748b',
-                                        padding: '0.35rem 0.75rem',
-                                        borderRadius: '6px',
-                                        fontSize: '0.78rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer'
-                                      }}
-                                    >
-                                      Cancelar
-                                    </button>
-                                  )}
+                                {/* Action Buttons */}
+                                <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => handleOpenPacs(study, e)}
+                                    style={{
+                                      background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                                      color: '#ffffff',
+                                      border: 'none',
+                                      padding: '0.45rem 0.95rem',
+                                      borderRadius: '7px',
+                                      fontSize: '0.82rem',
+                                      fontWeight: 800,
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      cursor: 'pointer',
+                                      boxShadow: '0 2px 6px rgba(7, 106, 188, 0.2)'
+                                    }}
+                                  >
+                                    <Maximize2 size={14} />
+                                    Abrir Visor PACS
+                                  </button>
 
                                   <button
                                     type="button"
                                     onClick={(e) => handlePrintStudy(study, e)}
                                     style={{
-                                      background: '#f8fafc',
+                                      background: '#ffffff',
                                       border: '1px solid #cbd5e1',
                                       color: '#334155',
-                                      padding: '0.35rem 0.75rem',
-                                      borderRadius: '6px',
-                                      fontSize: '0.78rem',
+                                      padding: '0.45rem 0.85rem',
+                                      borderRadius: '7px',
+                                      fontSize: '0.82rem',
                                       fontWeight: 700,
                                       display: 'inline-flex',
                                       alignItems: 'center',
-                                      gap: '4px',
+                                      gap: '5px',
                                       cursor: 'pointer'
                                     }}
                                   >
-                                    <Printer size={13} />
+                                    <Printer size={14} />
                                     Imprimir
                                   </button>
 
@@ -1010,265 +934,229 @@ export const ImagingView = () => {
                                       background: '#ecfdf5',
                                       border: '1px solid #a7f3d0',
                                       color: '#065f46',
-                                      padding: '0.35rem 0.75rem',
-                                      borderRadius: '6px',
-                                      fontSize: '0.78rem',
+                                      padding: '0.45rem 0.85rem',
+                                      borderRadius: '7px',
+                                      fontSize: '0.82rem',
                                       fontWeight: 700,
                                       display: 'inline-flex',
                                       alignItems: 'center',
-                                      gap: '4px',
+                                      gap: '5px',
                                       cursor: 'pointer'
                                     }}
                                   >
-                                    <Share2 size={13} />
-                                    Enviar al Paciente
+                                    <WhatsAppIcon size={15} color="#059669" />
+                                    Enviar WhatsApp
                                   </button>
-                                </div>
-                              </div>
 
-                              {/* Two columns: Left Thumbnail + Quick PACS launch, Right findings & conclusion */}
-                              <div
-                                style={{
-                                  display: 'grid',
-                                  gridTemplateColumns: '220px 1fr',
-                                  gap: '1.25rem',
-                                  alignItems: 'start'
-                                }}
-                              >
-                                {/* Left Column: Thumbnail + PACS launcher */}
-                                <div
-                                  style={{
-                                    border: '1px solid #e2e8f0',
-                                    borderRadius: '8px',
-                                    overflow: 'hidden',
-                                    background: '#090f10',
-                                    position: 'relative'
-                                  }}
-                                >
-                                  <img
-                                    src={study.thumbnailUrl}
-                                    alt={study.bodyPart}
-                                    style={{
-                                      width: '100%',
-                                      height: '160px',
-                                      objectFit: 'cover',
-                                      display: 'block',
-                                      opacity: 0.95
-                                    }}
-                                  />
-                                  <div
-                                    style={{
-                                      padding: '0.65rem',
-                                      background: '#0c1b1c',
-                                      borderTop: '1px solid #1e3a3a',
-                                      display: 'flex',
-                                      flexDirection: 'column',
-                                      gap: '0.45rem'
-                                    }}
-                                  >
-                                    <div style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'flex', justifyContent: 'space-between' }}>
-                                      <span>DICOM 3.0</span>
-                                      <span>{study.fileSize || '48 MB'}</span>
-                                    </div>
+                                  {editingStudyId !== study.id ? (
                                     <button
                                       type="button"
-                                      onClick={(e) => handleOpenPacs(study, e)}
+                                      onClick={(e) => handleStartEdit(study, e)}
                                       style={{
-                                        width: '100%',
-                                        background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
-                                        color: '#ffffff',
-                                        border: 'none',
-                                        padding: '0.45rem',
-                                        borderRadius: '6px',
-                                        fontSize: '0.78rem',
-                                        fontWeight: 800,
-                                        display: 'flex',
+                                        background: '#f8fafc',
+                                        border: '1px solid #cbd5e1',
+                                        color: '#334155',
+                                        padding: '0.45rem 0.85rem',
+                                        borderRadius: '7px',
+                                        fontSize: '0.82rem',
+                                        fontWeight: 700,
+                                        display: 'inline-flex',
                                         alignItems: 'center',
-                                        justifyContent: 'center',
                                         gap: '5px',
                                         cursor: 'pointer'
                                       }}
                                     >
-                                      <Maximize2 size={13} />
-                                      Abrir Visor PACS
+                                      <Edit3 size={14} />
+                                      Editar
                                     </button>
-                                  </div>
-                                </div>
-
-                                {/* Right Column: Medical report text */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                                  {editingStudyId !== study.id ? (
-                                    <>
-                                      {/* Findings text */}
-                                      <div>
-                                        <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>
-                                          Hallazgos Radiológicos / Descripción Técnica:
-                                        </div>
-                                        <div style={{ fontSize: '0.88rem', color: '#1e293b', lineHeight: 1.5, background: '#f8fafc', padding: '0.75rem', borderRadius: '6px', border: '1px solid #f1f5f9' }}>
-                                          {study.findings}
-                                        </div>
-                                      </div>
-
-                                      {/* Conclusion box */}
-                                      <div
-                                        style={{
-                                          background: '#eff6ff',
-                                          borderLeft: '4px solid #076ABC',
-                                          padding: '0.85rem',
-                                          borderRadius: '4px 8px 8px 4px'
-                                        }}
-                                      >
-                                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', marginBottom: '3px' }}>
-                                          Conclusión Diagnóstica:
-                                        </div>
-                                        <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#002182', lineHeight: 1.4 }}>
-                                          {study.conclusion}
-                                        </div>
-                                      </div>
-
-                                      {/* Measurements chips */}
-                                      {study.measurements && Object.keys(study.measurements).length > 0 && (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                          <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748b' }}>
-                                            Mediciones Cuantificadas:
-                                          </span>
-                                          {Object.entries(study.measurements).map(([key, val]) => (
-                                            <span
-                                              key={key}
-                                              style={{
-                                                background: '#f8fafc',
-                                                border: '1px solid #cbd5e1',
-                                                padding: '0.2rem 0.55rem',
-                                                borderRadius: '6px',
-                                                fontSize: '0.76rem',
-                                                color: '#334155'
-                                              }}
-                                            >
-                                              <strong style={{ color: '#0f172a' }}>{key}:</strong> {val}
-                                            </span>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </>
                                   ) : (
-                                    /* Edit report mode */
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                      <div>
-                                        <label style={{ fontSize: '0.76rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '4px' }}>
-                                          Editar Hallazgos Radiológicos:
-                                        </label>
-                                        <textarea
-                                          rows={3}
-                                          value={editFindings}
-                                          onChange={(e) => setEditFindings(e.target.value)}
-                                          style={{
-                                            width: '100%',
-                                            padding: '0.65rem',
-                                            borderRadius: '6px',
-                                            border: '1px solid #cbd5e1',
-                                            fontSize: '0.86rem',
-                                            color: '#0f172a',
-                                            background: '#ffffff'
-                                          }}
-                                        />
-                                      </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingStudyId(null)}
+                                      style={{
+                                        background: '#f8fafc',
+                                        border: '1px solid #cbd5e1',
+                                        color: '#64748b',
+                                        padding: '0.45rem 0.85rem',
+                                        borderRadius: '7px',
+                                        fontSize: '0.82rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      Cancelar
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
 
-                                      <div>
-                                        <label style={{ fontSize: '0.76rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '4px' }}>
-                                          Editar Conclusión Diagnóstica:
-                                        </label>
-                                        <textarea
-                                          rows={2}
-                                          value={editConclusion}
-                                          onChange={(e) => setEditConclusion(e.target.value)}
-                                          style={{
-                                            width: '100%',
-                                            padding: '0.65rem',
-                                            borderRadius: '6px',
-                                            border: '1px solid #cbd5e1',
-                                            fontSize: '0.86rem',
-                                            color: '#0f172a',
-                                            background: '#ffffff'
-                                          }}
-                                        />
-                                      </div>
+                              {/* 2. Main Medical Report Content */}
+                              {editingStudyId !== study.id ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
+                                  {/* Conclusión Diagnóstica (Highlighted at the top) */}
+                                  <div
+                                    style={{
+                                      background: '#f0f7ff',
+                                      borderLeft: '4px solid #076ABC',
+                                      border: '1px solid #dbeafe',
+                                      borderLeftWidth: '4px',
+                                      padding: '1.1rem 1.35rem',
+                                      borderRadius: '8px'
+                                    }}
+                                  >
+                                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>
+                                      Conclusión Diagnóstica:
+                                    </div>
+                                    <div style={{ fontSize: '1.02rem', fontWeight: 800, color: '#002182', lineHeight: 1.5 }}>
+                                      {study.conclusion}
+                                    </div>
+                                  </div>
 
-                                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                                        <button
-                                          type="button"
-                                          onClick={() => setEditingStudyId(null)}
+                                  {/* Hallazgos Radiológicos / Descripción Detallada */}
+                                  <div>
+                                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#475569', marginBottom: '6px' }}>
+                                      Hallazgos Radiológicos & Descripción Detallada:
+                                    </div>
+                                    <div
+                                      style={{
+                                        fontSize: '0.94rem',
+                                        color: '#1e293b',
+                                        lineHeight: 1.6,
+                                        background: '#f8fafc',
+                                        padding: '1rem 1.25rem',
+                                        borderRadius: '8px',
+                                        border: '1px solid #e2e8f0'
+                                      }}
+                                    >
+                                      {study.findings}
+                                    </div>
+                                  </div>
+
+                                  {/* Mediciones Cuantificadas */}
+                                  {study.measurements && Object.keys(study.measurements).length > 0 && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                                      <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#475569' }}>
+                                        Mediciones Clínicas:
+                                      </span>
+                                      {Object.entries(study.measurements).map(([key, val]) => (
+                                        <span
+                                          key={key}
                                           style={{
-                                            padding: '0.45rem 0.85rem',
-                                            borderRadius: '6px',
+                                            background: '#ffffff',
                                             border: '1px solid #cbd5e1',
-                                            background: '#f8fafc',
-                                            color: '#475569',
-                                            fontSize: '0.8rem',
-                                            fontWeight: 700,
-                                            cursor: 'pointer'
+                                            padding: '0.35rem 0.75rem',
+                                            borderRadius: '6px',
+                                            fontSize: '0.84rem',
+                                            color: '#334155',
+                                            boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
                                           }}
                                         >
-                                          Descartar
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => handleSaveReport(study.id)}
-                                          style={{
-                                            padding: '0.45rem 0.95rem',
-                                            borderRadius: '6px',
-                                            border: 'none',
-                                            background: '#076ABC',
-                                            color: '#ffffff',
-                                            fontSize: '0.8rem',
-                                            fontWeight: 800,
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '5px',
-                                            cursor: 'pointer'
-                                          }}
-                                        >
-                                          <CheckCircle2 size={14} />
-                                          Guardar y Firmar
-                                        </button>
-                                      </div>
+                                          <strong style={{ color: '#0f172a' }}>{formatMeasurementKey(key)}:</strong> {val}
+                                        </span>
+                                      ))}
                                     </div>
                                   )}
 
-                                  {/* Legal signature footer */}
+                                  {/* Status indicator (Clean, no SHA-256) */}
                                   <div
                                     style={{
                                       display: 'flex',
-                                      justifyContent: 'space-between',
                                       alignItems: 'center',
-                                      flexWrap: 'wrap',
-                                      gap: '0.5rem',
-                                      paddingTop: '0.65rem',
-                                      borderTop: '1px solid #f1f5f9',
-                                      fontSize: '0.72rem',
-                                      color: '#64748b'
+                                      gap: '6px',
+                                      color: '#059669',
+                                      fontWeight: 700,
+                                      fontSize: '0.8rem',
+                                      paddingTop: '0.5rem',
+                                      borderTop: '1px solid #f1f5f9'
                                     }}
                                   >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#059669', fontWeight: 700 }}>
-                                      <ShieldCheck size={14} />
-                                      Firma Digital X.509 Verificada • Integridad Criptográfica Válida
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                      <span>SHA-256:</span>
-                                      <code style={{ background: '#f1f5f9', padding: '0.1rem 0.35rem', borderRadius: '4px', color: '#334155' }}>
-                                        {study.hashSha256?.substring(0, 16)}...
-                                      </code>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => handleCopyHash(study.hashSha256 || '', e)}
-                                        title="Copiar Hash SHA-256"
-                                        style={{ background: 'none', border: 'none', color: '#076ABC', cursor: 'pointer', padding: '2px' }}
-                                      >
-                                        <Copy size={12} />
-                                      </button>
-                                    </div>
+                                    <CheckCircle2 size={15} />
+                                    <span>Informe validado y firmado electrónicamente por el especialista en diagnóstico por imágenes.</span>
                                   </div>
                                 </div>
-                              </div>
+                              ) : (
+                                /* Edit report mode */
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                                  <div>
+                                    <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '5px' }}>
+                                      Conclusión Diagnóstica:
+                                    </label>
+                                    <textarea
+                                      rows={2}
+                                      value={editConclusion}
+                                      onChange={(e) => setEditConclusion(e.target.value)}
+                                      style={{
+                                        width: '100%',
+                                        padding: '0.75rem',
+                                        borderRadius: '8px',
+                                        border: '1px solid #cbd5e1',
+                                        fontSize: '0.92rem',
+                                        color: '#0f172a',
+                                        background: '#ffffff'
+                                      }}
+                                    />
+                                  </div>
+
+                                  <div>
+                                    <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '5px' }}>
+                                      Hallazgos Radiológicos:
+                                    </label>
+                                    <textarea
+                                      rows={4}
+                                      value={editFindings}
+                                      onChange={(e) => setEditFindings(e.target.value)}
+                                      style={{
+                                        width: '100%',
+                                        padding: '0.75rem',
+                                        borderRadius: '8px',
+                                        border: '1px solid #cbd5e1',
+                                        fontSize: '0.92rem',
+                                        color: '#0f172a',
+                                        background: '#ffffff'
+                                      }}
+                                    />
+                                  </div>
+
+                                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingStudyId(null)}
+                                      style={{
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: '7px',
+                                        border: '1px solid #cbd5e1',
+                                        background: '#f8fafc',
+                                        color: '#475569',
+                                        fontSize: '0.82rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      Descartar
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSaveReport(study.id)}
+                                      style={{
+                                        padding: '0.5rem 1.1rem',
+                                        borderRadius: '7px',
+                                        border: 'none',
+                                        background: '#076ABC',
+                                        color: '#ffffff',
+                                        fontSize: '0.82rem',
+                                        fontWeight: 800,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      <CheckCircle2 size={15} />
+                                      Guardar Cambios
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -1562,7 +1450,9 @@ export const ImagingView = () => {
                       textShadow: '0 1px 4px #000'
                     }}
                   >
-                    <span>📏 Calibre: 8.4 mm (Normoposición)</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                      <Ruler size={13} /> Calibre: 8.4 mm (Normoposición)
+                    </span>
                   </div>
                 )}
               </div>

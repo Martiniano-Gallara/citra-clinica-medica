@@ -6,7 +6,7 @@ import {
   Mail,
   Clock,
   Send,
-  MessageCircle,
+  Instagram,
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
@@ -196,7 +196,7 @@ export const ContactSection = () => {
                   flexShrink: 0
                 }}
               >
-                <MessageCircle size={22} />
+                <Instagram size={22} />
               </div>
               <div>
                 <h4 style={{ margin: '0 0 0.25rem', fontSize: '1.05rem', fontWeight: 800, color: '#002182' }}>
@@ -294,7 +294,7 @@ export const ContactSection = () => {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Ej: Marcelo Fernández"
+                    placeholder="Tu nombre y apellido"
                     style={{
                       width: '100%',
                       padding: '0.7rem 0.85rem',
@@ -338,7 +338,7 @@ export const ContactSection = () => {
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="+54 9 11 ..."
+                      placeholder="Cód. área y número"
                       style={{
                         width: '100%',
                         padding: '0.7rem 0.85rem',

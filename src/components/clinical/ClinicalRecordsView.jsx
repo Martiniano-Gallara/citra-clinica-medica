@@ -121,7 +121,7 @@ export const ClinicalRecordsView = () => {
         onClose={() => setIsLegalHceModalOpen(false)}
       />
 
-      {/* 1. TOP HEADER WITH LEGAL CERTIFICATION NOTICE */}
+      {/* 1. TOP HEADER */}
       <div
         style={{
           display: 'flex',
@@ -132,65 +132,11 @@ export const ClinicalRecordsView = () => {
         }}
       >
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
-            <span
-              style={{
-                background: '#ecfdf5',
-                color: '#065f46',
-                border: '1px solid #a7f3d0',
-                padding: '0.2rem 0.65rem',
-                borderRadius: '100px',
-                fontSize: '0.74rem',
-                fontWeight: 800,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              <Stethoscope size={13} />
-              {isDoctor ? (currentDoctor?.name?.startsWith('Dr.') ? currentDoctor.name : `Dr. ${currentDoctor?.name || 'Alejandro Blanco'}`) : 'HCE Centralizada'}
-            </span>
-
-            <span
-              style={{
-                background: '#eff6ff',
-                color: '#1e40af',
-                border: '1px solid #bfdbfe',
-                padding: '0.2rem 0.65rem',
-                borderRadius: '100px',
-                fontSize: '0.72rem',
-                fontWeight: 800
-              }}
-            >
-              REGISTRO CLÍNICO DIGITAL
-            </span>
-
-            <span
-              style={{
-                background: '#F5F8FE',
-                color: '#002182',
-                border: '1px solid #D2E3FC',
-                padding: '0.2rem 0.65rem',
-                borderRadius: '100px',
-                fontSize: '0.72rem',
-                fontWeight: 800
-              }}
-            >
-              CMPC M.P. 34.892 · TRAUMATOLOGÍA
-            </span>
-
-            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-              • Registro Inmutable · Firma Digital X.509
-            </span>
-          </div>
-
           <h1 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.25rem', letterSpacing: '-0.02em' }}>
             Historia Clínica Electrónica
           </h1>
-          <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
-            {isDoctor
-              ? `Evoluciones traumatológicas inmutables, diagnósticos CIE-10 y prescripciones verificadas del ${currentDoctor?.name || 'Dr. Blanco'}.`
-              : 'Registro cronológico inmutable y trazabilidad asistencial de la institución.'}
+          <p style={{ fontSize: '0.86rem', color: '#64748b', margin: 0 }}>
+            Historial clínico cronológico y seguimiento médico de pacientes.
           </p>
         </div>
 
@@ -206,10 +152,10 @@ export const ClinicalRecordsView = () => {
               borderColor: '#BFDBFE',
               color: '#002182'
             }}
-            title="Emitir copia formal certificada de historia clínica"
+            title="Exportar copia de historia clínica"
           >
-            <Scale size={15} color="#076ABC" />
-            <span>Dossier Clínico Certificado</span>
+            <Download size={15} color="#076ABC" />
+            <span>Exportar Historia Clínica</span>
           </button>
 
           <button
@@ -269,107 +215,89 @@ export const ClinicalRecordsView = () => {
         </div>
       </div>
 
-      {/* 3. OPERATIONAL SUMMARY KPI CARDS */}
+      {/* 2. OPERATIONAL SUMMARY KPI CARDS */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '1rem'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gap: '1.25rem'
         }}
       >
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '14px',
-            border: '1px solid #e2e8f0',
-            padding: '1.15rem 1.25rem'
+            borderRadius: '16px',
+            border: '1.5px solid #D2E3FC',
+            borderLeft: '4px solid #076ABC',
+            padding: '1.25rem 1.5rem',
+            boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Total de Consultas Registradas
             </span>
-            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#EBF3FD', color: '#076ABC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <FileText size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.2rem' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 900, color: '#002182', marginBottom: '0.2rem', lineHeight: 1 }}>
             {effectiveConsultations.length}
           </div>
-          <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-            {isDoctor ? 'Mis evoluciones traumatológicas' : 'Historias clínicas foliadas'}
+          <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '4px' }}>
+            Evoluciones médicas asentadas
           </div>
         </div>
 
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '14px',
-            border: '1px solid #e2e8f0',
-            padding: '1.15rem 1.25rem'
+            borderRadius: '16px',
+            border: '1.5px solid #D2E3FC',
+            borderLeft: '4px solid #10b981',
+            padding: '1.25rem 1.5rem',
+            boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Consultas de Hoy
             </span>
-            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Calendar size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.2rem' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.2rem', lineHeight: 1 }}>
             {todayConsultationsCount}
           </div>
-          <div style={{ fontSize: '0.74rem', color: '#059669', fontWeight: 600 }}>
-            Atención médica en consultorio
+          <div style={{ fontSize: '0.76rem', color: '#059669', fontWeight: 700, marginTop: '4px' }}>
+            Atención médica en la jornada
           </div>
         </div>
 
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '14px',
-            border: '1px solid #e2e8f0',
-            padding: '1.15rem 1.25rem'
+            borderRadius: '16px',
+            border: '1.5px solid #D2E3FC',
+            borderLeft: '4px solid #8b5cf6',
+            padding: '1.25rem 1.5rem',
+            boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Pacientes en Seguimiento
             </span>
-            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#f8fafc', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#f5f3ff', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <User size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.2rem' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.2rem', lineHeight: 1 }}>
             {effectivePatients.length}
           </div>
-          <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-            Titulares con HCE activa
-          </div>
-        </div>
-
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '14px',
-            border: '1px solid #e2e8f0',
-            padding: '1.15rem 1.25rem'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Firma Digital & Validez
-            </span>
-            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#d1fae5', color: '#065f46', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <CheckCircle2 size={18} />
-            </div>
-          </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#065f46', marginBottom: '0.2rem' }}>
-            100%
-          </div>
-          <div style={{ fontSize: '0.74rem', color: '#065f46', fontWeight: 600 }}>
-            Certificados X.509 ONTI válidos
+          <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '4px' }}>
+            Titulares con historia clínica activa
           </div>
         </div>
       </div>
@@ -408,24 +336,7 @@ export const ClinicalRecordsView = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          {isDoctor ? (
-            <div
-              style={{
-                fontSize: '0.82rem',
-                fontWeight: 800,
-                padding: '0.4rem 0.85rem',
-                background: '#ecfdf5',
-                color: '#065f46',
-                border: '1px solid #a7f3d0',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              <span>🩺 {currentDoctor?.name?.startsWith('Dr.') ? currentDoctor.name : `Dr. ${currentDoctor?.name || 'Alejandro Blanco'}`} (M.P. 34.892 CMPC)</span>
-            </div>
-          ) : (
+          {!isDoctor && (
             <select
               value={selectedDoctor}
               onChange={(e) => setSelectedDoctor(e.target.value)}
@@ -458,7 +369,7 @@ export const ClinicalRecordsView = () => {
         </div>
       </div>
 
-      {/* 5. CONSULTATION TABLE (CRONOLÓGICA Y FOLIADA SEGÚN LEY 26.529 ART. 12) */}
+      {/* 5. CONSULTATION TABLE */}
       <div
         style={{
           background: '#ffffff',
@@ -472,11 +383,11 @@ export const ClinicalRecordsView = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
             <thead>
               <tr style={{ background: '#f8fafc', borderBottom: '1.5px solid #e2e8f0', color: '#0f172a', fontWeight: 800 }}>
-                <th style={{ padding: '0.9rem 1.25rem', width: '140px' }}>Fecha & Folio</th>
-                <th style={{ padding: '0.9rem 1.25rem' }}>Paciente Titular</th>
-                <th style={{ padding: '0.9rem 1.25rem' }}>Diagnóstico Principal (CIE-10)</th>
-                <th style={{ padding: '0.9rem 1.25rem', width: '220px' }}>Firma Digital & Validez</th>
-                <th style={{ padding: '0.9rem 1.25rem', textAlign: 'right', width: '160px' }}>Acciones</th>
+                <th style={{ padding: '0.9rem 1.25rem', width: '130px' }}>Fecha & Folio</th>
+                <th style={{ padding: '0.9rem 1.25rem', width: '220px' }}>Paciente Titular</th>
+                <th style={{ padding: '0.9rem 1.25rem' }}>Motivo de Consulta</th>
+                <th style={{ padding: '0.9rem 1.25rem' }}>Diagnóstico (CIE-10)</th>
+                <th style={{ padding: '0.9rem 1.25rem', textAlign: 'right', width: '150px' }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -524,33 +435,26 @@ export const ClinicalRecordsView = () => {
 
                         {/* Paciente */}
                         <td style={{ padding: '0.9rem 1.25rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div
-                              style={{
-                                width: '36px',
-                                height: '36px',
-                                borderRadius: '50%',
-                                background: '#eff6ff',
-                                color: '#2563eb',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: 800,
-                                fontSize: '0.85rem',
-                                flexShrink: 0
-                              }}
-                            >
-                              {getInitials(cons.patientName)}
+                          <div>
+                            <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.94rem' }}>
+                              {cons.patientName}
                             </div>
-                            <div>
-                              <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.94rem' }}>
-                                {cons.patientName}
-                              </div>
-                              <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-                                DNI {cons.patientDni || pat?.dni || '-'} · {pat?.insuranceName || 'Particular'}
-                              </div>
+                            <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
+                              DNI {cons.patientDni || pat?.dni || '-'} · {pat?.insuranceName || 'Particular'}
                             </div>
                           </div>
+                        </td>
+
+                        {/* Motivo de Consulta */}
+                        <td style={{ padding: '0.9rem 1.25rem' }}>
+                          <div style={{ fontSize: '0.86rem', color: '#1e293b', fontWeight: 600, lineHeight: 1.4 }}>
+                            {cons.reason || 'Consulta médica programada'}
+                          </div>
+                          {cons.symptoms && (
+                            <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '3px' }}>
+                              {cons.symptoms}
+                            </div>
+                          )}
                         </td>
 
                         {/* Diagnóstico CIE-10 */}
@@ -597,32 +501,6 @@ export const ClinicalRecordsView = () => {
                           )}
                         </td>
 
-                        {/* Firma Digital & Validez Córdoba */}
-                        <td style={{ padding: '0.9rem 1.25rem', whiteSpace: 'nowrap' }}>
-                          <div>
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                background: '#ecfdf5',
-                                color: '#065f46',
-                                border: '1px solid #a7f3d0',
-                                padding: '0.25rem 0.65rem',
-                                borderRadius: '100px',
-                                fontSize: '0.74rem',
-                                fontWeight: 800
-                              }}
-                            >
-                              <CheckCircle2 size={13} />
-                              X.509 · CMPC (Córdoba)
-                            </span>
-                          </div>
-                          <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>
-                            {cons.doctorLicense || 'M.P. 34.892 · M.N. 114.829'}
-                          </div>
-                        </td>
-
                         {/* Acciones */}
                         <td style={{ padding: '0.9rem 1.25rem', textAlign: 'right' }}>
                           <div
@@ -632,7 +510,7 @@ export const ClinicalRecordsView = () => {
                             <button
                               type="button"
                               onClick={() => setSelectedConsultationForPrint(cons)}
-                              title="Imprimir informe clínico legal homologado"
+                              title="Imprimir informe de consulta"
                               style={{
                                 background: '#f8fafc',
                                 border: '1px solid #cbd5e1',
@@ -746,8 +624,8 @@ export const ClinicalRecordsView = () => {
                                   {cons.prescriptions && cons.prescriptions.length > 0 ? (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                       {cons.prescriptions.map((rx, idx) => (
-                                        <div key={idx} style={{ fontSize: '0.82rem', color: '#0f172a', background: '#ecfdf5', padding: '4px 8px', borderRadius: '6px', border: '1px solid #a7f3d0' }}>
-                                          💊 <strong>{rx.medication || rx.name || rx.drugName}</strong> — {rx.dosage || rx.presentation}
+                                        <div key={idx} style={{ fontSize: '0.82rem', color: '#0f172a', background: '#ecfdf5', padding: '4px 8px', borderRadius: '6px', border: '1px solid #a7f3d0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                          <Pill size={13} color="#059669" /> <span><strong>{rx.medication || rx.name || rx.drugName}</strong> — {rx.dosage || rx.presentation}</span>
                                         </div>
                                       ))}
                                     </div>
@@ -804,10 +682,10 @@ export const ClinicalRecordsView = () => {
                                   gap: '0.75rem'
                                 }}
                               >
-                                <div style={{ fontSize: '0.74rem', color: '#059669', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <Lock size={13} />
+                                <div style={{ fontSize: '0.76rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <CheckCircle2 size={14} color="#059669" />
                                   <span>
-                                    Firma Digital X.509: <strong>{cons.doctorName}</strong> ({cons.doctorLicense || 'M.P. 34.892'}) · Sello SHA-256 Inmutable
+                                    Profesional tratante: <strong style={{ color: '#0f172a' }}>{cons.doctorName}</strong> {cons.doctorLicense && `(${cons.doctorLicense})`}
                                   </span>
                                 </div>
 
@@ -844,7 +722,7 @@ export const ClinicalRecordsView = () => {
                                     style={{ fontSize: '0.78rem', fontWeight: 800 }}
                                   >
                                     <Printer size={13} />
-                                    <span>Imprimir Informe Homologado</span>
+                                    <span>Imprimir Consulta</span>
                                   </button>
                                 </div>
                               </div>

@@ -11,7 +11,15 @@ import {
   Stethoscope,
   ScanLine,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  ShieldCheck,
+  ExternalLink,
+  Activity,
+  Check,
+  Car,
+  Accessibility,
+  Zap,
+  CreditCard
 } from 'lucide-react';
 
 export const ClinicPage = () => {
@@ -21,96 +29,234 @@ export const ClinicPage = () => {
     {
       icon: Stethoscope,
       title: 'Consultorios Médicos',
-      detail: 'Atención clínica y diagnóstica en traumatología, reumatología, neurología y nutrición.'
+      badge: 'Especialidades',
+      detail: 'Módulos equipados para traumatología, neurología, reumatología y nutrición clínica.',
+      color: '#076ABC',
+      bg: '#EBF3FD'
     },
     {
       icon: Dumbbell,
-      title: 'Gimnasio de Rehabilitación',
-      detail: 'Espacio acondicionado para kinesiología activa, fisioterapia, osteopatía y reeducación motora.'
+      title: 'Gimnasio Biomecánico',
+      badge: '180 m²',
+      detail: 'Rehabilitación motora activa, kinesiología, osteopatía y reeducación postural.',
+      color: '#059669',
+      bg: '#ECFDF5'
     },
     {
       icon: ScanLine,
-      title: 'Diagnóstico & Biomecánica',
-      detail: 'Radiología digital directa y plataforma baropodométrica para estudio de la pisada y marcha.'
+      title: 'Diagnóstico & Imágenes',
+      badge: 'Digital Directo',
+      detail: 'Radiología digital de alta resolución y plataforma baropodométrica computarizada.',
+      color: '#7C3AED',
+      bg: '#F5F3FF'
     },
     {
       icon: Sparkles,
       title: 'Gabinete de Terapias',
-      detail: 'Equipamiento para ozonoterapia médica, terapias biológicas y fisioterapia especializada.'
+      badge: 'Avanzado',
+      detail: 'Ozonoterapia médica, medicina biológica regenerativa y fisioterapia analgésica.',
+      color: '#D97706',
+      bg: '#FEF3C7'
+    },
+    {
+      icon: Activity,
+      title: 'Estudio de Pisada & Baropodometría',
+      badge: 'Biomecánica',
+      detail: 'Evaluación de presiones plantares computarizada y confección de plantillas ortopédicas.',
+      color: '#2563EB',
+      bg: '#EFF6FF'
+    },
+    {
+      icon: ShieldCheck,
+      title: 'Recepción & Admisión Médica',
+      badge: 'Atención Ágil',
+      detail: 'Gestión rápida de turnos, convenios con obras sociales y sala de espera climatizada.',
+      color: '#0D9488',
+      bg: '#F0FDFA'
+    }
+  ];
+
+  const careModelSteps = [
+    {
+      step: '01',
+      title: 'Consulta Médica',
+      desc: 'Evaluación clínica especializada en traumatología y áreas afines sin demoras.',
+      icon: Stethoscope,
+      color: '#076ABC',
+      bg: '#EBF3FD'
+    },
+    {
+      step: '02',
+      title: 'Diagnóstico Inmediato',
+      desc: 'Rayos X digital y análisis biomecánico en la misma sede y con entrega en el día.',
+      icon: ScanLine,
+      color: '#7C3AED',
+      bg: '#F5F3FF'
+    },
+    {
+      step: '03',
+      title: 'Rehabilitación Activa',
+      desc: 'Tratamiento kinésico continuo y personalizado en nuestro gimnasio de 180 m².',
+      icon: Dumbbell,
+      color: '#059669',
+      bg: '#ECFDF5'
     }
   ];
 
   return (
     <div style={{ background: '#ffffff', minHeight: '100vh' }}>
-      {/* Header Banner — Compacto y Mobile-First */}
-      <section
-        style={{
-          background: 'linear-gradient(135deg, #001556 0%, #002182 100%)',
-          color: '#ffffff',
-          padding: '2.5rem 1.25rem 1.75rem',
-          position: 'relative'
-        }}
-      >
-        <div style={{ maxWidth: '850px', margin: '0 auto' }}>
+      {/* Header Banner — Rediseño Premium: Glassmorphism, atmósfera tech y métricas de sede */}
+      <section className="services-hero-banner">
+        {/* Fondo interactivo con microretícula y halos de iluminación ambiental */}
+        <div aria-hidden="true" className="services-hero-grid-bg" />
+        <div aria-hidden="true" className="services-hero-glow-cyan" />
+        <div aria-hidden="true" className="services-hero-glow-blue" />
+
+        <div style={{ maxWidth: '1020px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <div
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.4rem',
-              background: 'rgba(37, 124, 230, 0.18)',
-              border: '1px solid rgba(142, 190, 245, 0.35)',
-              color: '#D2E3FC',
-              padding: '0.3rem 0.8rem',
+              gap: '0.45rem',
+              background: 'rgba(37, 124, 230, 0.16)',
+              border: '1px solid rgba(142, 190, 245, 0.32)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              color: '#E0F2FE',
+              padding: '0.35rem 0.85rem',
               borderRadius: '100px',
-              fontSize: '0.72rem',
+              fontSize: '0.74rem',
               fontWeight: 800,
-              letterSpacing: '0.04em',
-              marginBottom: '0.65rem'
+              letterSpacing: '0.05em',
+              marginBottom: '0.85rem',
+              boxShadow: '0 2px 10px rgba(0, 19, 72, 0.25)'
             }}
           >
-            <Building2 size={12} color="#8EBEF5" />
-            SEDE INSTITUCIONAL ARROYITO
+            <Building2 size={13} color="#00F0FF" />
+            <span>CITRA · SEDE INSTITUCIONAL ARROYITO</span>
           </div>
 
           <h1
             style={{
-              fontSize: 'clamp(1.75rem, 4vw, 2.6rem)',
+              fontSize: 'clamp(1.85rem, 4.5vw, 2.85rem)',
               fontWeight: 900,
-              letterSpacing: '-0.02em',
-              margin: '0 0 0.45rem',
-              lineHeight: 1.15
+              letterSpacing: '-0.03em',
+              margin: '0 0 0.65rem',
+              lineHeight: 1.15,
+              color: '#ffffff'
             }}
           >
-            La Clínica
+            La Clínica &{' '}
+            <span
+              style={{
+                background: 'linear-gradient(135deg, #60A5FA 0%, #38BDF8 50%, #A5F3FC 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            >
+              Sede Central
+            </span>
           </h1>
 
           <p
             style={{
-              fontSize: '0.92rem',
-              color: '#D2E3FC',
-              maxWidth: '580px',
-              lineHeight: 1.45,
-              margin: 0,
-              opacity: 0.92
+              fontSize: 'clamp(0.88rem, 2.2vw, 0.96rem)',
+              color: '#BFDBFE',
+              maxWidth: '680px',
+              lineHeight: 1.5,
+              margin: '0 0 1.5rem',
+              fontWeight: 500,
+              opacity: 0.95
             }}
           >
-            Centro Integral de Traumatología & Rehabilitación. Atención profesional, diagnóstico y recuperación en un mismo lugar.
+            Centro Integral de Traumatología & Rehabilitación. Infraestructura médica de vanguardia con consultorios, gimnasio de 180 m² y diagnóstico digital en Arroyito.
           </p>
+
+          {/* Quick Metrics Bar — Tarjetas Glassmorphism de la Sede */}
+          <div className="services-metrics-grid">
+            <div className="services-metric-card">
+              <div
+                className="services-metric-icon-wrap"
+                style={{
+                  background: 'radial-gradient(circle, rgba(37, 124, 230, 0.28) 0%, rgba(7, 106, 188, 0.12) 100%)',
+                  borderColor: 'rgba(96, 165, 250, 0.3)'
+                }}
+              >
+                <Stethoscope size={20} color="#60A5FA" />
+              </div>
+              <div className="services-metric-content">
+                <div className="services-metric-value">8 Módulos</div>
+                <div className="services-metric-label">Consultorios</div>
+                <div className="services-metric-sub">Atención médica</div>
+              </div>
+            </div>
+
+            <div className="services-metric-card">
+              <div
+                className="services-metric-icon-wrap"
+                style={{
+                  background: 'radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.1) 100%)',
+                  borderColor: 'rgba(52, 211, 153, 0.3)'
+                }}
+              >
+                <Dumbbell size={20} color="#34D399" />
+              </div>
+              <div className="services-metric-content">
+                <div className="services-metric-value">180 m²</div>
+                <div className="services-metric-label">Gimnasio</div>
+                <div className="services-metric-sub">Biomecánica motora</div>
+              </div>
+            </div>
+
+            <div className="services-metric-card">
+              <div
+                className="services-metric-icon-wrap"
+                style={{
+                  background: 'radial-gradient(circle, rgba(168, 85, 247, 0.26) 0%, rgba(126, 34, 206, 0.1) 100%)',
+                  borderColor: 'rgba(192, 132, 252, 0.3)'
+                }}
+              >
+                <ScanLine size={20} color="#C084FC" />
+              </div>
+              <div className="services-metric-content">
+                <div className="services-metric-value">Digital</div>
+                <div className="services-metric-label">Rayos X & Eco</div>
+                <div className="services-metric-sub">Diagnóstico propio</div>
+              </div>
+            </div>
+
+            <div className="services-metric-card">
+              <div
+                className="services-metric-icon-wrap"
+                style={{
+                  background: 'radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, rgba(180, 83, 9, 0.1) 100%)',
+                  borderColor: 'rgba(251, 191, 36, 0.3)'
+                }}
+              >
+                <MapPin size={20} color="#FBBF24" />
+              </div>
+              <div className="services-metric-content">
+                <div className="services-metric-value">Arroyito</div>
+                <div className="services-metric-label">Carlos Pontin 556</div>
+                <div className="services-metric-sub">Fácil acceso</div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Main Content Area */}
-      <section style={{ maxWidth: '850px', margin: '0 auto', padding: '1.75rem 1.25rem 3.5rem' }}>
+      <section style={{ maxWidth: '920px', margin: '0 auto', padding: '2rem 1.25rem 3.5rem' }}>
         
-        {/* Foto Real de la Sede con Badge de Ubicación */}
+        {/* Foto Real de la Sede con Badge Glassmorphism de Ubicación */}
         <div
           style={{
             position: 'relative',
-            borderRadius: '18px',
+            borderRadius: '20px',
             overflow: 'hidden',
             border: '1.5px solid #D2E3FC',
-            boxShadow: '0 8px 24px rgba(0, 33, 130, 0.08)',
-            marginBottom: '1.75rem'
+            boxShadow: '0 10px 30px rgba(0, 33, 130, 0.08)',
+            marginBottom: '2rem'
           }}
         >
           <img
@@ -118,7 +264,7 @@ export const ClinicPage = () => {
             alt="Fachada real de CITRA en Arroyito"
             style={{
               width: '100%',
-              height: 'clamp(200px, 45vw, 320px)',
+              height: 'clamp(210px, 46vw, 340px)',
               objectFit: 'cover',
               objectPosition: 'center 35%',
               display: 'block'
@@ -130,77 +276,231 @@ export const ClinicPage = () => {
               bottom: '0.85rem',
               left: '0.85rem',
               right: '0.85rem',
-              background: 'rgba(0, 21, 86, 0.88)',
-              backdropFilter: 'blur(6px)',
+              background: 'rgba(0, 21, 86, 0.92)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
               color: '#ffffff',
-              padding: '0.65rem 0.95rem',
-              borderRadius: '12px',
-              border: '1px solid rgba(210, 227, 252, 0.25)',
+              padding: '0.75rem 1rem',
+              borderRadius: '14px',
+              border: '1px solid rgba(210, 227, 252, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: '0.5rem',
-              flexWrap: 'wrap'
+              flexWrap: 'wrap',
+              boxShadow: '0 8px 20px rgba(0, 0, 0, 0.3)'
             }}
           >
             <a
               href="https://maps.app.goo.gl/FJhLndjvgSAWb2Si6"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', fontWeight: 800, color: 'inherit', textDecoration: 'none' }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                fontSize: '0.84rem',
+                fontWeight: 800,
+                color: '#ffffff',
+                textDecoration: 'none'
+              }}
             >
-              <MapPin size={15} color="#257CE6" />
+              <MapPin size={16} color="#00F0FF" />
               <span>Av. Carlos Pontin Nº556, Arroyito</span>
+              <ExternalLink size={13} color="#93C5FD" />
             </a>
-            <span style={{ fontSize: '0.72rem', color: '#D2E3FC', fontWeight: 700 }}>
-              Fácil acceso y estacionamiento
+            <span
+              style={{
+                fontSize: '0.74rem',
+                color: '#D2E3FC',
+                fontWeight: 700,
+                background: 'rgba(37, 124, 230, 0.25)',
+                border: '1px solid rgba(142, 190, 245, 0.3)',
+                padding: '0.2rem 0.6rem',
+                borderRadius: '100px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <Check size={12} /> Estacionamiento exclusivo
             </span>
           </div>
         </div>
 
-        {/* Propuesta de Atención Real y Verídica */}
+        {/* Strip de Infraestructura y Confort */}
         <div
           style={{
-            background: '#F5F8FE',
-            borderRadius: '16px',
-            border: '1.5px solid #D2E3FC',
-            padding: '1.25rem',
-            marginBottom: '1.75rem'
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+            gap: '0.65rem',
+            marginBottom: '2.5rem'
           }}
         >
-          <div style={{ fontSize: '0.74rem', fontWeight: 900, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.35rem' }}>
-            NUESTRO MODELO DE ATENCIÓN
-          </div>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#002182', margin: '0 0 0.55rem' }}>
-            Diagnóstico, Consulta Médica y Rehabilitación Integrados
-          </h2>
-          <p style={{ fontSize: '0.86rem', color: '#496386', lineHeight: 1.5, margin: '0 0 0.85rem' }}>
-            En CITRA reunimos a médicos especialistas, kinesiólogos y tecnología diagnóstica en un mismo centro en Arroyito. Esto permite coordinar la evaluación médica, la indicación de estudios y el tratamiento kinésico de forma continua, sin demoras ni trámites innecesarios.
-          </p>
+          {[
+            { icon: Car, label: 'Estacionamiento', sub: 'Exclusivo en puerta' },
+            { icon: Accessibility, label: 'Accesibilidad', sub: '100% adaptado' },
+            { icon: Zap, label: 'Rayos X In situ', sub: 'Entrega digital en el día' },
+            { icon: Clock, label: 'Horario Corrido', sub: 'Lun a Vie 8 a 20 hs' },
+            { icon: CreditCard, label: 'Obras Sociales', sub: 'Atención con convenios' }
+          ].map((item, idx) => (
+            <div
+              key={idx}
+              style={{
+                background: '#F8FAFD',
+                border: '1px solid #E2EDFC',
+                borderRadius: '12px',
+                padding: '0.65rem 0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.65rem',
+                boxShadow: '0 2px 6px rgba(0, 33, 130, 0.02)'
+              }}
+            >
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: '#EAF3FD',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#076ABC',
+                  flexShrink: 0
+                }}
+              >
+                <item.icon size={17} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#002182', lineHeight: 1.2 }}>
+                  {item.label}
+                </div>
+                <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 600 }}>
+                  {item.sub}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.8rem', color: '#002182', fontWeight: 700 }}>
-              <CheckCircle2 size={15} color="#076ABC" />
-              <span>Interconsulta médica directa</span>
+        {/* Modelo Asistencial Integrado — 3 Pasos Visuales Sin Bloques Pesados de Texto */}
+        <div style={{ marginBottom: '2.5rem' }}>
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{ fontSize: '0.74rem', fontWeight: 900, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.3rem' }}>
+              MODELO DE ATENCIÓN INTEGRAL
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.8rem', color: '#002182', fontWeight: 700 }}>
-              <CheckCircle2 size={15} color="#076ABC" />
-              <span>Profesionales de la salud colegiados</span>
+            <h2 style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.55rem)', fontWeight: 900, color: '#002182', margin: '0 0 0.4rem', letterSpacing: '-0.02em' }}>
+              Consulta Médica, Diagnóstico y Terapia en un Mismo Centro
+            </h2>
+            <p style={{ fontSize: '0.88rem', color: '#496386', lineHeight: 1.45, margin: 0, maxWidth: '680px' }}>
+              Coordinación continua sin trámites ni demoras entre médicos especialistas y kinesiólogos.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.85rem' }}>
+            {careModelSteps.map((step, i) => {
+              const StepIcon = step.icon;
+              return (
+                <div
+                  key={i}
+                  style={{
+                    background: '#ffffff',
+                    border: '1.5px solid #D2E3FC',
+                    borderRadius: '16px',
+                    padding: '1.15rem 1.1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.65rem',
+                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '10px',
+                        background: step.bg,
+                        color: step.color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <StepIcon size={18} />
+                    </div>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 900, color: '#7994B8', letterSpacing: '0.05em' }}>
+                      {step.step}
+                    </span>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: '0.94rem', fontWeight: 800, color: '#002182', marginBottom: '0.2rem' }}>
+                      {step.title}
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: '#496386', lineHeight: 1.4 }}>
+                      {step.desc}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Garantías del Modelo Asistencial (Reemplaza los viejos checkmarks de texto denso) */}
+          <div className="trust-commitment-card" style={{ marginTop: '1.2rem' }}>
+            <div className="trust-commitment-badge">
+              <ShieldCheck size={14} color="#076ABC" />
+              <span>GARANTÍAS ASISTENCIALES DE LA SEDE</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.8rem', color: '#002182', fontWeight: 700 }}>
-              <CheckCircle2 size={15} color="#076ABC" />
-              <span>Atención para obras sociales y prepagas</span>
+            <div className="trust-grid">
+              <div className="trust-item">
+                <div className="trust-icon-box" style={{ background: '#EBF3FD', color: '#076ABC' }}>
+                  <Check size={18} />
+                </div>
+                <div className="trust-content">
+                  <span className="trust-title">Interconsulta Directa</span>
+                  <span className="trust-desc">Médicos y kinesiólogos comunicados en tiempo real</span>
+                </div>
+              </div>
+
+              <div className="trust-item">
+                <div className="trust-icon-box" style={{ background: '#ECFDF5', color: '#059669' }}>
+                  <ShieldCheck size={18} />
+                </div>
+                <div className="trust-content">
+                  <span className="trust-title">Profesionales Colegiados</span>
+                  <span className="trust-desc">Especialistas matriculados con posgrados activos</span>
+                </div>
+              </div>
+
+              <div className="trust-item">
+                <div className="trust-icon-box" style={{ background: '#EFF6FF', color: '#2563EB' }}>
+                  <CheckCircle2 size={18} />
+                </div>
+                <div className="trust-content">
+                  <span className="trust-title">Obras Sociales & Prepagas</span>
+                  <span className="trust-desc">Atención y cobertura sin demoras burocráticas</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Instalaciones y Áreas de la Clínica (Tarjetas Compactas) */}
-        <div style={{ marginBottom: '1.75rem' }}>
-          <div style={{ fontSize: '0.74rem', fontWeight: 900, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.75rem', paddingLeft: '0.25rem' }}>
-            Áreas y Espacios de la Sede
+        {/* Instalaciones y Áreas de la Sede (Tarjetas Modernas con Hover) */}
+        <div style={{ marginBottom: '2.25rem' }}>
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{ fontSize: '0.74rem', fontWeight: 900, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.3rem' }}>
+              INSTALACIONES & EQUIPAMIENTO
+            </div>
+            <h2 style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.55rem)', fontWeight: 900, color: '#002182', margin: 0, letterSpacing: '-0.02em' }}>
+              Áreas y Espacios de la Sede
+            </h2>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.65rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.85rem' }}>
             {realAreas.map((area, i) => {
               const Icon = area.icon;
               return (
@@ -208,36 +508,63 @@ export const ClinicPage = () => {
                   key={i}
                   style={{
                     background: '#ffffff',
-                    border: '1.5px solid #D2E3FC',
-                    borderRadius: '14px',
-                    padding: '0.9rem',
+                    border: '1.5px solid #E2EDFC',
+                    borderRadius: '16px',
+                    padding: '1rem 1.1rem',
                     display: 'flex',
                     alignItems: 'flex-start',
-                    gap: '0.75rem',
-                    boxShadow: '0 2px 8px rgba(0, 33, 130, 0.03)'
+                    gap: '0.85rem',
+                    boxShadow: '0 2px 10px rgba(0, 33, 130, 0.03)',
+                    transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.borderColor = '#8EBEF5';
+                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(7, 106, 188, 0.09)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.borderColor = '#E2EDFC';
+                    e.currentTarget.style.boxShadow = '0 2px 10px rgba(0, 33, 130, 0.03)';
                   }}
                 >
                   <div
                     style={{
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: '10px',
-                      background: '#EBF3FD',
-                      color: '#076ABC',
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '12px',
+                      background: area.bg,
+                      color: area.color,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
-                      marginTop: '2px'
+                      marginTop: '2px',
+                      boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)'
                     }}
                   >
-                    <Icon size={18} />
+                    <Icon size={20} />
                   </div>
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#002182', marginBottom: '0.2rem' }}>
-                      {area.title}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem', marginBottom: '0.2rem' }}>
+                      <span style={{ fontSize: '0.92rem', fontWeight: 800, color: '#002182' }}>
+                        {area.title}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '0.66rem',
+                          fontWeight: 800,
+                          background: area.bg,
+                          color: area.color,
+                          padding: '0.1rem 0.45rem',
+                          borderRadius: '6px',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {area.badge}
+                      </span>
                     </div>
-                    <div style={{ fontSize: '0.76rem', color: '#496386', lineHeight: 1.35 }}>
+                    <div style={{ fontSize: '0.78rem', color: '#496386', lineHeight: 1.38 }}>
                       {area.detail}
                     </div>
                   </div>
@@ -247,66 +574,132 @@ export const ClinicPage = () => {
           </div>
         </div>
 
-        {/* Ficha Directa de Información & Contacto */}
+        {/* Ficha Directa de Información & Contacto — Rediseño Elevado */}
         <div
           style={{
-            background: 'linear-gradient(135deg, #EBF3FD 0%, #F5F8FE 100%)',
-            borderRadius: '16px',
-            border: '1.5px solid #D2E3FC',
-            padding: '1.25rem'
+            background: 'linear-gradient(135deg, #001556 0%, #002182 100%)',
+            borderRadius: '20px',
+            border: '1.5px solid rgba(37, 124, 230, 0.3)',
+            padding: '1.5rem',
+            color: '#ffffff',
+            boxShadow: '0 10px 30px rgba(0, 21, 86, 0.25)',
+            position: 'relative',
+            overflow: 'hidden'
           }}
         >
-          <div style={{ fontSize: '0.92rem', fontWeight: 900, color: '#002182', marginBottom: '0.75rem' }}>
-            Información de Atención
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', fontSize: '0.82rem', color: '#172A4A', marginBottom: '1.25rem' }}>
-            <a
-              href="https://maps.app.goo.gl/FJhLndjvgSAWb2Si6"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'inherit', textDecoration: 'none' }}
-            >
-              <MapPin size={15} color="#076ABC" />
-              <span><strong>Dirección:</strong> Av. Carlos Pontin Nº556, Arroyito (CP 2434)</span>
-            </a>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Clock size={15} color="#076ABC" />
-              <span><strong>Horarios:</strong> Lunes a Viernes de 8:00 a 20:00 hs</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Phone size={15} color="#076ABC" />
-              <span><strong>Teléfono:</strong> 3576 450214</span>
-            </div>
-          </div>
-
-          {/* Botón de Turnos */}
-          <button
-            onClick={() => {
-              setCurrentView('booking');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
+          <div
             style={{
-              width: '100%',
-              background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
-              color: '#ffffff',
-              border: 'none',
-              padding: '0.8rem 1.25rem',
-              borderRadius: '10px',
-              fontWeight: 800,
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              boxShadow: '0 4px 14px rgba(7, 106, 188, 0.25)',
-              minHeight: '44px'
+              position: 'absolute',
+              top: '-30%',
+              right: '-10%',
+              width: '250px',
+              height: '250px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(0, 240, 255, 0.15) 0%, transparent 70%)',
+              filter: 'blur(40px)',
+              pointerEvents: 'none'
             }}
-          >
-            <CalendarPlus size={17} />
-            Sacar Turno Online
-          </button>
+          />
+
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#60A5FA', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+              VISITA Y ATENCIÓN CITRA
+            </div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#ffffff', margin: '0 0 1rem' }}>
+              Información de Atención en Sede
+            </h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem', marginBottom: '1.35rem' }}>
+              <a
+                href="https://maps.app.goo.gl/FJhLndjvgSAWb2Si6"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(210, 227, 252, 0.18)',
+                  borderRadius: '12px',
+                  padding: '0.75rem 0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.65rem',
+                  color: '#ffffff',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <MapPin size={18} color="#38BDF8" style={{ flexShrink: 0 }} />
+                <div style={{ fontSize: '0.78rem' }}>
+                  <div style={{ fontWeight: 800, color: '#D2E3FC' }}>Dirección</div>
+                  <div>Av. Carlos Pontin Nº556</div>
+                </div>
+              </a>
+
+              <div
+                style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(210, 227, 252, 0.18)',
+                  borderRadius: '12px',
+                  padding: '0.75rem 0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.65rem'
+                }}
+              >
+                <Clock size={18} color="#34D399" style={{ flexShrink: 0 }} />
+                <div style={{ fontSize: '0.78rem' }}>
+                  <div style={{ fontWeight: 800, color: '#D2E3FC' }}>Horarios</div>
+                  <div>Lun a Vie 8:00 a 20:00 hs</div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(210, 227, 252, 0.18)',
+                  borderRadius: '12px',
+                  padding: '0.75rem 0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.65rem'
+                }}
+              >
+                <Phone size={18} color="#FBBF24" style={{ flexShrink: 0 }} />
+                <div style={{ fontSize: '0.78rem' }}>
+                  <div style={{ fontWeight: 800, color: '#D2E3FC' }}>Teléfono</div>
+                  <div>(03576) 450214</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Botón de Turnos con degradé vibrante */}
+            <button
+              onClick={() => {
+                setCurrentView('booking');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, #257CE6 0%, #076ABC 100%)',
+                color: '#ffffff',
+                border: 'none',
+                padding: '0.9rem 1.4rem',
+                borderRadius: '12px',
+                fontWeight: 800,
+                fontSize: '0.95rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.55rem',
+                boxShadow: '0 6px 20px rgba(7, 106, 188, 0.35)',
+                minHeight: '48px',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <CalendarPlus size={18} />
+              Sacar Turno Online en CITRA
+            </button>
+          </div>
         </div>
 
       </section>

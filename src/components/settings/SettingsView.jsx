@@ -22,8 +22,11 @@ import {
   Phone,
   DollarSign,
   Percent,
-  UserCheck
+  UserCheck,
+  MapPin,
+  Copy
 } from 'lucide-react';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
 export const SettingsView = () => {
   const {
@@ -58,12 +61,12 @@ export const SettingsView = () => {
     specialty: currentDoctor?.specialty || 'Traumatología & Cirugía Artroscópica',
     license: currentDoctor?.license || 'MP 34.892 · MN 114.829',
     sisaRefeps: currentDoctor?.sisaRefeps || 'REFEPS-MN-114829',
-    phone: currentDoctor?.phone || '+54 9 351 442-8819',
+    phone: currentDoctor?.phone || '+54 3576 45-2201',
     email: (() => {
       const raw = currentDoctor?.email || authAdmin?.email || 'dr.blanco@citra.com.ar';
       return raw.includes('morales') ? 'dr.blanco@citra.com.ar' : raw;
     })(),
-    consultationPrice: currentDoctor?.consultationPrice || 12000,
+    consultationPrice: currentDoctor?.consultationPrice || currentDoctor?.priceConsultation || 25000,
     feePercentage: currentDoctor?.feePercentage || 75,
     bio: currentDoctor?.bio || 'Especialista en lesiones osteoarticulares, artroscopía de rodilla, reemplazo protésico y traumatología deportiva de alto rendimiento.',
     cuirCode: 'CUIR-AR-TRAUMA-9941',
@@ -197,259 +200,392 @@ export const SettingsView = () => {
   // ==============================================================
   if (isDoctor) {
     return (
-      <div className="settings-container">
-        {/* Header Doctor */}
-        <div className="page-header">
-          <div className="page-title-group">
-            <div className="badge-wrapper" style={{ marginBottom: '0.4rem' }}>
-              <span className="badge badge-teal" style={{ background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0' }}>
-                <Stethoscope size={13} style={{ marginRight: '4px' }} />
-                Configuración Profesional · {doctorDisplayName}
-              </span>
-            </div>
-            <h1>
-              <Settings size={28} color="#059669" />
-              <span>Mi Configuración Profesional & Credenciales</span>
-            </h1>
-            <p>Gestione exclusivamente sus datos profesionales, matrículas, certificado de firma digital y aranceles</p>
-          </div>
-        </div>
-
-        {/* Digital Signature PKI Banner */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%' }}>
+        {/* 1. TOP HEADER: LIMPIO Y PROFESIONAL (SIN ETIQUETA REDUNDANTE) */}
         <div
           style={{
-            background: 'linear-gradient(135deg, #022c22 0%, #064e3b 100%)',
-            borderRadius: '14px',
-            padding: '1.25rem 1.5rem',
-            color: '#ffffff',
             display: 'flex',
-            alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: '1.5rem',
-            boxShadow: '0 4px 15px rgba(6, 78, 59, 0.2)'
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1rem'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div
+          <div>
+            <h1
               style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '12px',
-                background: 'rgba(52, 211, 153, 0.2)',
+                fontSize: '1.65rem',
+                fontWeight: 900,
+                color: '#0f172a',
+                margin: '0 0 0.25rem',
+                letterSpacing: '-0.02em',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                border: '1px solid rgba(52, 211, 153, 0.4)'
+                gap: '10px'
               }}
             >
-              <FileCheck size={26} color="#34d399" />
-            </div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                Firma Digital X.509 Certificada
-                <span style={{ background: '#059669', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '100px', fontWeight: 800 }}>
-                  VIGENTE
-                </span>
-              </div>
-              <div style={{ fontSize: '0.82rem', color: '#a7f3d0', marginTop: '2px' }}>
-                Emisor: AC ONTI · Ministerio de Modernización · Serial: {doctorForm.pkiSerial} · Vence: {doctorForm.pkiCertificateValidUntil}
-              </div>
-            </div>
-          </div>
-
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.75rem', color: '#6ee7b7', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
-              Código Receta ReNaPDiS
-            </div>
-            <div style={{ fontWeight: 800, fontSize: '1rem', color: '#ffffff' }}>
-              {doctorForm.cuirCode}
-            </div>
+              <Settings size={28} color="#002182" />
+              <span>Mi Perfil Profesional & Credenciales</span>
+            </h1>
+            <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
+              Gestión de datos de matrícula, firma digital criptográfica, aranceles de consultorio y seguridad de cuenta.
+            </p>
           </div>
         </div>
 
-        {/* Doctor Settings Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
+        {/* 3. DOCTOR SETTINGS GRID */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
           {/* Main Professional Data Form */}
-          <div className="card">
-            <div className="card-header">
-              <h3 className="card-title">Datos Médicos & Matrículas Habilitantes</h3>
-              <p className="card-subtitle">Estos datos se imprimen en sus recetas electrónicas y constancias de atención</p>
+          <div
+            style={{
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '14px',
+              padding: '1.35rem',
+              boxShadow: '0 2px 8px rgba(0, 33, 130, 0.02)',
+              gridColumn: 'span 2'
+            }}
+          >
+            <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '0.85rem', marginBottom: '1.15rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Stethoscope size={18} color="#002182" />
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  Datos Médicos & Matrículas Habilitantes
+                </h3>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '3px 0 0' }}>
+                Información oficial que se imprime en recetas electrónicas, indicaciones y constancias de atención.
+              </p>
             </div>
 
-            <form onSubmit={handleSaveDoctorProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div className="form-row">
-                <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                  <label className="form-label">Nombre Completo del Profesional</label>
+            <form onSubmit={handleSaveDoctorProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                {/* Nombre Completo */}
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
+                    Nombre Completo del Profesional
+                  </label>
                   <input
                     type="text"
-                    className="form-control"
                     value={doctorForm.name}
                     onChange={(e) => setDoctorForm({ ...doctorForm, name: e.target.value })}
                     required
+                    style={{
+                      width: '100%',
+                      padding: '0.55rem 0.85rem',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.86rem',
+                      outline: 'none',
+                      background: '#f8fafc',
+                      color: '#0f172a'
+                    }}
                   />
                 </div>
-              </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Especialidad Principal</label>
+                {/* Especialidad */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
+                    Especialidad Principal
+                  </label>
                   <input
                     type="text"
-                    className="form-control"
                     value={doctorForm.specialty}
                     onChange={(e) => setDoctorForm({ ...doctorForm, specialty: e.target.value })}
                     required
+                    style={{
+                      width: '100%',
+                      padding: '0.55rem 0.85rem',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.86rem',
+                      outline: 'none',
+                      background: '#f8fafc',
+                      color: '#0f172a'
+                    }}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Matrículas (MP / MN)</label>
+                {/* Matrículas */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
+                    Matrículas (MP / MN)
+                  </label>
                   <input
                     type="text"
-                    className="form-control"
                     value={doctorForm.license}
                     onChange={(e) => setDoctorForm({ ...doctorForm, license: e.target.value })}
                     required
+                    style={{
+                      width: '100%',
+                      padding: '0.55rem 0.85rem',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.86rem',
+                      outline: 'none',
+                      background: '#f8fafc',
+                      color: '#0f172a'
+                    }}
                   />
                 </div>
-              </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Registro Nacional SISA / REFEPS</label>
+                {/* SISA / REFEPS */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
+                    Registro Nacional SISA / REFEPS
+                  </label>
                   <input
                     type="text"
-                    className="form-control"
                     value={doctorForm.sisaRefeps}
                     onChange={(e) => setDoctorForm({ ...doctorForm, sisaRefeps: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.55rem 0.85rem',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.86rem',
+                      outline: 'none',
+                      background: '#f8fafc',
+                      color: '#0f172a'
+                    }}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Email Profesional Oficial</label>
+                {/* Email */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
+                    Email Profesional Oficial
+                  </label>
                   <input
                     type="email"
-                    className="form-control"
                     value={doctorForm.email}
                     onChange={(e) => setDoctorForm({ ...doctorForm, email: e.target.value })}
                     required
+                    style={{
+                      width: '100%',
+                      padding: '0.55rem 0.85rem',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.86rem',
+                      outline: 'none',
+                      background: '#f8fafc',
+                      color: '#0f172a'
+                    }}
                   />
                 </div>
-              </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">WhatsApp / Teléfono de Contacto</label>
+                {/* WhatsApp / Teléfono */}
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
+                    <WhatsAppIcon size={14} />
+                    WhatsApp / Teléfono de Contacto
+                  </label>
                   <input
                     type="text"
-                    className="form-control"
                     value={doctorForm.phone}
                     onChange={(e) => setDoctorForm({ ...doctorForm, phone: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.55rem 0.85rem',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.86rem',
+                      outline: 'none',
+                      background: '#f8fafc',
+                      color: '#0f172a'
+                    }}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Arancel Consulta Base ($)</label>
+                {/* Arancel Consulta Base */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
+                    Arancel Consulta Base Privada ($)
+                  </label>
                   <input
                     type="number"
-                    className="form-control"
                     value={doctorForm.consultationPrice}
                     onChange={(e) => setDoctorForm({ ...doctorForm, consultationPrice: Number(e.target.value) })}
+                    style={{
+                      width: '100%',
+                      padding: '0.55rem 0.85rem',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.86rem',
+                      outline: 'none',
+                      background: '#f8fafc',
+                      color: '#0f172a'
+                    }}
                   />
                 </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Resumen Profesional / Perfil Clínico</label>
+              {/* Bio / Perfil Clínico */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
+                  Resumen Profesional / Perfil Clínico
+                </label>
                 <textarea
-                  className="form-control"
                   rows={3}
                   value={doctorForm.bio}
                   onChange={(e) => setDoctorForm({ ...doctorForm, bio: e.target.value })}
                   placeholder="Descripción de trayectoria, subespecialidades y cirugías que realiza..."
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.84rem',
+                    outline: 'none',
+                    background: '#f8fafc',
+                    color: '#0f172a',
+                    fontFamily: 'inherit',
+                    resize: 'vertical'
+                  }}
                 />
               </div>
 
+              {/* Action Button */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-                <button type="submit" className="btn btn-primary" style={{ background: '#059669', borderColor: '#059669' }}>
+                <button
+                  type="submit"
+                  style={{
+                    background: '#002182',
+                    border: 'none',
+                    color: '#ffffff',
+                    padding: '0.6rem 1.4rem',
+                    borderRadius: '8px',
+                    fontSize: '0.85rem',
+                    fontWeight: 800,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(0, 33, 130, 0.2)',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
                   <Save size={16} />
-                  <span>Guardar Mis Datos Profesionales</span>
+                  <span>Guardar Cambios de Perfil</span>
                 </button>
               </div>
             </form>
           </div>
 
-          {/* Column 2: Account Security & Privacy Scope */}
+          {/* Column 2: Account Security & Operational Scope */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             {/* Password change */}
-            <div className="card">
-              <div className="card-header">
-                <h3 className="card-title">Seguridad de la Cuenta</h3>
-                <p className="card-subtitle">Actualice su clave de acceso al portal</p>
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '14px',
+                padding: '1.35rem',
+                boxShadow: '0 2px 8px rgba(0, 33, 130, 0.02)'
+              }}
+            >
+              <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Lock size={17} color="#002182" />
+                  <h3 style={{ fontSize: '0.98rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    Seguridad de la Cuenta
+                  </h3>
+                </div>
+                <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '2px 0 0' }}>
+                  Actualice su clave de acceso al portal médico.
+                </p>
               </div>
 
               <form onSubmit={handleUpdateDoctorPassword} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                <div className="form-group">
-                  <label className="form-label">Contraseña Actual</label>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: '#334155', marginBottom: '0.3rem' }}>
+                    Contraseña Actual
+                  </label>
                   <input
                     type="password"
-                    className="form-control"
                     placeholder="••••••••"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     required
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.84rem',
+                      outline: 'none',
+                      background: '#f8fafc'
+                    }}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Nueva Contraseña</label>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: '#334155', marginBottom: '0.3rem' }}>
+                    Nueva Contraseña
+                  </label>
                   <input
                     type="password"
-                    className="form-control"
                     placeholder="Mínimo 6 caracteres"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.84rem',
+                      outline: 'none',
+                      background: '#f8fafc'
+                    }}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Confirmar Contraseña</label>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: '#334155', marginBottom: '0.3rem' }}>
+                    Confirmar Contraseña
+                  </label>
                   <input
                     type="password"
-                    className="form-control"
                     placeholder="Repita nueva clave"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.84rem',
+                      outline: 'none',
+                      background: '#f8fafc'
+                    }}
                   />
                 </div>
 
-                <button type="submit" className="btn btn-outline btn-sm" style={{ width: '100%', marginTop: '0.35rem' }}>
-                  <Lock size={14} />
-                  Cambiar Contraseña
+                <button
+                  type="submit"
+                  style={{
+                    width: '100%',
+                    marginTop: '0.35rem',
+                    background: '#f8fafc',
+                    border: '1px solid #cbd5e1',
+                    color: '#334155',
+                    padding: '0.5rem',
+                    borderRadius: '8px',
+                    fontSize: '0.82rem',
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <KeyRound size={14} />
+                  <span>Actualizar Contraseña</span>
                 </button>
               </form>
-            </div>
-
-            {/* Scope info note */}
-            <div
-              className="card"
-              style={{
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                padding: '1.25rem'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.6rem' }}>
-                <Shield size={18} color="#059669" />
-                <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#0f172a' }}>
-                  Aislamiento de Privacidad RBAC
-                </span>
-              </div>
-              <p style={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.5, margin: 0 }}>
-                Su cuenta médica opera bajo un perfil protegido. Los módulos globales (gestión de otros empleados, cajas, auditoría general y convenios de toda la clínica) corresponden a la Dirección Administrativa y no son accesibles desde este portal.
-              </p>
             </div>
           </div>
         </div>
@@ -521,7 +657,7 @@ export const SettingsView = () => {
 
       {/* TAB 1: DATOS INSTITUCIONALES */}
       {activeTab === 'general' && (
-        <div className="card" style={{ maxWidth: '800px' }}>
+        <div className="card" style={{ width: '100%', maxWidth: '100%' }}>
           <form onSubmit={handleSaveGeneral}>
             <div className="form-row">
               <div className="form-group" style={{ gridColumn: 'span 2' }}>

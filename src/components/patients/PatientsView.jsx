@@ -24,12 +24,11 @@ import {
   ChevronDown,
   ChevronUp,
   MessageSquare,
-  Mail,
-  Calendar,
-  X
+  Mail
 } from 'lucide-react';
 import { PatientFormModal } from './PatientFormModal';
 import { PatientDetailModal } from './PatientDetailModal';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
 export const PatientsView = () => {
   const {
@@ -39,7 +38,6 @@ export const PatientsView = () => {
     currentDoctor,
     healthInsurances,
     rehabPlans,
-    appointments,
     setSelectedPatientForDetail,
     setIsPatientFormModalOpen,
     setPatientFormModalData,
@@ -74,16 +72,6 @@ export const PatientsView = () => {
     } catch {
       return '-';
     }
-  };
-
-  const getInitials = (name) => {
-    if (!name) return 'PT';
-    return name
-      .split(' ')
-      .slice(0, 2)
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase();
   };
 
   const toggleExpand = (patientId) => {
@@ -179,36 +167,13 @@ export const PatientsView = () => {
         }}
       >
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '0.35rem' }}>
-            <span
-              style={{
-                background: '#ecfdf5',
-                color: '#065f46',
-                border: '1px solid #a7f3d0',
-                padding: '0.2rem 0.65rem',
-                borderRadius: '100px',
-                fontSize: '0.74rem',
-                fontWeight: 800,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              <Users size={13} />
-              {isDoctor ? (currentDoctor?.name?.startsWith('Dr.') ? currentDoctor.name : `Dr. ${currentDoctor?.name || 'Alejandro Blanco'}`) : 'Padrón Central'}
-            </span>
-            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-              • {filteredPatients.length} pacientes registrados
-            </span>
-          </div>
-
           <h1 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.25rem', letterSpacing: '-0.02em' }}>
             {isDoctor ? 'Mis Pacientes' : 'Padrón de Pacientes'}
           </h1>
           <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
             {isDoctor
-              ? `Pacientes bajo su seguimiento médico en ${currentDoctor?.specialty || 'Traumatología'}. Presione cualquier paciente para abrir su ficha completa.`
-              : 'Base de pacientes con historia clínica electrónica, coberturas y trazabilidad.'}
+              ? 'Listado y seguimiento médico de pacientes asignados.'
+              : 'Base general de pacientes e historias clínicas.'}
           </p>
         </div>
 
@@ -502,30 +467,14 @@ export const PatientsView = () => {
                       >
                         {/* Paciente */}
                         <td style={{ padding: '0.9rem 1.25rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <img
-                              src={pat.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'}
-                              alt={pat.name}
-                              style={{
-                                width: '38px',
-                                height: '38px',
-                                borderRadius: '50%',
-                                objectFit: 'cover',
-                                border: '2px solid #D2E3FC',
-                                flexShrink: 0
-                              }}
-                            />
-                            <div>
-                              <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.94rem' }}>
-                                {pat.name}
-                              </div>
-                              <div style={{ fontSize: '0.74rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                <span>{calculateAge(pat.birthDate)}</span>
-                                <span>•</span>
-                                <span>{pat.gender}</span>
-                                <span>•</span>
-                                <span style={{ fontWeight: 700, color: '#002182' }}>Grupo {pat.bloodType || 'A+'}</span>
-                              </div>
+                          <div>
+                            <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.94rem' }}>
+                              {pat.name}
+                            </div>
+                            <div style={{ fontSize: '0.74rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              <span>{calculateAge(pat.birthDate)}</span>
+                              <span>•</span>
+                              <span>{pat.gender}</span>
                             </div>
                           </div>
                         </td>
@@ -535,25 +484,28 @@ export const PatientsView = () => {
                           <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.9rem' }}>
                             {pat.dni}
                           </div>
-                          <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                            HC #{pat.id.slice(-4)}
-                          </div>
                         </td>
 
-                        {/* Obra Social */}
+                        {/* Cobertura */}
                         <td style={{ padding: '0.9rem 1.25rem' }}>
-                          <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.88rem' }}>
-                            {pat.insuranceName}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: '#059669', fontWeight: 700 }}>
-                            Plan {pat.insurancePlan || 'Base'}
-                          </div>
+                          <span
+                            style={{
+                              background: '#eff6ff',
+                              color: '#1d4ed8',
+                              padding: '0.25rem 0.65rem',
+                              borderRadius: '6px',
+                              fontSize: '0.8rem',
+                              fontWeight: 700
+                            }}
+                          >
+                            {pat.insuranceName || 'Particular'}
+                          </span>
                         </td>
 
                         {/* Contacto Directo */}
                         <td style={{ padding: '0.9rem 1.25rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{ fontWeight: 600, color: '#334155', fontSize: '0.84rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                            <span style={{ fontSize: '0.84rem', color: '#334155', fontWeight: 600 }}>
                               {pat.phone}
                             </span>
                             {pat.phone && (
@@ -561,21 +513,22 @@ export const PatientsView = () => {
                                 href={`https://wa.me/${pat.phone.replace(/[^0-9]/g, '')}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
                                 style={{
-                                  width: '24px',
-                                  height: '24px',
+                                  width: '26px',
+                                  height: '26px',
                                   borderRadius: '50%',
-                                  background: '#dcfce7',
-                                  color: '#15803d',
+                                  background: '#25D366',
+                                  color: '#ffffff',
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
-                                  textDecoration: 'none'
+                                  textDecoration: 'none',
+                                  boxShadow: '0 2px 6px rgba(37, 211, 102, 0.35)',
+                                  transition: 'transform 0.15s ease'
                                 }}
-                                title="Abrir WhatsApp"
+                                title="Abrir WhatsApp oficial"
                               >
-                                <MessageSquare size={12} />
+                                <WhatsAppIcon size={14} color="#ffffff" />
                               </a>
                             )}
                           </div>
@@ -660,7 +613,7 @@ export const PatientsView = () => {
                                   <div><strong>Nombre:</strong> {pat.name}</div>
                                   <div><strong>DNI:</strong> {pat.dni}</div>
                                   <div><strong>Fecha de Nacimiento:</strong> {pat.birthDate} ({calculateAge(pat.birthDate)})</div>
-                                  <div><strong>Género:</strong> {pat.gender} · <strong>Grupo:</strong> {pat.bloodType || 'A+'}</div>
+                                  <div><strong>Género:</strong> {pat.gender}</div>
                                   <div><strong>Fecha de Alta:</strong> {pat.registeredAt || '2023-01-15'}</div>
                                 </div>
                               </div>

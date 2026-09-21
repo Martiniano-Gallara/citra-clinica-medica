@@ -11,7 +11,7 @@ import { DoctorsPage } from './components/institutional/DoctorsPage';
 import { ClinicPage } from './components/institutional/ClinicPage';
 import { Footer } from './components/institutional/Footer';
 import { AppointmentBookingWizard } from './components/booking/AppointmentBookingWizard';
-import { MyTurnosView } from './components/portal/MyTurnosView';
+import { PatientUnifiedPortal } from './components/portal/PatientUnifiedPortal';
 import { UserAuthModal } from './components/auth/UserAuthModal';
 
 // Administration Views
@@ -93,11 +93,13 @@ const MainLayout = () => {
         );
 
       case 'my-turnos':
+      case 'patient-portal':
+      case 'portal':
         return (
           <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             <Navbar />
             <main style={{ flex: 1 }}>
-              <MyTurnosView />
+              <PatientUnifiedPortal />
             </main>
             <Footer />
           </div>

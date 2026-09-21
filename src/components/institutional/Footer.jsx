@@ -1,20 +1,6 @@
 import React from 'react';
-import { useClinic } from '../../context/ClinicContext';
 
 export const Footer = () => {
-  const { setCurrentView, setAuthRole, setAuthAdmin, users } = useClinic();
-
-  const handleAdminDirectClick = (e) => {
-    e.preventDefault();
-    if (users && users.length > 0) {
-      const defaultAdmin = users.find((u) => u.role?.includes('Admin') || u.email?.includes('admin')) || users[0];
-      setAuthRole('admin');
-      setAuthAdmin(defaultAdmin);
-    }
-    setCurrentView('admin-panel');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   return (
     <footer
       style={{
@@ -62,29 +48,6 @@ export const Footer = () => {
             MGH
           </a>
         </span>
-        <span style={{ opacity: 0.4 }}>•</span>
-        <a
-          href="#admin"
-          onClick={handleAdminDirectClick}
-          style={{
-            color: '#A8C7FA',
-            textDecoration: 'none',
-            opacity: 0.75,
-            transition: 'all 0.2s ease',
-            cursor: 'pointer'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.opacity = '1';
-            e.currentTarget.style.color = '#ffffff';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = '0.75';
-            e.currentTarget.style.color = '#A8C7FA';
-          }}
-          title="Panel Administrativo de CITRA"
-        >
-          Administración
-        </a>
       </div>
     </footer>
   );

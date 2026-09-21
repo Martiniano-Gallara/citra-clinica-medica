@@ -155,16 +155,9 @@ export const UsersManager = () => {
                       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     >
                       <td style={{ padding: '0.9rem 1.25rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <img
-                            src={pat.avatar || 'https://images.unsplash.com/photo-1534528741775?w=100'}
-                            alt={pat.name}
-                            style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
-                          />
-                          <div>
-                            <div style={{ fontWeight: 800, color: '#002182' }}>{pat.name}</div>
-                            <div style={{ fontSize: '0.72rem', color: '#7994B8' }}>Alta: {pat.registeredAt || '2025'}</div>
-                          </div>
+                        <div>
+                          <div style={{ fontWeight: 800, color: '#002182' }}>{pat.name}</div>
+                          <div style={{ fontSize: '0.72rem', color: '#7994B8' }}>Alta: {pat.registeredAt || '2025'}</div>
                         </div>
                       </td>
 
@@ -409,12 +402,9 @@ export const UsersManager = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ background: '#002182', color: '#ffffff', padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <img src={selectedPatientForView.avatar} alt={selectedPatientForView.name} style={{ width: '45px', height: '45px', borderRadius: '50%' }} />
-                <div>
-                  <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>{selectedPatientForView.name}</h3>
-                  <div style={{ fontSize: '0.75rem', color: '#D2E3FC' }}>DNI: {selectedPatientForView.dni}</div>
-                </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>{selectedPatientForView.name}</h3>
+                <div style={{ fontSize: '0.75rem', color: '#D2E3FC' }}>DNI: {selectedPatientForView.dni}</div>
               </div>
               <button onClick={() => setSelectedPatientForView(null)} style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer' }}>
                 <X size={20} />

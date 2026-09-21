@@ -27,6 +27,7 @@ import {
   Bell
 } from 'lucide-react';
 import { Badge } from '../common/Badge';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
 export const AppointmentsManager = () => {
   const {
@@ -39,14 +40,19 @@ export const AppointmentsManager = () => {
     deleteAppointment,
     addAppointment,
     doctors,
+    consultations,
+    patients,
+    setSelectedConsultationForPrint,
+    setSelectedPatientForDetail,
     setIsNewConsultationModalOpen,
     setConsultationPreloadData,
     sendWhatsAppReminder,
     addToast
   } = useClinic();
 
-  // Selected date (defaults to 2026-08-28 to show demo data, with full navigation)
-  const [selectedDate, setSelectedDate] = useState('2026-08-28');
+  // Selected date (defaults to today's date dynamically, with full navigation)
+  const todayIso = new Date().toISOString().split('T')[0];
+  const [selectedDate, setSelectedDate] = useState(todayIso);
   // Status filter pill: 'all', 'en_sala', 'pendientes', 'atendidos'
   const [statusFilter, setStatusFilter] = useState('all');
   // Instant search input
@@ -78,17 +84,14 @@ export const AppointmentsManager = () => {
 
   // Operational KPIs for the selected date
   const totalCount = dateAppointments.length;
-  const inWaitingRoomCount = dateAppointments.filter((a) => a.status === 'en_sala').length;
   const attendedCount = dateAppointments.filter((a) => a.status === 'atendido').length;
-  const pendingCount = dateAppointments.filter((a) => a.status === 'pendiente' || a.status === 'confirmado').length;
-  const totalCopayCollected = dateAppointments.reduce((acc, curr) => acc + (curr.isPaid ? curr.copayAmount || 0 : 0), 0);
+  const pendingCount = dateAppointments.filter((a) => a.status !== 'atendido' && a.status !== 'cancelado').length;
 
   // Filtered appointments based on search and status pill
   const filteredAppointments = useMemo(() => {
     return dateAppointments.filter((app) => {
       // Status pill match
-      if (statusFilter === 'en_sala' && app.status !== 'en_sala') return false;
-      if (statusFilter === 'pendientes' && app.status !== 'pendiente' && app.status !== 'confirmado') return false;
+      if (statusFilter === 'pendientes' && (app.status === 'atendido' || app.status === 'cancelado')) return false;
       if (statusFilter === 'atendidos' && app.status !== 'atendido') return false;
 
       // Search query match
@@ -121,7 +124,7 @@ export const AppointmentsManager = () => {
   };
 
   const handleToday = () => {
-    setSelectedDate('2026-08-28');
+    setSelectedDate(todayIso);
   };
 
   const formatDateHeader = (dateStr) => {
@@ -151,12 +154,56 @@ export const AppointmentsManager = () => {
     setExpandedAppointmentId((prev) => (prev === appId ? null : appId));
   };
 
-  // Call / Start Consultation Action
+  // View Existing Consultation / Medical Record
+  const handleViewConsultation = (app) => {
+    const exactCons = (consultations || []).find(
+      (c) => c.appointmentId === app.id || (c.patientDni === app.patientDni && c.date === app.date)
+    );
+    if (exactCons && setSelectedConsultationForPrint) {
+      setSelectedConsultationForPrint(exactCons);
+      addToast('Historia Clínica', `Abriendo registro de consulta de ${app.patientName}.`, 'info');
+      return;
+    }
+
+    const anyCons = (consultations || []).find(
+      (c) => c.patientId === app.patientId || c.patientDni === app.patientDni
+    );
+    if (anyCons && setSelectedConsultationForPrint) {
+      setSelectedConsultationForPrint(anyCons);
+      addToast('Historia Clínica', `Abriendo consulta de ${app.patientName}.`, 'info');
+      return;
+    }
+
+    const matchedPat = (patients || []).find((p) => p.id === app.patientId || p.dni === app.patientDni);
+    if (matchedPat && setSelectedPatientForDetail) {
+      setSelectedPatientForDetail(matchedPat);
+      addToast('Historia Clínica', `Abriendo expediente clínico de ${app.patientName}.`, 'info');
+    } else {
+      addToast('Historia Clínica', `No se encontró registro clínico previo para ${app.patientName}.`, 'warning');
+    }
+  };
+
+  // Call / Start Consultation Action (Only for pending / in room appointments)
   const handleStartConsultation = (app) => {
+    // If appointment is already attended, view existing record instead of creating a duplicate
+    if (app.status === 'atendido') {
+      handleViewConsultation(app);
+      return;
+    }
+
     if (setIsNewConsultationModalOpen && setConsultationPreloadData) {
       setConsultationPreloadData(app);
       setIsNewConsultationModalOpen(true);
-      addToast('Consulta Médica Iniciada', `Atendiendo a ${app.patientName} en ${currentDoctor?.roomName || 'Consultorio 102'}.`, 'info');
+      const hasExistingHC = (consultations || []).some(
+        (c) => c.patientId === app.patientId || c.patientDni === app.patientDni
+      );
+      addToast(
+        hasExistingHC ? 'Evolución Médica' : 'Consulta Médica',
+        hasExistingHC
+          ? `Atendiendo a ${app.patientName} — Registrando nueva evolución en su Historia Clínica existente.`
+          : `Iniciando consulta para ${app.patientName} en ${currentDoctor?.roomName || 'Consultorio 102'}.`,
+        'info'
+      );
     } else {
       updateAppointmentStatus(app.id, 'atendido');
       addToast('Paciente Atendido', `${app.patientName} marcado como atendido.`, 'success');
@@ -270,10 +317,13 @@ export const AppointmentsManager = () => {
               padding: '0.25rem 0.65rem',
               borderRadius: '100px',
               fontSize: '0.74rem',
-              fontWeight: 700
+              fontWeight: 700,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
             }}
           >
-            ✓ Atendido
+            <CheckCircle2 size={12} /> Atendido
           </span>
         );
       case 'cancelado':
@@ -314,29 +364,6 @@ export const AppointmentsManager = () => {
         }}
       >
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '0.35rem' }}>
-            <span
-              style={{
-                background: '#ecfdf5',
-                color: '#065f46',
-                border: '1px solid #a7f3d0',
-                padding: '0.2rem 0.65rem',
-                borderRadius: '100px',
-                fontSize: '0.74rem',
-                fontWeight: 800,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              <Stethoscope size={13} />
-              {isDoctor ? (currentDoctor?.name?.startsWith('Dr.') ? currentDoctor.name : `Dr. ${currentDoctor?.name || 'Alejandro Blanco'}`) : 'Gestión Central'}
-            </span>
-            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-              • {currentDoctor?.roomName || 'Consultorio 101 — Traumatología'}
-            </span>
-          </div>
-
           <h1 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.25rem', letterSpacing: '-0.02em' }}>
             {isDoctor ? 'Mis Turnos Programados' : 'Gestión de Turnos'}
           </h1>
@@ -370,137 +397,65 @@ export const AppointmentsManager = () => {
         </button>
       </div>
 
-      {/* 2. OPERATIONAL KPI STRIP (FROM AGENDA VIEW, CLEAN & SCOPED) */}
+      {/* 2. OPERATIONAL KPI STRIP: SOLO PENDIENTES DE HOY Y ATENDIDOS */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '1rem'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gap: '1.25rem'
         }}
       >
-        {/* KPI 1: Turnos del Día */}
+        {/* KPI 1: Pendientes de Hoy */}
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '14px',
-            border: '1px solid #e2e8f0',
-            padding: '1.15rem 1.25rem',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+            borderRadius: '16px',
+            border: '1.5px solid #D2E3FC',
+            borderLeft: '4px solid #076ABC',
+            padding: '1.25rem 1.5rem',
+            boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Turnos del Día
+            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Pendientes de Hoy
             </span>
-            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <CalendarIcon size={18} />
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '0.6rem' }}>
-            <span style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a' }}>{totalCount}</span>
-            <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
-              {attendedCount} atendidos
-            </span>
-          </div>
-          <div style={{ width: '100%', height: '5px', background: '#f1f5f9', borderRadius: '10px', overflow: 'hidden' }}>
-            <div
-              style={{
-                width: `${totalCount > 0 ? (attendedCount / totalCount) * 100 : 0}%`,
-                height: '100%',
-                background: '#2563eb',
-                borderRadius: '10px'
-              }}
-            />
-          </div>
-        </div>
-
-        {/* KPI 2: En Sala de Espera */}
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '14px',
-            border: '1px solid #e2e8f0',
-            borderLeft: '4px solid #10b981',
-            padding: '1.15rem 1.25rem',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
-              <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                En Sala de Espera
-              </span>
-            </div>
-            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#EBF3FD', color: '#076ABC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Clock size={18} />
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '0.25rem' }}>
-            <span style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a' }}>{inWaitingRoomCount}</span>
-            <span style={{ fontSize: '0.78rem', color: '#059669', fontWeight: 700 }}>
-              Demora prom: 8 min
-            </span>
+          <div style={{ fontSize: '2.1rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
+            {pendingCount}
           </div>
-          <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-            Listos para llamar a consultorio
+          <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '0.45rem', fontWeight: 600 }}>
+            Pacientes por atender en la jornada
           </div>
         </div>
 
-        {/* KPI 3: Por Llegar / Pendientes */}
+        {/* KPI 2: Atendidos */}
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '14px',
-            border: '1px solid #e2e8f0',
-            padding: '1.15rem 1.25rem',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+            borderRadius: '16px',
+            border: '1.5px solid #D2E3FC',
+            borderLeft: '4px solid #10b981',
+            padding: '1.25rem 1.5rem',
+            boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Por Llegar / Pendientes
+            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Atendidos
             </span>
-            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#f8fafc', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <User size={18} />
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CheckCircle2 size={18} />
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '0.25rem' }}>
-            <span style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a' }}>{pendingCount}</span>
-            <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
-              próximos en agenda
-            </span>
+          <div style={{ fontSize: '2.1rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
+            {attendedCount}
           </div>
-          <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-            Pendientes de check-in en recepción
-          </div>
-        </div>
-
-        {/* KPI 4: Copagos / Recaudación */}
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '14px',
-            border: '1px solid #e2e8f0',
-            padding: '1.15rem 1.25rem',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Copagos en Recepción
-            </span>
-            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#f0fdf4', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <DollarSign size={18} />
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '0.25rem' }}>
-            <span style={{ fontSize: '1.75rem', fontWeight: 900, color: '#16a34a' }}>
-              ${totalCopayCollected.toLocaleString()}
-            </span>
-          </div>
-          <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-            Cobranzas con CAE ARCA / MP QR
+          <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '0.45rem', fontWeight: 600 }}>
+            Consultas completadas con éxito
           </div>
         </div>
       </div>
@@ -626,7 +581,7 @@ export const AppointmentsManager = () => {
             />
           </div>
 
-          {/* Status Pills Group */}
+          {/* Status Pills Group: Solo Pendientes y Atendidos */}
           <div style={{ display: 'flex', background: '#f1f5f9', padding: '3px', borderRadius: '10px', gap: '2px' }}>
             <button
               type="button"
@@ -643,22 +598,6 @@ export const AppointmentsManager = () => {
               }}
             >
               Todos ({totalCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFilter('en_sala')}
-              style={{
-                background: statusFilter === 'en_sala' ? '#002182' : 'transparent',
-                color: statusFilter === 'en_sala' ? '#ffffff' : '#475569',
-                border: 'none',
-                borderRadius: '7px',
-                padding: '0.35rem 0.75rem',
-                fontSize: '0.76rem',
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-            >
-              🟢 En Sala ({inWaitingRoomCount})
             </button>
             <button
               type="button"
@@ -764,35 +703,16 @@ export const AppointmentsManager = () => {
 
                         {/* Paciente */}
                         <td style={{ padding: '0.9rem 1.25rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div
-                              style={{
-                                width: '38px',
-                                height: '38px',
-                                borderRadius: '50%',
-                                background: isEnSala ? '#dcfce7' : '#eff6ff',
-                                color: isEnSala ? '#15803d' : '#2563eb',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: 800,
-                                fontSize: '0.85rem',
-                                flexShrink: 0
-                              }}
-                            >
-                              {getInitials(app.patientName)}
+                          <div>
+                            <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>
+                              {app.patientName}
                             </div>
-                            <div>
-                              <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>
-                                {app.patientName}
-                              </div>
-                              <div style={{ fontSize: '0.76rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span>DNI {app.patientDni}</span>
-                                <span>•</span>
-                                <span style={{ fontWeight: 700, color: '#0369a1' }}>
-                                  {app.patientInsurance || app.healthInsurance || 'Particular'}
-                                </span>
-                              </div>
+                            <div style={{ fontSize: '0.76rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span>DNI {app.patientDni}</span>
+                              <span>•</span>
+                              <span style={{ fontWeight: 700, color: '#0369a1' }}>
+                                {app.patientInsurance || app.healthInsurance || 'Particular'}
+                              </span>
                             </div>
                           </div>
                         </td>
@@ -846,18 +766,23 @@ export const AppointmentsManager = () => {
                             ) : isAtendido ? (
                               <button
                                 type="button"
-                                onClick={() => handleStartConsultation(app)}
+                                onClick={() => handleViewConsultation(app)}
                                 style={{
-                                  background: '#f1f5f9',
-                                  color: '#475569',
-                                  border: '1px solid #cbd5e1',
+                                  background: '#eff6ff',
+                                  color: '#002182',
+                                  border: '1px solid #bfdbfe',
                                   borderRadius: '8px',
                                   padding: '0.35rem 0.65rem',
                                   fontSize: '0.78rem',
-                                  fontWeight: 700,
-                                  cursor: 'pointer'
+                                  fontWeight: 800,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
                                 }}
+                                title="Ver registro de Historia Clínica de esta consulta"
                               >
+                                <FileText size={13} />
                                 Ver Consulta
                               </button>
                             ) : (
@@ -875,11 +800,11 @@ export const AppointmentsManager = () => {
                                   cursor: 'pointer',
                                   display: 'flex',
                                   alignItems: 'center',
-                                  gap: '4px'
+                                  gap: '5px'
                                 }}
                               >
-                                <Bell size={13} />
-                                Llamar
+                                <Phone size={13} />
+                                Llamar a Sala
                               </button>
                             )}
 
@@ -907,31 +832,32 @@ export const AppointmentsManager = () => {
                         </td>
                       </tr>
 
-                      {/* 5. EXPANDED PATIENT DETAIL ROW (SMOOTH ACCORDION) */}
+                      {/* ACCORDION EXPANDABLE DETAIL ROW */}
                       {isExpanded && (
-                        <tr style={{ background: '#f8fafc', borderBottom: '2px solid #cbd5e1' }}>
-                          <td colSpan={5} style={{ padding: '1.25rem 1.5rem' }}>
+                        <tr style={{ background: '#f8fafc' }}>
+                          <td colSpan={5} style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #cbd5e1' }}>
                             <div
                               style={{
                                 background: '#ffffff',
-                                borderRadius: '12px',
                                 border: '1px solid #e2e8f0',
+                                borderRadius: '12px',
                                 padding: '1.25rem',
                                 display: 'grid',
                                 gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                                gap: '1.25rem'
+                                gap: '1.25rem',
+                                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.03)'
                               }}
                             >
-                              {/* Column 1: Patient Data */}
+                              {/* Column 1: Patient Details */}
                               <div>
-                                <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#002182', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
                                   <User size={14} /> Ficha del Paciente
                                 </div>
-                                <div style={{ fontSize: '0.85rem', color: '#0f172a', lineHeight: '1.6' }}>
+                                <div style={{ fontSize: '0.82rem', color: '#334155', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                                   <div><strong>Nombre:</strong> {app.patientName}</div>
-                                  <div><strong>DNI:</strong> {app.patientDni}</div>
-                                  <div><strong>Teléfono:</strong> {app.patientPhone || '+54 3576 44-5588'}</div>
-                                  <div><strong>Email:</strong> {app.patientEmail || `${app.patientName?.toLowerCase().replace(/\s+/g, '.')}@email.com`}</div>
+                                  <div><strong>DNI:</strong> {app.patientDni || 'Sin registrar'}</div>
+                                  <div><strong>Teléfono:</strong> {app.patientPhone || 'No informado'}</div>
+                                  <div><strong>Email:</strong> {app.patientEmail || `${app.patientName.toLowerCase().replace(/\s+/g, '.')}@email.com`}</div>
                                 </div>
                               </div>
 
@@ -940,11 +866,16 @@ export const AppointmentsManager = () => {
                                 <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
                                   <Shield size={14} /> Cobertura & Pagos
                                 </div>
-                                <div style={{ fontSize: '0.85rem', color: '#0f172a', lineHeight: '1.6' }}>
+                                <div style={{ fontSize: '0.82rem', color: '#334155', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                                   <div><strong>Obra Social:</strong> {app.patientInsurance || app.healthInsurance || 'Particular'}</div>
-                                  <div><strong>N° Carnet / Afiliado:</strong> {app.insuranceCardNumber || '9481029381'}</div>
-                                  <div><strong>Copago Consulta:</strong> {app.copayAmount > 0 ? `$${app.copayAmount.toLocaleString()}` : '$0 (Sin Coseguro)'}</div>
-                                  <div><strong>Estado de Cobro:</strong> {app.isPaid ? '✓ Liquidado / Abonado' : '⏳ Pendiente en caja'}</div>
+                                  <div><strong>Nº Carnet / Afiliado:</strong> {app.insuranceNumber || '9481029381'}</div>
+                                  <div><strong>Copago Consulta:</strong> ${app.copayAmount || 0} {app.copayAmount > 0 ? '(Abonado)' : '(Sin Coseguro)'}</div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <strong>Estado de Cobro:</strong>
+                                    <span style={{ color: '#059669', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                      <CheckCircle2 size={12} /> Liquidado / Abonado
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
 
@@ -959,26 +890,95 @@ export const AppointmentsManager = () => {
                                 </p>
 
                                 {/* Quick action buttons */}
-                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleStartConsultation(app)}
-                                    style={{
-                                      background: '#059669',
-                                      color: '#ffffff',
-                                      border: 'none',
-                                      borderRadius: '6px',
-                                      padding: '0.35rem 0.65rem',
-                                      fontSize: '0.76rem',
-                                      fontWeight: 800,
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '4px'
-                                    }}
-                                  >
-                                    <Stethoscope size={13} /> Iniciar Historia Clínica
-                                  </button>
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                                  {isAtendido ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleViewConsultation(app)}
+                                      style={{
+                                        background: '#002182',
+                                        color: '#ffffff',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        padding: '0.35rem 0.75rem',
+                                        fontSize: '0.76rem',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '5px',
+                                        boxShadow: '0 2px 6px rgba(0, 33, 130, 0.2)'
+                                      }}
+                                      title="Ver la Historia Clínica registrada de este paciente"
+                                    >
+                                      <FileText size={13} /> Ver Historia Clínica
+                                    </button>
+                                  ) : (consultations || []).some((c) => c.patientId === app.patientId || c.patientDni === app.patientDni) ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStartConsultation(app)}
+                                      style={{
+                                        background: '#059669',
+                                        color: '#ffffff',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        padding: '0.35rem 0.75rem',
+                                        fontSize: '0.76rem',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '5px',
+                                        boxShadow: '0 2px 6px rgba(5, 150, 105, 0.2)'
+                                      }}
+                                      title="El paciente ya tiene Historia Clínica. Registrar nueva evolución para este turno."
+                                    >
+                                      <Stethoscope size={13} /> Registrar Evolución
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStartConsultation(app)}
+                                      style={{
+                                        background: '#059669',
+                                        color: '#ffffff',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        padding: '0.35rem 0.75rem',
+                                        fontSize: '0.76rem',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '5px',
+                                        boxShadow: '0 2px 6px rgba(5, 150, 105, 0.2)'
+                                      }}
+                                      title="Apertura de Historia Clínica para paciente nuevo"
+                                    >
+                                      <Stethoscope size={13} /> Iniciar Historia Clínica
+                                    </button>
+                                  )}
+
+                                  {/* Status badge: HC Existente */}
+                                  {(consultations || []).some((c) => c.patientId === app.patientId || c.patientDni === app.patientDni) && (
+                                    <span
+                                      style={{
+                                        fontSize: '0.7rem',
+                                        color: '#002182',
+                                        background: '#eff6ff',
+                                        border: '1px solid #bfdbfe',
+                                        padding: '0.2rem 0.5rem',
+                                        borderRadius: '4px',
+                                        fontWeight: 700,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '3px'
+                                      }}
+                                      title="Este paciente cuenta con expediente clínico unificado en CITRA"
+                                    >
+                                      <Shield size={11} /> HC Activa
+                                    </span>
+                                  )}
 
                                   {app.patientPhone && (
                                     <button
@@ -1001,11 +1001,11 @@ export const AppointmentsManager = () => {
                                         gap: '4px'
                                       }}
                                     >
-                                      <MessageSquare size={13} /> WhatsApp
+                                      <WhatsAppIcon size={14} color="#ffffff" /> WhatsApp
                                     </button>
                                   )}
 
-                                  {app.status !== 'cancelado' && (
+                                  {app.status !== 'cancelado' && app.status !== 'atendido' && (
                                     <button
                                       type="button"
                                       onClick={() => cancelAppointment(app.id, 'Cancelado por el médico')}
@@ -1077,10 +1077,10 @@ export const AppointmentsManager = () => {
             >
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>
-                  Nuevo Turno para {isDoctor ? (currentDoctor?.name?.startsWith('Dr.') ? currentDoctor.name : `Dr. ${currentDoctor?.name || 'Alejandro Blanco'}`) : 'Consultorio'}
+                  Nuevo Turno Médico
                 </h3>
                 <div style={{ fontSize: '0.78rem', color: '#D2E3FC', marginTop: '2px' }}>
-                  {currentDoctor?.roomName || 'Consultorio 101'} · {selectedDate}
+                  {currentDoctor?.roomName || 'Consultorio'} · {selectedDate}
                 </div>
               </div>
               <button

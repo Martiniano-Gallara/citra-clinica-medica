@@ -19,7 +19,6 @@ import {
   Users,
   ShieldCheck,
   PhoneCall,
-  MessageCircle,
   Navigation,
   ExternalLink
 } from 'lucide-react';
@@ -411,7 +410,28 @@ export const Navbar = () => {
                       }}
                     >
                       <CalendarCheck size={15} color="#076ABC" />
-                      Mis Turnos
+                      Mi Portal & Turnos
+                    </button>
+                    <button
+                      onClick={() => { setUserDropdownOpen(false); setCurrentView('my-turnos'); }}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        background: 'none',
+                        border: 'none',
+                        padding: '0.5rem 0.75rem',
+                        borderRadius: '8px',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        color: '#002182',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <FileText size={15} color="#076ABC" />
+                      Mi Historia Clínica & Recetas
                     </button>
                     <button
                       onClick={() => { setUserDropdownOpen(false); logoutPatient(); }}
@@ -428,7 +448,9 @@ export const Navbar = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.5rem',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        borderTop: '1px solid #EDF3FD',
+                        marginTop: '0.25rem'
                       }}
                     >
                       <LogOut size={15} />

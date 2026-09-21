@@ -133,28 +133,95 @@ export const InsurancesView = () => {
   const approvedAuths = authorizations.filter((a) => a.status === 'Aprobada Online').length;
   const rejectedAuths = authorizations.filter((a) => a.status === 'Rechazada').length;
 
-  // Distinct brand styling for coverage logos
-  const getBrandBadge = (hi) => {
-    const name = hi.name.toLowerCase();
-    if (name.includes('osde')) {
-      return { bg: '#002B49', color: '#ffffff', short: 'OSDE' };
+  // Official logos mapping matching Inicio / InsurancesSection
+  const INSURANCE_LOGOS = {
+    'OSDE': '/logos/logo-osde.png',
+    'Swiss Medical': '/logos/logo-swiss-medical.png',
+    'Galeno': '/logos/logo-galeno.png',
+    'Apross': '/logos/logo-apross.png',
+    'PAMI': '/logos/logo-pami.png',
+    'Medicus': '/logos/logo-medicus.svg'
+  };
+
+  const getResolvedLogo = (hi) => {
+    if (!hi) return null;
+    if (hi.logo && typeof hi.logo === 'string' && hi.logo.trim() !== '') return hi.logo;
+    const name = (hi.name || hi.insuranceName || '').toLowerCase();
+    for (const [key, path] of Object.entries(INSURANCE_LOGOS)) {
+      if (name.includes(key.toLowerCase())) return path;
     }
-    if (name.includes('swiss')) {
-      return { bg: '#E11D48', color: '#ffffff', short: 'SMG' };
+    return null;
+  };
+
+  const getCoverageType = (hi) => {
+    const name = (hi?.name || hi?.insuranceName || '').toLowerCase();
+    if (name.includes('particular') || hi?.id === 'hi-7') {
+      return { label: 'Atención Privada', bg: '#F1F5F9', color: '#475569', border: '#E2E8F0' };
     }
-    if (name.includes('galeno')) {
-      return { bg: '#0284C7', color: '#ffffff', short: 'GAL' };
+    if (name.includes('apross') || name.includes('pami')) {
+      return { label: 'Obra Social', bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' };
     }
-    if (name.includes('apross')) {
-      return { bg: '#059669', color: '#ffffff', short: 'APR' };
-    }
-    if (name.includes('pami')) {
-      return { bg: '#0891B2', color: '#ffffff', short: 'PAMI' };
-    }
-    if (name.includes('medicus')) {
-      return { bg: '#6366F1', color: '#ffffff', short: 'MED' };
-    }
-    return { bg: '#334155', color: '#ffffff', short: 'PART' };
+    return { label: 'Prepaga Nacional', bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' };
+  };
+
+  const renderInsuranceLogo = (hi, size = 48) => {
+    const logoSrc = getResolvedLogo(hi);
+    const isParticular = hi?.id === 'hi-7' || ((hi?.name || hi?.insuranceName || '').toLowerCase().includes('particular'));
+    const displayName = hi?.name || hi?.insuranceName || 'OS';
+
+    return (
+      <div
+        style={{
+          width: `${size}px`,
+          height: `${size}px`,
+          borderRadius: size >= 44 ? '12px' : '8px',
+          background: '#ffffff',
+          border: '1.5px solid #EDF3FD',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: size >= 44 ? '4px' : '2px',
+          flexShrink: 0,
+          boxShadow: '0 2px 8px rgba(0, 33, 130, 0.05)',
+          overflow: 'hidden'
+        }}
+      >
+        {logoSrc ? (
+          <img
+            src={logoSrc}
+            alt={displayName}
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              if (e.currentTarget.nextSibling) {
+                e.currentTarget.nextSibling.style.display = 'flex';
+              }
+            }}
+          />
+        ) : null}
+        <div
+          style={{
+            display: logoSrc ? 'none' : 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            height: '100%',
+            background: isParticular ? '#F8FAFC' : '#EFF6FF',
+            borderRadius: size >= 44 ? '8px' : '6px',
+            color: isParticular ? '#475569' : '#002182'
+          }}
+        >
+          {isParticular ? (
+            <DollarSign size={size >= 44 ? 20 : 16} color="#002182" />
+          ) : (
+            <span style={{ fontSize: size >= 44 ? '0.85rem' : '0.72rem', fontWeight: 900 }}>
+              {displayName.substring(0, 2).toUpperCase()}
+            </span>
+          )}
+        </div>
+      </div>
+    );
   };
 
   // =========================================================================
@@ -174,44 +241,11 @@ export const InsurancesView = () => {
           }}
         >
           <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
-              <span
-                style={{
-                  background: '#ecfdf5',
-                  color: '#065f46',
-                  border: '1px solid #a7f3d0',
-                  padding: '0.2rem 0.65rem',
-                  borderRadius: '100px',
-                  fontSize: '0.74rem',
-                  fontWeight: 800,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px'
-                }}
-              >
-                <Stethoscope size={13} />
-                {doctorDisplayName} · {doctorSpecialty}
-              </span>
-              <span
-                style={{
-                  background: '#eff6ff',
-                  color: '#1e40af',
-                  border: '1px solid #bfdbfe',
-                  padding: '0.2rem 0.65rem',
-                  borderRadius: '100px',
-                  fontSize: '0.72rem',
-                  fontWeight: 800
-                }}
-              >
-                CONVENIOS & ARANCELES DE CONSULTORIO
-              </span>
-            </div>
-
             <h1 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.25rem', letterSpacing: '-0.02em' }}>
               Mis Obras Sociales & Coberturas
             </h1>
             <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
-              Seleccione qué coberturas atiende en su consultorio y consulte condiciones arancelarias ({doctorAcceptedIds.length} de {healthInsurances.length} habilitadas).
+              Gestión de coberturas médicas y condiciones de atención en consultorio.
             </p>
           </div>
 
@@ -608,7 +642,7 @@ export const InsurancesView = () => {
               filteredDoctorInsurances.map((hi) => {
                 const isAccepted = doctorAcceptedIds.includes(hi.id);
                 const isExpanded = expandedFichaId === hi.id;
-                const brand = getBrandBadge(hi);
+                const coverageType = getCoverageType(hi);
                 const agreement = insuranceAgreements.find(
                   (a) => a.insuranceId === hi.id || a.insuranceName.toLowerCase().includes(hi.name.toLowerCase())
                 );
@@ -618,74 +652,65 @@ export const InsurancesView = () => {
                     key={hi.id}
                     style={{
                       background: '#ffffff',
-                      border: isExpanded ? '1px solid #076ABC' : '1px solid #e2e8f0',
-                      borderRadius: '12px',
+                      border: isExpanded ? '1.5px solid #076ABC' : '1px solid #e2e8f0',
+                      borderRadius: '14px',
                       overflow: 'hidden',
-                      boxShadow: isExpanded ? '0 4px 14px rgba(7, 106, 188, 0.08)' : '0 1px 3px rgba(0,0,0,0.02)',
-                      transition: 'border-color 0.15s ease, box-shadow 0.15s ease'
+                      boxShadow: isExpanded ? '0 6px 20px rgba(7, 106, 188, 0.09)' : '0 2px 6px rgba(0, 33, 130, 0.03)',
+                      transition: 'all 0.2s ease'
                     }}
                   >
-                    {/* CABECERA DE LA FICHA (LIMPIA, MODERNA, SIN TEXTO INÚTIL) */}
+                    {/* CABECERA DE LA FICHA CON LOGOS OFICIALES Y ESTILIZACIÓN PREMIUM */}
                     <div
                       onClick={() => toggleFicha(hi.id)}
                       style={{
-                        padding: '1rem 1.25rem',
+                        padding: '1.1rem 1.35rem',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         flexWrap: 'wrap',
                         gap: '1rem',
                         cursor: 'pointer',
-                        background: isExpanded ? '#f8fafc' : '#ffffff'
+                        background: isExpanded ? '#f8fafc' : '#ffffff',
+                        transition: 'background 0.15s ease'
                       }}
                     >
-                      {/* Bloque Izquierdo: Brand Badge + Nombre + Planes */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', flex: '1 1 280px' }}>
-                        {/* Brand Badge */}
-                        <div
-                          style={{
-                            width: '44px',
-                            height: '44px',
-                            borderRadius: '10px',
-                            background: brand.bg,
-                            color: brand.color,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 900,
-                            fontSize: '0.82rem',
-                            letterSpacing: '0.04em',
-                            flexShrink: 0,
-                            boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
-                          }}
-                        >
-                          {brand.short}
-                        </div>
+                      {/* Bloque Izquierdo: Logo Oficial en Caja Blanca + Nombre + Categoría + Planes */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: '1 1 300px' }}>
+                        {/* Logo Oficial Caja Blanca */}
+                        {renderInsuranceLogo(hi, 50)}
 
                         <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>
                               {hi.name}
                             </span>
-                            {hi.id === 'hi-7' && (
-                              <span style={{ fontSize: '0.7rem', background: '#f1f5f9', color: '#475569', padding: '0.1rem 0.45rem', borderRadius: '4px', fontWeight: 700 }}>
-                                Sin intermediario
-                              </span>
-                            )}
+                            <span
+                              style={{
+                                fontSize: '0.68rem',
+                                fontWeight: 800,
+                                background: coverageType.bg,
+                                color: coverageType.color,
+                                border: `1px solid ${coverageType.border}`,
+                                padding: '0.12rem 0.5rem',
+                                borderRadius: '6px'
+                              }}
+                            >
+                              {coverageType.label}
+                            </span>
                           </div>
 
                           {/* Plan pills */}
-                          <div style={{ display: 'flex', gap: '0.35rem', marginTop: '4px', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', gap: '0.35rem', marginTop: '5px', flexWrap: 'wrap' }}>
                             {hi.plans && hi.plans.length > 0 ? (
                               hi.plans.map((p, idx) => (
                                 <span
                                   key={idx}
                                   style={{
-                                    background: isAccepted ? '#eff6ff' : '#f1f5f9',
+                                    background: isAccepted ? '#eff6ff' : '#f8fafc',
                                     color: isAccepted ? '#1e40af' : '#64748b',
                                     border: isAccepted ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
-                                    padding: '0.1rem 0.45rem',
-                                    borderRadius: '4px',
+                                    padding: '0.12rem 0.45rem',
+                                    borderRadius: '5px',
                                     fontSize: '0.72rem',
                                     fontWeight: 700
                                   }}
@@ -694,15 +719,15 @@ export const InsurancesView = () => {
                                 </span>
                               ))
                             ) : (
-                              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Todos los planes</span>
+                              <span style={{ fontSize: '0.74rem', color: '#64748b' }}>Todos los planes</span>
                             )}
                           </div>
                         </div>
                       </div>
 
                       {/* Bloque Central: Copago / Plus de Consulta */}
-                      <div style={{ display: 'flex', flexDirection: 'column', minWidth: '150px' }}>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', minWidth: '160px' }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                           Copago en Consultorio
                         </span>
                         <div>
@@ -711,15 +736,15 @@ export const InsurancesView = () => {
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '4px',
-                                background: '#fef3c7',
-                                color: '#b45309',
-                                border: '1px solid #fde68a',
-                                padding: '0.2rem 0.6rem',
-                                borderRadius: '6px',
-                                fontSize: '0.8rem',
+                                gap: '5px',
+                                background: '#FFFBEB',
+                                color: '#B45309',
+                                border: '1px solid #FDE68A',
+                                padding: '0.25rem 0.65rem',
+                                borderRadius: '8px',
+                                fontSize: '0.82rem',
                                 fontWeight: 800,
-                                marginTop: '2px'
+                                marginTop: '3px'
                               }}
                             >
                               Copago: ${hi.copay.toLocaleString()}
@@ -729,18 +754,21 @@ export const InsurancesView = () => {
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '4px',
-                                background: '#ecfdf5',
+                                gap: '5px',
+                                background: '#ECFDF5',
                                 color: '#059669',
-                                border: '1px solid #a7f3d0',
-                                padding: '0.2rem 0.6rem',
-                                borderRadius: '6px',
-                                fontSize: '0.8rem',
+                                border: '1px solid #A7F3D0',
+                                padding: '0.25rem 0.65rem',
+                                borderRadius: '8px',
+                                fontSize: '0.82rem',
                                 fontWeight: 800,
-                                marginTop: '2px'
+                                marginTop: '3px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px'
                               }}
                             >
-                              ✓ Sin Copago (100% Cubierto)
+                              <Check size={13} color="#059669" /> Sin Copago (100% Cubierto)
                             </span>
                           )}
                         </div>
@@ -754,10 +782,10 @@ export const InsurancesView = () => {
                           onClick={(e) => handleToggleInsurance(hi.id, e)}
                           title={isAccepted ? 'Haga clic para pausar la atención de esta cobertura' : 'Haga clic para aceptar esta cobertura'}
                           style={{
-                            background: isAccepted ? '#ecfdf5' : '#f1f5f9',
-                            border: isAccepted ? '1px solid #a7f3d0' : '1px solid #cbd5e1',
-                            color: isAccepted ? '#065f46' : '#64748b',
-                            padding: '0.4rem 0.85rem',
+                            background: isAccepted ? '#ECFDF5' : '#F8FAFC',
+                            border: isAccepted ? '1px solid #A7F3D0' : '1px solid #CBD5E1',
+                            color: isAccepted ? '#065F46' : '#64748B',
+                            padding: '0.45rem 0.9rem',
                             borderRadius: '20px',
                             fontSize: '0.8rem',
                             fontWeight: 800,
@@ -773,7 +801,7 @@ export const InsurancesView = () => {
                               width: '8px',
                               height: '8px',
                               borderRadius: '50%',
-                              background: isAccepted ? '#10b981' : '#94a3b8',
+                              background: isAccepted ? '#10B981' : '#94A3B8',
                               display: 'inline-block'
                             }}
                           />
@@ -789,17 +817,18 @@ export const InsurancesView = () => {
                           }}
                           title={isExpanded ? 'Ocultar ficha interna' : 'Ver ficha interna completa'}
                           style={{
-                            background: isExpanded ? '#e2e8f0' : '#f8fafc',
-                            border: '1px solid #cbd5e1',
-                            color: '#475569',
-                            padding: '0.4rem 0.65rem',
+                            background: isExpanded ? '#E2E8F0' : '#F8FAFC',
+                            border: '1px solid #CBD5E1',
+                            color: '#334155',
+                            padding: '0.45rem 0.75rem',
                             borderRadius: '8px',
-                            fontSize: '0.78rem',
+                            fontSize: '0.8rem',
                             fontWeight: 700,
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '4px',
-                            cursor: 'pointer'
+                            gap: '5px',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
                           }}
                         >
                           <span>Ficha</span>
@@ -808,7 +837,7 @@ export const InsurancesView = () => {
                       </div>
                     </div>
 
-                    {/* FICHA INTERNA DESPLEGADA (CLARA, ESTRUCTURADA, SIN RELLENO) */}
+                    {/* FICHA INTERNA DESPLEGADA (CLARA, ESTRUCTURADA, CON LOGO) */}
                     {isExpanded && (
                       <div
                         style={{
@@ -820,29 +849,34 @@ export const InsurancesView = () => {
                           gap: '1rem'
                         }}
                       >
-                        {/* Subheader Ficha */}
+                        {/* Subheader Ficha con Logo Real */}
                         <div
                           style={{
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
                             flexWrap: 'wrap',
-                            gap: '0.5rem',
+                            gap: '0.75rem',
                             borderBottom: '1px solid #e2e8f0',
-                            paddingBottom: '0.65rem'
+                            paddingBottom: '0.75rem'
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <FileText size={15} color="#076ABC" />
-                            <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#0f172a' }}>
-                              Ficha de Convenio Clínico: {hi.name}
-                            </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {renderInsuranceLogo(hi, 36)}
+                            <div>
+                              <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0f172a' }}>
+                                Convenio Clínico: {hi.name}
+                              </div>
+                              <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
+                                {coverageType.label} · Planes habilitados: {hi.plans?.join(', ') || 'General'}
+                              </div>
+                            </div>
                           </div>
 
-                          <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
-                            Estado actual para {getDoctorDisplayName()}:{' '}
-                            <strong style={{ color: isAccepted ? '#059669' : '#64748b' }}>
-                              {isAccepted ? 'Habilitada en consultorio' : 'Pausada'}
+                          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                            Estado en consultorio:{' '}
+                            <strong style={{ color: isAccepted ? '#059669' : '#dc2626' }}>
+                              {isAccepted ? '● Habilitada para turnos' : '○ Pausada'}
                             </strong>
                           </div>
                         </div>
@@ -1081,12 +1115,6 @@ export const InsurancesView = () => {
       {/* Header */}
       <div className="view-header">
         <div>
-          <div className="badge-wrapper" style={{ marginBottom: '0.4rem' }}>
-            <span className="badge badge-teal">
-              <Shield size={13} style={{ marginRight: '4px' }} />
-              Convenios Prestadores, Nomenclador Traumatológico & Autorizaciones Online
-            </span>
-          </div>
           <h1 className="view-title">Obras Sociales & Prepagas</h1>
           <p className="view-subtitle">
             Administración de convenios institucionales, aranceles del Nomenclador Nacional, validación de tokens en tiempo real y débitos.
@@ -1209,8 +1237,13 @@ export const InsurancesView = () => {
                 {filteredAgreements.map((agr) => (
                   <tr key={agr.id}>
                     <td>
-                      <div style={{ fontWeight: 800, color: 'var(--text-main)' }}>{agr.insuranceName}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{agr.agreementType}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                        {renderInsuranceLogo({ name: agr.insuranceName }, 38)}
+                        <div>
+                          <div style={{ fontWeight: 800, color: 'var(--text-main)' }}>{agr.insuranceName}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{agr.agreementType}</div>
+                        </div>
+                      </div>
                     </td>
                     <td>
                       <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{agr.cuit}</span>

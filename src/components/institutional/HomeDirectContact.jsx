@@ -1,22 +1,11 @@
 import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
 import {
   MapPin,
   Clock,
   Sparkles
 } from 'lucide-react';
-
-const WhatsAppOfficialIcon = ({ size = 20, color = '#ffffff', ...props }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill={color}
-    {...props}
-  >
-    <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm5.79 14.05c-.24.67-1.39 1.28-1.92 1.36-.51.08-1.16.11-3.69-.93-2.99-1.23-4.9-4.28-5.05-4.48-.15-.2-1.2-1.6-1.2-3.05 0-1.45.76-2.17 1.03-2.46.27-.29.59-.36.79-.36.2 0 .4.01.57.02.19.01.44-.07.69.52.25.6.86 2.1.93 2.26.08.15.13.33.03.53-.1.2-.15.33-.3.51-.15.17-.32.39-.45.52-.15.15-.31.31-.13.62.18.31.79 1.3 1.7 2.11 1.17 1.04 2.15 1.36 2.46 1.51.31.15.48.13.66-.08.18-.2.76-.89.96-1.19.2-.31.41-.26.69-.15.28.1.78.83 2.08 1.47.24.12.4.18.46.27.06.1.06.66-.18 1.33z" />
-  </svg>
-);
 
 const InstagramIcon = ({ size = 20, color = '#ffffff', ...props }) => (
   <svg
@@ -242,7 +231,7 @@ export const HomeDirectContact = () => {
                 flexShrink: 0
               }}
             >
-              <WhatsAppOfficialIcon size={20} color="#ffffff" />
+              <WhatsAppIcon size={20} color="#ffffff" />
             </div>
             <div>
               <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#002182', marginBottom: '0.1rem' }}>

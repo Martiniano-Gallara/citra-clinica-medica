@@ -97,6 +97,109 @@ export const AdminManagementHub = () => {
   // Mobile sidebar open state
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
+  // General KPIs
+  const todayStr = new Date().toISOString().split('T')[0];
+  const totalAppointments = appointments.length;
+  const todayAppointments = appointments.filter((a) => a.date === todayStr);
+  const activeDoctors = doctors.filter((d) => d.active !== false).length;
+  const totalPatients = patients.length;
+  const availableRooms = rooms ? rooms.filter((r) => (r.status || 'Disponible') === 'Disponible').length : 6;
+
+  // Doctor Specific KPIs
+  const doctorAppointments = scopedAppointments;
+  const todayDoctorAppointments = doctorAppointments.filter((a) => a.date === todayStr);
+  const doctorPatients = scopedPatients;
+
+  // Sidebar Grouped Navigation Sections according to Role (Doctor vs Administrativo)
+  const navSections = React.useMemo(() => {
+    return isDoctor
+      ? [
+        {
+          title: 'PANEL PRINCIPAL',
+          items: [
+            { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard, badge: null }
+          ]
+        },
+        {
+          title: 'MI ATENCIÓN Y PACIENTES',
+          items: [
+            { id: 'appointments', label: 'Mis Turnos', icon: CalendarCheck, badge: doctorAppointments.length },
+            { id: 'patients', label: 'Mis Pacientes', icon: Users, badge: doctorPatients.length },
+            { id: 'clinical', label: 'Historia Clínica', icon: FileText, badge: scopedConsultations.length },
+            { id: 'prescriptions', label: 'Mis Recetas (CUIR)', icon: Pill, badge: scopedElectronicPrescriptions.length },
+            { id: 'imaging', label: 'Estudios & Radiología', icon: Eye, badge: scopedImagingStudies.length }
+          ]
+        },
+        {
+          title: 'MI GESTIÓN PROFESIONAL',
+          items: [
+            { id: 'schedules', label: 'Gestión y Horarios', icon: Clock, badge: null },
+            { id: 'insurances', label: 'Mis Obras Sociales', icon: Shield, badge: scopedHealthInsurances.length },
+            { id: 'reports', label: 'Métricas & Rendimiento', icon: BarChart3, badge: null }
+          ]
+        },
+        {
+          title: 'MI CUENTA',
+          items: [
+            { id: 'settings', label: 'Mi Configuración', icon: Settings, badge: null }
+          ]
+        }
+      ]
+      : [
+        {
+          title: 'PRINCIPAL',
+          items: [
+            { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard, badge: null }
+          ]
+        },
+        {
+          title: 'ATENCIÓN Y PACIENTES',
+          items: [
+            { id: 'appointments', label: 'Turnos Generales', icon: CalendarCheck, badge: appointments.length },
+            { id: 'patients', label: 'Padrón de Pacientes', icon: Users, badge: patients.length },
+            { id: 'clinical', label: 'Historial Clínico', icon: FileText, badge: null },
+            { id: 'prescriptions', label: 'Recetas Médicas', icon: Pill, badge: electronicPrescriptions ? electronicPrescriptions.length : null },
+            { id: 'imaging', label: 'Estudios & Docs', icon: Eye, badge: null }
+          ]
+        },
+        {
+          title: 'CUERPO MÉDICO Y RECURSOS',
+          items: [
+            { id: 'doctors', label: 'Profesionales', icon: Stethoscope, badge: doctors.length },
+            { id: 'services', label: 'Especialidades', icon: Layers, badge: specialties.length },
+            { id: 'rooms', label: 'Consultorios', icon: DoorClosed, badge: rooms ? rooms.length : 8 },
+            { id: 'schedules', label: 'Horarios de Atención', icon: Clock, badge: null }
+          ]
+        },
+        {
+          title: 'ADMINISTRACIÓN Y FINANZAS',
+          items: [
+            { id: 'insurances', label: 'Obras Sociales', icon: Shield, badge: healthInsurances.length },
+            { id: 'billing', label: 'Facturación / Pagos', icon: CreditCard, badge: null },
+            { id: 'reports', label: 'Reportes & Estadísticas', icon: BarChart3, badge: null },
+            { id: 'communications', label: 'Notificaciones', icon: MessageSquare, badge: null }
+          ]
+        },
+        {
+          title: 'SISTEMA Y SEGURIDAD',
+          items: [
+            { id: 'staff', label: 'Usuarios y Permisos', icon: UserCheck, badge: null },
+            { id: 'settings', label: 'Configuración', icon: Settings, badge: null },
+            { id: 'audit', label: 'Auditoría', icon: ShieldAlert, badge: null }
+          ]
+        }
+      ];
+  }, [isDoctor, doctorAppointments.length, doctorPatients.length, scopedConsultations.length, scopedElectronicPrescriptions.length, scopedImagingStudies.length, scopedHealthInsurances.length, appointments.length, patients.length, electronicPrescriptions, doctors.length, specialties.length, rooms, healthInsurances.length]);
+
+  // RBAC Guard Effect: automatically redirect to dashboard if tab not permitted for current role
+  React.useEffect(() => {
+    if (authRole !== 'admin') return;
+    const allowedTabIds = navSections.flatMap((s) => s.items).map((i) => i.id);
+    if (!allowedTabIds.includes(activeTab)) {
+      setActiveTab('dashboard');
+    }
+  }, [isDoctor, activeTab, navSections, authRole]);
+
   // Strict Role Protection Check
   if (authRole !== 'admin') {
     return (
@@ -180,108 +283,8 @@ export const AdminManagementHub = () => {
     );
   }
 
-  // General KPIs
-  const todayStr = new Date().toISOString().split('T')[0];
-  const totalAppointments = appointments.length;
-  const todayAppointments = appointments.filter((a) => a.date === todayStr || a.date === '2026-08-28');
-  const activeDoctors = doctors.filter((d) => d.active !== false).length;
-  const totalPatients = patients.length;
-  const availableRooms = rooms ? rooms.filter((r) => (r.status || 'Disponible') === 'Disponible').length : 6;
-
-  // Doctor Specific KPIs
-  const doctorAppointments = scopedAppointments;
-  const todayDoctorAppointments = doctorAppointments.filter((a) => a.date === todayStr || a.date === '2026-08-28');
-  const doctorPatients = scopedPatients;
-
-  // Sidebar Grouped Navigation Sections according to Role (Doctor vs Administrativo)
-  const navSections = isDoctor
-    ? [
-      {
-        title: 'PANEL PRINCIPAL',
-        items: [
-          { id: 'dashboard', label: 'Dashboard & Mis Métricas', icon: LayoutDashboard, badge: null }
-        ]
-      },
-      {
-        title: 'MI ATENCIÓN Y PACIENTES',
-        items: [
-          { id: 'appointments', label: 'Mis Turnos', icon: CalendarCheck, badge: doctorAppointments.length },
-          { id: 'patients', label: 'Mis Pacientes', icon: Users, badge: doctorPatients.length },
-          { id: 'clinical', label: 'Historia Clínica', icon: FileText, badge: scopedConsultations.length },
-          { id: 'prescriptions', label: 'Mis Recetas (CUIR)', icon: Pill, badge: scopedElectronicPrescriptions.length },
-          { id: 'imaging', label: 'Estudios & Radiología', icon: Eye, badge: scopedImagingStudies.length }
-        ]
-      },
-      {
-        title: 'MI GESTIÓN PROFESIONAL',
-        items: [
-          { id: 'schedules', label: 'Gestión y Horarios', icon: Clock, badge: null },
-          { id: 'insurances', label: 'Mis Obras Sociales', icon: Shield, badge: scopedHealthInsurances.length },
-          { id: 'reports', label: 'Mis Estadísticas', icon: BarChart3, badge: null }
-        ]
-      },
-      {
-        title: 'MI CUENTA',
-        items: [
-          { id: 'settings', label: 'Mi Configuración', icon: Settings, badge: null }
-        ]
-      }
-    ]
-    : [
-      {
-        title: 'PRINCIPAL',
-        items: [
-          { id: 'dashboard', label: 'Dashboard & Métricas', icon: LayoutDashboard, badge: null }
-        ]
-      },
-      {
-        title: 'ATENCIÓN Y PACIENTES',
-        items: [
-          { id: 'appointments', label: 'Turnos Generales', icon: CalendarCheck, badge: appointments.length },
-          { id: 'patients', label: 'Padrón de Pacientes', icon: Users, badge: patients.length },
-          { id: 'clinical', label: 'Historial Clínico', icon: FileText, badge: null },
-          { id: 'prescriptions', label: 'Recetas Médicas', icon: Pill, badge: electronicPrescriptions ? electronicPrescriptions.length : null },
-          { id: 'imaging', label: 'Estudios & Docs', icon: Eye, badge: null }
-        ]
-      },
-      {
-        title: 'CUERPO MÉDICO Y RECURSOS',
-        items: [
-          { id: 'doctors', label: 'Profesionales', icon: Stethoscope, badge: doctors.length },
-          { id: 'services', label: 'Especialidades', icon: Layers, badge: specialties.length },
-          { id: 'rooms', label: 'Consultorios', icon: DoorClosed, badge: rooms ? rooms.length : 8 },
-          { id: 'schedules', label: 'Horarios de Atención', icon: Clock, badge: null }
-        ]
-      },
-      {
-        title: 'ADMINISTRACIÓN Y FINANZAS',
-        items: [
-          { id: 'insurances', label: 'Obras Sociales', icon: Shield, badge: healthInsurances.length },
-          { id: 'billing', label: 'Facturación / Pagos', icon: CreditCard, badge: null },
-          { id: 'reports', label: 'Reportes & Estadísticas', icon: BarChart3, badge: null },
-          { id: 'communications', label: 'Notificaciones', icon: MessageSquare, badge: null }
-        ]
-      },
-      {
-        title: 'SISTEMA Y SEGURIDAD',
-        items: [
-          { id: 'staff', label: 'Usuarios y Permisos', icon: UserCheck, badge: null },
-          { id: 'settings', label: 'Configuración', icon: Settings, badge: null },
-          { id: 'audit', label: 'Auditoría', icon: ShieldAlert, badge: null }
-        ]
-      }
-    ];
-
-  // RBAC Guard Effect: automatically redirect to dashboard if tab not permitted for current role
-  React.useEffect(() => {
-    const allowedTabIds = navSections.flatMap((s) => s.items).map((i) => i.id);
-    if (!allowedTabIds.includes(activeTab)) {
-      setActiveTab('dashboard');
-    }
-  }, [isDoctor, activeTab, navSections]);
-
   const currentTabLabel =
-    navSections.flatMap((s) => s.items).find((i) => i.id === activeTab)?.label || 'Dashboard & Métricas';
+    navSections.flatMap((s) => s.items).find((i) => i.id === activeTab)?.label || 'Inicio';
 
   const doctorAdminName = (() => {
     if (!isDoctor) return authAdmin?.name || 'Lic. Facundo Quiroga';
@@ -291,11 +294,13 @@ export const AdminManagementHub = () => {
   })();
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#F5F8FE' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#F5F8FE', width: '100%' }}>
       {/* 1. SIDEBAR LATERAL A LA IZQUIERDA */}
       <aside
         style={{
-          width: '270px',
+          width: '310px',
+          minWidth: '310px',
+          flexShrink: 0,
           background: '#001556',
           color: '#ffffff',
           display: 'flex',
@@ -310,34 +315,24 @@ export const AdminManagementHub = () => {
         }}
         className={`admin-sidebar ${isMobileSidebarOpen ? 'sidebar-mobile-open' : ''}`}
       >
-        {/* Top: Logo & Clinic Name */}
+        {/* Top: Logo */}
         <div style={{ padding: '1.25rem 1.25rem 1rem', borderBottom: '1px solid rgba(210, 227, 252, 0.12)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div
-                style={{
-                  background: '#ffffff',
-                  padding: '0.3rem 0.55rem',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-                }}
-              >
-                <img
-                  src="./citra-logo.png"
-                  alt="CITRA"
-                  style={{ height: '28px', maxWidth: '110px', objectFit: 'contain' }}
-                />
-              </div>
-              <div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 900, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-                  CITRA <span style={{ color: '#257CE6', fontSize: '0.78rem' }}>CLÍNICA</span>
-                </div>
-                <div style={{ fontSize: '0.62rem', color: '#D2E3FC', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '2px' }}>
-                  Panel Administrativo
-                </div>
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <div
+              style={{
+                background: '#ffffff',
+                padding: '0.45rem 0.85rem',
+                borderRadius: '12px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.15)'
+              }}
+            >
+              <img
+                src="./citra-logo.png"
+                alt="CITRA"
+                style={{ height: '32px', maxWidth: '160px', objectFit: 'contain', display: 'block' }}
+              />
             </div>
 
             {/* Close button for mobile */}
@@ -504,14 +499,14 @@ export const AdminManagementHub = () => {
       </aside>
 
       {/* 2. ÁREA DE CONTENIDO PRINCIPAL A LA DERECHA */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: '100vh' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: '100vh', width: '100%' }}>
         {/* Topbar del Área de Contenido */}
         <header
           style={{
             height: '64px',
             background: '#ffffff',
             borderBottom: '1.5px solid #D2E3FC',
-            padding: '0 2rem',
+            padding: '0 2.25rem',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -537,88 +532,21 @@ export const AdminManagementHub = () => {
               <Menu size={22} />
             </button>
 
-            <div>
-              <div style={{ fontSize: '0.74rem', color: '#7994B8', fontWeight: 700 }}>
-                CITRA Centro Médico · Sede Arroyito
-              </div>
-              <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: '#002182', letterSpacing: '-0.02em' }}>
-                {currentTabLabel}
-              </h1>
-            </div>
+            <h1 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 900, color: '#002182', letterSpacing: '-0.02em' }}>
+              {currentTabLabel}
+            </h1>
           </div>
 
-          {/* Right: Role Switcher Demo, User Badge & Navigation */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
-            {/* Quick 1-Click Role Switcher Demo Button */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#ffffff', border: '1.5px solid #257CE6', padding: '0.25rem 0.5rem', borderRadius: '12px' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#002182' }}>
-                Probar Rol:
-              </span>
-              <button
-                type="button"
-                onClick={() => switchAdminUser('usr-1')}
-                style={{
-                  background: isDoctor ? 'linear-gradient(135deg, #002182 0%, #076ABC 100%)' : '#F5F8FE',
-                  color: isDoctor ? '#ffffff' : '#002182',
-                  border: isDoctor ? 'none' : '1px solid #D2E3FC',
-                  padding: '0.3rem 0.65rem',
-                  borderRadius: '8px',
-                  fontSize: '0.75rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s'
-                }}
-              >
-                🩺 Dr. Blanco (Médico)
-              </button>
-              <button
-                type="button"
-                onClick={() => switchAdminUser('usr-3')}
-                style={{
-                  background: !isDoctor ? 'linear-gradient(135deg, #055294 0%, #257CE6 100%)' : '#F5F8FE',
-                  color: !isDoctor ? '#ffffff' : '#002182',
-                  border: !isDoctor ? 'none' : '1px solid #D2E3FC',
-                  padding: '0.3rem 0.65rem',
-                  borderRadius: '8px',
-                  fontSize: '0.75rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s'
-                }}
-              >
-                💼 Lic. Quiroga (Administrativo)
-              </button>
-            </div>
-
-            <button
-              onClick={() => setCurrentView('home')}
-              style={{
-                background: '#F5F8FE',
-                border: '1.5px solid #D2E3FC',
-                color: '#002182',
-                padding: '0.45rem 0.85rem',
-                borderRadius: '10px',
-                fontSize: '0.8rem',
-                fontWeight: 800,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.45rem',
-                cursor: 'pointer',
-                transition: 'all 0.18s ease'
-              }}
-            >
-              <ExternalLink size={14} color="#076ABC" />
-              <span>Web</span>
-            </button>
-
-            {/* Administrator Badge */}
+          {/* Right: User Badge & Logout */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            {/* Administrator / Doctor Badge */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem',
-                background: isDoctor ? '#EBF3FD' : '#FEF3C7',
-                border: isDoctor ? '1px solid #8EBEF5' : '1px solid #FCD34D',
+                gap: '0.55rem',
+                background: '#F5F8FE',
+                border: '1px solid #D2E3FC',
                 borderRadius: '100px',
                 padding: '0.35rem 0.85rem'
               }}
@@ -628,14 +556,14 @@ export const AdminManagementHub = () => {
                   width: '8px',
                   height: '8px',
                   borderRadius: '50%',
-                  background: isDoctor ? '#10b981' : '#d97706'
+                  background: isDoctor ? '#10b981' : '#2563eb'
                 }}
               />
-              <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#002182' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#002182' }}>
                 {doctorAdminName}
               </span>
-              <span style={{ fontSize: '0.72rem', color: isDoctor ? '#076ABC' : '#92400e', fontWeight: 700 }}>
-                · {isDoctor ? 'Médico Especialista' : 'Administrativo'}
+              <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600 }}>
+                · {isDoctor ? (currentDoctor?.specialty || 'Médico') : 'Administrativo'}
               </span>
             </div>
 
@@ -652,7 +580,8 @@ export const AdminManagementHub = () => {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                transition: 'all 0.15s ease'
               }}
             >
               <LogOut size={15} />
@@ -661,7 +590,7 @@ export const AdminManagementHub = () => {
         </header>
 
         {/* Content Body */}
-        <main style={{ padding: '1.75rem 2rem', flex: 1, maxWidth: '1400px', width: '100%', boxSizing: 'border-box' }}>
+        <main style={{ padding: '1.75rem 2.25rem 3rem', flex: 1, width: '100%', boxSizing: 'border-box' }}>
           {/* TAB 1: DASHBOARD & MÉTRICAS PARA DOCTOR (Dr. Blanco) */}
           {activeTab === 'dashboard' && isDoctor && (
             <div>
@@ -734,146 +663,6 @@ export const AdminManagementHub = () => {
                     <Pill size={16} color="#93C5FD" />
                     <span>Emitir Receta</span>
                   </button>
-                </div>
-              </div>
-
-              {/* 5 Doctor KPI Cards */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                  gap: '1.25rem',
-                  marginBottom: '2rem'
-                }}
-              >
-                {/* Card 1: Mis Turnos Totales */}
-                <div
-                  style={{
-                    background: '#ffffff',
-                    borderRadius: '18px',
-                    border: '1.5px solid #D2E3FC',
-                    padding: '1.5rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase' }}>
-                      MIS TURNOS TOTALES
-                    </div>
-                    <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#EBF3FD', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#076ABC' }}>
-                      <CalendarCheck size={20} />
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
-                    {doctorAppointments.length}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#076ABC', fontWeight: 700, marginTop: '0.5rem' }}>
-                    En mi agenda profesional
-                  </div>
-                </div>
-
-                {/* Card 2: Mis Turnos Hoy */}
-                <div
-                  style={{
-                    background: '#ffffff',
-                    borderRadius: '18px',
-                    border: '1.5px solid #D2E3FC',
-                    padding: '1.5rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase' }}>
-                      MIS TURNOS HOY
-                    </div>
-                    <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#92400E' }}>
-                      <Clock size={20} />
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
-                    {todayDoctorAppointments.length}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#92400E', fontWeight: 700, marginTop: '0.5rem' }}>
-                    Consultas programadas hoy
-                  </div>
-                </div>
-
-                {/* Card 3: Mis Pacientes Asignados */}
-                <div
-                  style={{
-                    background: '#ffffff',
-                    borderRadius: '18px',
-                    border: '1.5px solid #D2E3FC',
-                    padding: '1.5rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase' }}>
-                      MIS PACIENTES
-                    </div>
-                    <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#EBF3FD', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#002182' }}>
-                      <Users size={20} />
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
-                    {doctorPatients.length}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#076ABC', fontWeight: 700, marginTop: '0.5rem' }}>
-                    Bajo mi seguimiento clínico
-                  </div>
-                </div>
-
-                {/* Card 4: Mi Consultorio Asignado */}
-                <div
-                  style={{
-                    background: '#ffffff',
-                    borderRadius: '18px',
-                    border: '1.5px solid #D2E3FC',
-                    padding: '1.5rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase' }}>
-                      MI CONSULTORIO
-                    </div>
-                    <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#065F46' }}>
-                      <DoorClosed size={20} />
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#002182', lineHeight: 1.2, marginTop: '0.2rem' }}>
-                    {currentDoctor?.roomName?.split('—')[0] || 'Consultorio 101'}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#065F46', fontWeight: 700, marginTop: '0.65rem' }}>
-                    {currentDoctor?.roomName?.split('—')[1] || 'Traumatología'}
-                  </div>
-                </div>
-
-                {/* Card 5: Mi Calificación y Ocupación */}
-                <div
-                  style={{
-                    background: '#ffffff',
-                    borderRadius: '18px',
-                    border: '1.5px solid #D2E3FC',
-                    padding: '1.5rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase' }}>
-                      CALIFICACIÓN CLÍNICA
-                    </div>
-                    <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#B45309' }}>
-                      <CheckCircle2 size={20} />
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
-                    {currentDoctor?.stats?.rating || 4.9} ★
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#076ABC', fontWeight: 700, marginTop: '0.5rem' }}>
-                    {currentDoctor?.stats?.patientsAttended || 620} pacientes atendidos ({currentDoctor?.stats?.occupationRate || 96}% ocupación)
-                  </div>
                 </div>
               </div>
 
@@ -1840,7 +1629,7 @@ export const AdminManagementHub = () => {
         @media (max-width: 900px) {
           .admin-sidebar {
             position: fixed !important;
-            left: -290px;
+            left: -330px;
             transition: left 0.25s ease-in-out;
           }
           .sidebar-mobile-open {

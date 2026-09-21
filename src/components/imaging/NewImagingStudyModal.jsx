@@ -9,7 +9,8 @@ import {
   Sparkles,
   FileCheck2,
   Stethoscope,
-  Building
+  Building,
+  Activity
 } from 'lucide-react';
 
 export const NewImagingStudyModal = () => {
@@ -28,7 +29,7 @@ export const NewImagingStudyModal = () => {
 
   const imagingPresets = [
     {
-      label: '🦵 RMN Rodilla (LCA / Meniscos)',
+      label: 'RMN Rodilla (LCA / Meniscos)',
       modality: 'Resonancia Magnética Nuclear (RMN)',
       bodyPart: 'Rodilla Derecha (Protocolo Ligamentario LCA & Meniscos)',
       center: 'Centro de Diagnóstico Por Imágenes Arroyito',
@@ -37,7 +38,7 @@ export const NewImagingStudyModal = () => {
       conclusion: 'Evolución satisfactoria post-reconstrucción ligamentaria. Articulación fémoro-tibial y fémoro-patelar conservadas.'
     },
     {
-      label: '💥 Rx Columna Lumbar (F y P)',
+      label: 'Rx Columna Lumbar (F y P)',
       modality: 'Radiografía Digital (RX)',
       bodyPart: 'Columna Lumbo-Sacra (Frente y Perfil)',
       center: 'Servicio Radiología CITRA Sede Central',
@@ -46,7 +47,7 @@ export const NewImagingStudyModal = () => {
       conclusion: 'Signos de discopatía degenerativa incipiente L5-S1. Sin lesiones traumáticas óseas agudas.'
     },
     {
-      label: '💪 Ecografía Hombro (Manguito Rotador)',
+      label: 'Ecografía Hombro (Manguito Rotador)',
       modality: 'Ecografía de Partes Blandas (Eco)',
       bodyPart: 'Hombro Derecho (Tendón Supraespinoso y Manguito Rotador)',
       center: 'Centro de Diagnóstico Por Imágenes Arroyito',
@@ -55,7 +56,7 @@ export const NewImagingStudyModal = () => {
       conclusion: 'Tendinopatía insercional de supraespinoso sin desgarro de espesor completo. Bursitis subacromial reactiva.'
     },
     {
-      label: '🦶 Rx Tobillo (F, P y Mortaja)',
+      label: 'Rx Tobillo (F, P y Mortaja)',
       modality: 'Radiografía Digital (RX)',
       bodyPart: 'Tobillo Derecho (Frente, Perfil y Proyección de Mortaja)',
       center: 'Servicio Radiología CITRA Sede Central',
@@ -229,7 +230,10 @@ export const NewImagingStudyModal = () => {
                   onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#002182')}
                   onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#BFDBFE')}
                 >
-                  {preset.label}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                    <Activity size={12} color="#076ABC" />
+                    {preset.label}
+                  </span>
                 </button>
               ))}
             </div>

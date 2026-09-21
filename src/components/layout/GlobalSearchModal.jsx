@@ -190,19 +190,12 @@ export const GlobalSearchModal = () => {
                     }}
                     className="hover-subtle"
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <img
-                        src={pat.avatar}
-                        alt={pat.name}
-                        style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
-                      />
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#0f172a' }}>
-                          {pat.name}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                          DNI {pat.dni} · {pat.insuranceName} ({pat.insurancePlan})
-                        </div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#0f172a' }}>
+                        {pat.name}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                        DNI {pat.dni} · {pat.insuranceName} ({pat.insurancePlan})
                       </div>
                     </div>
                     <ArrowRight size={16} color="#94a3b8" />

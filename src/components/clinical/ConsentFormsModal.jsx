@@ -22,7 +22,8 @@ import {
   User,
   Stethoscope,
   Check,
-  Calendar
+  Calendar,
+  Activity
 } from 'lucide-react';
 
 export const ConsentFormsModal = () => {
@@ -69,7 +70,7 @@ export const ConsentFormsModal = () => {
   // Traumatology Fast Procedures Protocols
   const procedureProtocols = [
     {
-      label: '💉 Infiltración Rodilla (Ácido Hialurónico)',
+      label: 'Infiltración Rodilla (Ácido Hialurónico)',
       procedureType: 'Infiltración Intraarticular de Rodilla con Ácido Hialurónico / Corticoide',
       title: 'Consentimiento Informado para Artrocentesis e Infiltración Articular',
       risks:
@@ -79,7 +80,7 @@ export const ConsentFormsModal = () => {
       witness: 'Romina Maidana (DNI 32.105.880)'
     },
     {
-      label: '🔬 Artroscopía Rodilla / Plastia LCA',
+      label: 'Artroscopía Rodilla / Plastia LCA',
       procedureType: 'Cirugía Artroscópica con Reconstrucción de Ligamento Cruzado Anterior (Neoinjerto H-T-H)',
       title: 'Consentimiento Informado para Artroscopía de Rodilla & Reconstrucción LCA',
       risks:
@@ -89,7 +90,7 @@ export const ConsentFormsModal = () => {
       witness: 'Lic. Facundo Quiroga (DNI 30.412.981)'
     },
     {
-      label: '💪 Cirugía Manguito Rotador (Hombro)',
+      label: 'Cirugía Manguito Rotador (Hombro)',
       procedureType: 'Reparación Artroscópica de Hombro con Anclaje Óseo Titanio/PEEK de Tendón Supraespinoso',
       title: 'Consentimiento Informado para Cirugía Artroscópica de Manguito Rotador',
       risks:
@@ -99,7 +100,7 @@ export const ConsentFormsModal = () => {
       witness: 'Romina Maidana (DNI 32.105.880)'
     },
     {
-      label: '🩹 Reducción Fractura / Yeso',
+      label: 'Reducción Fractura / Yeso',
       procedureType: 'Reducción Cerrada de Fractura e Inmovilización con Vendaje Enyesado / Bota Walker',
       title: 'Consentimiento Informado para Reducción e Inmovilización Traumatológica',
       risks:
@@ -742,7 +743,10 @@ export const ConsentFormsModal = () => {
                         e.currentTarget.style.background = '#F5F8FE';
                       }}
                     >
-                      {proto.label}
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                        <Activity size={12} color="#076ABC" />
+                        {proto.label}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -1220,8 +1224,8 @@ export const ConsentFormsModal = () => {
                     <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
                       DNI {selectedConsent.patientDni}
                     </div>
-                    <div style={{ fontSize: '0.68rem', color: '#059669', fontWeight: 700, marginTop: '2px' }}>
-                      ✓ {selectedConsent.patientSignatureType || 'Biometría Digital'}
+                    <div style={{ fontSize: '0.68rem', color: '#059669', fontWeight: 700, marginTop: '2px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                      <CheckCircle2 size={10} /> {selectedConsent.patientSignatureType || 'Biometría Digital'}
                     </div>
                   </div>
 
@@ -1246,8 +1250,8 @@ export const ConsentFormsModal = () => {
                     <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
                       {selectedConsent.witnessName || 'Romina Maidana (DNI 32.105.880)'}
                     </div>
-                    <div style={{ fontSize: '0.68rem', color: '#059669', fontWeight: 700, marginTop: '2px' }}>
-                      ✓ Asistencia Acreditada
+                    <div style={{ fontSize: '0.68rem', color: '#059669', fontWeight: 700, marginTop: '2px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                      <CheckCircle2 size={10} /> Asistencia Acreditada
                     </div>
                   </div>
 
@@ -1272,8 +1276,8 @@ export const ConsentFormsModal = () => {
                     <div style={{ fontSize: '0.72rem', color: '#475569', fontWeight: 700 }}>
                       {selectedConsent.doctorLicense || activeDoctor.license}
                     </div>
-                    <div style={{ fontSize: '0.68rem', color: '#059669', fontWeight: 700, marginTop: '2px' }}>
-                      🔒 Firma Digital X.509 Estándar ONTI
+                    <div style={{ fontSize: '0.68rem', color: '#059669', fontWeight: 700, marginTop: '2px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Lock size={10} /> Firma Digital X.509 Estándar ONTI
                     </div>
                   </div>
                 </div>

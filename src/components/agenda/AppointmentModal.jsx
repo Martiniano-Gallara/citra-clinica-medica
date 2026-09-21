@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { Modal } from '../common/Modal';
-import { Calendar, Clock, User, UserCheck, Building, AlertCircle, MessageSquare, Trash2 } from 'lucide-react';
+import { Calendar, Clock, User, UserCheck, Building, AlertCircle, Trash2 } from 'lucide-react';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
 export const AppointmentModal = () => {
   const {
@@ -433,7 +434,7 @@ export const AppointmentModal = () => {
               style={{ color: '#15803d', borderColor: '#bbf7d0', background: '#f0fdf4' }}
               onClick={handleSendReminderWhatsApp}
             >
-              <MessageSquare size={16} />
+              <WhatsAppIcon size={16} color="#15803d" />
               <span>Enviar Recordatorio por WhatsApp ({formData.patientPhone})</span>
             </button>
           </div>

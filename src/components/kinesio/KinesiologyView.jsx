@@ -60,15 +60,9 @@ export const KinesiologyView = () => {
       {/* Header */}
       <div className="view-header">
         <div>
-          <div className="badge-wrapper" style={{ marginBottom: '0.4rem' }}>
-            <span className="badge badge-teal">
-              <Activity size={13} style={{ marginRight: '4px' }} />
-              Servicio de Kinesiología, Fisiatría & Gimnasio Terapéutico
-            </span>
-          </div>
           <h1 className="view-title">Rehabilitación & Fisiokinesioterapia</h1>
           <p className="view-subtitle">
-            Planes kinesiológicos personalizados, contador de sesiones, evolución EVA (0-10) y ejercicios domiciliarios.
+            Planes de rehabilitación kinesiológica, control de sesiones y seguimiento de evolución.
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>

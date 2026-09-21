@@ -26,8 +26,13 @@ export const verifyRecordIntegrity = (record) => {
   };
 };
 
+export const hashPassword = (password) => {
+  return generateSHA256Hash(`citra_salt_${password}`);
+};
+
 const calculatedHashEquals = (h1, h2) => {
-  return h1 === h2 || h1.substring(0, 32) === h2.substring(0, 32);
+  if (!h1 || !h2) return false;
+  return h1.trim().toLowerCase() === h2.trim().toLowerCase();
 };
 
 /**

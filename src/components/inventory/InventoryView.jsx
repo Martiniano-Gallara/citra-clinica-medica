@@ -13,7 +13,8 @@ import {
   ArrowDownRight,
   Building2,
   Calendar,
-  DollarSign
+  DollarSign,
+  Star
 } from 'lucide-react';
 import { Badge } from '../common/Badge';
 
@@ -384,7 +385,9 @@ export const InventoryView = () => {
                       <span style={{ fontWeight: 700 }}>{sup.deliveryTimeDays} días</span>
                     </td>
                     <td>
-                      <span className="badge badge-teal">⭐ {sup.rating}</span>
+                      <span className="badge badge-teal" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Star size={11} fill="#0d9488" color="#0d9488" /> {sup.rating}
+                      </span>
                     </td>
                   </tr>
                 ))}

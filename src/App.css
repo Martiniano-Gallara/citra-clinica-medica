@@ -88,7 +88,7 @@
   --radius-xl: 20px;
   --radius-full: 9999px;
   --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  --sidebar-width: 280px;
+  --sidebar-width: 310px;
   --sidebar-collapsed-width: 86px;
   --topbar-height: 76px;
 }
@@ -1178,5 +1178,438 @@ button, input, select, textarea {
     padding: 3rem 1rem !important;
   }
 }
+
+/* ===================================================================
+   HERO BACKGROUND SUTILE ANIMATION (CITRA MEDICAL TECH)
+   Leve y sutil movimiento orgánico: plexus flotante, halos y partículas
+   =================================================================== */
+
+@keyframes citraPlexusDrift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(-14px, -10px, 0) scale(1.035);
+  }
+  66% {
+    transform: translate3d(10px, -16px, 0) scale(1.02);
+  }
+  100% {
+    transform: translate3d(-8px, 12px, 0) scale(1.045);
+  }
+}
+
+@keyframes citraHaloPulse {
+  0% {
+    transform: translateX(-50%) scale(0.94);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateX(-50%) scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) scale(0.97);
+    opacity: 0.8;
+  }
+}
+
+@keyframes citraOrbLeft {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate3d(28px, -24px, 0) scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(-12px, 18px, 0) scale(0.94);
+    opacity: 0.75;
+  }
+}
+
+@keyframes citraOrbRight {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.75;
+  }
+  50% {
+    transform: translate3d(-26px, 28px, 0) scale(1.18);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(18px, -16px, 0) scale(0.92);
+    opacity: 0.7;
+  }
+}
+
+@keyframes citraParticleFloat {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.8);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.55;
+  }
+  60% {
+    transform: translate3d(var(--px, 20px), var(--py, -40px), 0) scale(1.1);
+    opacity: 0.75;
+  }
+  85% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate3d(calc(var(--px, 20px) * 1.6), calc(var(--py, -40px) * 1.8), 0) scale(0.7);
+    opacity: 0;
+  }
+}
+
+.hero-plexus-layer {
+  position: absolute;
+  top: -6%;
+  left: -6%;
+  width: 112%;
+  height: 112%;
+  background-image: url("/citra-hero-plexus.jpg");
+  background-size: cover;
+  background-position: left center;
+  background-repeat: no-repeat;
+  opacity: 0.55;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 0;
+  -webkit-mask-image: radial-gradient(ellipse 95% 90% at 20% 50%, black 35%, rgba(0, 0, 0, 0.6) 65%, transparent 100%);
+  mask-image: radial-gradient(ellipse 95% 90% at 20% 50%, black 35%, rgba(0, 0, 0, 0.6) 65%, transparent 100%);
+  filter: contrast(1.08) saturate(1.15);
+  animation: citraPlexusDrift 26s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.hero-halo-layer {
+  position: absolute;
+  top: -15%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 650px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(37, 124, 230, 0.13) 0%, rgba(7, 106, 188, 0.04) 50%, rgba(255, 255, 255, 0) 75%);
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: 0;
+  animation: citraHaloPulse 16s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.hero-orb-left-layer {
+  position: absolute;
+  top: 25%;
+  left: -8%;
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(7, 106, 188, 0.1) 0%, rgba(255, 255, 255, 0) 70%);
+  filter: blur(50px);
+  pointer-events: none;
+  z-index: 0;
+  animation: citraOrbLeft 20s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.hero-orb-right-layer {
+  position: absolute;
+  bottom: 10%;
+  right: -6%;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 33, 130, 0.08) 0%, rgba(255, 255, 255, 0) 70%);
+  filter: blur(50px);
+  pointer-events: none;
+  z-index: 0;
+  animation: citraOrbRight 22s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.hero-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(37, 124, 230, 0.8) 0%, rgba(7, 106, 188, 0.35) 60%, transparent 100%);
+  box-shadow: 0 0 10px rgba(37, 124, 230, 0.35);
+  pointer-events: none;
+  z-index: 1;
+  animation: citraParticleFloat 18s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-plexus-layer,
+  .hero-halo-layer,
+  .hero-orb-left-layer,
+  .hero-orb-right-layer,
+  .hero-particle {
+    animation: none !important;
+  }
+}
+
+/* ===================================================================
+   INSTITUTIONAL PAGES (SERVICES, DOCTORS) ELEVATED SHOWCASE BANNER
+   High-end medical-tech hero banner with glassmorphism, dynamic glowing
+   mesh, responsive metric cards and luxury typography.
+   =================================================================== */
+
+.services-hero-banner {
+  background: radial-gradient(130% 120% at 85% 0%, #002B94 0%, #001B6B 42%, #000F38 100%);
+  color: #ffffff;
+  padding: 3rem 1.25rem 2.25rem;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(37, 124, 230, 0.25);
+}
+
+.services-hero-grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(142, 190, 245, 0.14) 1.2px, transparent 1.2px);
+  background-size: 26px 26px;
+  pointer-events: none;
+  opacity: 0.75;
+  mask-image: radial-gradient(ellipse 90% 80% at 50% 30%, black 25%, transparent 85%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 30%, black 25%, transparent 85%);
+}
+
+.services-hero-glow-cyan {
+  position: absolute;
+  top: -25%;
+  right: -8%;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.15) 0%, rgba(37, 124, 230, 0.08) 50%, transparent 70%);
+  filter: blur(55px);
+  pointer-events: none;
+  animation: citraOrbRight 22s ease-in-out infinite alternate;
+}
+
+.services-hero-glow-blue {
+  position: absolute;
+  bottom: -25%;
+  left: -10%;
+  width: 440px;
+  height: 440px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(37, 124, 230, 0.18) 0%, rgba(0, 33, 130, 0.08) 55%, transparent 70%);
+  filter: blur(55px);
+  pointer-events: none;
+  animation: citraOrbLeft 20s ease-in-out infinite alternate;
+}
+
+.services-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.85rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(210, 227, 252, 0.16);
+}
+
+@media (max-width: 860px) {
+  .services-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+    padding-top: 1.25rem;
+  }
+}
+
+.services-metric-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(210, 227, 252, 0.18);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 16px;
+  padding: 0.85rem 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 18px rgba(0, 15, 56, 0.25);
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+.services-metric-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(96, 165, 250, 0.5);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.04) 100%);
+  box-shadow: 0 8px 24px rgba(37, 124, 230, 0.25);
+}
+
+.services-metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+}
+
+.services-metric-icon-wrap {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.services-metric-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.services-metric-value {
+  font-size: 1.18rem;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.services-metric-label {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #D2E3FC;
+  margin-top: 0.15rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.services-metric-sub {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #93C5FD;
+  opacity: 0.9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ===================================================================
+   COMPROMISO ASISTENCIAL CITRA - COMPACT VALUE STRIP
+   Diseño moderno, texto ultra reducido, íconos dedicados y hover dinámico
+   =================================================================== */
+
+.trust-commitment-card {
+  margin-top: 2.5rem;
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1.5px solid #D2E3FC;
+  box-shadow: 0 6px 24px rgba(0, 33, 130, 0.05);
+  padding: 1.25rem 1.25rem 1.15rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.trust-commitment-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #002182 0%, #076ABC 50%, #257CE6 100%);
+}
+
+.trust-commitment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.74rem;
+  font-weight: 900;
+  color: #076ABC;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.9rem;
+}
+
+.trust-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .trust-grid {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+  }
+  .trust-commitment-card {
+    padding: 1.1rem 0.95rem 1rem;
+    border-radius: 16px;
+  }
+}
+
+.trust-item {
+  background: #F6F9FE;
+  border: 1.5px solid #E1ECFA;
+  border-radius: 14px;
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.trust-item:hover {
+  background: #ffffff;
+  border-color: #8EBEF5;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(7, 106, 188, 0.08);
+}
+
+.trust-icon-box {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.trust-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.trust-title {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #002182;
+  line-height: 1.2;
+}
+
+.trust-desc {
+  font-size: 0.73rem;
+  color: #496386;
+  font-weight: 600;
+  margin-top: 0.15rem;
+  line-height: 1.25;
+}
+
+
+
 
 

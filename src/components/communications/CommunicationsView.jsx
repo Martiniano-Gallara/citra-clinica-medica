@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
 import {
   MessageSquare,
   Send,
@@ -71,7 +72,7 @@ export const CommunicationsView = () => {
         <div>
           <div className="badge-wrapper" style={{ marginBottom: '0.4rem' }}>
             <span className="badge badge-teal">
-              <MessageSquare size={13} style={{ marginRight: '4px' }} />
+              <WhatsAppIcon size={14} color="#059669" style={{ marginRight: '6px' }} />
               WhatsApp Cloud API, Email & Centro de Mensajería Omnicanal
             </span>
           </div>
