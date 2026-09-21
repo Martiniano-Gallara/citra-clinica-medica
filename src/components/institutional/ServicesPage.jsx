@@ -15,13 +15,10 @@ import {
   Sparkles,
   CheckCircle2,
   CalendarPlus,
-  ShieldCheck,
   Clock,
   ChevronDown,
   Search,
-  Stethoscope,
-  ArrowRight,
-  Users
+  Stethoscope
 } from 'lucide-react';
 
 export const ServicesPage = () => {
@@ -694,66 +691,6 @@ export const ServicesPage = () => {
           )}
         </div>
 
-        {/* Compromiso Asistencial CITRA — Rediseño Moderno con Texto Reducido e Impactante */}
-        <div className="trust-commitment-card">
-          <div className="trust-commitment-badge">
-            <ShieldCheck size={15} color="#076ABC" />
-            <span>Compromiso Asistencial CITRA</span>
-          </div>
-
-          <div className="trust-grid">
-            <div className="trust-item">
-              <div
-                className="trust-icon-box"
-                style={{
-                  background: '#EBF3FD',
-                  color: '#076ABC',
-                  border: '1px solid #D2E3FC'
-                }}
-              >
-                <ShieldCheck size={18} />
-              </div>
-              <div className="trust-content">
-                <div className="trust-title">Atención Personalizada</div>
-                <div className="trust-desc">Plan y seguimiento a tu medida</div>
-              </div>
-            </div>
-
-            <div className="trust-item">
-              <div
-                className="trust-icon-box"
-                style={{
-                  background: '#ECFDF5',
-                  color: '#059669',
-                  border: '1px solid #A7F3D0'
-                }}
-              >
-                <Users size={18} />
-              </div>
-              <div className="trust-content">
-                <div className="trust-title">Equipo Integrado</div>
-                <div className="trust-desc">Médicos y kinesiólogos en el centro</div>
-              </div>
-            </div>
-
-            <div className="trust-item">
-              <div
-                className="trust-icon-box"
-                style={{
-                  background: '#F5F3FF',
-                  color: '#7C3AED',
-                  border: '1px solid #DDD6FE'
-                }}
-              >
-                <Zap size={18} />
-              </div>
-              <div className="trust-content">
-                <div className="trust-title">Tecnología Médica</div>
-                <div className="trust-desc">Gimnasio 180 m² y Rayos X digital</div>
-              </div>
-            </div>
-          </div>
-        </div>
 
       </section>
     </div>
