@@ -95,7 +95,7 @@ export const DoctorsPage = () => {
             }}
           >
             <Sparkles size={13} color="#00F0FF" />
-            <span>CITRA · CUERPO MÉDICO Y PROFESIONALES</span>
+            <span>PROFESIONALES CITRA</span>
           </div>
 
           <h1
@@ -108,7 +108,7 @@ export const DoctorsPage = () => {
               color: '#ffffff'
             }}
           >
-            Cuerpo Médico &{' '}
+            Cuerpo{' '}
             <span
               style={{
                 background: 'linear-gradient(135deg, #60A5FA 0%, #38BDF8 50%, #A5F3FC 100%)',
@@ -116,7 +116,7 @@ export const DoctorsPage = () => {
                 WebkitTextFillColor: 'transparent'
               }}
             >
-              Especialistas
+              Médico
             </span>
           </h1>
 
@@ -131,11 +131,17 @@ export const DoctorsPage = () => {
               opacity: 0.95
             }}
           >
-            Médicos traumatólogos, especialistas clínicos, radiología y kinesiólogos altamente formados, comprometidos con tu salud y bienestar en Arroyito.
+            Especialistas comprometidos con tu salud y bienestar en Arroyito.
           </p>
 
-          {/* Quick Metrics Bar — Tarjetas Glassmorphism con Íconos y Estilo Cohesivo */}
-          <div className="services-metrics-grid">
+          {/* Quick Metrics Bar — 2 Tarjetas Glassmorphism */}
+          <div
+            className="services-metrics-grid"
+            style={{
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+              maxWidth: '640px'
+            }}
+          >
             <div className="services-metric-card">
               <div
                 className="services-metric-icon-wrap"
@@ -167,40 +173,6 @@ export const DoctorsPage = () => {
                 <div className="services-metric-value">+25 Años</div>
                 <div className="services-metric-label">Trayectoria</div>
                 <div className="services-metric-sub">Liderazgo en salud</div>
-              </div>
-            </div>
-
-            <div className="services-metric-card">
-              <div
-                className="services-metric-icon-wrap"
-                style={{
-                  background: 'radial-gradient(circle, rgba(168, 85, 247, 0.26) 0%, rgba(126, 34, 206, 0.1) 100%)',
-                  borderColor: 'rgba(192, 132, 252, 0.3)'
-                }}
-              >
-                <Clock size={20} color="#C084FC" />
-              </div>
-              <div className="services-metric-content">
-                <div className="services-metric-value">8 Módulos</div>
-                <div className="services-metric-label">Consultorios</div>
-                <div className="services-metric-sub">Infraestructura propia</div>
-              </div>
-            </div>
-
-            <div className="services-metric-card">
-              <div
-                className="services-metric-icon-wrap"
-                style={{
-                  background: 'radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, rgba(180, 83, 9, 0.1) 100%)',
-                  borderColor: 'rgba(251, 191, 36, 0.3)'
-                }}
-              >
-                <ShieldCheck size={20} color="#FBBF24" />
-              </div>
-              <div className="services-metric-content">
-                <div className="services-metric-value">Integral</div>
-                <div className="services-metric-label">Atención Médica</div>
-                <div className="services-metric-sub">Equipo multidisciplinario</div>
               </div>
             </div>
           </div>
