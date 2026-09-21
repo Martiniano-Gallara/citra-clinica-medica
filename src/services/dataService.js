@@ -528,26 +528,39 @@ export const dataService = {
   // --- REALTIME SUBSCRIPTION HELPER ---
   subscribeToTable(tableName, onInsert = null, onUpdate = null, onDelete = null) {
     if (isSupabaseConfigured && supabase) {
-      const channel = supabase
-        .channel(`realtime_${tableName}`)
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: tableName },
-          (payload) => {
-            if (payload.eventType === 'INSERT' && onInsert) {
-              onInsert(toCamelCase(payload.new));
-            } else if (payload.eventType === 'UPDATE' && onUpdate) {
-              onUpdate(toCamelCase(payload.new));
-            } else if (payload.eventType === 'DELETE' && onDelete) {
-              onDelete(toCamelCase(payload.old));
+      try {
+        const channel = supabase
+          .channel(`realtime_${tableName}`)
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: tableName },
+            (payload) => {
+              if (payload.eventType === 'INSERT' && onInsert) {
+                onInsert(toCamelCase(payload.new));
+              } else if (payload.eventType === 'UPDATE' && onUpdate) {
+                onUpdate(toCamelCase(payload.new));
+              } else if (payload.eventType === 'DELETE' && onDelete) {
+                onDelete(toCamelCase(payload.old));
+              }
             }
-          }
-        )
-        .subscribe();
+          )
+          .subscribe((status) => {
+            if (status === 'CHANNEL_ERROR') {
+              console.warn(`[CITRA Realtime] Canal ${tableName} en espera de conexión.`);
+            }
+          });
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
+        return () => {
+          try {
+            supabase.removeChannel(channel);
+          } catch {
+            // ignore channel removal error on unmount
+          }
+        };
+      } catch (err) {
+        console.warn(`[CITRA Realtime] Error al inicializar suscripción para ${tableName}:`, err);
+        return () => {};
+      }
     }
     return () => {};
   }
