@@ -361,7 +361,7 @@ export const PatientsView = () => {
           justifyContent: 'space-between'
         }}
       >
-        <div style={{ position: 'relative', flex: '1 1 280px', minWidth: '240px' }}>
+        <div style={{ position: 'relative', flex: '1 1 280px', minWidth: '160px' }}>
           <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
           <input
             type="text"
@@ -449,7 +449,7 @@ export const PatientsView = () => {
           boxShadow: '0 4px 15px rgba(0, 33, 130, 0.03)'
         }}
       >
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
             <thead>
               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#0f172a', fontWeight: 800 }}>

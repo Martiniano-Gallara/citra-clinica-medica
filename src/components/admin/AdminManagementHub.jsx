@@ -400,6 +400,16 @@ export const AdminManagementHub = () => {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#F5F8FE', width: '100%' }}>
+      {/* 0. BACKDROP OVERLAY PARA SIDEBAR MÓVIL */}
+      {isMobileSidebarOpen && (
+        <div
+          className="admin-sidebar-backdrop"
+          onClick={() => setIsMobileSidebarOpen(false)}
+          title="Toca para cerrar menú de navegación"
+          aria-label="Cerrar menú de navegación"
+        />
+      )}
+
       {/* 1. SIDEBAR LATERAL A LA IZQUIERDA */}
       <aside
         style={{
@@ -444,12 +454,15 @@ export const AdminManagementHub = () => {
             <button
               onClick={() => setIsMobileSidebarOpen(false)}
               className="admin-mobile-close-btn"
+              title="Cerrar navegación"
               style={{
                 display: 'none',
                 background: 'none',
                 border: 'none',
                 color: '#ffffff',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '8px'
               }}
             >
               <X size={20} />
@@ -607,6 +620,7 @@ export const AdminManagementHub = () => {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: '100vh', width: '100%' }}>
         {/* Topbar del Área de Contenido */}
         <header
+          className="admin-topbar"
           style={{
             height: '64px',
             background: '#ffffff',
@@ -621,10 +635,11 @@ export const AdminManagementHub = () => {
           }}
         >
           {/* Left: Mobile Menu Toggle & Title */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: 0 }}>
             <button
               onClick={() => setIsMobileSidebarOpen(true)}
               className="admin-mobile-open-btn"
+              title="Abrir menú de navegación"
               style={{
                 display: 'none',
                 background: 'none',
@@ -637,19 +652,20 @@ export const AdminManagementHub = () => {
               <Menu size={22} />
             </button>
 
-            <h1 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 900, color: '#002182', letterSpacing: '-0.02em' }}>
+            <h1 className="admin-topbar-title" style={{ margin: 0, fontSize: '1.35rem', fontWeight: 900, color: '#002182', letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {currentTabLabel}
             </h1>
           </div>
 
           {/* Right: User Badge & Switcher & Logout */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <div className="admin-topbar-right" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
             {/* Quick Profile Switcher (Médico vs Administrativo) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <label style={{ fontSize: '0.74rem', fontWeight: 800, color: '#496386' }}>
+            <div className="admin-profile-switcher" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <label className="admin-profile-label" style={{ fontSize: '0.74rem', fontWeight: 800, color: '#496386' }}>
                 Perfil:
               </label>
               <select
+                className="admin-profile-select"
                 value={authAdmin?.id || ''}
                 onChange={(e) => {
                   if (typeof switchAdminUser === 'function') {
@@ -680,6 +696,7 @@ export const AdminManagementHub = () => {
 
             {/* Administrator / Doctor Badge */}
             <div
+              className="admin-user-badge"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -695,13 +712,14 @@ export const AdminManagementHub = () => {
                   width: '8px',
                   height: '8px',
                   borderRadius: '50%',
-                  background: isDoctor ? '#10b981' : '#2563eb'
+                  background: isDoctor ? '#10b981' : '#2563eb',
+                  flexShrink: 0
                 }}
               />
-              <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#002182' }}>
+              <span className="admin-user-name" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#002182' }}>
                 {doctorAdminName}
               </span>
-              <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600 }}>
+              <span className="admin-user-role" style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600 }}>
                 · {isDoctor ? (currentDoctor?.specialty || 'Médico') : (authAdmin?.role || 'Recepción & Facturación')}
               </span>
             </div>
@@ -709,6 +727,7 @@ export const AdminManagementHub = () => {
             {/* Logout button */}
             <button
               onClick={logoutAdmin}
+              className="admin-logout-btn"
               title="Cerrar Sesión"
               style={{
                 background: '#FEE2E2',
@@ -729,13 +748,14 @@ export const AdminManagementHub = () => {
         </header>
 
         {/* Content Body */}
-        <main style={{ padding: '1.75rem 2.25rem 3rem', flex: 1, width: '100%', boxSizing: 'border-box' }}>
+        <main className="admin-main-content" style={{ padding: '1.75rem 2.25rem 3rem', flex: 1, width: '100%', boxSizing: 'border-box' }}>
           <AdminTabErrorBoundary tab={activeTab} onReset={() => setActiveTab('dashboard')}>
           {/* TAB 1: DASHBOARD & MÉTRICAS PARA DOCTOR (Dr. Blanco) */}
           {activeTab === 'dashboard' && isDoctor && (
             <div>
               {/* Doctor Header Banner */}
               <div
+                className="admin-hero-banner"
                 style={{
                   background: 'linear-gradient(135deg, #002182 0%, #076ABC 100%)',
                   borderRadius: '20px',
@@ -807,7 +827,7 @@ export const AdminManagementHub = () => {
               </div>
 
               {/* Atajos Rápidos del Doctor y Próximos Turnos */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.75rem', marginBottom: '2rem' }}>
+              <div className="admin-shortcuts-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.75rem', marginBottom: '2rem' }}>
                 {/* Left: Mis Atajos Clínicos */}
                 <div
                   style={{
@@ -1193,6 +1213,7 @@ export const AdminManagementHub = () => {
             <div>
               {/* KPI Cards Grid (4 Identical Cards to reference image + Consultorios) */}
               <div
+                className="admin-kpi-grid"
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
@@ -1332,7 +1353,7 @@ export const AdminManagementHub = () => {
               </div>
 
               {/* Quick Actions & Recent Turnos */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.75rem', marginBottom: '2rem' }}>
+              <div className="admin-shortcuts-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.75rem', marginBottom: '2rem' }}>
                 {/* Left: Atajos Rápidos de Administración */}
                 <div
                   style={{
@@ -1578,7 +1599,7 @@ export const AdminManagementHub = () => {
               </div>
 
               {/* Pacientes Recientes & Consultorios Activos */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.75rem' }}>
+              <div className="admin-panels-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.75rem' }}>
                 {/* Pacientes Recientes */}
                 <div
                   style={{
@@ -1766,22 +1787,181 @@ export const AdminManagementHub = () => {
       <ConsentFormsModal />
       <OnlineAuthModal />
 
-      {/* Responsive Styles for Sidebar */}
+      {/* Responsive Styles for Mobile Audit (Doctor & Administrative) */}
       <style>{`
+        /* 0. Mobile Drawer Backdrop */
+        .admin-sidebar-backdrop {
+          display: none;
+        }
+
+        /* 1. Tablet & Mobile Styles (<= 900px) */
         @media (max-width: 900px) {
+          .admin-sidebar-backdrop {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 15, 60, 0.68);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 998;
+            animation: adminFadeIn 0.2s ease;
+          }
+
+          @keyframes adminFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+
           .admin-sidebar {
             position: fixed !important;
             left: -330px;
-            transition: left 0.25s ease-in-out;
+            width: 295px !important;
+            max-width: 86vw !important;
+            transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            z-index: 999 !important;
+            box-shadow: 12px 0 35px rgba(0, 0, 0, 0.38) !important;
           }
+
           .sidebar-mobile-open {
             left: 0 !important;
           }
+
           .admin-mobile-open-btn {
-            display: block !important;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            background: #F5F8FE !important;
+            border: 1px solid #D2E3FC !important;
+            color: #002182 !important;
           }
+
           .admin-mobile-close-btn {
-            display: block !important;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.14) !important;
+            color: #ffffff !important;
+          }
+
+          .admin-topbar {
+            padding: 0 1.25rem !important;
+            height: 60px !important;
+          }
+
+          .admin-main-content {
+            padding: 1.25rem 1rem 3rem !important;
+          }
+        }
+
+        /* 2. Small Mobile Screens (<= 640px) */
+        @media (max-width: 640px) {
+          .admin-topbar {
+            padding: 0 0.75rem !important;
+            height: 56px !important;
+          }
+
+          .admin-topbar-title {
+            font-size: 1.12rem !important;
+            max-width: 135px;
+          }
+
+          .admin-topbar-right {
+            gap: 0.35rem !important;
+          }
+
+          .admin-profile-label {
+            display: none !important;
+          }
+
+          .admin-profile-select {
+            max-width: 105px !important;
+            font-size: 0.72rem !important;
+            padding: 0.28rem 0.4rem !important;
+          }
+
+          .admin-user-role {
+            display: none !important;
+          }
+
+          .admin-user-badge {
+            padding: 0.25rem 0.55rem !important;
+            gap: 0.4rem !important;
+          }
+
+          .admin-user-name {
+            font-size: 0.75rem !important;
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          .admin-logout-btn {
+            padding: 0.4rem 0.55rem !important;
+          }
+
+          .admin-main-content {
+            padding: 0.85rem 0.65rem 2.5rem !important;
+          }
+
+          .admin-hero-banner {
+            padding: 1.25rem 1rem !important;
+            border-radius: 16px !important;
+            margin-bottom: 1.25rem !important;
+            gap: 1rem !important;
+          }
+
+          .admin-hero-banner h2 {
+            font-size: 1.35rem !important;
+            line-height: 1.25 !important;
+          }
+
+          .admin-hero-banner p {
+            font-size: 0.82rem !important;
+            line-height: 1.45 !important;
+          }
+
+          .admin-hero-banner button {
+            flex: 1 1 calc(50% - 0.5rem);
+            justify-content: center;
+          }
+
+          .admin-shortcuts-grid,
+          .admin-panels-grid {
+            grid-template-columns: 1fr !important;
+            gap: 1rem !important;
+            margin-bottom: 1.25rem !important;
+          }
+
+          .admin-kpi-grid {
+            grid-template-columns: 1fr !important;
+            gap: 0.85rem !important;
+            margin-bottom: 1.25rem !important;
+          }
+        }
+
+        /* 3. Ultra-Compact Phones (<= 420px) */
+        @media (max-width: 420px) {
+          .admin-topbar-title {
+            max-width: 110px;
+            font-size: 1.05rem !important;
+          }
+
+          .admin-hero-banner button {
+            flex: 1 1 100%;
+          }
+
+          .admin-user-badge {
+            display: none !important;
           }
         }
       `}</style>

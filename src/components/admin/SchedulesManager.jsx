@@ -392,7 +392,7 @@ export const SchedulesManager = () => {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.6rem' }}>
+            <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
               <input
                 type="date"
                 value={newDocBlockedDate}
@@ -772,7 +772,7 @@ export const SchedulesManager = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '0.6rem' }}>
+              <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
                 <input
                   type="date"
                   value={adminNewBlockedDate}
@@ -1017,7 +1017,7 @@ export const SchedulesManager = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.6rem' }}>
+          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
             <input
               type="date"
               value={newBlockedDate}

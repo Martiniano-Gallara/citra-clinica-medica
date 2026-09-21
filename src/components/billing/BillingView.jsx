@@ -381,7 +381,7 @@ export const BillingView = () => {
       </div>
       ) : (
         /* HONORARIOS LIQUIDATION VIEW */
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '1.25rem' }}>
           {doctors.map((doc) => {
             const docInvoices = invoices.filter((i) => i.doctorName === doc.name);
             const totalBruto = docInvoices.reduce((acc, curr) => acc + (curr.amount || 0), 0);
