@@ -11,20 +11,18 @@ import {
   Sparkles,
   PhoneCall,
   CheckCircle2,
-  Stethoscope,
-  ShieldCheck
+  Stethoscope
 } from 'lucide-react';
 
 export const DoctorsPage = () => {
   const { doctors, setCurrentView, setBookingPreselectedDoctor, setBookingPreselectedSpecialty } = useClinic();
-  const [selectedSpecialty, setSelectedSpecialty] = useState('all');
+  const [selectedSpecialty, setSelectedSpecialty] = useState('trauma');
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedId, setExpandedId] = useState(null);
 
   const activeDoctors = doctors.filter((d) => d.active !== false);
 
   const filterTabs = [
-    { id: 'all', label: `Todos (${activeDoctors.length})` },
     { id: 'trauma', label: 'Traumatología' },
     { id: 'kinesio', label: 'Kinesiología' },
     { id: 'medicas', label: 'Médicas' },
@@ -187,7 +185,7 @@ export const DoctorsPage = () => {
           <Search size={17} color="#076ABC" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
           <input
             type="text"
-            placeholder="Buscar por médico o especialidad (ej. Blanco, rodilla, kinesiología)..."
+            placeholder="Buscar profesional..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
@@ -546,66 +544,7 @@ export const DoctorsPage = () => {
           )}
         </div>
 
-        {/* Compromiso Médico CITRA al pie de página */}
-        <div className="trust-commitment-card" style={{ marginTop: '2.5rem' }}>
-          <div className="trust-commitment-badge">
-            <ShieldCheck size={15} color="#076ABC" />
-            <span>Compromiso Médico CITRA</span>
-          </div>
 
-          <div className="trust-grid">
-            <div className="trust-item">
-              <div
-                className="trust-icon-box"
-                style={{
-                  background: '#EBF3FD',
-                  color: '#076ABC',
-                  border: '1px solid #D2E3FC'
-                }}
-              >
-                <Stethoscope size={18} />
-              </div>
-              <div className="trust-content">
-                <div className="trust-title">Atención Personalizada</div>
-                <div className="trust-desc">Plan y seguimiento a tu medida</div>
-              </div>
-            </div>
-
-            <div className="trust-item">
-              <div
-                className="trust-icon-box"
-                style={{
-                  background: '#ECFDF5',
-                  color: '#059669',
-                  border: '1px solid #A7F3D0'
-                }}
-              >
-                <Award size={18} />
-              </div>
-              <div className="trust-content">
-                <div className="trust-title">Equipo Certificado</div>
-                <div className="trust-desc">Especialistas con matrícula provincial</div>
-              </div>
-            </div>
-
-            <div className="trust-item">
-              <div
-                className="trust-icon-box"
-                style={{
-                  background: '#F5F3FF',
-                  color: '#7C3AED',
-                  border: '1px solid #DDD6FE'
-                }}
-              >
-                <Clock size={18} />
-              </div>
-              <div className="trust-content">
-                <div className="trust-title">Puntualidad y Confort</div>
-                <div className="trust-desc">8 consultorios y turnos online</div>
-              </div>
-            </div>
-          </div>
-        </div>
 
       </section>
     </div>
