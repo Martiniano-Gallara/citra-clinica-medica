@@ -60,8 +60,12 @@ export const AppointmentsManager = () => {
   // Expanded appointment ID for accordion details
   const [expandedAppointmentId, setExpandedAppointmentId] = useState(null);
 
+  // Doctor filter for administrative reception
+  const [doctorFilter, setDoctorFilter] = useState('all');
+
   // Manual appointment modal
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [manualDoctorId, setManualDoctorId] = useState(doctors[0]?.id || '');
   const [manualPatientName, setManualPatientName] = useState('');
   const [manualPatientDni, setManualPatientDni] = useState('');
   const [manualPatientPhone, setManualPatientPhone] = useState('');
@@ -69,13 +73,21 @@ export const AppointmentsManager = () => {
   const [manualTime, setManualTime] = useState('09:00');
   const [manualReason, setManualReason] = useState('Consulta traumatológica');
 
-  // Strict data scoping: Doctor ONLY sees their own appointments
+  // Strict data scoping: Doctor ONLY sees their own appointments, Administrative sees all or filtered by doctor
   const effectiveAppointments = useMemo(() => {
     if (isDoctor && currentDoctor) {
       return scopedAppointments.filter((a) => a.doctorId === currentDoctor.id);
     }
+    if (doctorFilter !== 'all') {
+      const targetDoc = doctors.find((d) => d.id === doctorFilter);
+      return appointments.filter(
+        (a) =>
+          a.doctorId === doctorFilter ||
+          (a.doctorName && targetDoc?.name && a.doctorName.toLowerCase().includes(targetDoc.name.toLowerCase()))
+      );
+    }
     return appointments;
-  }, [isDoctor, currentDoctor, scopedAppointments, appointments]);
+  }, [isDoctor, currentDoctor, scopedAppointments, appointments, doctorFilter, doctors]);
 
   // Appointments on selected date
   const dateAppointments = useMemo(() => {
@@ -224,7 +236,9 @@ export const AppointmentsManager = () => {
       return;
     }
 
-    const assignedDoc = isDoctor && currentDoctor ? currentDoctor : doctors[0];
+    const assignedDoc = isDoctor && currentDoctor
+      ? currentDoctor
+      : (doctors.find((d) => d.id === manualDoctorId) || doctors[0]);
 
     addAppointment({
       patientId: `pat-${Date.now()}`,
@@ -250,7 +264,7 @@ export const AppointmentsManager = () => {
     setManualPatientName('');
     setManualPatientDni('');
     setManualPatientPhone('');
-    addToast('Turno Agendado', `Turno registrado exitosamente para el ${selectedDate} a las ${manualTime} hs.`, 'success');
+    addToast('Turno Agendado', `Turno registrado con ${assignedDoc.name} para el ${selectedDate} a las ${manualTime} hs.`, 'success');
   };
 
   const getStatusBadgeElement = (status) => {
@@ -393,7 +407,7 @@ export const AppointmentsManager = () => {
           }}
         >
           <Plus size={18} />
-          Nuevo Turno Manual
+          {isDoctor ? 'Nuevo Turno Manual' : 'Asignar Turno a Profesional'}
         </button>
       </div>
 
@@ -561,6 +575,34 @@ export const AppointmentsManager = () => {
 
         {/* Search & Status Filters */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {/* Doctor filter for Reception */}
+          {!isDoctor && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <select
+                value={doctorFilter}
+                onChange={(e) => setDoctorFilter(e.target.value)}
+                style={{
+                  padding: '0.48rem 0.75rem',
+                  borderRadius: '8px',
+                  border: '1.5px solid #cbd5e1',
+                  background: '#ffffff',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  color: '#002182',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="all">Todos los profesionales ({doctors.length})</option>
+                {doctors.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name} ({d.specialty})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Search Box */}
           <div style={{ position: 'relative', minWidth: '220px' }}>
             <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
@@ -651,6 +693,7 @@ export const AppointmentsManager = () => {
               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#0f172a', fontWeight: 800 }}>
                 <th style={{ padding: '0.85rem 1.25rem', width: '110px' }}>Horario</th>
                 <th style={{ padding: '0.85rem 1.25rem' }}>Paciente</th>
+                {!isDoctor && <th style={{ padding: '0.85rem 1.25rem' }}>Profesional</th>}
                 <th style={{ padding: '0.85rem 1.25rem' }}>Motivo de Consulta</th>
                 <th style={{ padding: '0.85rem 1.25rem', width: '160px' }}>Estado</th>
                 <th style={{ padding: '0.85rem 1.25rem', textAlign: 'right', width: '180px' }}>Acción</th>
@@ -659,11 +702,11 @@ export const AppointmentsManager = () => {
             <tbody>
               {filteredAppointments.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: '3.5rem 1.5rem', textAlign: 'center', color: '#64748b' }}>
+                  <td colSpan={isDoctor ? 5 : 6} style={{ padding: '3.5rem 1.5rem', textAlign: 'center', color: '#64748b' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
                       <CalendarIcon size={36} style={{ color: '#cbd5e1' }} />
                       <div style={{ fontWeight: 700, color: '#1e293b' }}>No hay turnos registrados para este día o filtro</div>
-                      <div style={{ fontSize: '0.82rem' }}>Utilice el navegador de fechas o haga clic en "Nuevo Turno Manual".</div>
+                      <div style={{ fontSize: '0.82rem' }}>Utilice el navegador de fechas o haga clic en "{isDoctor ? 'Nuevo Turno Manual' : 'Asignar Turno a Profesional'}".</div>
                     </div>
                   </td>
                 </tr>
@@ -717,6 +760,18 @@ export const AppointmentsManager = () => {
                           </div>
                         </td>
 
+                        {/* Profesional (solo visible para Administrativo) */}
+                        {!isDoctor && (
+                          <td style={{ padding: '0.9rem 1.25rem' }}>
+                            <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.88rem' }}>
+                              {app.doctorName || 'Dr. Asignado'}
+                            </div>
+                            <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
+                              {app.specialtyName || app.doctorSpecialty || 'Consultorio'}
+                            </div>
+                          </td>
+                        )}
+
                         {/* Motivo de Consulta */}
                         <td style={{ padding: '0.9rem 1.25rem' }}>
                           <div style={{ color: '#334155', fontWeight: 600, fontSize: '0.88rem' }}>
@@ -740,72 +795,138 @@ export const AppointmentsManager = () => {
                             style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem' }}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            {/* Primary Action Button */}
-                            {isEnSala ? (
-                              <button
-                                type="button"
-                                onClick={() => handleStartConsultation(app)}
-                                style={{
-                                  background: '#059669',
-                                  color: '#ffffff',
-                                  border: 'none',
-                                  borderRadius: '8px',
-                                  padding: '0.45rem 0.85rem',
-                                  fontSize: '0.82rem',
-                                  fontWeight: 800,
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '5px',
-                                  boxShadow: '0 2px 8px rgba(5, 150, 105, 0.25)'
-                                }}
-                              >
-                                <Stethoscope size={15} />
-                                Atender
-                              </button>
-                            ) : isAtendido ? (
-                              <button
-                                type="button"
-                                onClick={() => handleViewConsultation(app)}
-                                style={{
-                                  background: '#eff6ff',
-                                  color: '#002182',
-                                  border: '1px solid #bfdbfe',
-                                  borderRadius: '8px',
-                                  padding: '0.35rem 0.65rem',
-                                  fontSize: '0.78rem',
-                                  fontWeight: 800,
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px'
-                                }}
-                                title="Ver registro de Historia Clínica de esta consulta"
-                              >
-                                <FileText size={13} />
-                                Ver Consulta
-                              </button>
+                            {/* Actions for Administrative vs Doctor */}
+                            {!isDoctor ? (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                {app.status === 'en_sala' ? (
+                                  <span
+                                    style={{
+                                      fontSize: '0.74rem',
+                                      fontWeight: 800,
+                                      color: '#059669',
+                                      background: '#ecfdf5',
+                                      border: '1px solid #a7f3d0',
+                                      padding: '0.35rem 0.65rem',
+                                      borderRadius: '8px',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
+                                    <CheckCircle2 size={12} /> En Espera
+                                  </span>
+                                ) : app.status === 'atendido' ? (
+                                  <span
+                                    style={{
+                                      fontSize: '0.74rem',
+                                      fontWeight: 700,
+                                      color: '#64748b',
+                                      background: '#f1f5f9',
+                                      padding: '0.35rem 0.65rem',
+                                      borderRadius: '8px'
+                                    }}
+                                  >
+                                    Atendido
+                                  </span>
+                                ) : app.status === 'cancelado' ? (
+                                  <span style={{ fontSize: '0.74rem', color: '#ef4444', fontWeight: 700 }}>
+                                    Cancelado
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      updateAppointmentStatus(app.id, 'en_sala');
+                                      addToast('Paciente en Sala', `${app.patientName} fue registrado en sala de espera. Notificado a ${app.doctorName}.`, 'success');
+                                    }}
+                                    style={{
+                                      background: '#059669',
+                                      color: '#ffffff',
+                                      border: 'none',
+                                      borderRadius: '8px',
+                                      padding: '0.4rem 0.75rem',
+                                      fontSize: '0.78rem',
+                                      fontWeight: 800,
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                      boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)'
+                                    }}
+                                  >
+                                    <CheckCircle2 size={13} />
+                                    Llegó / En Sala
+                                  </button>
+                                )}
+                              </div>
                             ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleCallToRoom(app)}
-                                style={{
-                                  background: '#076ABC',
-                                  color: '#ffffff',
-                                  border: 'none',
-                                  borderRadius: '8px',
-                                  padding: '0.4rem 0.75rem',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 800,
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '5px'
-                                }}
-                              >
-                                <Phone size={13} />
-                                Llamar a Sala
-                              </button>
+                              // Doctor Actions
+                              isEnSala ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleStartConsultation(app)}
+                                  style={{
+                                    background: '#059669',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    padding: '0.45rem 0.85rem',
+                                    fontSize: '0.82rem',
+                                    fontWeight: 800,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '5px',
+                                    boxShadow: '0 2px 8px rgba(5, 150, 105, 0.25)'
+                                  }}
+                                >
+                                  <Stethoscope size={15} />
+                                  Atender
+                                </button>
+                              ) : isAtendido ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleViewConsultation(app)}
+                                  style={{
+                                    background: '#eff6ff',
+                                    color: '#002182',
+                                    border: '1px solid #bfdbfe',
+                                    borderRadius: '8px',
+                                    padding: '0.35rem 0.65rem',
+                                    fontSize: '0.78rem',
+                                    fontWeight: 800,
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}
+                                  title="Ver registro de Historia Clínica de esta consulta"
+                                >
+                                  <FileText size={13} />
+                                  Ver Consulta
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCallToRoom(app)}
+                                  style={{
+                                    background: '#076ABC',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    padding: '0.4rem 0.75rem',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 800,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '5px'
+                                  }}
+                                >
+                                  <Phone size={13} />
+                                  Llamar a Sala
+                                </button>
+                              )
                             )}
 
                             {/* Accordion detail expand toggle */}
@@ -835,7 +956,7 @@ export const AppointmentsManager = () => {
                       {/* ACCORDION EXPANDABLE DETAIL ROW */}
                       {isExpanded && (
                         <tr style={{ background: '#f8fafc' }}>
-                          <td colSpan={5} style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #cbd5e1' }}>
+                          <td colSpan={isDoctor ? 5 : 6} style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #cbd5e1' }}>
                             <div
                               style={{
                                 background: '#ffffff',
@@ -891,93 +1012,97 @@ export const AppointmentsManager = () => {
 
                                 {/* Quick action buttons */}
                                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                                  {isAtendido ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleViewConsultation(app)}
-                                      style={{
-                                        background: '#002182',
-                                        color: '#ffffff',
-                                        border: 'none',
-                                        borderRadius: '6px',
-                                        padding: '0.35rem 0.75rem',
-                                        fontSize: '0.76rem',
-                                        fontWeight: 800,
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '5px',
-                                        boxShadow: '0 2px 6px rgba(0, 33, 130, 0.2)'
-                                      }}
-                                      title="Ver la Historia Clínica registrada de este paciente"
-                                    >
-                                      <FileText size={13} /> Ver Historia Clínica
-                                    </button>
-                                  ) : (consultations || []).some((c) => c.patientId === app.patientId || c.patientDni === app.patientDni) ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleStartConsultation(app)}
-                                      style={{
-                                        background: '#059669',
-                                        color: '#ffffff',
-                                        border: 'none',
-                                        borderRadius: '6px',
-                                        padding: '0.35rem 0.75rem',
-                                        fontSize: '0.76rem',
-                                        fontWeight: 800,
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '5px',
-                                        boxShadow: '0 2px 6px rgba(5, 150, 105, 0.2)'
-                                      }}
-                                      title="El paciente ya tiene Historia Clínica. Registrar nueva evolución para este turno."
-                                    >
-                                      <Stethoscope size={13} /> Registrar Evolución
-                                    </button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleStartConsultation(app)}
-                                      style={{
-                                        background: '#059669',
-                                        color: '#ffffff',
-                                        border: 'none',
-                                        borderRadius: '6px',
-                                        padding: '0.35rem 0.75rem',
-                                        fontSize: '0.76rem',
-                                        fontWeight: 800,
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '5px',
-                                        boxShadow: '0 2px 6px rgba(5, 150, 105, 0.2)'
-                                      }}
-                                      title="Apertura de Historia Clínica para paciente nuevo"
-                                    >
-                                      <Stethoscope size={13} /> Iniciar Historia Clínica
-                                    </button>
-                                  )}
+                                  {isDoctor && (
+                                    <>
+                                      {isAtendido ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleViewConsultation(app)}
+                                          style={{
+                                            background: '#002182',
+                                            color: '#ffffff',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            padding: '0.35rem 0.75rem',
+                                            fontSize: '0.76rem',
+                                            fontWeight: 800,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '5px',
+                                            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.2)'
+                                          }}
+                                          title="Ver la Historia Clínica registrada de este paciente"
+                                        >
+                                          <FileText size={13} /> Ver Historia Clínica
+                                        </button>
+                                      ) : (consultations || []).some((c) => c.patientId === app.patientId || c.patientDni === app.patientDni) ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleStartConsultation(app)}
+                                          style={{
+                                            background: '#059669',
+                                            color: '#ffffff',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            padding: '0.35rem 0.75rem',
+                                            fontSize: '0.76rem',
+                                            fontWeight: 800,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '5px',
+                                            boxShadow: '0 2px 6px rgba(5, 150, 105, 0.2)'
+                                          }}
+                                          title="El paciente ya tiene Historia Clínica. Registrar nueva evolución para este turno."
+                                        >
+                                          <Stethoscope size={13} /> Registrar Evolución
+                                        </button>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleStartConsultation(app)}
+                                          style={{
+                                            background: '#059669',
+                                            color: '#ffffff',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            padding: '0.35rem 0.75rem',
+                                            fontSize: '0.76rem',
+                                            fontWeight: 800,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '5px',
+                                            boxShadow: '0 2px 6px rgba(5, 150, 105, 0.2)'
+                                          }}
+                                          title="Apertura de Historia Clínica para paciente nuevo"
+                                        >
+                                          <Stethoscope size={13} /> Iniciar Historia Clínica
+                                        </button>
+                                      )}
 
-                                  {/* Status badge: HC Existente */}
-                                  {(consultations || []).some((c) => c.patientId === app.patientId || c.patientDni === app.patientDni) && (
-                                    <span
-                                      style={{
-                                        fontSize: '0.7rem',
-                                        color: '#002182',
-                                        background: '#eff6ff',
-                                        border: '1px solid #bfdbfe',
-                                        padding: '0.2rem 0.5rem',
-                                        borderRadius: '4px',
-                                        fontWeight: 700,
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '3px'
-                                      }}
-                                      title="Este paciente cuenta con expediente clínico unificado en CITRA"
-                                    >
-                                      <Shield size={11} /> HC Activa
-                                    </span>
+                                      {/* Status badge: HC Existente */}
+                                      {(consultations || []).some((c) => c.patientId === app.patientId || c.patientDni === app.patientDni) && (
+                                        <span
+                                          style={{
+                                            fontSize: '0.7rem',
+                                            color: '#002182',
+                                            background: '#eff6ff',
+                                            border: '1px solid #bfdbfe',
+                                            padding: '0.2rem 0.5rem',
+                                            borderRadius: '4px',
+                                            fontWeight: 700,
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '3px'
+                                          }}
+                                          title="Este paciente cuenta con expediente clínico unificado en CITRA"
+                                        >
+                                          <Shield size={11} /> HC Activa
+                                        </span>
+                                      )}
+                                    </>
                                   )}
 
                                   {app.patientPhone && (
@@ -1077,10 +1202,10 @@ export const AppointmentsManager = () => {
             >
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>
-                  Nuevo Turno Médico
+                  {isDoctor ? 'Nuevo Turno Médico' : 'Asignar Turno a Profesional'}
                 </h3>
                 <div style={{ fontSize: '0.78rem', color: '#D2E3FC', marginTop: '2px' }}>
-                  {currentDoctor?.roomName || 'Consultorio'} · {selectedDate}
+                  {isDoctor ? (currentDoctor?.roomName || 'Consultorio') : 'Recepción CITRA'} · {selectedDate}
                 </div>
               </div>
               <button
@@ -1094,6 +1219,38 @@ export const AppointmentsManager = () => {
 
             <form onSubmit={handleCreateManualAppointment} style={{ padding: '1.5rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+                {/* Doctor Selector for Receptionist */}
+                {!isDoctor && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                      Profesional / Médico Asignado *
+                    </label>
+                    <select
+                      value={manualDoctorId}
+                      onChange={(e) => setManualDoctorId(e.target.value)}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '0.65rem 0.75rem',
+                        borderRadius: '8px',
+                        border: '1.5px solid #D2E3FC',
+                        fontSize: '0.85rem',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                        background: '#ffffff',
+                        fontWeight: 700,
+                        color: '#002182'
+                      }}
+                    >
+                      {doctors.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name} — {d.specialty} ({d.roomName || 'Consultorio'})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
                     Nombre y Apellido del Paciente *

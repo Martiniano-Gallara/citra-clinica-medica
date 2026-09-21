@@ -330,9 +330,26 @@ export const ClinicProvider = ({ children }) => {
   useEffect(() => { localStorage.setItem('citra_clinicSchedule', JSON.stringify(clinicSchedule)); }, [clinicSchedule]);
 
   // --- RBAC & ROLE-BASED SCOPED DATA ENGINE ---
-  // Resolve current doctor if authenticated user is a physician
+  // Fix: isDoctor is strictly true ONLY when authAdmin has adminType === 'doctor'
+  const isDoctor = Boolean(
+    authAdmin &&
+    authAdmin.adminType === 'doctor' &&
+    authAdmin.adminType !== 'administrative'
+  );
+
+  const isAdministrative = Boolean(
+    authAdmin &&
+    (authAdmin.adminType === 'administrative' ||
+      (!isDoctor && authAdmin.adminType !== 'superadmin'))
+  );
+
+  const isSuperAdmin = Boolean(
+    authAdmin && (authAdmin.adminType === 'superadmin' || authAdmin.role?.toLowerCase().includes('director'))
+  );
+
+  // Resolve current doctor ONLY if authenticated user is a physician
   const currentDoctor = React.useMemo(() => {
-    if (!authAdmin) return null;
+    if (!authAdmin || !isDoctor) return null;
     const docId = authAdmin.doctorId;
     if (docId) {
       const found = doctors.find((d) => d.id === docId);
@@ -341,34 +358,23 @@ export const ClinicProvider = ({ children }) => {
         return { ...found, name: cleanName, fullName: cleanName };
       }
     }
-    const fallbackDoc = (
-      doctors.find(
-        (d) =>
-          (d.email && authAdmin.email && d.email.toLowerCase() === authAdmin.email.toLowerCase()) ||
-          (d.name && authAdmin.name && (d.name.toLowerCase().includes(authAdmin.name.toLowerCase()) || authAdmin.name.toLowerCase().includes(d.name.toLowerCase())))
-      ) || doctors[0]
+    const matchedDoc = doctors.find(
+      (d) =>
+        (d.email && authAdmin.email && d.email.toLowerCase() === authAdmin.email.toLowerCase()) ||
+        (d.name && authAdmin.name && (d.name.toLowerCase().includes(authAdmin.name.toLowerCase()) || authAdmin.name.toLowerCase().includes(d.name.toLowerCase())))
     );
-    if (!fallbackDoc) return null;
-    const cleanName = fallbackDoc.name && fallbackDoc.name.includes('Morales') ? 'Dr. Alejandro Blanco' : fallbackDoc.name;
-    return { ...fallbackDoc, name: cleanName, fullName: cleanName };
-  }, [authAdmin, doctors]);
-
-  const isDoctor = Boolean(
-    authAdmin &&
-    (authAdmin.adminType === 'doctor' ||
-      Boolean(currentDoctor) ||
-      (authAdmin.role && (authAdmin.role.toLowerCase().includes('médico') || authAdmin.role.toLowerCase().includes('doctor'))))
-  );
-
-  const isAdministrative = Boolean(
-    authAdmin &&
-    (authAdmin.adminType === 'administrative' ||
-      (!isDoctor && authAdmin.adminType !== 'doctor'))
-  );
-
-  const isSuperAdmin = Boolean(
-    authAdmin && (authAdmin.adminType === 'superadmin' || authAdmin.role?.toLowerCase().includes('director'))
-  );
+    if (matchedDoc) {
+      const cleanName = matchedDoc.name && matchedDoc.name.includes('Morales') ? 'Dr. Alejandro Blanco' : matchedDoc.name;
+      return { ...matchedDoc, name: cleanName, fullName: cleanName };
+    }
+    if (authAdmin.adminType === 'doctor') {
+      const fallbackDoc = doctors[0];
+      if (!fallbackDoc) return null;
+      const cleanName = fallbackDoc.name && fallbackDoc.name.includes('Morales') ? 'Dr. Alejandro Blanco' : fallbackDoc.name;
+      return { ...fallbackDoc, name: cleanName, fullName: cleanName };
+    }
+    return null;
+  }, [authAdmin, doctors, isDoctor]);
 
   // Scoped Data Collections
   const scopedAppointments = React.useMemo(() => {
@@ -419,8 +425,10 @@ export const ClinicProvider = ({ children }) => {
           (c.doctorName && c.doctorName.toLowerCase().includes(currentDoctor.name.toLowerCase()))
       );
     }
-    return consultations;
-  }, [consultations, isDoctor, currentDoctor]);
+    if (isSuperAdmin) return consultations;
+    // Administrativo: estricta reserva de confidencialidad médica
+    return [];
+  }, [consultations, isDoctor, currentDoctor, isSuperAdmin]);
 
   const scopedElectronicPrescriptions = React.useMemo(() => {
     if (isDoctor && currentDoctor) {
@@ -430,8 +438,10 @@ export const ClinicProvider = ({ children }) => {
           (rx.doctorName && rx.doctorName.toLowerCase().includes(currentDoctor.name.toLowerCase()))
       );
     }
-    return electronicPrescriptions;
-  }, [electronicPrescriptions, isDoctor, currentDoctor]);
+    if (isSuperAdmin) return electronicPrescriptions;
+    // Administrativo: estricta reserva de recetas médicas
+    return [];
+  }, [electronicPrescriptions, isDoctor, currentDoctor, isSuperAdmin]);
 
   const scopedImagingStudies = React.useMemo(() => {
     if (isDoctor) {
@@ -449,8 +459,9 @@ export const ClinicProvider = ({ children }) => {
       );
       return filtered.length > 0 ? filtered : imagingStudies;
     }
-    return imagingStudies;
-  }, [imagingStudies, isDoctor, currentDoctor]);
+    if (isSuperAdmin) return imagingStudies;
+    return [];
+  }, [imagingStudies, isDoctor, currentDoctor, isSuperAdmin]);
 
   const scopedHealthInsurances = React.useMemo(() => {
     if (isDoctor && currentDoctor && currentDoctor.acceptedInsurances) {

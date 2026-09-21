@@ -112,10 +112,10 @@ export const AdminManagementHub = () => {
 
   // Sidebar Grouped Navigation Sections according to Role (Doctor vs Administrativo)
   const navSections = React.useMemo(() => {
-    return isDoctor
-      ? [
+    if (isDoctor) {
+      return [
         {
-          title: 'PANEL PRINCIPAL',
+          title: 'PANEL MÉDICO',
           items: [
             { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard, badge: null }
           ]
@@ -144,52 +144,54 @@ export const AdminManagementHub = () => {
             { id: 'settings', label: 'Mi Configuración', icon: Settings, badge: null }
           ]
         }
-      ]
-      : [
-        {
-          title: 'PRINCIPAL',
-          items: [
-            { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard, badge: null }
-          ]
-        },
-        {
-          title: 'ATENCIÓN Y PACIENTES',
-          items: [
-            { id: 'appointments', label: 'Turnos Generales', icon: CalendarCheck, badge: appointments.length },
-            { id: 'patients', label: 'Padrón de Pacientes', icon: Users, badge: patients.length },
-            { id: 'clinical', label: 'Historial Clínico', icon: FileText, badge: null },
-            { id: 'prescriptions', label: 'Recetas Médicas', icon: Pill, badge: electronicPrescriptions ? electronicPrescriptions.length : null },
-            { id: 'imaging', label: 'Estudios & Docs', icon: Eye, badge: null }
-          ]
-        },
-        {
-          title: 'CUERPO MÉDICO Y RECURSOS',
-          items: [
-            { id: 'doctors', label: 'Profesionales', icon: Stethoscope, badge: doctors.length },
-            { id: 'services', label: 'Especialidades', icon: Layers, badge: specialties.length },
-            { id: 'rooms', label: 'Consultorios', icon: DoorClosed, badge: rooms ? rooms.length : 8 },
-            { id: 'schedules', label: 'Horarios de Atención', icon: Clock, badge: null }
-          ]
-        },
-        {
-          title: 'ADMINISTRACIÓN Y FINANZAS',
-          items: [
-            { id: 'insurances', label: 'Obras Sociales', icon: Shield, badge: healthInsurances.length },
-            { id: 'billing', label: 'Facturación / Pagos', icon: CreditCard, badge: null },
-            { id: 'reports', label: 'Reportes & Estadísticas', icon: BarChart3, badge: null },
-            { id: 'communications', label: 'Notificaciones', icon: MessageSquare, badge: null }
-          ]
-        },
-        {
-          title: 'SISTEMA Y SEGURIDAD',
-          items: [
-            { id: 'staff', label: 'Usuarios y Permisos', icon: UserCheck, badge: null },
-            { id: 'settings', label: 'Configuración', icon: Settings, badge: null },
-            { id: 'audit', label: 'Auditoría', icon: ShieldAlert, badge: null }
-          ]
-        }
       ];
-  }, [isDoctor, doctorAppointments.length, doctorPatients.length, scopedConsultations.length, scopedElectronicPrescriptions.length, scopedImagingStudies.length, scopedHealthInsurances.length, appointments.length, patients.length, electronicPrescriptions, doctors.length, specialties.length, rooms, healthInsurances.length]);
+    }
+
+    // Role: Administrativo (Recepción & Facturación de CITRA)
+    const adminSections = [
+      {
+        title: 'RECEPCIÓN CITRA',
+        items: [
+          { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard, badge: null }
+        ]
+      },
+      {
+        title: 'GESTIÓN DE ATENCIÓN',
+        items: [
+          { id: 'appointments', label: 'Gestión de Turnos', icon: CalendarCheck, badge: appointments.length },
+          { id: 'patients', label: 'Pacientes', icon: Users, badge: patients.length }
+        ]
+      },
+      {
+        title: 'ADMINISTRACIÓN Y FACTURACIÓN',
+        items: [
+          { id: 'schedules', label: 'Horarios de Profesionales', icon: Clock, badge: null },
+          { id: 'insurances', label: 'Obras Sociales', icon: Shield, badge: healthInsurances.length },
+          { id: 'billing', label: 'Facturación / Caja', icon: CreditCard, badge: null },
+          { id: 'reports', label: 'Métricas Operativas', icon: BarChart3, badge: null }
+        ]
+      }
+    ];
+
+    if (isSuperAdmin) {
+      adminSections.push({
+        title: 'DIRECCIÓN & AUDITORÍA',
+        items: [
+          { id: 'staff', label: 'Usuarios y Permisos', icon: UserCheck, badge: null },
+          { id: 'audit', label: 'Auditoría', icon: ShieldAlert, badge: null }
+        ]
+      });
+    }
+
+    adminSections.push({
+      title: 'MI CUENTA',
+      items: [
+        { id: 'settings', label: 'Mi Configuración', icon: Settings, badge: null }
+      ]
+    });
+
+    return adminSections;
+  }, [isDoctor, isSuperAdmin, doctorAppointments.length, doctorPatients.length, scopedConsultations.length, scopedElectronicPrescriptions.length, scopedImagingStudies.length, scopedHealthInsurances.length, appointments.length, patients.length, healthInsurances.length]);
 
   // RBAC Guard Effect: automatically redirect to dashboard if tab not permitted for current role
   React.useEffect(() => {
@@ -471,8 +473,8 @@ export const AdminManagementHub = () => {
                 <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ffffff' }}>
                   {doctorAdminName}
                 </div>
-                <div style={{ fontSize: '0.68rem', color: '#257CE6', fontWeight: 700, marginTop: '2px' }}>
-                  Administrador
+                <div style={{ fontSize: '0.68rem', color: isDoctor ? '#86efac' : '#93c5fd', fontWeight: 700, marginTop: '2px' }}>
+                  {isDoctor ? (currentDoctor?.specialty || 'Médico Especialista') : (authAdmin?.role || 'Recepción & Facturación')}
                 </div>
               </div>
             </div>
@@ -563,7 +565,7 @@ export const AdminManagementHub = () => {
                 {doctorAdminName}
               </span>
               <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600 }}>
-                · {isDoctor ? (currentDoctor?.specialty || 'Médico') : 'Administrativo'}
+                · {isDoctor ? (currentDoctor?.specialty || 'Médico') : (authAdmin?.role || 'Recepción & Facturación')}
               </span>
             </div>
 
@@ -1258,56 +1260,6 @@ export const AdminManagementHub = () => {
                     </button>
 
                     <button
-                      onClick={() => setActiveTab('clinical')}
-                      style={{
-                        background: '#F5F8FE',
-                        border: '1px solid #D2E3FC',
-                        padding: '0.85rem 1rem',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontWeight: 700,
-                        color: '#002182',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#076ABC')}
-                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#D2E3FC')}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <FileText size={17} color="#076ABC" />
-                        Fichas e Historias Clínicas Integrales
-                      </span>
-                      <ChevronRight size={16} color="#7994B8" />
-                    </button>
-
-                    <button
-                      onClick={() => setActiveTab('doctors')}
-                      style={{
-                        background: '#F5F8FE',
-                        border: '1px solid #D2E3FC',
-                        padding: '0.85rem 1rem',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontWeight: 700,
-                        color: '#002182',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#076ABC')}
-                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#D2E3FC')}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <Stethoscope size={17} color="#076ABC" />
-                        Gestionar profesionales y consultorios
-                      </span>
-                      <ChevronRight size={16} color="#7994B8" />
-                    </button>
-
-                    <button
                       onClick={() => setActiveTab('schedules')}
                       style={{
                         background: '#F5F8FE',
@@ -1327,13 +1279,13 @@ export const AdminManagementHub = () => {
                     >
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
                         <Clock size={17} color="#076ABC" />
-                        Configurar horarios y días de atención
+                        Horarios y disponibilidad de médicos
                       </span>
                       <ChevronRight size={16} color="#7994B8" />
                     </button>
 
                     <button
-                      onClick={() => setActiveTab('prescriptions')}
+                      onClick={() => setActiveTab('insurances')}
                       style={{
                         background: '#F5F8FE',
                         border: '1px solid #D2E3FC',
@@ -1351,8 +1303,58 @@ export const AdminManagementHub = () => {
                       onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#D2E3FC')}
                     >
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <Pill size={17} color="#076ABC" />
-                        Recetas médicas electrónicas (CUIR)
+                        <Shield size={17} color="#076ABC" />
+                        Obras sociales y convenios
+                      </span>
+                      <ChevronRight size={16} color="#7994B8" />
+                    </button>
+
+                    <button
+                      onClick={() => setActiveTab('billing')}
+                      style={{
+                        background: '#F5F8FE',
+                        border: '1px solid #D2E3FC',
+                        padding: '0.85rem 1rem',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontWeight: 700,
+                        color: '#002182',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#076ABC')}
+                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#D2E3FC')}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                        <CreditCard size={17} color="#076ABC" />
+                        Facturación y cobranza en caja
+                      </span>
+                      <ChevronRight size={16} color="#7994B8" />
+                    </button>
+
+                    <button
+                      onClick={() => setActiveTab('reports')}
+                      style={{
+                        background: '#F5F8FE',
+                        border: '1px solid #D2E3FC',
+                        padding: '0.85rem 1rem',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontWeight: 700,
+                        color: '#002182',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#076ABC')}
+                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#D2E3FC')}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                        <BarChart3 size={17} color="#076ABC" />
+                        Métricas y reportes de atención
                       </span>
                       <ChevronRight size={16} color="#7994B8" />
                     </button>
@@ -1571,47 +1573,47 @@ export const AdminManagementHub = () => {
           {/* TAB 3: PACIENTES */}
           {activeTab === 'patients' && <PatientsView />}
 
-          {/* TAB 4: HISTORIAL CLÍNICO */}
-          {activeTab === 'clinical' && <ClinicalRecordsView />}
+          {/* TAB 4: HISTORIAL CLÍNICO (Exclusivo Médico) */}
+          {activeTab === 'clinical' && isDoctor && <ClinicalRecordsView />}
 
-          {/* TAB 5: PROFESIONALES (Solo Administrativo) */}
-          {activeTab === 'doctors' && !isDoctor && <DoctorsManager />}
+          {/* TAB 5: PROFESIONALES (Solo Superadmin) */}
+          {activeTab === 'doctors' && isSuperAdmin && <DoctorsManager />}
 
-          {/* TAB 6: ESPECIALIDADES (Solo Administrativo) */}
-          {activeTab === 'services' && !isDoctor && <ServicesManager />}
+          {/* TAB 6: ESPECIALIDADES (Solo Superadmin) */}
+          {activeTab === 'services' && isSuperAdmin && <ServicesManager />}
 
           {/* TAB 7: HORARIOS & DISPONIBILIDAD */}
           {activeTab === 'schedules' && <SchedulesManager />}
 
-          {/* TAB 8: CONSULTORIOS (Solo Administrativo) */}
-          {activeTab === 'rooms' && !isDoctor && <RoomsManager />}
+          {/* TAB 8: CONSULTORIOS (Solo Superadmin) */}
+          {activeTab === 'rooms' && isSuperAdmin && <RoomsManager />}
 
           {/* TAB 9: OBRAS SOCIALES */}
           {activeTab === 'insurances' && <InsurancesView />}
 
-          {/* TAB 10: ESTUDIOS & DOCUMENTACIÓN */}
-          {activeTab === 'imaging' && <ImagingView />}
+          {/* TAB 10: ESTUDIOS & DOCUMENTACIÓN (Exclusivo Médico) */}
+          {activeTab === 'imaging' && isDoctor && <ImagingView />}
 
-          {/* TAB 11: RECETAS ELECTRÓNICAS (CUIR) */}
-          {activeTab === 'prescriptions' && <PrescriptionsManager />}
+          {/* TAB 11: RECETAS ELECTRÓNICAS (Exclusivo Médico) */}
+          {activeTab === 'prescriptions' && isDoctor && <PrescriptionsManager />}
 
-          {/* TAB 12: FACTURACIÓN / PAGOS / ARCA (Solo Administrativo) */}
+          {/* TAB 12: FACTURACIÓN / PAGOS / CAJA (Administración & Superadmin) */}
           {activeTab === 'billing' && !isDoctor && <BillingView />}
 
           {/* TAB 13: REPORTES & ESTADÍSTICAS */}
           {activeTab === 'reports' && <ReportsView />}
 
-          {/* TAB 14: NOTIFICACIONES & RECORDATORIOS (Solo Administrativo) */}
-          {activeTab === 'communications' && !isDoctor && <CommunicationsView />}
+          {/* TAB 14: NOTIFICACIONES (Solo Superadmin) */}
+          {activeTab === 'communications' && isSuperAdmin && <CommunicationsView />}
 
-          {/* TAB 15: USUARIOS Y PERMISOS (Solo Administrativo) */}
-          {activeTab === 'staff' && !isDoctor && <UsersManager />}
+          {/* TAB 15: USUARIOS Y PERMISOS (Solo Superadmin) */}
+          {activeTab === 'staff' && isSuperAdmin && <UsersManager />}
 
           {/* TAB 16: CONFIGURACIÓN DE LA CLÍNICA / MI PERFIL */}
           {activeTab === 'settings' && <SettingsView />}
 
-          {/* TAB 17: AUDITORÍA Y SEGURIDAD (Solo Administrativo) */}
-          {activeTab === 'audit' && !isDoctor && <AuditLogsView />}
+          {/* TAB 17: AUDITORÍA Y SEGURIDAD (Solo Superadmin) */}
+          {activeTab === 'audit' && isSuperAdmin && <AuditLogsView />}
         </main>
       </div>
 

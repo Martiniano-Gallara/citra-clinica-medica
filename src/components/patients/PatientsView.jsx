@@ -168,12 +168,12 @@ export const PatientsView = () => {
       >
         <div>
           <h1 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.25rem', letterSpacing: '-0.02em' }}>
-            {isDoctor ? 'Mis Pacientes' : 'Padrón de Pacientes'}
+            {isDoctor ? 'Mis Pacientes' : 'Pacientes'}
           </h1>
           <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
             {isDoctor
-              ? 'Listado y seguimiento médico de pacientes asignados.'
-              : 'Base general de pacientes e historias clínicas.'}
+              ? 'Listado y seguimiento médico de pacientes asignados a su consultorio.'
+              : 'Directorio general de pacientes registrados y asignación de turnos.'}
           </p>
         </div>
 
@@ -233,7 +233,7 @@ export const PatientsView = () => {
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
             <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Total en Mi Padrón
+              {isDoctor ? 'Total en Mi Padrón' : 'Total Pacientes'}
             </span>
             <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Users size={18} />
@@ -243,7 +243,7 @@ export const PatientsView = () => {
             {effectivePatients.length}
           </div>
           <div style={{ fontSize: '0.74rem', color: '#16a34a', fontWeight: 600 }}>
-            100% con historia clínica abierta
+            {isDoctor ? 'Pacientes bajo seguimiento médico' : 'Padrón de afiliados activo en CITRA'}
           </div>
         </div>
 
@@ -271,30 +271,56 @@ export const PatientsView = () => {
           </div>
         </div>
 
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '14px',
-            border: '1px solid #e2e8f0',
-            borderLeft: '4px solid #ef4444',
-            padding: '1.15rem 1.25rem'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Alertas Clínicas
-            </span>
-            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <AlertTriangle size={18} />
+        {isDoctor ? (
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '14px',
+              border: '1px solid #e2e8f0',
+              borderLeft: '4px solid #ef4444',
+              padding: '1.15rem 1.25rem'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+              <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Alertas Clínicas
+              </span>
+              <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <AlertTriangle size={18} />
+              </div>
+            </div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#dc2626', marginBottom: '0.2rem' }}>
+              {patientsWithAllergiesCount}
+            </div>
+            <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
+              Pacientes con alergias declaradas
             </div>
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#dc2626', marginBottom: '0.2rem' }}>
-            {patientsWithAllergiesCount}
+        ) : (
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '14px',
+              border: '1px solid #e2e8f0',
+              padding: '1.15rem 1.25rem'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+              <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Atención Diaria
+              </span>
+              <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#eff6ff', color: '#076ABC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <UserCheck size={18} />
+              </div>
+            </div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#002182', marginBottom: '0.2rem' }}>
+              {effectivePatients.length}
+            </div>
+            <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
+              Pacientes empadronados para recepción
+            </div>
           </div>
-          <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-            Pacientes con alergias declaradas
-          </div>
-        </div>
+        )}
 
         <div
           style={{
@@ -327,44 +353,44 @@ export const PatientsView = () => {
           background: '#ffffff',
           borderRadius: '14px',
           border: '1px solid #e2e8f0',
-          padding: '0.85rem 1.25rem',
+          padding: '1rem 1.25rem',
           display: 'flex',
-          justifyContent: 'space-between',
+          gap: '1rem',
           alignItems: 'center',
           flexWrap: 'wrap',
-          gap: '1rem'
+          justifyContent: 'space-between'
         }}
       >
-        <div style={{ position: 'relative', flex: 1, minWidth: '260px', maxWidth: '420px' }}>
+        <div style={{ position: 'relative', flex: '1 1 280px', minWidth: '240px' }}>
           <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
           <input
             type="text"
-            placeholder="Buscar por paciente, DNI, teléfono..."
+            placeholder="Buscar por Nombre, DNI, Teléfono o Cobertura..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
               width: '100%',
-              padding: '0.55rem 0.75rem 0.55rem 2.25rem',
-              borderRadius: '9px',
+              padding: '0.55rem 0.85rem 0.55rem 2.35rem',
+              borderRadius: '8px',
               border: '1px solid #cbd5e1',
-              fontSize: '0.85rem',
-              outline: 'none',
-              boxSizing: 'border-box'
+              fontSize: '0.88rem',
+              outline: 'none'
             }}
           />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <select
             value={insuranceFilter}
             onChange={(e) => setInsuranceFilter(e.target.value)}
             style={{
-              padding: '0.5rem 0.75rem',
-              borderRadius: '9px',
+              padding: '0.5rem 0.85rem',
+              borderRadius: '8px',
               border: '1px solid #cbd5e1',
-              fontSize: '0.82rem',
               background: '#ffffff',
-              color: '#334155'
+              fontSize: '0.84rem',
+              color: '#334155',
+              cursor: 'pointer'
             }}
           >
             <option value="all">Todas las Obras Sociales</option>
@@ -373,26 +399,28 @@ export const PatientsView = () => {
             ))}
           </select>
 
-          <button
-            type="button"
-            onClick={() => setAllergyOnlyFilter(!allergyOnlyFilter)}
-            style={{
-              padding: '0.45rem 0.85rem',
-              borderRadius: '8px',
-              border: allergyOnlyFilter ? '1.5px solid #ef4444' : '1px solid #cbd5e1',
-              background: allergyOnlyFilter ? '#fef2f2' : '#ffffff',
-              color: allergyOnlyFilter ? '#dc2626' : '#475569',
-              fontSize: '0.8rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px'
-            }}
-          >
-            <AlertTriangle size={14} color={allergyOnlyFilter ? '#dc2626' : '#94a3b8'} />
-            <span>Solo con Alergias ({patientsWithAllergiesCount})</span>
-          </button>
+          {isDoctor && (
+            <button
+              type="button"
+              onClick={() => setAllergyOnlyFilter(!allergyOnlyFilter)}
+              style={{
+                padding: '0.45rem 0.85rem',
+                borderRadius: '8px',
+                border: allergyOnlyFilter ? '1.5px solid #ef4444' : '1px solid #cbd5e1',
+                background: allergyOnlyFilter ? '#fef2f2' : '#ffffff',
+                color: allergyOnlyFilter ? '#dc2626' : '#475569',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+            >
+              <AlertTriangle size={14} color={allergyOnlyFilter ? '#dc2626' : '#94a3b8'} />
+              <span>Solo con Alergias ({patientsWithAllergiesCount})</span>
+            </button>
+          )}
 
           {(searchTerm || insuranceFilter !== 'all' || allergyOnlyFilter) && (
             <button
@@ -429,7 +457,9 @@ export const PatientsView = () => {
                 <th style={{ padding: '0.85rem 1.25rem', width: '130px' }}>DNI</th>
                 <th style={{ padding: '0.85rem 1.25rem' }}>Obra Social & Plan</th>
                 <th style={{ padding: '0.85rem 1.25rem' }}>Contacto Directo</th>
-                <th style={{ padding: '0.85rem 1.25rem', width: '150px' }}>Alertas Clínicas</th>
+                <th style={{ padding: '0.85rem 1.25rem', width: '160px' }}>
+                  {isDoctor ? 'Alertas Clínicas' : 'Domicilio / Ciudad'}
+                </th>
                 <th style={{ padding: '0.85rem 1.25rem', textAlign: 'right', width: '140px' }}>Ficha</th>
               </tr>
             </thead>
@@ -534,28 +564,34 @@ export const PatientsView = () => {
                           </div>
                         </td>
 
-                        {/* Alertas Médicas */}
+                        {/* Alertas Médicas (Médico) o Domicilio (Recepción) */}
                         <td style={{ padding: '0.9rem 1.25rem' }}>
-                          {hasAllergies ? (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                background: '#fee2e2',
-                                color: '#991b1b',
-                                border: '1px solid #fecaca',
-                                padding: '2px 8px',
-                                borderRadius: '6px',
-                                fontSize: '0.74rem',
-                                fontWeight: 800
-                              }}
-                            >
-                              <AlertTriangle size={12} color="#dc2626" />
-                              {pat.allergies[0]} {pat.allergies.length > 1 ? `(+${pat.allergies.length - 1})` : ''}
-                            </span>
+                          {isDoctor ? (
+                            hasAllergies ? (
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  background: '#fee2e2',
+                                  color: '#991b1b',
+                                  border: '1px solid #fecaca',
+                                  padding: '2px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.74rem',
+                                  fontWeight: 800
+                                }}
+                              >
+                                <AlertTriangle size={12} color="#dc2626" />
+                                {pat.allergies[0]} {pat.allergies.length > 1 ? `(+${pat.allergies.length - 1})` : ''}
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Sin alergias</span>
+                            )
                           ) : (
-                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Sin alergias</span>
+                            <span style={{ fontSize: '0.82rem', color: '#475569', fontWeight: 500 }}>
+                              {pat.address || 'Arroyito, Cba.'}
+                            </span>
                           )}
                         </td>
 
@@ -632,79 +668,157 @@ export const PatientsView = () => {
                                 </div>
                               </div>
 
-                              {/* Antecedentes Clínicos & Acciones */}
-                              <div>
-                                <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                  <Stethoscope size={14} /> Antecedentes & Acciones
-                                </div>
-                                <div style={{ fontSize: '0.82rem', color: '#334155', marginBottom: '0.85rem', lineHeight: '1.4' }}>
-                                  <div><strong>Alergias:</strong> {pat.allergies && pat.allergies.length > 0 ? pat.allergies.join(', ') : 'Ninguna declarada'}</div>
-                                  <div><strong>Antecedentes:</strong> {pat.antecedentes && pat.antecedentes.length > 0 ? pat.antecedentes.join(', ') : 'Sin antecedentes de riesgo'}</div>
-                                  <div><strong>Última Visita:</strong> {pat.lastVisit || '2026-08-28'}</div>
-                                </div>
+                              {/* Médico: Antecedentes Clínicos & Acciones Médicas || Recepción: Gestión & Asignación */}
+                              {isDoctor ? (
+                                <div>
+                                  <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                    <Stethoscope size={14} /> Antecedentes & Acciones
+                                  </div>
+                                  <div style={{ fontSize: '0.82rem', color: '#334155', marginBottom: '0.85rem', lineHeight: '1.4' }}>
+                                    <div><strong>Alergias:</strong> {pat.allergies && pat.allergies.length > 0 ? pat.allergies.join(', ') : 'Ninguna declarada'}</div>
+                                    <div><strong>Antecedentes:</strong> {pat.antecedentes && pat.antecedentes.length > 0 ? pat.antecedentes.join(', ') : 'Sin antecedentes de riesgo'}</div>
+                                    <div><strong>Última Visita:</strong> {pat.lastVisit || '2026-08-28'}</div>
+                                  </div>
 
-                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleStartConsultation(pat)}
-                                    style={{
-                                      background: '#059669',
-                                      color: '#ffffff',
-                                      border: 'none',
-                                      borderRadius: '6px',
-                                      padding: '0.35rem 0.65rem',
-                                      fontSize: '0.76rem',
-                                      fontWeight: 800,
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '4px'
-                                    }}
-                                  >
-                                    <Stethoscope size={13} /> Iniciar Consulta
-                                  </button>
+                                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStartConsultation(pat)}
+                                      style={{
+                                        background: '#059669',
+                                        color: '#ffffff',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        padding: '0.35rem 0.65rem',
+                                        fontSize: '0.76rem',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}
+                                    >
+                                      <Stethoscope size={13} /> Iniciar Consulta
+                                    </button>
 
-                                  <button
-                                    type="button"
-                                    onClick={() => handleBookAppointment(pat)}
-                                    style={{
-                                      background: '#076ABC',
-                                      color: '#ffffff',
-                                      border: 'none',
-                                      borderRadius: '6px',
-                                      padding: '0.35rem 0.65rem',
-                                      fontSize: '0.76rem',
-                                      fontWeight: 800,
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '4px'
-                                    }}
-                                  >
-                                    <CalendarPlus size={13} /> Agendar Turno
-                                  </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleBookAppointment(pat)}
+                                      style={{
+                                        background: '#076ABC',
+                                        color: '#ffffff',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        padding: '0.35rem 0.65rem',
+                                        fontSize: '0.76rem',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}
+                                    >
+                                      <CalendarPlus size={13} /> Agendar Turno
+                                    </button>
 
-                                  <button
-                                    type="button"
-                                    onClick={() => setSelectedPatientForDetail(pat)}
-                                    style={{
-                                      background: '#f1f5f9',
-                                      color: '#334155',
-                                      border: '1px solid #cbd5e1',
-                                      borderRadius: '6px',
-                                      padding: '0.35rem 0.65rem',
-                                      fontSize: '0.76rem',
-                                      fontWeight: 700,
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '4px'
-                                    }}
-                                  >
-                                    <FileText size={13} /> Historial Completo
-                                  </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedPatientForDetail(pat)}
+                                      style={{
+                                        background: '#f1f5f9',
+                                        color: '#334155',
+                                        border: '1px solid #cbd5e1',
+                                        borderRadius: '6px',
+                                        padding: '0.35rem 0.65rem',
+                                        fontSize: '0.76rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}
+                                    >
+                                      <FileText size={13} /> Historial Completo
+                                    </button>
+                                  </div>
                                 </div>
-                              </div>
+                              ) : (
+                                <div>
+                                  <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                    <CalendarPlus size={14} /> Recepción & Asignación
+                                  </div>
+                                  <div style={{ fontSize: '0.82rem', color: '#334155', marginBottom: '0.85rem', lineHeight: '1.4' }}>
+                                    <div><strong>Domicilio:</strong> {pat.address || 'Arroyito, Córdoba'}</div>
+                                    <div><strong>Ciudad / Localidad:</strong> {pat.city || 'Arroyito (Cba.)'}</div>
+                                    <div><strong>Estado Administrativo:</strong> <span style={{ color: '#16a34a', fontWeight: 700 }}>Habilitado</span></div>
+                                  </div>
+
+                                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleBookAppointment(pat)}
+                                      style={{
+                                        background: '#076ABC',
+                                        color: '#ffffff',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        padding: '0.35rem 0.75rem',
+                                        fontSize: '0.76rem',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}
+                                    >
+                                      <CalendarPlus size={13} /> + Asignar Turno
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setPatientFormModalData(pat);
+                                        setIsPatientFormModalOpen(true);
+                                      }}
+                                      style={{
+                                        background: '#f8fafc',
+                                        color: '#334155',
+                                        border: '1px solid #cbd5e1',
+                                        borderRadius: '6px',
+                                        padding: '0.35rem 0.65rem',
+                                        fontSize: '0.76rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}
+                                    >
+                                      <Edit2 size={13} /> Editar Datos
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedPatientForDetail(pat)}
+                                      style={{
+                                        background: '#eff6ff',
+                                        color: '#1d4ed8',
+                                        border: '1px solid #bfdbfe',
+                                        borderRadius: '6px',
+                                        padding: '0.35rem 0.65rem',
+                                        fontSize: '0.76rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}
+                                    >
+                                      <UserCheck size={13} /> Ficha de Afiliado
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </td>
                         </tr>

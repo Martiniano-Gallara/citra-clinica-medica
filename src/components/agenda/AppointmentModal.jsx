@@ -17,6 +17,8 @@ export const AppointmentModal = () => {
     addAppointment,
     updateAppointment,
     deleteAppointment,
+    isDoctor,
+    currentDoctor,
     addToast
   } = useClinic();
 
@@ -53,7 +55,7 @@ export const AppointmentModal = () => {
       setFormData(appointmentModalData);
       setPatientSearch(appointmentModalData.patientName);
     } else {
-      const defaultDoc = doctors[0] || {};
+      const defaultDoc = (isDoctor && currentDoctor) ? currentDoctor : (doctors[0] || {});
       setFormData({
         patientId: '',
         patientName: '',
@@ -292,11 +294,14 @@ export const AppointmentModal = () => {
         {/* Doctor & Specialty Selection */}
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">Profesional / Médico *</label>
+            <label className="form-label">
+              Profesional / Médico * {isDoctor && <span style={{ fontSize: '0.75rem', color: '#64748b' }}>(Su agenda)</span>}
+            </label>
             <select
               className="form-control"
               value={formData.doctorId}
               onChange={handleDoctorChange}
+              disabled={isDoctor}
               required
             >
               {doctors.map((doc) => (

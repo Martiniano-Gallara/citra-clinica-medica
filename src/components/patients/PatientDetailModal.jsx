@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { Modal } from '../common/Modal';
 import { Badge } from '../common/Badge';
@@ -29,6 +29,7 @@ export const PatientDetailModal = () => {
     appointments,
     consultations,
     rehabPlans,
+    isDoctor,
     setIsPatientFormModalOpen,
     setPatientFormModalData,
     setIsAppointmentModalOpen,
@@ -45,6 +46,12 @@ export const PatientDetailModal = () => {
   const [newFileName, setNewFileName] = useState('');
   const [newFileType, setNewFileType] = useState('Resonancia Magnética (RMN)');
   const [isLegalHceModalOpen, setIsLegalHceModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isDoctor && activeTab !== 'general' && activeTab !== 'appointments') {
+      setActiveTab('general');
+    }
+  }, [isDoctor, activeTab]);
 
   if (!selectedPatientForDetail) return null;
 
@@ -93,7 +100,7 @@ export const PatientDetailModal = () => {
     <Modal
       isOpen={!!selectedPatientForDetail}
       onClose={() => setSelectedPatientForDetail(null)}
-      title={`Ficha Clínica Integral — ${patient.name}`}
+      title={isDoctor ? `Ficha Clínica Integral — ${patient.name}` : `Ficha de Afiliado — ${patient.name}`}
       size="xl"
       footer={
         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
@@ -114,26 +121,28 @@ export const PatientDetailModal = () => {
           </div>
 
           <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={() => setIsLegalHceModalOpen(true)}
-              style={{
-                borderColor: '#076ABC',
-                color: '#076ABC',
-                fontWeight: 800,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              <FileCheck2 size={16} color="#076ABC" />
-              <span>Exportar Historial (PDF Firmado)</span>
-            </button>
+            {isDoctor && (
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => setIsLegalHceModalOpen(true)}
+                style={{
+                  borderColor: '#076ABC',
+                  color: '#076ABC',
+                  fontWeight: 800,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <FileCheck2 size={16} color="#076ABC" />
+                <span>Exportar Historial (PDF Firmado)</span>
+              </button>
+            )}
 
             <button
               type="button"
-              className="btn btn-outline"
+              className="btn btn-primary"
               onClick={() => {
                 setAppointmentModalData({
                   patientId: patient.id,
@@ -145,26 +154,29 @@ export const PatientDetailModal = () => {
                 setIsAppointmentModalOpen(true);
               }}
             >
-              <CalendarPlus size={16} color="var(--c-primary)" />
+              <CalendarPlus size={16} />
               <span>+ Agendar Turno</span>
             </button>
 
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => {
-                setConsultationPreloadData({
-                  patientId: patient.id,
-                  patientName: patient.name,
-                  patientDni: patient.dni,
-                  patientInsurance: patient.insuranceName
-                });
-                setIsNewConsultationModalOpen(true);
-              }}
-            >
-              <Stethoscope size={16} />
-              <span>+ Nueva Consulta HCE</span>
-            </button>
+            {isDoctor && (
+              <button
+                type="button"
+                className="btn btn-outline"
+                style={{ borderColor: '#059669', color: '#059669', fontWeight: 800 }}
+                onClick={() => {
+                  setConsultationPreloadData({
+                    patientId: patient.id,
+                    patientName: patient.name,
+                    patientDni: patient.dni,
+                    patientInsurance: patient.insuranceName
+                  });
+                  setIsNewConsultationModalOpen(true);
+                }}
+              >
+                <Stethoscope size={16} />
+                <span>+ Nueva Consulta HCE</span>
+              </button>
+            )}
           </div>
         </div>
       }
@@ -251,27 +263,29 @@ export const PatientDetailModal = () => {
               <span>WhatsApp</span>
             </a>
 
-            <button
-              type="button"
-              onClick={() => setIsLegalHceModalOpen(true)}
-              style={{
-                background: '#ffffff',
-                color: '#002182',
-                fontWeight: 800,
-                border: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                borderRadius: '8px',
-                padding: '0.45rem 0.95rem',
-                fontSize: '0.84rem',
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(0, 33, 130, 0.15)'
-              }}
-            >
-              <FileCheck2 size={16} color="#002182" />
-              <span>Exportar PDF</span>
-            </button>
+            {isDoctor && (
+              <button
+                type="button"
+                onClick={() => setIsLegalHceModalOpen(true)}
+                style={{
+                  background: '#ffffff',
+                  color: '#002182',
+                  fontWeight: 800,
+                  border: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  borderRadius: '8px',
+                  padding: '0.45rem 0.95rem',
+                  fontSize: '0.84rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(0, 33, 130, 0.15)'
+                }}
+              >
+                <FileCheck2 size={16} color="#002182" />
+                <span>Exportar PDF</span>
+              </button>
+            )}
 
             <button
               type="button"
@@ -299,50 +313,52 @@ export const PatientDetailModal = () => {
           </div>
         </div>
 
-        {/* 2. CLINICAL ALERTS & SURGICAL WARNINGS */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {patient.allergies && patient.allergies.length > 0 && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                background: '#fee2e2',
-                border: '1px solid #fecaca',
-                borderRadius: '8px',
-                padding: '0.65rem 1rem',
-                color: '#991b1b',
-                fontSize: '0.86rem'
-              }}
-            >
-              <AlertTriangle size={18} color="#dc2626" style={{ flexShrink: 0 }} />
-              <div>
-                <strong>ALERGIAS MEDICAMENTOSAS / ALIMENTARIAS:</strong> {patient.allergies.join(' · ')}
+        {/* 2. CLINICAL ALERTS & SURGICAL WARNINGS (SOLO MÉDICO) */}
+        {isDoctor && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {patient.allergies && patient.allergies.length > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  background: '#fee2e2',
+                  border: '1px solid #fecaca',
+                  borderRadius: '8px',
+                  padding: '0.65rem 1rem',
+                  color: '#991b1b',
+                  fontSize: '0.86rem'
+                }}
+              >
+                <AlertTriangle size={18} color="#dc2626" style={{ flexShrink: 0 }} />
+                <div>
+                  <strong>ALERGIAS MEDICAMENTOSAS / ALIMENTARIAS:</strong> {patient.allergies.join(' · ')}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {patient.antecedentes && patient.antecedentes.length > 0 && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                background: '#f0fdf4',
-                border: '1px solid #bbf7d0',
-                borderRadius: '8px',
-                padding: '0.65rem 1rem',
-                color: '#166534',
-                fontSize: '0.84rem'
-              }}
-            >
-              <Activity size={18} color="#16a34a" style={{ flexShrink: 0 }} />
-              <div>
-                <strong>ANTECEDENTE QUIRÚRGICO / TRAUMATOLÓGICO:</strong> {patient.antecedentes.join(' | ')}
+            {patient.antecedentes && patient.antecedentes.length > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  background: '#f0fdf4',
+                  border: '1px solid #bbf7d0',
+                  borderRadius: '8px',
+                  padding: '0.65rem 1rem',
+                  color: '#166534',
+                  fontSize: '0.84rem'
+                }}
+              >
+                <Activity size={18} color="#16a34a" style={{ flexShrink: 0 }} />
+                <div>
+                  <strong>ANTECEDENTE QUIRÚRGICO / TRAUMATOLÓGICO:</strong> {patient.antecedentes.join(' | ')}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {/* 3. TABS NAVIGATION */}
         <div className="tabs-header" style={{ marginBottom: 0 }}>
@@ -354,21 +370,25 @@ export const PatientDetailModal = () => {
             <span>Datos & Cobertura</span>
           </button>
 
-          <button
-            className={`tab-btn ${activeTab === 'hce' ? 'active' : ''}`}
-            onClick={() => setActiveTab('hce')}
-          >
-            <Stethoscope size={16} />
-            <span>Historia Clínica ({patientConsultations.length})</span>
-          </button>
+          {isDoctor && (
+            <>
+              <button
+                className={`tab-btn ${activeTab === 'hce' ? 'active' : ''}`}
+                onClick={() => setActiveTab('hce')}
+              >
+                <Stethoscope size={16} />
+                <span>Historia Clínica ({patientConsultations.length})</span>
+              </button>
 
-          <button
-            className={`tab-btn ${activeTab === 'rehab' ? 'active' : ''}`}
-            onClick={() => setActiveTab('rehab')}
-          >
-            <Activity size={16} />
-            <span>Kinesiología & Planes ({patientRehabPlans.length})</span>
-          </button>
+              <button
+                className={`tab-btn ${activeTab === 'rehab' ? 'active' : ''}`}
+                onClick={() => setActiveTab('rehab')}
+              >
+                <Activity size={16} />
+                <span>Kinesiología & Planes ({patientRehabPlans.length})</span>
+              </button>
+            </>
+          )}
 
           <button
             className={`tab-btn ${activeTab === 'appointments' ? 'active' : ''}`}
@@ -378,13 +398,15 @@ export const PatientDetailModal = () => {
             <span>Turnos ({patientAppointments.length})</span>
           </button>
 
-          <button
-            className={`tab-btn ${activeTab === 'files' ? 'active' : ''}`}
-            onClick={() => setActiveTab('files')}
-          >
-            <FileText size={16} />
-            <span>Estudios & PACS ({patient.files?.length || 0})</span>
-          </button>
+          {isDoctor && (
+            <button
+              className={`tab-btn ${activeTab === 'files' ? 'active' : ''}`}
+              onClick={() => setActiveTab('files')}
+            >
+              <FileText size={16} />
+              <span>Estudios & PACS ({patient.files?.length || 0})</span>
+            </button>
+          )}
         </div>
 
         {/* 4. TAB CONTENTS */}
@@ -470,8 +492,8 @@ export const PatientDetailModal = () => {
           </div>
         )}
 
-        {/* TAB 2: HISTORIA CLÍNICA ELECTRÓNICA (HCE) */}
-        {activeTab === 'hce' && (
+        {/* TAB 2: HISTORIA CLÍNICA ELECTRÓNICA (HCE) - SOLO MÉDICO */}
+        {isDoctor && activeTab === 'hce' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             {/* Header banner with PDF export */}
             <div
@@ -660,8 +682,8 @@ export const PatientDetailModal = () => {
           </div>
         )}
 
-        {/* TAB 3: KINESIOLOGÍA & REHABILITACIÓN */}
-        {activeTab === 'rehab' && (
+        {/* TAB 3: KINESIOLOGÍA & REHABILITACIÓN - SOLO MÉDICO */}
+        {isDoctor && activeTab === 'rehab' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {patientRehabPlans.length === 0 ? (
               <div className="card" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
@@ -818,8 +840,8 @@ export const PatientDetailModal = () => {
           </div>
         )}
 
-        {/* TAB 5: ESTUDIOS, RADIOGRAFÍAS & PACS */}
-        {activeTab === 'files' && (
+        {/* TAB 5: ESTUDIOS, RADIOGRAFÍAS & PACS - SOLO MÉDICO */}
+        {isDoctor && activeTab === 'files' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             {/* Upload File Box */}
             <form onSubmit={handleUploadFile} className="card" style={{ padding: '1rem', background: '#F8FAFC', border: '1.5px dashed #076ABC' }}>
@@ -900,12 +922,14 @@ export const PatientDetailModal = () => {
         )}
       </div>
 
-      {/* MODAL DE EXPORTACIÓN Y FIRMA DIGITAL OFICIAL */}
-      <LegalHceCertificateModal
-        isOpen={isLegalHceModalOpen}
-        onClose={() => setIsLegalHceModalOpen(false)}
-        targetPatient={patient}
-      />
+      {/* MODAL DE EXPORTACIÓN Y FIRMA DIGITAL OFICIAL (SOLO MÉDICO) */}
+      {isDoctor && (
+        <LegalHceCertificateModal
+          isOpen={isLegalHceModalOpen}
+          onClose={() => setIsLegalHceModalOpen(false)}
+          targetPatient={patient}
+        />
+      )}
     </Modal>
   );
 };
