@@ -320,7 +320,7 @@ export const ServicesPage = () => {
             }}
           >
             <Sparkles size={13} color="#00F0FF" />
-            <span>CITRA · SERVICIOS ESPECIALIZADOS</span>
+            <span>SERVICIOS CITRA</span>
           </div>
 
           <h1
@@ -333,7 +333,7 @@ export const ServicesPage = () => {
               color: '#ffffff'
             }}
           >
-            Servicios Médicos &{' '}
+            Servicios{' '}
             <span
               style={{
                 background: 'linear-gradient(135deg, #60A5FA 0%, #38BDF8 50%, #A5F3FC 100%)',
@@ -341,7 +341,7 @@ export const ServicesPage = () => {
                 WebkitTextFillColor: 'transparent'
               }}
             >
-              Terapias de Avanzada
+              Médicos
             </span>
           </h1>
 
@@ -356,7 +356,7 @@ export const ServicesPage = () => {
               opacity: 0.95
             }}
           >
-            Atención clínica especializada, kinesiología biomecánica, diagnóstico por imágenes digital y rehabilitación personalizada en Arroyito.
+            Atención especializada, diagnóstico por imágenes y rehabilitación en Arroyito.
           </p>
 
           {/* Quick Metrics Bar — 2 Tarjetas Glassmorphism */}
