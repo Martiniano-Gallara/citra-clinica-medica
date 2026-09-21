@@ -21,8 +21,7 @@ import {
   Search,
   Stethoscope,
   ArrowRight,
-  Users,
-  Check
+  Users
 } from 'lucide-react';
 
 export const ServicesPage = () => {
@@ -357,43 +356,8 @@ export const ServicesPage = () => {
               opacity: 0.95
             }}
           >
-            Atención clínica especializada, kinesiología en gimnasio biomecánico de 180 m², diagnóstico por imágenes digital y rehabilitación personalizada en Arroyito.
+            Atención clínica especializada, kinesiología biomecánica, diagnóstico por imágenes digital y rehabilitación personalizada en Arroyito.
           </p>
-
-          {/* Micro-pills temáticas para escaneabilidad rápida */}
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '0.4rem',
-              marginBottom: '1.25rem'
-            }}
-          >
-            {[
-              'Traumatología',
-              'Kinesiología Biomecánica',
-              'Rayos X & Ecografía Digital',
-              'Especialidades Médicas'
-            ].map((tag) => (
-              <span
-                key={tag}
-                style={{
-                  fontSize: '0.72rem',
-                  fontWeight: 700,
-                  color: '#D2E3FC',
-                  background: 'rgba(255, 255, 255, 0.07)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  padding: '0.2rem 0.55rem',
-                  borderRadius: '6px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <Check size={11} color="#93C5FD" /> {tag}
-              </span>
-            ))}
-          </div>
 
           {/* Quick Metrics Bar — 2 Tarjetas Glassmorphism */}
           <div
