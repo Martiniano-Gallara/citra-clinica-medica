@@ -30,6 +30,108 @@ import { DoctorModal } from '../doctors/DoctorModal';
 import { NewConsultationModal } from '../clinical/NewConsultationModal';
 import { ConsultationPrintView } from '../clinical/ConsultationPrintView';
 import { ConsentFormsModal } from '../clinical/ConsentFormsModal';
+import { OnlineAuthModal } from '../insurances/OnlineAuthModal';
+
+// Resilient Error Boundary to prevent any unhandled render crash from turning the page blank
+class AdminTabErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Error caught by AdminTabErrorBoundary:', error, errorInfo);
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.tab !== this.props.tab && this.state.hasError) {
+      this.setState({ hasError: false, error: null });
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            border: '1.5px solid #FECACA',
+            padding: '2.5rem',
+            textAlign: 'center',
+            boxShadow: '0 4px 20px rgba(220, 38, 38, 0.08)',
+            maxWidth: '640px',
+            margin: '2rem auto'
+          }}
+        >
+          <div
+            style={{
+              width: '54px',
+              height: '54px',
+              borderRadius: '50%',
+              background: '#FEE2E2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1.25rem',
+              color: '#DC2626'
+            }}
+          >
+            <ShieldAlert size={28} />
+          </div>
+          <h2 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#991B1B', margin: '0 0 0.5rem' }}>
+            No se pudo cargar este módulo
+          </h2>
+          <p style={{ fontSize: '0.88rem', color: '#64748B', margin: '0 0 1.5rem', lineHeight: 1.5 }}>
+            Ocurrió un inconveniente temporal en la renderización de la sección. La seguridad y los datos de la clínica están a resguardo.
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
+            <button
+              type="button"
+              onClick={() => this.setState({ hasError: false, error: null })}
+              style={{
+                background: '#076ABC',
+                color: '#ffffff',
+                border: 'none',
+                padding: '0.6rem 1.25rem',
+                borderRadius: '8px',
+                fontWeight: 800,
+                fontSize: '0.84rem',
+                cursor: 'pointer'
+              }}
+            >
+              Reintentar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                if (this.props.onReset) this.props.onReset();
+              }}
+              style={{
+                background: '#F1F5F9',
+                color: '#334155',
+                border: '1px solid #CBD5E1',
+                padding: '0.6rem 1.25rem',
+                borderRadius: '8px',
+                fontWeight: 800,
+                fontSize: '0.84rem',
+                cursor: 'pointer'
+              }}
+            >
+              Volver al Inicio
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Icons
 import {
@@ -159,7 +261,8 @@ export const AdminManagementHub = () => {
         title: 'GESTIÓN DE ATENCIÓN',
         items: [
           { id: 'appointments', label: 'Gestión de Turnos', icon: CalendarCheck, badge: appointments.length },
-          { id: 'patients', label: 'Pacientes', icon: Users, badge: patients.length }
+          { id: 'patients', label: 'Pacientes', icon: Users, badge: patients.length },
+          { id: 'rooms', label: 'Consultorios en Vivo', icon: DoorClosed, badge: availableRooms }
         ]
       },
       {
@@ -539,8 +642,42 @@ export const AdminManagementHub = () => {
             </h1>
           </div>
 
-          {/* Right: User Badge & Logout */}
+          {/* Right: User Badge & Switcher & Logout */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            {/* Quick Profile Switcher (Médico vs Administrativo) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <label style={{ fontSize: '0.74rem', fontWeight: 800, color: '#496386' }}>
+                Perfil:
+              </label>
+              <select
+                value={authAdmin?.id || ''}
+                onChange={(e) => {
+                  if (typeof switchAdminUser === 'function') {
+                    switchAdminUser(e.target.value);
+                  }
+                }}
+                style={{
+                  padding: '0.35rem 0.65rem',
+                  borderRadius: '8px',
+                  border: '1.5px solid #D2E3FC',
+                  background: '#ffffff',
+                  color: '#002182',
+                  fontSize: '0.78rem',
+                  fontWeight: 800,
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                {(users || [])
+                  .filter((u) => u.adminType === 'doctor' || u.adminType === 'administrative' || u.adminType === 'superadmin')
+                  .map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name} ({u.adminType === 'doctor' ? 'Médico' : 'Recepción/Admin'})
+                    </option>
+                  ))}
+              </select>
+            </div>
+
             {/* Administrator / Doctor Badge */}
             <div
               style={{
@@ -593,6 +730,7 @@ export const AdminManagementHub = () => {
 
         {/* Content Body */}
         <main style={{ padding: '1.75rem 2.25rem 3rem', flex: 1, width: '100%', boxSizing: 'border-box' }}>
+          <AdminTabErrorBoundary tab={activeTab} onReset={() => setActiveTab('dashboard')}>
           {/* TAB 1: DASHBOARD & MÉTRICAS PARA DOCTOR (Dr. Blanco) */}
           {activeTab === 'dashboard' && isDoctor && (
             <div>
@@ -1585,8 +1723,8 @@ export const AdminManagementHub = () => {
           {/* TAB 7: HORARIOS & DISPONIBILIDAD */}
           {activeTab === 'schedules' && <SchedulesManager />}
 
-          {/* TAB 8: CONSULTORIOS (Solo Superadmin) */}
-          {activeTab === 'rooms' && isSuperAdmin && <RoomsManager />}
+          {/* TAB 8: CONSULTORIOS (Administración y Superadmin) */}
+          {activeTab === 'rooms' && (!isDoctor || isSuperAdmin) && <RoomsManager />}
 
           {/* TAB 9: OBRAS SOCIALES */}
           {activeTab === 'insurances' && <InsurancesView />}
@@ -1614,6 +1752,7 @@ export const AdminManagementHub = () => {
 
           {/* TAB 17: AUDITORÍA Y SEGURIDAD (Solo Superadmin) */}
           {activeTab === 'audit' && isSuperAdmin && <AuditLogsView />}
+          </AdminTabErrorBoundary>
         </main>
       </div>
 
@@ -1625,6 +1764,7 @@ export const AdminManagementHub = () => {
       <NewConsultationModal />
       <ConsultationPrintView />
       <ConsentFormsModal />
+      <OnlineAuthModal />
 
       {/* Responsive Styles for Sidebar */}
       <style>{`

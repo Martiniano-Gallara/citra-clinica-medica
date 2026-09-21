@@ -26,6 +26,8 @@ export const BillingView = () => {
   const {
     invoices,
     doctors,
+    cashClosures,
+    addCashMovement,
     setIsPaymentModalOpen,
     setPaymentPreloadData,
     setIsArcaInvoiceModalOpen,
@@ -97,7 +99,7 @@ export const BillingView = () => {
             <span>Facturación ARCA (AFIP) & Honorarios Médicos</span>
           </h1>
           <p>
-            Comprobantes fiscales electrónicos con CAE, liquidación de honorarios y control de caja (Pto Vta {clinicInfo.arcaPtoVta})
+            Comprobantes fiscales electrónicos con CAE, liquidación de honorarios y control de caja (Pto Vta {clinicInfo?.arcaPtoVta || '0003'})
           </p>
         </div>
 
@@ -247,7 +249,7 @@ export const BillingView = () => {
                   <tr key={inv.id}>
                     <td>
                       <div style={{ fontWeight: 800, color: '#002182' }}>{inv.invoiceNumber}</div>
-                      <div style={{ fontSize: '0.74rem', color: '#496386' }}>Pto Vta 0001 · CUIT {clinicInfo.cuit}</div>
+                      <div style={{ fontSize: '0.74rem', color: '#496386' }}>Pto Vta 0001 · CUIT {clinicInfo?.cuit || '30-71829304-8'}</div>
                     </td>
                     <td>
                       <div style={{ fontFamily: 'monospace', fontWeight: 700, color: '#076ABC' }}>
@@ -296,28 +298,36 @@ export const BillingView = () => {
       ) : activeSubTab === 'caja' ? (
         /* CAJA DIARIA & ARQUEOS DE TURNO VIEW */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {cashClosures.map((caja) => (
-            <div key={caja.id} className="card" style={{ border: '2px solid var(--c-primary)' }}>
-              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div className="badge badge-teal" style={{ marginBottom: '0.35rem' }}>{caja.id}</div>
-                  <h3 className="card-title">{caja.shift} — {caja.date}</h3>
-                  <p className="card-subtitle">Responsable de Caja: <strong>{caja.cashierName}</strong></p>
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button
-                    type="button"
-                    className="btn btn-outline btn-sm"
-                    onClick={() => {
-                      const amount = prompt('Monto del Egreso Menor ($):', '2500');
-                      const concept = prompt('Concepto del Egreso:', 'Artículos de limpieza / librería');
-                      if (amount && concept) {
-                        const { addCashMovement } = useClinic; // or called from hook
-                      }
-                    }}
-                  >
-                    - Registrar Egreso
-                  </button>
+          {(!cashClosures || cashClosures.length === 0) ? (
+            <div className="card" style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+              No hay arqueos de caja registrados actualmente.
+            </div>
+          ) : (
+            cashClosures.map((caja) => (
+              <div key={caja.id} className="card" style={{ border: '2px solid var(--c-primary)' }}>
+                <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div className="badge badge-teal" style={{ marginBottom: '0.35rem' }}>{caja.id}</div>
+                    <h3 className="card-title">{caja.shift} — {caja.date}</h3>
+                    <p className="card-subtitle">Responsable de Caja: <strong>{caja.cashierName}</strong></p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={() => {
+                        const amount = prompt('Monto del Egreso Menor ($):', '2500');
+                        const concept = prompt('Concepto del Egreso:', 'Artículos de limpieza / librería');
+                        if (amount && concept) {
+                          if (typeof addCashMovement === 'function') {
+                            addCashMovement('egreso', Number(amount), concept, caja.cashierName || 'Recepción');
+                          }
+                          addToast('Egreso Registrado', `Se asentó egreso de $${Number(amount).toLocaleString()} por ${concept}.`, 'info');
+                        }
+                      }}
+                    >
+                      - Registrar Egreso
+                    </button>
                   <button
                     type="button"
                     className="btn btn-primary btn-sm"
@@ -366,8 +376,9 @@ export const BillingView = () => {
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+          ))
+        )}
+      </div>
       ) : (
         /* HONORARIOS LIQUIDATION VIEW */
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>

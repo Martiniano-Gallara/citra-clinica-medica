@@ -37,7 +37,7 @@ export const SchedulesManager = () => {
   const allWorkingDays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
   const [workingDays, setWorkingDays] = useState(clinicSchedule?.workingDays || allWorkingDays);
 
-  // Doctor Specific Schedule State
+  // Doctor Specific Schedule State (Personal for doctor)
   const [docWorkingDays, setDocWorkingDays] = useState(currentDoctor?.workingDays || ['Lunes', 'Miércoles', 'Viernes']);
   const [docScheduleStart, setDocScheduleStart] = useState(currentDoctor?.scheduleStart || '08:00');
   const [docScheduleEnd, setDocScheduleEnd] = useState(currentDoctor?.scheduleEnd || '14:00');
@@ -46,6 +46,60 @@ export const SchedulesManager = () => {
   const [docFeePercentage, setDocFeePercentage] = useState(currentDoctor?.feePercentage || 75);
   const [docBlockedDates, setDocBlockedDates] = useState(currentDoctor?.blockedDates || ['2026-09-20', '2026-10-12']);
   const [newDocBlockedDate, setNewDocBlockedDate] = useState('');
+
+  // Administrative State: Tab & Selected Doctor for Reception Management
+  const [adminTab, setAdminTab] = useState('global'); // 'global' | 'doctors'
+  const [selectedAdminDoctorId, setSelectedAdminDoctorId] = useState(doctors[0]?.id || 'doc-1');
+  const selectedDocObj = doctors.find((d) => d.id === selectedAdminDoctorId) || doctors[0];
+
+  const [adminDocWorkingDays, setAdminDocWorkingDays] = useState(selectedDocObj?.workingDays || ['Lunes', 'Miércoles', 'Viernes']);
+  const [adminDocStart, setAdminDocStart] = useState(selectedDocObj?.scheduleStart || '08:00');
+  const [adminDocEnd, setAdminDocEnd] = useState(selectedDocObj?.scheduleEnd || '14:00');
+  const [adminDocSlot, setAdminDocSlot] = useState(selectedDocObj?.slotDuration || 30);
+  const [adminDocBlocked, setAdminDocBlocked] = useState(selectedDocObj?.blockedDates || []);
+  const [adminNewBlockedDate, setAdminNewBlockedDate] = useState('');
+
+  React.useEffect(() => {
+    if (selectedDocObj) {
+      setAdminDocWorkingDays(selectedDocObj.workingDays || ['Lunes', 'Miércoles', 'Viernes']);
+      setAdminDocStart(selectedDocObj.scheduleStart || '08:00');
+      setAdminDocEnd(selectedDocObj.scheduleEnd || '14:00');
+      setAdminDocSlot(selectedDocObj.slotDuration || 30);
+      setAdminDocBlocked(selectedDocObj.blockedDates || []);
+    }
+  }, [selectedAdminDoctorId, selectedDocObj]);
+
+  const toggleAdminDocWorkingDay = (day) => {
+    if (adminDocWorkingDays.includes(day)) {
+      setAdminDocWorkingDays(adminDocWorkingDays.filter((d) => d !== day));
+    } else {
+      setAdminDocWorkingDays([...adminDocWorkingDays, day]);
+    }
+  };
+
+  const handleAddAdminDocBlockedDate = () => {
+    if (!adminNewBlockedDate) return;
+    if (adminDocBlocked.includes(adminNewBlockedDate)) {
+      addToast('Fecha ya bloqueada', 'Esta fecha ya figura en los días bloqueados del profesional.', 'info');
+      return;
+    }
+    setAdminDocBlocked([...adminDocBlocked, adminNewBlockedDate]);
+    setAdminNewBlockedDate('');
+    addToast('Día no laborable añadido', `Se bloqueó la fecha en la agenda de ${selectedDocObj?.name}.`, 'success');
+  };
+
+  const handleSaveAdminDoctor = (e) => {
+    e.preventDefault();
+    if (!selectedDocObj) return;
+    updateDoctorSchedule(selectedDocObj.id, {
+      workingDays: adminDocWorkingDays,
+      scheduleStart: adminDocStart,
+      scheduleEnd: adminDocEnd,
+      slotDuration: Number(adminDocSlot),
+      blockedDates: adminDocBlocked
+    });
+    addToast('Agenda de Profesional Actualizada', `Se guardó la disponibilidad de ${selectedDocObj.name}.`, 'success');
+  };
 
   const toggleGlobalWorkingDay = (day) => {
     if (workingDays.includes(day)) {
@@ -411,49 +465,393 @@ export const SchedulesManager = () => {
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#002182', margin: '0 0 0.25rem' }}>
-            Gestión Central de Horarios de la Clínica
+            Gestión Central de Horarios & Disponibilidad
           </h2>
           <p style={{ margin: 0, fontSize: '0.85rem', color: '#496386' }}>
-            Configuración global de apertura, turnos estándar, días hábiles y bloqueo de feriados institucionales.
+            Configuración global de la clínica y administración de horarios de cada profesional médico.
           </p>
         </div>
 
+        {adminTab === 'global' ? (
+          <button
+            onClick={handleSaveGlobal}
+            style={{
+              background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+              color: '#ffffff',
+              border: 'none',
+              padding: '0.65rem 1.4rem',
+              borderRadius: '10px',
+              fontSize: '0.88rem',
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)'
+            }}
+          >
+            <Save size={18} />
+            Guardar Configuración Global
+          </button>
+        ) : (
+          <button
+            onClick={handleSaveAdminDoctor}
+            style={{
+              background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+              color: '#ffffff',
+              border: 'none',
+              padding: '0.65rem 1.4rem',
+              borderRadius: '10px',
+              fontSize: '0.88rem',
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)'
+            }}
+          >
+            <Save size={18} />
+            Guardar Horarios de {selectedDocObj?.name?.split(' ')[1] || 'Profesional'}
+          </button>
+        )}
+      </div>
+
+      {/* Admin Tabs */}
+      <div style={{ display: 'flex', gap: '0.65rem', marginBottom: '1.5rem' }}>
         <button
-          onClick={handleSaveGlobal}
+          type="button"
+          onClick={() => setAdminTab('global')}
           style={{
-            background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
-            color: '#ffffff',
-            border: 'none',
-            padding: '0.65rem 1.4rem',
+            padding: '0.55rem 1.1rem',
             borderRadius: '10px',
-            fontSize: '0.88rem',
+            border: adminTab === 'global' ? '1.5px solid #076ABC' : '1px solid #D2E3FC',
+            background: adminTab === 'global' ? '#EBF3FD' : '#ffffff',
+            color: adminTab === 'global' ? '#002182' : '#496386',
             fontWeight: 800,
-            display: 'flex',
+            fontSize: '0.86rem',
+            display: 'inline-flex',
             alignItems: 'center',
             gap: '0.45rem',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)'
+            cursor: 'pointer'
           }}
         >
-          <Save size={18} />
-          Guardar Configuración
+          <Building2 size={16} color={adminTab === 'global' ? '#076ABC' : '#496386'} />
+          Horarios Generales de la Clínica
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setAdminTab('doctors')}
+          style={{
+            padding: '0.55rem 1.1rem',
+            borderRadius: '10px',
+            border: adminTab === 'doctors' ? '1.5px solid #076ABC' : '1px solid #D2E3FC',
+            background: adminTab === 'doctors' ? '#EBF3FD' : '#ffffff',
+            color: adminTab === 'doctors' ? '#002182' : '#496386',
+            fontWeight: 800,
+            fontSize: '0.86rem',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            cursor: 'pointer'
+          }}
+        >
+          <Stethoscope size={16} color={adminTab === 'doctors' ? '#076ABC' : '#496386'} />
+          Horarios por Profesional ({doctors.length})
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.75rem' }}>
-        {/* Left: General Operating Hours */}
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '18px',
-            border: '1.5px solid #D2E3FC',
-            padding: '1.75rem',
-            boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
-          }}
-        >
+      {adminTab === 'doctors' ? (
+        /* VISTA: GESTIÓN DE HORARIOS DE MÉDICOS POR RECEPCIÓN */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* Selector de Médico */}
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '16px',
+              border: '1.5px solid #D2E3FC',
+              padding: '1.25rem 1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '1rem',
+              boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#EBF3FD', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#076ABC' }}>
+                <Stethoscope size={20} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Seleccionar Profesional Médico
+                </div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#002182' }}>
+                  {selectedDocObj?.name}
+                </div>
+                <div style={{ fontSize: '0.76rem', color: '#496386' }}>
+                  {selectedDocObj?.specialty} · {selectedDocObj?.roomName || 'Consultorio Asignado'}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ minWidth: '260px' }}>
+              <select
+                value={selectedAdminDoctorId}
+                onChange={(e) => setSelectedAdminDoctorId(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.65rem 0.85rem',
+                  borderRadius: '10px',
+                  border: '1.5px solid #076ABC',
+                  fontSize: '0.88rem',
+                  fontWeight: 700,
+                  color: '#002182',
+                  outline: 'none',
+                  background: '#F5F8FE'
+                }}
+              >
+                {doctors.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name} — {d.specialty}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.75rem' }}>
+            {/* Franja de Atención del Médico */}
+            <div
+              style={{
+                background: '#ffffff',
+                borderRadius: '18px',
+                border: '1.5px solid #D2E3FC',
+                padding: '1.75rem',
+                boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#EBF3FD', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#076ABC' }}>
+                  <Clock size={20} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#002182' }}>
+                    Horario de Atención en Consultorio
+                  </h3>
+                  <div style={{ fontSize: '0.75rem', color: '#496386' }}>Horario de inicio y fin de turnos</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.35rem' }}>
+                    Hora de Inicio
+                  </label>
+                  <input
+                    type="time"
+                    value={adminDocStart}
+                    onChange={(e) => setAdminDocStart(e.target.value)}
+                    style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.88rem', outline: 'none' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.35rem' }}>
+                    Hora de Finalización
+                  </label>
+                  <input
+                    type="time"
+                    value={adminDocEnd}
+                    onChange={(e) => setAdminDocEnd(e.target.value)}
+                    style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.88rem', outline: 'none' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.35rem' }}>
+                  Duración por Consulta
+                </label>
+                <select
+                  value={adminDocSlot}
+                  onChange={(e) => setAdminDocSlot(Number(e.target.value))}
+                  style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.88rem', outline: 'none', background: '#ffffff' }}
+                >
+                  <option value={15}>15 minutos</option>
+                  <option value={20}>20 minutos</option>
+                  <option value={30}>30 minutos (Estándar)</option>
+                  <option value={40}>40 minutos</option>
+                  <option value={45}>45 minutos</option>
+                  <option value={60}>60 minutos</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Días de Atención del Médico */}
+            <div
+              style={{
+                background: '#ffffff',
+                borderRadius: '18px',
+                border: '1.5px solid #D2E3FC',
+                padding: '1.75rem',
+                boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#EBF3FD', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#076ABC' }}>
+                  <Calendar size={20} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#002182' }}>
+                    Días Habilitados de Consultorio
+                  </h3>
+                  <div style={{ fontSize: '0.75rem', color: '#496386' }}>Días en que atiende {selectedDocObj?.name}</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+                {allWorkingDays.map((day) => {
+                  const isSelected = adminDocWorkingDays.includes(day);
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => toggleAdminDocWorkingDay(day)}
+                      style={{
+                        padding: '0.75rem 1rem',
+                        borderRadius: '10px',
+                        border: isSelected ? '1.5px solid #076ABC' : '1px solid #D2E3FC',
+                        background: isSelected ? '#EBF3FD' : '#ffffff',
+                        color: isSelected ? '#002182' : '#496386',
+                        fontWeight: 800,
+                        fontSize: '0.85rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <span>{day}</span>
+                      {isSelected && <CheckCircle2 size={16} color="#076ABC" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Días Bloqueados del Médico */}
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '18px',
+              border: '1.5px solid #D2E3FC',
+              padding: '1.75rem',
+              boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#991B1B' }}>
+                  <AlertTriangle size={20} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#002182' }}>
+                    Días No Laborables / Ausencias de {selectedDocObj?.name}
+                  </h3>
+                  <div style={{ fontSize: '0.75rem', color: '#496386' }}>
+                    Fechas específicas donde no habrá turnos para este profesional
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.6rem' }}>
+                <input
+                  type="date"
+                  value={adminNewBlockedDate}
+                  onChange={(e) => setAdminNewBlockedDate(e.target.value)}
+                  style={{ padding: '0.55rem 0.85rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none' }}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddAdminDocBlockedDate}
+                  style={{
+                    background: '#076ABC',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '0.55rem 1rem',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    fontSize: '0.82rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Plus size={16} /> Bloquear Fecha
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.65rem' }}>
+              {adminDocBlocked.length === 0 ? (
+                <div style={{ color: '#7994B8', fontSize: '0.85rem', padding: '0.5rem 0' }}>
+                  No hay ausencias registradas para este profesional.
+                </div>
+              ) : (
+                adminDocBlocked.map((dateStr) => (
+                  <div
+                    key={dateStr}
+                    style={{
+                      background: '#FEF2F2',
+                      border: '1px solid #FECACA',
+                      color: '#991B1B',
+                      padding: '0.45rem 0.85rem',
+                      borderRadius: '8px',
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}
+                  >
+                    <Calendar size={14} />
+                    <span>{dateStr}</span>
+                    <button
+                      type="button"
+                      onClick={() => setAdminDocBlocked(adminDocBlocked.filter((d) => d !== dateStr))}
+                      style={{ background: 'none', border: 'none', color: '#991B1B', cursor: 'pointer', padding: 0 }}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* VISTA: HORARIOS GLOBALES DE LA CLÍNICA */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.75rem' }}>
+            {/* Left: General Operating Hours */}
+            <div
+              style={{
+                background: '#ffffff',
+                borderRadius: '18px',
+                border: '1.5px solid #D2E3FC',
+                padding: '1.75rem',
+                boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+              }}
+            >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
             <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#EBF3FD', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#076ABC' }}>
               <Clock size={20} />
@@ -679,5 +1077,7 @@ export const SchedulesManager = () => {
         </div>
       </div>
     </div>
-  );
+  )}
+</div>
+);
 };

@@ -22,6 +22,7 @@ import {
   ToggleRight,
   ExternalLink
 } from 'lucide-react';
+import { OnlineAuthModal } from './OnlineAuthModal';
 
 export const InsurancesView = () => {
   const {
@@ -36,10 +37,18 @@ export const InsurancesView = () => {
     addToast
   } = useClinic();
 
-  // Tabs for Doctor
-  const [activeTab, setActiveTab] = useState('my-insurances'); // 'my-insurances', 'my-nomenclator'
+  // Tabs for Doctor vs Administrative
+  const [activeTab, setActiveTab] = useState(isDoctor ? 'my-insurances' : 'agreements');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterState, setFilterState] = useState('all'); // 'all', 'accepted', 'not-accepted'
+
+  React.useEffect(() => {
+    if (isDoctor && !['my-insurances', 'my-nomenclator'].includes(activeTab)) {
+      setActiveTab('my-insurances');
+    } else if (!isDoctor && !['agreements', 'authorizations', 'nomenclator'].includes(activeTab)) {
+      setActiveTab('agreements');
+    }
+  }, [isDoctor]);
 
   // Interactive Fichas Internas: which insurance ficha is expanded
   const [expandedFichaId, setExpandedFichaId] = useState(null);
@@ -59,12 +68,14 @@ export const InsurancesView = () => {
   // Toggle single insurance
   const handleToggleInsurance = (insId, e) => {
     if (e) e.stopPropagation();
-    if (!currentDoctor) return;
+    if (!currentDoctor?.id) return;
     const exists = doctorAcceptedIds.includes(insId);
     const nextList = exists
       ? doctorAcceptedIds.filter((id) => id !== insId)
       : [...doctorAcceptedIds, insId];
-    updateDoctorInsurances(currentDoctor.id, nextList);
+    if (typeof updateDoctorInsurances === 'function') {
+      updateDoctorInsurances(currentDoctor.id, nextList);
+    }
     const target = healthInsurances.find((h) => h.id === insId);
     if (exists) {
       addToast('Cobertura Pausada', `Ya no acepta ${target?.name || 'la cobertura'} en su consultorio.`, 'info');
@@ -75,9 +86,11 @@ export const InsurancesView = () => {
 
   // Toggle all insurances
   const handleToggleAll = (enableAll) => {
-    if (!currentDoctor) return;
+    if (!currentDoctor?.id) return;
     const nextList = enableAll ? healthInsurances.map((h) => h.id) : ['hi-7']; // Keep particular if disabling
-    updateDoctorInsurances(currentDoctor.id, nextList);
+    if (typeof updateDoctorInsurances === 'function') {
+      updateDoctorInsurances(currentDoctor.id, nextList);
+    }
     if (enableAll) {
       addToast('Todas Aceptadas', 'Se habilitaron todas las obras sociales registradas.', 'success');
     } else {
@@ -1264,6 +1277,160 @@ export const InsurancesView = () => {
           </div>
         </div>
       )}
+
+      {/* Tab 2: Autorizaciones Online Registradas */}
+      {activeTab === 'authorizations' && (
+        <div className="card">
+          <div className="table-responsive">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Paciente / DNI</th>
+                  <th>Obra Social</th>
+                  <th>Práctica Homologada</th>
+                  <th>Token Digital</th>
+                  <th>Fecha & Hora</th>
+                  <th>Copago</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {authorizations
+                  .filter((a) =>
+                    (a.patientName && a.patientName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                    (a.insuranceName && a.insuranceName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                    (a.tokenProvided && a.tokenProvided.toLowerCase().includes(searchTerm.toLowerCase()))
+                  )
+                  .map((auth) => (
+                    <tr key={auth.id}>
+                      <td>
+                        <div style={{ fontWeight: 800, color: '#002182' }}>{auth.patientName}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>DNI {auth.patientDni}</div>
+                      </td>
+                      <td>
+                        <span style={{ fontWeight: 700, color: '#0f172a' }}>{auth.insuranceName}</span>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#002182' }}>
+                          {auth.nomenclatorCode} — {auth.description}
+                        </div>
+                      </td>
+                      <td>
+                        <span
+                          style={{
+                            fontFamily: 'monospace',
+                            fontWeight: 800,
+                            background: '#EFF6FF',
+                            color: '#1D4ED8',
+                            border: '1px solid #BFDBFE',
+                            padding: '0.2rem 0.55rem',
+                            borderRadius: '6px',
+                            fontSize: '0.82rem'
+                          }}
+                        >
+                          {auth.tokenProvided}
+                        </span>
+                      </td>
+                      <td style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                        {auth.requestedAt || '2026-08-28 10:15'}
+                      </td>
+                      <td>
+                        {auth.copayCharged > 0 ? (
+                          <span style={{ fontWeight: 800, color: '#b45309' }}>
+                            ${auth.copayCharged?.toLocaleString()}
+                          </span>
+                        ) : (
+                          <span style={{ color: '#059669', fontWeight: 700 }}>$0 (Cubierto)</span>
+                        )}
+                      </td>
+                      <td>
+                        <span
+                          className={`badge ${
+                            auth.status === 'Aprobada Online'
+                              ? 'badge-success'
+                              : auth.status === 'Rechazada'
+                              ? 'badge-danger'
+                              : 'badge-warning'
+                          }`}
+                        >
+                          {auth.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 3: Nomenclador Nacional Completo Institucional */}
+      {activeTab === 'nomenclator' && (
+        <div className="card">
+          <div className="table-responsive">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Práctica Médica</th>
+                  <th>Categoría</th>
+                  <th>Especialidad</th>
+                  <th style={{ textAlign: 'right' }}>Arancel Base</th>
+                </tr>
+              </thead>
+              <tbody>
+                {nomenclatorItems
+                  .filter((item) =>
+                    item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    item.code?.includes(searchTerm) ||
+                    item.category?.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map((item) => (
+                    <tr key={item.code}>
+                      <td>
+                        <span
+                          style={{
+                            fontFamily: 'monospace',
+                            fontWeight: 800,
+                            background: '#eff6ff',
+                            color: '#1d4ed8',
+                            border: '1px solid #bfdbfe',
+                            padding: '0.2rem 0.55rem',
+                            borderRadius: '6px',
+                            fontSize: '0.82rem'
+                          }}
+                        >
+                          {item.code}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 700, color: '#0f172a' }}>{item.name}</div>
+                      </td>
+                      <td>
+                        <span className="badge badge-outline" style={{ fontSize: '0.78rem' }}>
+                          {item.category}
+                        </span>
+                      </td>
+                      <td>
+                        <span style={{ fontSize: '0.82rem', color: '#475569' }}>
+                          {item.specialty || 'General / Traumatología'}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <span style={{ fontWeight: 800, color: '#002182', fontSize: '0.94rem' }}>
+                          ${item.arancelBase?.toLocaleString()}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Validación Online */}
+      <OnlineAuthModal />
     </div>
   );
 };
