@@ -127,7 +127,7 @@ export const ContactSection = () => {
                   Dirección y Acceso
                 </h4>
                 <div style={{ fontSize: '0.88rem', color: '#496386', lineHeight: 1.5 }}>
-                  Av. Carlos Pontin Nº556, Arroyito, Córdoba (CP 2434).<br />
+                  Av. Carlos Pontin 556, Arroyito, Córdoba (CP 2434).<br />
                   Fácil acceso y estacionamiento.
                 </div>
               </div>

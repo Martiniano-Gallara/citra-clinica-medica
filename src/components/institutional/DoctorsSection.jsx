@@ -8,16 +8,14 @@ import {
   Award,
   ChevronRight
 } from 'lucide-react';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
 export const DoctorsSection = () => {
   const { doctors, setCurrentView, setBookingPreselectedDoctor, setBookingPreselectedSpecialty } = useClinic();
 
   const handleBookDoctor = (doc) => {
-    setBookingPreselectedDoctor(doc.id);
-    if (doc.specialtyId) {
-      setBookingPreselectedSpecialty(doc.specialtyId);
-    }
-    setCurrentView('booking');
+    const text = `Hola CITRA, quisiera solicitar un turno con ${doc.name} (${doc.specialty || 'Especialista'}).`;
+    window.open(`https://wa.me/543576450214?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
 
   const activeDoctors = doctors.filter((d) => d.active !== false);
@@ -157,7 +155,7 @@ export const DoctorsSection = () => {
                   onClick={() => handleBookDoctor(doc)}
                   style={{
                     width: '100%',
-                    background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                    background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
                     color: '#ffffff',
                     border: 'none',
                     padding: '0.75rem',
@@ -169,10 +167,11 @@ export const DoctorsSection = () => {
                     justifyContent: 'center',
                     gap: '0.5rem',
                     cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(7, 106, 188, 0.2)'
+                    boxShadow: '0 4px 12px rgba(37, 211, 102, 0.25)',
+                    transition: 'all 0.15s ease'
                   }}
                 >
-                  <CalendarPlus size={16} />
+                  <WhatsAppIcon size={16} color="#ffffff" />
                   Sacar Turno con Profesional
                 </button>
               </div>

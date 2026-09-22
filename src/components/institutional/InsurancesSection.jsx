@@ -5,6 +5,10 @@ import {
   ArrowRight,
   BadgeCheck
 } from 'lucide-react';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
+
+const WA_NUMBER = '543576450214';
+const WA_TEXT = encodeURIComponent('Hola CITRA, quisiera consultar por coberturas y obras sociales.');
 
 const PRIMARY_INSURANCES = [
   {
@@ -50,6 +54,11 @@ export const InsurancesSection = () => {
   const handleViewAll = () => {
     setCurrentView('insurances');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleWhatsApp = (insuranceName) => {
+    const text = encodeURIComponent(`Hola CITRA, quisiera consultar sobre cobertura de ${insuranceName}.`);
+    window.open(`https://wa.me/${WA_NUMBER}?text=${text}`, '_blank', 'noopener');
   };
 
   return (
@@ -150,9 +159,8 @@ export const InsurancesSection = () => {
           {PRIMARY_INSURANCES.map((hi) => (
             <div
               key={hi.id}
-              onClick={handleViewAll}
               style={{
-                flex: '0 0 215px',
+                flex: '0 0 248px',
                 scrollSnapAlign: 'start',
                 background: '#ffffff',
                 border: '1.5px solid #E1EDFC',
@@ -162,7 +170,6 @@ export const InsurancesSection = () => {
                 flexDirection: 'column',
                 justifyContent: 'space-between',
                 gap: '0.85rem',
-                cursor: 'pointer',
                 boxShadow: '0 2px 8px rgba(0, 33, 130, 0.03)',
                 transition: 'all 0.2s ease'
               }}
@@ -177,7 +184,7 @@ export const InsurancesSection = () => {
                 e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 33, 130, 0.03)';
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div
                   style={{
                     width: '46px',
@@ -205,21 +212,61 @@ export const InsurancesSection = () => {
                   />
                 </div>
 
-                <div style={{ overflow: 'hidden' }}>
+                <div style={{ overflow: 'hidden', minWidth: 0 }}>
                   <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.94rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                     {hi.name}
                   </div>
-                  <div style={{ fontSize: '0.74rem', color: '#16a34a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.2rem', marginTop: '0.15rem' }}>
-                    <BadgeCheck size={13} />
-                    {hi.badge}
+                  <div
+                    style={{
+                      fontSize: '0.73rem',
+                      color: '#16a34a',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                      marginTop: '0.15rem',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    <BadgeCheck size={13} style={{ flexShrink: 0 }} />
+                    <span style={{ whiteSpace: 'nowrap' }}>{hi.badge}</span>
                   </div>
                 </div>
               </div>
 
-              <div style={{ fontSize: '0.74rem', color: '#496386', paddingTop: '0.45rem', borderTop: '1px solid #F0F4FA', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>Requisitos de atención</span>
-                <ArrowRight size={12} color="#076ABC" />
-              </div>
+              {/* Botón Consultar → WhatsApp con logo oficial */}
+              <button
+                onClick={() => handleWhatsApp(hi.name)}
+                style={{
+                  width: '100%',
+                  background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+                  border: 'none',
+                  color: '#ffffff',
+                  padding: '0.55rem 0.75rem',
+                  borderRadius: '10px',
+                  fontSize: '0.82rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.45rem',
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 2px 8px rgba(37, 211, 102, 0.25)',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.35)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(37, 211, 102, 0.25)';
+                }}
+              >
+                <WhatsAppIcon size={15} color="#ffffff" style={{ flexShrink: 0 }} />
+                <span>Consultar</span>
+              </button>
             </div>
           ))}
         </div>

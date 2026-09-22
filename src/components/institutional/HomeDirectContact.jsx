@@ -140,7 +140,7 @@ export const HomeDirectContact = () => {
                 Ubicación
               </div>
               <div style={{ fontSize: '0.74rem', color: '#496386', lineHeight: 1.25 }}>
-                Av. Carlos Pontin Nº556
+                Av. Carlos Pontin 556
               </div>
             </div>
           </a>

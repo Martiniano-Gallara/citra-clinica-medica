@@ -2,10 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import {
   CalendarPlus,
-  CalendarCheck,
-  User,
-  LogIn,
-  LogOut,
   Shield,
   Menu,
   X,
@@ -13,28 +9,21 @@ import {
   Phone,
   Clock,
   MapPin,
-  ChevronDown,
   Home,
   Users,
   ShieldCheck,
-  PhoneCall,
-  Navigation,
-  ExternalLink
+  PhoneCall
 } from 'lucide-react';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
 export const Navbar = () => {
   const {
     currentView,
     setCurrentView,
-    authRole,
-    authPatient,
-    logoutPatient,
-    setIsAuthModalOpen,
-    setAuthModalTab
+    authRole
   } = useClinic();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -88,21 +77,10 @@ export const Navbar = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleBookingClick = () => {
+  const handleBookingClick = (customText) => {
     setMobileMenuOpen(false);
-    setCurrentView('booking');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleMyTurnosClick = () => {
-    setMobileMenuOpen(false);
-    if (authRole === 'patient') {
-      setCurrentView('my-turnos');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      setAuthModalTab('login');
-      setIsAuthModalOpen(true);
-    }
+    const msg = customText || 'Hola CITRA, quisiera solicitar un turno.';
+    window.open(`https://wa.me/543576450214?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
   };
 
   const handleAdminAccessClick = () => {
@@ -151,7 +129,7 @@ export const Navbar = () => {
             onMouseLeave={(e) => { e.currentTarget.style.color = '#D2E3FC'; }}
           >
             <MapPin size={13} color="#257CE6" />
-            Av. Carlos Pontin Nº556, Arroyito (CP 2434)
+            Av. Carlos Pontin 556, Arroyito (CP 2434)
           </a>
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             <Clock size={13} color="#257CE6" />
@@ -296,38 +274,15 @@ export const Navbar = () => {
             })}
           </nav>
 
-          {/* Desktop Actions (Hidden on mobile) */}
+          {/* Desktop Actions (Sacar Turno por WhatsApp) */}
           <div className="desktop-only" style={{ alignItems: 'center', gap: '0.75rem' }}>
-            {/* Mis Turnos Button */}
             <button
-              onClick={handleMyTurnosClick}
+              onClick={() => handleBookingClick()}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.45rem',
-                background: currentView === 'my-turnos' ? '#EBF3FD' : '#ffffff',
-                border: '1.5px solid #076ABC',
-                color: '#002182',
-                padding: '0.55rem 1rem',
-                borderRadius: '10px',
-                fontSize: '0.85rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              <CalendarCheck size={16} color="#076ABC" />
-              Mis Turnos
-            </button>
-
-            {/* Sacar Turno Primary Button */}
-            <button
-              onClick={handleBookingClick}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.45rem',
-                background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                gap: '0.5rem',
+                background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
                 border: 'none',
                 color: '#ffffff',
                 padding: '0.6rem 1.25rem',
@@ -335,148 +290,21 @@ export const Navbar = () => {
                 fontSize: '0.88rem',
                 fontWeight: 800,
                 cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)',
+                boxShadow: '0 4px 12px rgba(37, 211, 102, 0.28)',
                 transition: 'all 0.2s'
               }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(37, 211, 102, 0.38)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.28)';
+              }}
             >
-              <CalendarPlus size={17} />
+              <WhatsAppIcon size={17} color="#ffffff" />
               <span>Sacar Turno</span>
             </button>
-
-            {/* Patient Auth Status / Login */}
-            {authRole === 'patient' && authPatient ? (
-              <div style={{ position: 'relative' }}>
-                <button
-                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    background: '#F5F8FE',
-                    border: '1px solid #D2E3FC',
-                    borderRadius: '10px',
-                    padding: '0.4rem 0.75rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <img
-                    src={authPatient.avatar || 'https://images.unsplash.com/photo-1534528741775?w=100'}
-                    alt={authPatient.name}
-                    style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
-                  />
-                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#002182', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {authPatient.name.split(' ')[0]}
-                  </span>
-                  <ChevronDown size={14} color="#496386" />
-                </button>
-
-                {userDropdownOpen && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      right: 0,
-                      top: '110%',
-                      background: '#ffffff',
-                      borderRadius: '12px',
-                      boxShadow: '0 10px 25px rgba(0, 33, 130, 0.15)',
-                      border: '1px solid #D2E3FC',
-                      minWidth: '200px',
-                      padding: '0.5rem',
-                      zIndex: 1100
-                    }}
-                  >
-                    <div style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #EDF3FD', marginBottom: '0.35rem' }}>
-                      <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#002182' }}>{authPatient.name}</div>
-                      <div style={{ fontSize: '0.72rem', color: '#496386' }}>DNI: {authPatient.dni}</div>
-                    </div>
-                    <button
-                      onClick={() => { setUserDropdownOpen(false); setCurrentView('my-turnos'); }}
-                      style={{
-                        width: '100%',
-                        textAlign: 'left',
-                        background: 'none',
-                        border: 'none',
-                        padding: '0.5rem 0.75rem',
-                        borderRadius: '8px',
-                        fontSize: '0.82rem',
-                        fontWeight: 600,
-                        color: '#002182',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <CalendarCheck size={15} color="#076ABC" />
-                      Mi Portal & Turnos
-                    </button>
-                    <button
-                      onClick={() => { setUserDropdownOpen(false); setCurrentView('my-turnos'); }}
-                      style={{
-                        width: '100%',
-                        textAlign: 'left',
-                        background: 'none',
-                        border: 'none',
-                        padding: '0.5rem 0.75rem',
-                        borderRadius: '8px',
-                        fontSize: '0.82rem',
-                        fontWeight: 600,
-                        color: '#002182',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <FileText size={15} color="#076ABC" />
-                      Mi Historia Clínica & Recetas
-                    </button>
-                    <button
-                      onClick={() => { setUserDropdownOpen(false); logoutPatient(); }}
-                      style={{
-                        width: '100%',
-                        textAlign: 'left',
-                        background: 'none',
-                        border: 'none',
-                        padding: '0.5rem 0.75rem',
-                        borderRadius: '8px',
-                        fontSize: '0.82rem',
-                        fontWeight: 600,
-                        color: '#dc2626',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        cursor: 'pointer',
-                        borderTop: '1px solid #EDF3FD',
-                        marginTop: '0.25rem'
-                      }}
-                    >
-                      <LogOut size={15} />
-                      Cerrar Sesión
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <button
-                onClick={() => { setAuthModalTab('login'); setIsAuthModalOpen(true); }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  background: 'none',
-                  border: 'none',
-                  color: '#002182',
-                  fontSize: '0.86rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  padding: '0.5rem 0.75rem'
-                }}
-              >
-                <LogIn size={16} color="#076ABC" />
-                Ingresar
-              </button>
-            )}
           </div>
 
           {/* Clean Mobile Hamburger / Close Button (MOBILE ONLY - keeps header clean with logo only) */}
@@ -518,114 +346,11 @@ export const Navbar = () => {
             {/* Scrollable Drawer Body */}
             <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.1rem', flex: 1 }}>
 
-              {/* Patient Profile Card or Login Buttons */}
-              {authRole === 'patient' && authPatient ? (
-                <div
-                  style={{
-                    background: 'linear-gradient(135deg, #EBF3FD 0%, #F5F8FE 100%)',
-                    borderRadius: '16px',
-                    padding: '1.1rem 1rem',
-                    border: '1.5px solid #D2E3FC',
-                    boxShadow: '0 3px 12px rgba(0, 33, 130, 0.06)'
-                  }}
-                >
-                  {/* Avatar + Name */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '0.85rem' }}>
-                    <img
-                      src={authPatient.avatar || 'https://images.unsplash.com/photo-1534528741775?w=100'}
-                      alt={authPatient.name}
-                      style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2.5px solid #076ABC', flexShrink: 0 }}
-                    />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.94rem', fontWeight: 900, color: '#002182', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {authPatient.name}
-                      </div>
-                      <div style={{ fontSize: '0.72rem', color: '#496386', marginTop: '0.08rem' }}>
-                        DNI: {authPatient.dni}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Mi Cuenta / Mis Turnos — debajo del nombre */}
-                  <button
-                    onClick={handleMyTurnosClick}
-                    style={{
-                      width: '100%',
-                      background: '#ffffff',
-                      border: '1.5px solid #076ABC',
-                      color: '#002182',
-                      padding: '0.6rem 1rem',
-                      borderRadius: '10px',
-                      fontSize: '0.86rem',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.5rem',
-                      boxShadow: '0 2px 6px rgba(7, 106, 188, 0.1)',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    <CalendarCheck size={16} color="#076ABC" />
-                    Mi Cuenta / Mis Turnos
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      setAuthModalTab('login');
-                      setIsAuthModalOpen(true);
-                    }}
-                    style={{
-                      flex: 1,
-                      background: '#F5F8FE',
-                      border: '1.5px solid #076ABC',
-                      color: '#002182',
-                      padding: '0.75rem',
-                      borderRadius: '10px',
-                      fontSize: '0.86rem',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.4rem'
-                    }}
-                  >
-                    <LogIn size={16} color="#076ABC" />
-                    Iniciar Sesión
-                  </button>
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      setAuthModalTab('register');
-                      setIsAuthModalOpen(true);
-                    }}
-                    style={{
-                      flex: 1,
-                      background: '#076ABC',
-                      border: 'none',
-                      color: '#ffffff',
-                      padding: '0.75rem',
-                      borderRadius: '10px',
-                      fontSize: '0.86rem',
-                      fontWeight: 800,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Registrarse
-                  </button>
-                </div>
-              )}
-
-              {/* Highlighted Primary CTA: Sacar Turno */}
+              {/* Highlighted Primary CTA: Sacar Turno por WhatsApp */}
               <button
-                onClick={handleBookingClick}
+                onClick={() => handleBookingClick()}
                 style={{
-                  background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                  background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
                   color: '#ffffff',
                   border: 'none',
                   padding: '0.9rem 1rem',
@@ -637,11 +362,11 @@ export const Navbar = () => {
                   justifyContent: 'center',
                   gap: '0.6rem',
                   cursor: 'pointer',
-                  boxShadow: '0 6px 18px rgba(7, 106, 188, 0.3)'
+                  boxShadow: '0 6px 18px rgba(37, 211, 102, 0.3)'
                 }}
               >
-                <CalendarPlus size={20} />
-                Sacar Turno Online
+                <WhatsAppIcon size={20} color="#ffffff" />
+                <span>Sacar Turno por WhatsApp</span>
               </button>
 
               {/* Navigation Links */}
@@ -747,33 +472,6 @@ export const Navbar = () => {
                 </div>
               </div>
             </div>
-
-            {/* Salir — al final del drawer, solo si está logueado */}
-            {authRole === 'patient' && authPatient && (
-              <div style={{ padding: '1rem 1.25rem 1.25rem', borderTop: '1px solid #EDF3FD' }}>
-                <button
-                  onClick={() => { logoutPatient(); setMobileMenuOpen(false); }}
-                  style={{
-                    width: '100%',
-                    background: '#FFF5F5',
-                    color: '#dc2626',
-                    border: '1.5px solid #FECACA',
-                    padding: '0.75rem 1rem',
-                    borderRadius: '10px',
-                    fontWeight: 800,
-                    fontSize: '0.88rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.5rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <LogOut size={17} />
-                  Salir
-                </button>
-              </div>
-            )}
           </div>
         </div>
       )}

@@ -19,18 +19,16 @@ import {
   Stethoscope,
   FileText
 } from 'lucide-react';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
 export const ServicesSection = () => {
   const { setCurrentView, setBookingPreselectedSpecialty } = useClinic();
   // Default to the first category (one at a time, no "Todos" option)
   const [selectedCategory, setSelectedCategory] = useState('esp-1');
 
-  const handleBookSpecialty = (specialtyId) => {
-    if (setBookingPreselectedSpecialty) {
-      setBookingPreselectedSpecialty(specialtyId);
-    }
-    setCurrentView('booking');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handleBookSpecialty = (categoryTitle) => {
+    const text = `Hola CITRA, quisiera solicitar un turno para ${categoryTitle}.`;
+    window.open(`https://wa.me/543576450214?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
 
   const categoriesFilter = [
@@ -134,7 +132,7 @@ export const ServicesSection = () => {
             }}
           >
             <CheckCircle2 size={14} color="#076ABC" />
-            NUESTROS SERVICIOS ESPECIALIZADOS
+            ÁREAS DE ATENCIÓN
           </div>
           <h2
             style={{
@@ -147,8 +145,8 @@ export const ServicesSection = () => {
           >
             Especialidades Médicas & Servicios
           </h2>
-          <p style={{ margin: 0, fontSize: '0.94rem', color: '#496386' }}>
-            Seleccioná una categoría para ver los servicios y solicitar tu turno.
+          <p style={{ margin: 0, fontSize: '0.92rem', color: '#496386', lineHeight: 1.4 }}>
+            Seleccioná una categoría para solicitar tu turno.
           </p>
         </div>
 
@@ -297,12 +295,12 @@ export const ServicesSection = () => {
             })}
           </div>
 
-          {/* Direct booking through this specialty — siempre anclado al fondo */}
+          {/* Direct booking through this specialty via WhatsApp */}
           <button
-            onClick={() => handleBookSpecialty(activeCategory.id)}
+            onClick={() => handleBookSpecialty(activeCategory.title)}
             style={{
               width: '100%',
-              background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+              background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
               border: 'none',
               color: '#ffffff',
               padding: '0.85rem 0.6rem',
@@ -314,13 +312,14 @@ export const ServicesSection = () => {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '0.55rem',
-              boxShadow: '0 4px 14px rgba(7, 106, 188, 0.28)',
+              boxShadow: '0 4px 14px rgba(37, 211, 102, 0.28)',
               minHeight: '46px',
               marginTop: 'auto',
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              transition: 'all 0.15s ease'
             }}
           >
-            <CalendarPlus size={18} />
+            <WhatsAppIcon size={18} color="#ffffff" />
             <span>Sacar Turno en {activeCategory.title}</span>
           </button>
         </div>

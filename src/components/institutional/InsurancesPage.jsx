@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
 import {
   ShieldCheck,
   Search,
@@ -451,20 +452,47 @@ export const InsurancesPage = () => {
                           {category}
                         </span>
 
-                        <span
+                        <a
+                          href={`https://wa.me/543576450214?text=${encodeURIComponent(`Hola CITRA, quisiera consultar en secretaría por la cobertura de ${hi.name}.`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
                           style={{
                             fontSize: '0.66rem',
                             fontWeight: 800,
                             background: '#EFF6FF',
                             color: '#076ABC',
                             border: '1px solid #BFDBFE',
-                            padding: '0.14rem 0.55rem',
+                            padding: '0.15rem 0.55rem',
                             borderRadius: '100px',
-                            whiteSpace: 'nowrap'
+                            whiteSpace: 'nowrap',
+                            textDecoration: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                            boxShadow: '0 1px 2px rgba(7, 106, 188, 0.06)'
                           }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#25D366';
+                            e.currentTarget.style.color = '#ffffff';
+                            e.currentTarget.style.borderColor = '#22C55E';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.boxShadow = '0 3px 8px rgba(37, 211, 102, 0.25)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#EFF6FF';
+                            e.currentTarget.style.color = '#076ABC';
+                            e.currentTarget.style.borderColor = '#BFDBFE';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 1px 2px rgba(7, 106, 188, 0.06)'
+                          }}
+                          title="Consultar por WhatsApp al 3576 450214"
                         >
-                          Consultar a secretaría
-                        </span>
+                          <WhatsAppIcon size={12} />
+                          <span>Consultar a secretaría</span>
+                        </a>
                       </div>
 
                       <div style={{ fontSize: '0.76rem', color: '#496386', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -566,31 +594,71 @@ export const InsurancesPage = () => {
                         <span>Presentá tu DNI y credencial médica (o app digital con Token) en la mesa de recepción.</span>
                       </div>
 
-                      {/* Botón Directo para Sacar Turno */}
-                      <button
-                        onClick={handleBook}
-                        style={{
-                          width: '100%',
-                          background: 'linear-gradient(135deg, #257CE6 0%, #076ABC 100%)',
-                          color: '#ffffff',
-                          border: 'none',
-                          padding: '0.85rem 1.2rem',
-                          borderRadius: '12px',
-                          fontWeight: 800,
-                          fontSize: '0.92rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '0.5rem',
-                          cursor: 'pointer',
-                          boxShadow: '0 4px 14px rgba(7, 106, 188, 0.3)',
-                          minHeight: '46px',
-                          transition: 'all 0.2s ease'
-                        }}
-                      >
-                        <CalendarPlus size={18} />
-                        Sacar Turno con {hi.name}
-                      </button>
+                      {/* Botones de Acción: Sacar Turno y WhatsApp Secretaría */}
+                      <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                        <button
+                          onClick={handleBook}
+                          style={{
+                            flex: '1 1 200px',
+                            background: 'linear-gradient(135deg, #257CE6 0%, #076ABC 100%)',
+                            color: '#ffffff',
+                            border: 'none',
+                            padding: '0.85rem 1.2rem',
+                            borderRadius: '12px',
+                            fontWeight: 800,
+                            fontSize: '0.92rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 14px rgba(7, 106, 188, 0.3)',
+                            minHeight: '46px',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <CalendarPlus size={18} />
+                          Sacar Turno con {hi.name}
+                        </button>
+
+                        <a
+                          href={`https://wa.me/543576450214?text=${encodeURIComponent(`Hola CITRA, quisiera consultar en secretaría por la cobertura de ${hi.name}.`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            background: '#F0FDF4',
+                            border: '1.5px solid #BBF7D0',
+                            color: '#15803D',
+                            padding: '0.85rem 1.15rem',
+                            borderRadius: '12px',
+                            fontWeight: 800,
+                            fontSize: '0.88rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.45rem',
+                            cursor: 'pointer',
+                            textDecoration: 'none',
+                            minHeight: '46px',
+                            transition: 'all 0.2s ease',
+                            flexShrink: 0
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#25D366';
+                            e.currentTarget.style.color = '#ffffff';
+                            e.currentTarget.style.borderColor = '#22C55E';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#F0FDF4';
+                            e.currentTarget.style.color = '#15803D';
+                            e.currentTarget.style.borderColor = '#BBF7D0';
+                          }}
+                          title="Enviar WhatsApp a secretaría (3576 450214)"
+                        >
+                          <WhatsAppIcon size={18} />
+                          <span>WhatsApp Secretaría</span>
+                        </a>
+                      </div>
                     </div>
                   )}
                 </div>

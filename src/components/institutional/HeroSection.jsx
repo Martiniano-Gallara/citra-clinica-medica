@@ -5,6 +5,7 @@ import {
   ArrowDown,
   ChevronDown
 } from 'lucide-react';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
 export const HeroSection = () => {
   const { setCurrentView } = useClinic();
@@ -176,7 +177,7 @@ export const HeroSection = () => {
               color: '#002182',
               lineHeight: 1.15,
               letterSpacing: '-0.03em',
-              margin: '0 0 0.85rem'
+              margin: '0 0 1.6rem'
             }}
           >
             Nos enfocamos en tu{' '}
@@ -191,28 +192,17 @@ export const HeroSection = () => {
             </span>
           </h1>
 
-          {/* Subtítulo breve orientado al paciente */}
-          <p
-            style={{
-              fontSize: '0.98rem',
-              lineHeight: 1.5,
-              color: '#496386',
-              margin: '0 0 1.85rem',
-              maxWidth: '460px'
-            }}
-          >
-            Especialistas médicos, kinesiología y diagnóstico por imágenes en Arroyito.
-          </p>
-
-          {/* BOTÓN DE SACAR TURNO */}
-          <button
-            onClick={() => setCurrentView('booking')}
+          {/* BOTÓN DE SACAR TURNO POR WHATSAPP */}
+          <a
+            href={`https://wa.me/543576450214?text=${encodeURIComponent('Hola CITRA, quisiera solicitar un turno.')}`}
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               width: '100%',
               maxWidth: '290px',
-              background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+              background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
               color: '#ffffff',
-              border: 'none',
+              textDecoration: 'none',
               padding: '0.95rem 1.6rem',
               borderRadius: '14px',
               fontWeight: 800,
@@ -220,16 +210,25 @@ export const HeroSection = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.55rem',
+              gap: '0.6rem',
               cursor: 'pointer',
-              boxShadow: '0 8px 24px rgba(7, 106, 188, 0.35)',
+              boxShadow: '0 8px 24px rgba(37, 211, 102, 0.35)',
               minHeight: '48px',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              boxSizing: 'border-box'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 10px 28px rgba(37, 211, 102, 0.45)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(37, 211, 102, 0.35)';
             }}
           >
-            <CalendarPlus size={20} />
-            Sacar Turno Online
-          </button>
+            <WhatsAppIcon size={20} color="#ffffff" />
+            <span>Sacar Turno</span>
+          </a>
 
           {/* Contacto y Horarios con flecha hacia abajo que lleva a la sección #contacto */}
           <a

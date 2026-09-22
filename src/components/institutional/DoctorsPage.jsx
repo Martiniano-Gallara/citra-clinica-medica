@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import {
-  UserCheck,
   CalendarPlus,
-  Award,
+  Search,
+  Star,
   Clock,
   MapPin,
+  Award,
   ChevronDown,
-  Search,
-  Sparkles,
-  PhoneCall,
   CheckCircle2,
-  Stethoscope
+  Stethoscope,
+  PhoneCall,
+  Sparkles,
+  Users
 } from 'lucide-react';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
 export const DoctorsPage = () => {
   const { doctors, setCurrentView, setBookingPreselectedDoctor, setBookingPreselectedSpecialty } = useClinic();
@@ -47,16 +49,8 @@ export const DoctorsPage = () => {
   });
 
   const handleBook = (doc) => {
-    if (doc.isUpcoming) {
-      window.location.href = 'tel:03576450214';
-      return;
-    }
-    setBookingPreselectedDoctor(doc.id);
-    if (doc.specialtyId) {
-      setBookingPreselectedSpecialty(doc.specialtyId);
-    }
-    setCurrentView('booking');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const text = `Hola CITRA, quisiera solicitar un turno con ${doc.name} (${doc.specialty || 'Especialista'}).`;
+    window.open(`https://wa.me/543576450214?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
 
   const toggleExpand = (id) => {
@@ -485,57 +479,31 @@ export const DoctorsPage = () => {
                         )}
                       </div>
 
-                      {/* Botón de acción directo a Turnos */}
-                      {doc.isUpcoming ? (
-                        <button
-                          onClick={() => handleBook(doc)}
-                          style={{
-                            width: '100%',
-                            background: '#001556',
-                            color: '#ffffff',
-                            border: 'none',
-                            padding: '0.85rem 1rem',
-                            borderRadius: '12px',
-                            fontWeight: 800,
-                            fontSize: '0.92rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.5rem',
-                            cursor: 'pointer',
-                            minHeight: '46px',
-                            boxShadow: '0 4px 14px rgba(0, 21, 86, 0.25)'
-                          }}
-                        >
-                          <PhoneCall size={17} />
-                          Consultar Disponibilidad
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleBook(doc)}
-                          style={{
-                            width: '100%',
-                            background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
-                            color: '#ffffff',
-                            border: 'none',
-                            padding: '0.85rem 1rem',
-                            borderRadius: '12px',
-                            fontWeight: 800,
-                            fontSize: '0.92rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.5rem',
-                            cursor: 'pointer',
-                            boxShadow: '0 6px 18px rgba(7, 106, 188, 0.3)',
-                            minHeight: '46px',
-                            transition: 'all 0.2s ease'
-                          }}
-                        >
-                          <CalendarPlus size={18} />
-                          Sacar Turno con {doc.name}
-                        </button>
-                      )}
+                      {/* Botón de acción directo a Turnos por WhatsApp */}
+                      <button
+                        onClick={() => handleBook(doc)}
+                        style={{
+                          width: '100%',
+                          background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+                          color: '#ffffff',
+                          border: 'none',
+                          padding: '0.85rem 1rem',
+                          borderRadius: '12px',
+                          fontWeight: 800,
+                          fontSize: '0.92rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.5rem',
+                          cursor: 'pointer',
+                          boxShadow: '0 6px 18px rgba(37, 211, 102, 0.3)',
+                          minHeight: '46px',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <WhatsAppIcon size={18} color="#ffffff" />
+                        <span>Sacar Turno con {doc.name}</span>
+                      </button>
                     </div>
                   )}
                 </div>

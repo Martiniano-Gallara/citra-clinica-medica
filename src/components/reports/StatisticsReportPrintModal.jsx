@@ -355,7 +355,7 @@ export const StatisticsReportPrintModal = ({
                     Centro Integral de Traumatología y Rehabilitación
                   </div>
                   <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
-                    {clinicInfo?.address || 'Av. Carlos Pontin Nº556, Arroyito, Córdoba'} · Tel: {clinicInfo?.phone || '03576 450214'}
+                    {clinicInfo?.address || 'Av. Carlos Pontin 556, Arroyito, Córdoba'} · Tel: {clinicInfo?.phone || '03576 450214'}
                   </div>
                 </div>
               </div>

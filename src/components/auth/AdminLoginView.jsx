@@ -13,7 +13,8 @@ import {
   Briefcase,
   ShieldCheck,
   X,
-  CheckCircle2
+  CheckCircle2,
+  Activity
 } from 'lucide-react';
 
 export const AdminLoginView = () => {
@@ -85,125 +86,392 @@ export const AdminLoginView = () => {
   const directorUser = users.find((u) => u.adminType === 'superadmin' || u.role?.includes('Director')) || users[5] || users[0];
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: 'radial-gradient(circle at 50% 15%, #002182 0%, #001344 60%, #020718 100%)',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: '2rem 1rem',
-        position: 'relative',
-        fontFamily: 'inherit'
-      }}
-    >
-      {/* Top back button */}
-      <button
-        type="button"
-        onClick={() => setCurrentView('home')}
-        style={{
-          position: 'absolute',
-          top: '1.5rem',
-          left: '1.5rem',
-          background: 'rgba(255, 255, 255, 0.08)',
-          border: '1px solid rgba(255, 255, 255, 0.18)',
-          color: '#ffffff',
-          borderRadius: '12px',
-          padding: '0.6rem 1.1rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          cursor: 'pointer',
-          fontSize: '0.86rem',
-          fontWeight: 600,
-          backdropFilter: 'blur(10px)',
-          transition: 'all 0.2s ease',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.16)';
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.35)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.18)';
-        }}
-      >
-        <ArrowLeft size={16} />
-        Volver a la Web Institucional
-      </button>
+    <div className="admin-login-fullscreen-root">
+      <style>{`
+        .admin-login-fullscreen-root {
+          min-height: 100vh;
+          width: 100vw;
+          display: flex;
+          flex-direction: row;
+          background: #ffffff;
+          font-family: inherit;
+          position: relative;
+          overflow-x: hidden;
+          box-sizing: border-box;
+        }
+        .admin-login-left-showcase {
+          flex: 1.15;
+          min-height: 100vh;
+          background: linear-gradient(145deg, #001344 0%, #002182 55%, #076ABC 100%);
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          padding: 3rem 3.5rem;
+          position: relative;
+          overflow: hidden;
+          color: #ffffff;
+          box-sizing: border-box;
+        }
+        .admin-login-left-glow-top {
+          position: absolute;
+          width: 600px;
+          height: 600px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(7, 106, 188, 0.4) 0%, rgba(0, 33, 130, 0) 70%);
+          top: -200px;
+          left: -150px;
+          pointer-events: none;
+        }
+        .admin-login-left-glow-bottom {
+          position: absolute;
+          width: 450px;
+          height: 450px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(2, 132, 199, 0.25) 0%, rgba(0, 19, 68, 0) 70%);
+          bottom: -150px;
+          right: -100px;
+          pointer-events: none;
+        }
+        .admin-login-right-panel {
+          flex: 0.95;
+          min-height: 100vh;
+          background: #ffffff;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          padding: 2.5rem 2.5rem;
+          box-sizing: border-box;
+          position: relative;
+          overflow-y: auto;
+        }
+        .admin-login-card-inner {
+          width: 100%;
+          max-width: 450px;
+        }
+        .admin-login-mobile-back {
+          display: none;
+        }
+        @media (max-width: 1023px) {
+          .admin-login-fullscreen-root {
+            flex-direction: column;
+            background: #ffffff;
+          }
+          .admin-login-left-showcase {
+            display: none;
+          }
+          .admin-login-right-panel {
+            flex: 1;
+            width: 100%;
+            min-height: 100vh;
+            padding: 2rem 1.25rem;
+            justify-content: center;
+          }
+          .admin-login-mobile-back {
+            display: flex;
+            align-self: flex-start;
+            margin-bottom: 1.5rem;
+            width: 100%;
+          }
+        }
+      `}</style>
 
-      {/* Main card */}
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '460px',
-          background: '#ffffff',
-          borderRadius: '24px',
-          boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1)',
-          overflow: 'hidden',
-          padding: '2.5rem 2rem 2rem',
-          boxSizing: 'border-box'
-        }}
-      >
-        {/* Logo & Header */}
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <img
-            src="./citra-logo.png"
-            alt="CITRA Centro Integral de Traumatología & Rehabilitación"
+      {/* Left Showcase (Desktop First Full-Screen Presentation) */}
+      <div className="admin-login-left-showcase">
+        <div className="admin-login-left-glow-top" />
+        <div className="admin-login-left-glow-bottom" />
+
+        {/* Top Header Row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 2 }}>
+          <button
+            type="button"
+            onClick={() => setCurrentView('home')}
             style={{
-              height: '52px',
-              maxWidth: '220px',
-              objectFit: 'contain',
-              margin: '0 auto 1.25rem',
-              display: 'block'
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.22)',
+              color: '#ffffff',
+              borderRadius: '12px',
+              padding: '0.65rem 1.15rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.55rem',
+              cursor: 'pointer',
+              fontSize: '0.86rem',
+              fontWeight: 700,
+              backdropFilter: 'blur(10px)',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 4px 14px rgba(0,0,0,0.12)'
             }}
-          />
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
+            <ArrowLeft size={16} />
+            Volver a la Web Institucional
+          </button>
 
+          <span
+            style={{
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              letterSpacing: '0.08em',
+              color: 'rgba(255, 255, 255, 0.8)',
+              textTransform: 'uppercase',
+              background: 'rgba(255, 255, 255, 0.08)',
+              padding: '0.35rem 0.75rem',
+              borderRadius: '100px',
+              border: '1px solid rgba(255, 255, 255, 0.15)'
+            }}
+          >
+            CITRA CLINIC OS
+          </span>
+        </div>
+
+        {/* Center Presentation */}
+        <div style={{ maxWidth: '520px', zIndex: 2, margin: '2rem 0' }}>
           <div
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.4rem',
-              background: '#eff6ff',
-              border: '1px solid #bfdbfe',
-              color: '#1d4ed8',
-              padding: '0.28rem 0.75rem',
+              gap: '0.45rem',
+              background: 'rgba(255, 255, 255, 0.15)',
+              border: '1px solid rgba(255, 255, 255, 0.28)',
+              color: '#ffffff',
+              padding: '0.35rem 0.85rem',
               borderRadius: '100px',
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              letterSpacing: '0.04em',
+              fontSize: '0.74rem',
+              fontWeight: 800,
+              letterSpacing: '0.06em',
               textTransform: 'uppercase',
-              marginBottom: '0.65rem'
+              marginBottom: '1.25rem',
+              backdropFilter: 'blur(8px)'
             }}
           >
-            <Lock size={12} />
-            Acceso Restringido · Personal
+            <ShieldCheck size={14} color="#93C5FD" />
+            Sistema de Gestión Clínica & Administrativa
           </div>
 
-          <h1
+          <h2
             style={{
-              margin: 0,
-              fontSize: '1.55rem',
-              fontWeight: 800,
-              color: '#0f172a',
-              letterSpacing: '-0.02em'
+              fontSize: 'clamp(1.85rem, 2.7vw, 2.45rem)',
+              fontWeight: 900,
+              lineHeight: 1.18,
+              letterSpacing: '-0.03em',
+              margin: '0 0 1rem',
+              color: '#ffffff'
             }}
           >
-            Portal de Administración
-          </h1>
+            Tecnología médica para la excelencia en cada consulta.
+          </h2>
+
           <p
             style={{
-              margin: '0.35rem 0 0',
-              fontSize: '0.84rem',
-              color: '#64748b',
-              lineHeight: 1.4
+              fontSize: '0.94rem',
+              lineHeight: 1.6,
+              color: 'rgba(255, 255, 255, 0.82)',
+              margin: '0 0 1.75rem'
             }}
           >
-            CITRA · Centro Integral de Traumatología & Rehabilitación
+            Acceso unificado para el equipo de profesionales de la salud, secretaría, kinesiología y dirección médica de la Sede Arroyito.
           </p>
+
+          {/* 3 Module Showcase Cards */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div
+              style={{
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.14)',
+                borderRadius: '14px',
+                padding: '0.85rem 1.1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.85rem',
+                backdropFilter: 'blur(10px)'
+              }}
+            >
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
+              >
+                <Stethoscope size={18} color="#93C5FD" />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#ffffff' }}>
+                  Historia Clínica Electrónica (HCE)
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'rgba(255, 255, 255, 0.72)' }}>
+                  Evoluciones médicas, prescripciones digitales y consentimiento firmado.
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.14)',
+                borderRadius: '14px',
+                padding: '0.85rem 1.1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.85rem',
+                backdropFilter: 'blur(10px)'
+              }}
+            >
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
+              >
+                <Activity size={18} color="#86EFAC" />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#ffffff' }}>
+                  Rehabilitación & Kinesiología
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'rgba(255, 255, 255, 0.72)' }}>
+                  Seguimiento de planes de fisioterapia activa, boxes y gimnasio terapéutico.
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.14)',
+                borderRadius: '14px',
+                padding: '0.85rem 1.1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.85rem',
+                backdropFilter: 'blur(10px)'
+              }}
+            >
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
+              >
+                <ShieldCheck size={18} color="#FDE047" />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#ffffff' }}>
+                  Auditoría, Facturación & Obras Sociales
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'rgba(255, 255, 255, 0.72)' }}>
+                  Facturación fiscal ARCA directa y validación de coberturas en tiempo real.
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* Bottom Footer Status Row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.76rem', color: 'rgba(255, 255, 255, 0.75)', zIndex: 2 }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 10px #22C55E' }} />
+          <span>Servidor Sede Arroyito Conectado · Cifrado Seguro TLS 1.3</span>
+        </div>
+      </div>
+
+      {/* Right Login Panel */}
+      <div className="admin-login-right-panel">
+        <div className="admin-login-mobile-back">
+          <button
+            type="button"
+            onClick={() => setCurrentView('home')}
+            style={{
+              background: '#F1F5F9',
+              border: '1px solid #E2E8F0',
+              color: '#002182',
+              borderRadius: '10px',
+              padding: '0.55rem 0.95rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              cursor: 'pointer',
+              fontSize: '0.82rem',
+              fontWeight: 700
+            }}
+          >
+            <ArrowLeft size={15} />
+            Volver a la Web Institucional
+          </button>
+        </div>
+
+        <div className="admin-login-card-inner">
+          {/* Logo & Header */}
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+            <img
+              src="./citra-logo.png"
+              alt="CITRA Centro Integral de Traumatología & Rehabilitación"
+              style={{
+                height: '52px',
+                maxWidth: '220px',
+                objectFit: 'contain',
+                margin: '0 auto 1.25rem',
+                display: 'block'
+              }}
+            />
+
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                background: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                color: '#1d4ed8',
+                padding: '0.28rem 0.75rem',
+                borderRadius: '100px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                marginBottom: '0.65rem'
+              }}
+            >
+              <Lock size={12} />
+              Acceso Restringido · Personal
+            </div>
+
+            <h1
+              style={{
+                margin: 0,
+                fontSize: '1.65rem',
+                fontWeight: 900,
+                color: '#0f172a',
+                letterSpacing: '-0.02em'
+              }}
+            >
+              Portal de Administración
+            </h1>
+          </div>
 
         {/* Quick Demo Access Box (Streamlined 3-column buttons) */}
         <div
@@ -612,19 +880,6 @@ export const AdminLoginView = () => {
             {loading ? 'Verificando...' : 'Ingresar al Panel de Gestión'}
           </button>
         </form>
-
-        {/* Security badge footer */}
-        <div
-          style={{
-            marginTop: '1.5rem',
-            paddingTop: '1rem',
-            borderTop: '1px solid #f1f5f9',
-            textAlign: 'center',
-            fontSize: '0.72rem',
-            color: '#94a3b8'
-          }}
-        >
-          🔒 Acceso restringido y auditado · CITRA 2026
         </div>
       </div>
 

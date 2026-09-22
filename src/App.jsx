@@ -9,9 +9,6 @@ import { ServicesPage } from './components/institutional/ServicesPage';
 import { InsurancesPage } from './components/institutional/InsurancesPage';
 import { DoctorsPage } from './components/institutional/DoctorsPage';
 import { Footer } from './components/institutional/Footer';
-import { AppointmentBookingWizard } from './components/booking/AppointmentBookingWizard';
-import { PatientUnifiedPortal } from './components/portal/PatientUnifiedPortal';
-import { UserAuthModal } from './components/auth/UserAuthModal';
 
 // Administration Views
 import { AdminLoginView } from './components/auth/AdminLoginView';
@@ -71,16 +68,6 @@ const MainLayout = () => {
         );
 
       case 'booking':
-        return (
-          <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-            <Navbar />
-            <main style={{ flex: 1 }}>
-              <AppointmentBookingWizard />
-            </main>
-            <Footer />
-          </div>
-        );
-
       case 'my-turnos':
       case 'patient-portal':
       case 'portal':
@@ -88,7 +75,7 @@ const MainLayout = () => {
           <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             <Navbar />
             <main style={{ flex: 1 }}>
-              <PatientUnifiedPortal />
+              <InstitutionalHome />
             </main>
             <Footer />
           </div>
@@ -117,8 +104,7 @@ const MainLayout = () => {
     <div className="citra-platform" style={{ minHeight: '100vh', background: 'var(--bg-app)' }}>
       {renderCurrentView()}
 
-      {/* Global Modals & Notifications */}
-      <UserAuthModal />
+      {/* Global Notifications */}
       <Toast />
     </div>
   );

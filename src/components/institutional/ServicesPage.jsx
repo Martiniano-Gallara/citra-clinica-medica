@@ -19,6 +19,7 @@ import {
   Search,
   Stethoscope
 } from 'lucide-react';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
 export const ServicesPage = () => {
   const { setCurrentView, setBookingPreselectedSpecialty } = useClinic();
@@ -26,12 +27,9 @@ export const ServicesPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedId, setExpandedId] = useState(null);
 
-  const handleBook = (specialtyId) => {
-    if (setBookingPreselectedSpecialty) {
-      setBookingPreselectedSpecialty(specialtyId);
-    }
-    setCurrentView('booking');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handleBook = (serviceName) => {
+    const text = `Hola CITRA, quisiera solicitar un turno para ${serviceName}.`;
+    window.open(`https://wa.me/543576450214?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
 
   const toggleExpand = (id) => {
@@ -637,12 +635,12 @@ export const ServicesPage = () => {
                         <span style={{ fontWeight: 700 }}>{service.equipment}</span>
                       </div>
 
-                      {/* Botón de Sacar Turno Directo */}
+                      {/* Botón de Sacar Turno Directo por WhatsApp */}
                       <button
-                        onClick={() => handleBook(service.id)}
+                        onClick={() => handleBook(service.name)}
                         style={{
                           width: '100%',
-                          background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                          background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
                           color: '#ffffff',
                           border: 'none',
                           padding: '0.75rem 1rem',
@@ -654,11 +652,12 @@ export const ServicesPage = () => {
                           justifyContent: 'center',
                           gap: '0.5rem',
                           cursor: 'pointer',
-                          boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)',
-                          minHeight: '44px'
+                          boxShadow: '0 4px 12px rgba(37, 211, 102, 0.28)',
+                          minHeight: '44px',
+                          transition: 'all 0.15s ease'
                         }}
                       >
-                        <CalendarPlus size={16} />
+                        <WhatsAppIcon size={16} color="#ffffff" />
                         Sacar Turno en {service.name}
                       </button>
                     </div>

@@ -1184,7 +1184,7 @@ export const AdminManagementHub = () => {
                           Lugar: {currentDoctor?.roomName || 'Consultorio 101 — Traumatología'}
                         </div>
                         <div style={{ fontSize: '0.75rem', color: '#496386' }}>
-                          CITRA Sede Arroyito · Av. Carlos Pontin Nº556
+                          CITRA Sede Arroyito · Av. Carlos Pontin 556
                         </div>
                       </div>
                     </div>

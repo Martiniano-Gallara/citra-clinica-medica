@@ -1223,7 +1223,7 @@ export const AppointmentBookingWizard = () => {
                       <div>
                         <div style={{ fontSize: '0.72rem', color: '#7994B8', fontWeight: 700 }}>Lugar de Atención:</div>
                         <div style={{ fontWeight: 700, color: '#475569' }}>
-                          Av. Carlos Pontín Nº556, Arroyito (Sede Central)
+                          Av. Carlos Pontin 556, Arroyito (Sede Central)
                         </div>
                       </div>
                     </div>
