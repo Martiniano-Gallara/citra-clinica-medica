@@ -35,7 +35,7 @@ export const ServicesSection = () => {
     { id: 'esp-1', label: 'Especialidades' },
     { id: 'esp-5', label: 'Rehabilitación' },
     { id: 'esp-10', label: 'Diagnóstico' },
-    { id: 'esp-12', label: 'Tratamientos' }
+    { id: 'esp-12', label: 'Tratamientos Complementarios' }
   ];
 
   const serviceCategories = [
@@ -47,11 +47,10 @@ export const ServicesSection = () => {
       icon: Bone,
       color: '#076ABC',
       items: [
-        { name: 'Traumatología', detail: 'Huesos, articulaciones y lesiones', icon: Bone },
         { name: 'Neurología', detail: 'Cefaleas, migrañas y sistema nervioso', icon: Brain },
         { name: 'Reumatología', detail: 'Artritis y dolores inflamatorios', icon: Activity },
-        { name: 'Nutrición', detail: 'Planes personalizados y desinflamación', icon: Apple },
-        { name: 'Medicina General & PAMI', detail: 'Atención clínica integral de adultos mayores', icon: Stethoscope }
+        { name: 'Traumatología', detail: 'Huesos, articulaciones y lesiones', icon: Bone },
+        { name: 'Nutrición', detail: 'Planes personalizados y desinflamación', icon: Apple }
       ]
     },
     {
@@ -64,39 +63,34 @@ export const ServicesSection = () => {
       items: [
         { name: 'Kinesiología & Fisioterapia', detail: 'Recuperación motora, fisiatría activa y analgesia', icon: Dumbbell },
         { name: 'Osteopatía', detail: 'Terapia manual biomecánica y estructural', icon: Layers },
-        { name: 'ATM & Bruxismo', detail: 'Tratamiento articular temporomandibular', icon: Smile },
-        { name: 'Piso Pélvico Femenino', detail: 'Fisioterapia perineal y uroginecológica', icon: Heart },
-        { name: 'Readaptación Funcional', detail: 'Reeducación postural y reintegro deportivo', icon: Activity }
+        { name: 'ATM', detail: 'Tratamiento articular temporomandibular y bruxismo', icon: Smile },
+        { name: 'Piso Pélvico Femenino', detail: 'Fisioterapia perineal y uroginecológica', icon: Heart }
       ]
     },
     {
       id: 'esp-10',
       title: 'DIAGNÓSTICO',
       badge: 'Imágenes Digitales',
-      description: 'Estudios por imágenes de alta resolución y análisis biomecánico con entrega inmediata.',
+      description: 'Estudios por imágenes de alta resolución y entrega inmediata.',
       icon: ScanLine,
       color: '#002182',
       items: [
-        { name: 'Radiología Digital', detail: 'Rayos X directos de alta definición', icon: ScanLine },
-        { name: 'Estudio de la Pisada', detail: 'Baropodometría computarizada y marcha', icon: Footprints },
-        { name: 'Plantillas Ortopédicas', detail: 'Diseño biomecánico personalizado a medida', icon: Footprints },
-        { name: 'Informes Inmediatos', detail: 'Entrega digital en el día para tu médico', icon: FileText },
-        { name: 'Aptos Físicos & Quirúrgicos', detail: 'Evaluación diagnóstica y pre-participativa', icon: CheckCircle2 }
+        { name: 'Radiología', detail: 'Rayos X directos de alta definición y entrega digital inmediata', icon: ScanLine }
       ]
     },
     {
       id: 'esp-12',
-      title: 'TRATAMIENTOS',
-      badge: 'Bienestar & Alivio',
-      description: 'Terapias regenerativas y medicina estética orientadas a tu bienestar corporal.',
+      title: 'TRATAMIENTOS COMPLEMENTARIOS',
+      badge: 'Bienestar & Regeneración',
+      description: 'Terapias biológicas, biomecánica y medicina estética orientadas a tu recuperación integral.',
       icon: Sparkles,
       color: '#076ABC',
       items: [
         { name: 'Ozonoterapia', detail: 'Alivio articular y regeneración biológica', icon: Sparkles },
         { name: 'Piso Pélvico Femenino', detail: 'Biofeedback y reeducación perineal', icon: Heart },
         { name: 'ATM', detail: 'Terapia para articulación temporomandibular', icon: Smile },
-        { name: 'Medicina Estética', detail: 'Procedimientos médico-estéticos no invasivos', icon: Sparkles },
-        { name: 'Regeneración Articular', detail: 'Terapias biológicas de recuperación', icon: Activity }
+        { name: 'Estudio de la Pisada', detail: 'Baropodometría computarizada y plantillas ortopédicas', icon: Footprints },
+        { name: 'Medicina Estética', detail: 'Procedimientos médico-estéticos no invasivos y bienestar', icon: Sparkles }
       ]
     }
   ];
@@ -199,7 +193,7 @@ export const ServicesSection = () => {
             border: '1.5px solid #D2E3FC',
             padding: '1.75rem 1.5rem',
             boxShadow: '0 6px 20px rgba(0, 33, 130, 0.05)',
-            minHeight: '530px',
+            minHeight: '440px',
             display: 'flex',
             flexDirection: 'column',
             boxSizing: 'border-box'

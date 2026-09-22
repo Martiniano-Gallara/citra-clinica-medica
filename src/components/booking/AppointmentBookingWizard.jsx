@@ -215,7 +215,7 @@ export const AppointmentBookingWizard = () => {
   const filteredSpecialties = specialties.filter((s) => {
     if (specialtyCategoryFilter === 'all') return true;
     if (specialtyCategoryFilter === 'medicas') {
-      return ['esp-1', 'esp-2', 'esp-3', 'esp-4', 'esp-14'].includes(s.id);
+      return ['esp-1', 'esp-2', 'esp-3', 'esp-4'].includes(s.id);
     }
     if (specialtyCategoryFilter === 'kinesio') {
       return ['esp-5', 'esp-6', 'esp-7', 'esp-8', 'esp-9'].includes(s.id);

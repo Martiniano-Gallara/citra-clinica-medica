@@ -50,19 +50,18 @@ export const INITIAL_CLINIC_INFO = {
 };
 
 export const INITIAL_SPECIALTIES = [
-  { id: 'esp-1', name: 'Traumatología', icon: 'Bone', defaultDuration: 30, estimatedDuration: 30, color: '#002182', category: 'Especialidades', description: 'Diagnóstico y tratamiento óseo, articular, fracturas y lesiones deportivas.' },
   { id: 'esp-2', name: 'Neurología', icon: 'Brain', defaultDuration: 40, estimatedDuration: 40, color: '#076ABC', category: 'Especialidades', description: 'Atención integral del sistema nervioso, migrañas, cefaleas y dolor neuropático.' },
   { id: 'esp-3', name: 'Reumatología', icon: 'Activity', defaultDuration: 30, estimatedDuration: 30, color: '#257CE6', category: 'Especialidades', description: 'Enfermedades inflamatorias y autoinmunes de las articulaciones y tejido conectivo.' },
+  { id: 'esp-1', name: 'Traumatología', icon: 'Bone', defaultDuration: 30, estimatedDuration: 30, color: '#002182', category: 'Especialidades', description: 'Diagnóstico y tratamiento óseo, articular, fracturas y lesiones deportivas.' },
   { id: 'esp-4', name: 'Nutrición', icon: 'Apple', defaultDuration: 30, estimatedDuration: 30, color: '#055294', category: 'Especialidades', description: 'Planes nutricionales personalizados, antiinflamatorios y nutrición deportiva.' },
   { id: 'esp-5', name: 'Kinesiología & Fisioterapia', icon: 'Dumbbell', defaultDuration: 40, estimatedDuration: 40, color: '#076ABC', category: 'Rehabilitación', description: 'Recuperación funcional activa, fisioterapia analgésica e instrumental, pre y post-quirúrgica en gimnasio terapéutico.' },
   { id: 'esp-7', name: 'Osteopatía', icon: 'Layers', defaultDuration: 45, estimatedDuration: 45, color: '#002182', category: 'Rehabilitación', description: 'Terapia manual estructural y visceral para restablecer la movilidad biomecánica.' },
   { id: 'esp-8', name: 'ATM (Articulación Temporomandibular)', icon: 'Smile', defaultDuration: 40, estimatedDuration: 40, color: '#076ABC', category: 'Rehabilitación', description: 'Tratamiento de disfunciones mandibulares, bruxismo y dolores orofaciales.' },
-  { id: 'esp-9', name: 'Rehabilitación de Suelo Pélvico', icon: 'Heart', defaultDuration: 45, estimatedDuration: 45, color: '#257CE6', category: 'Rehabilitación', description: 'Fisioterapia uroginecológica, biofeedback y recuperación perineal postparto.' },
+  { id: 'esp-9', name: 'Piso Pélvico Femenino', icon: 'Heart', defaultDuration: 45, estimatedDuration: 45, color: '#257CE6', category: 'Rehabilitación', description: 'Fisioterapia uroginecológica, biofeedback y recuperación perineal postparto.' },
   { id: 'esp-10', name: 'Radiología', icon: 'ScanLine', defaultDuration: 20, estimatedDuration: 20, color: '#001556', category: 'Diagnóstico', isUpcoming: true, description: 'Próximamente: Rayos X digitales directos de alta definición con entrega inmediata.' },
-  { id: 'esp-11', name: 'Estudio de Pisadas y Plantillas Ortopédicas', icon: 'Footprints', defaultDuration: 30, estimatedDuration: 30, color: '#055294', category: 'Diagnóstico', description: 'Baropodometría computarizada estática y dinámica para plantillas a medida.' },
   { id: 'esp-12', name: 'Ozonoterapia', icon: 'Sparkles', defaultDuration: 30, estimatedDuration: 30, color: '#076ABC', category: 'Tratamientos Complementarios', description: 'Terapia con ozono medicinal con potente efecto analgésico y regenerativo articular.' },
-  { id: 'esp-13', name: 'Medicina Estética', icon: 'Sparkles', defaultDuration: 30, estimatedDuration: 30, color: '#257CE6', category: 'Tratamientos Complementarios', description: 'Procedimientos médico-estéticos no invasivos y bioestimulación dérmica.' },
-  { id: 'esp-14', name: 'Atención PAMI', icon: 'UserCheck', defaultDuration: 30, estimatedDuration: 30, color: '#002182', category: 'Especialidades', description: 'Atención clínica y seguimiento de adultos mayores afiliados a PAMI.' }
+  { id: 'esp-11', name: 'Estudio de la Pisada', icon: 'Footprints', defaultDuration: 30, estimatedDuration: 30, color: '#055294', category: 'Tratamientos Complementarios', description: 'Baropodometría computarizada estática y dinámica para plantillas a medida.' },
+  { id: 'esp-13', name: 'Medicina Estética', icon: 'Sparkles', defaultDuration: 30, estimatedDuration: 30, color: '#257CE6', category: 'Tratamientos Complementarios', description: 'Procedimientos médico-estéticos no invasivos y bioestimulación dérmica.' }
 ];
 
 export const INITIAL_ROOMS = [
@@ -272,10 +271,10 @@ export const INITIAL_DOCTORS = [
     id: 'doc-7',
     name: 'Dra. Allione',
     fullName: 'Dra. Allione',
-    specialty: 'Medicina Estética & Atención PAMI',
+    specialty: 'Medicina Estética',
     specialtyId: 'esp-13',
-    specialtyName: 'Medicina Estética y Clínica PAMI',
-    specialtyIds: ['esp-13', 'esp-14'],
+    specialtyName: 'Medicina Estética & Bienestar',
+    specialtyIds: ['esp-13'],
     license: 'MP 39.774 / ME 18.110',
     sisaRefeps: 'REFEPS-MP-39774',
     digitalSignatureStatus: 'Activo (Token ONTI)',
@@ -295,7 +294,7 @@ export const INITIAL_DOCTORS = [
     feePercentage: 75,
     active: true,
     experience: '13+ años de trayectoria',
-    bio: 'Médica especialista en estética no invasiva, bioestimulación celular y atención clínica de excelencia para jubilados y pensionados de PAMI.',
+    bio: 'Médica especialista en estética no invasiva, bioestimulación celular, mesoterapia y tratamientos de armonización y bienestar dérmico.',
     stats: { patientsAttended: 830, occupationRate: 98, rating: 4.9 }
   },
   {

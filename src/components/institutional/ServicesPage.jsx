@@ -23,7 +23,6 @@ import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
 export const ServicesPage = () => {
   const { setCurrentView, setBookingPreselectedSpecialty } = useClinic();
-  const [activeCategory, setActiveCategory] = useState('especialidades');
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedId, setExpandedId] = useState(null);
 
@@ -36,44 +35,21 @@ export const ServicesPage = () => {
     setExpandedId(prev => prev === id ? null : id);
   };
 
-  const serviceCategories = [
-    { id: 'especialidades', label: 'Especialidades' },
-    { id: 'rehabilitacion', label: 'Rehabilitación' },
-    { id: 'diagnostico', label: 'Diagnóstico' },
-    { id: 'complementarios', label: 'Tratamientos' }
-  ];
-
   const serviceCards = [
     // --- ESPECIALIDADES MÉDICAS ---
-    {
-      id: 'esp-1',
-      category: 'especialidades',
-      name: 'Traumatología',
-      icon: Bone,
-      badge: 'Médica',
-      shortDesc: 'Huesos, fracturas y lesiones',
-      description: 'Diagnóstico, tratamiento y seguimiento médico y quirúrgico de patologías óseas, articulares, fracturas, esguinces, artrosis y lesiones deportivas.',
-      features: [
-        'Traumatología general, articular y de columna',
-        'Infiltraciones articulares y ecoguiadas',
-        'Manejo agudo de fracturas, luxaciones y yesos',
-        'Artroscopía y cirugías ortopédicas'
-      ],
-      equipment: 'Sala de yesos y quirófano ambulatorio'
-    },
     {
       id: 'esp-2',
       category: 'especialidades',
       name: 'Neurología',
       icon: Brain,
       badge: 'Médica',
-      shortDesc: 'Cefaleas, migrañas y nervios',
+      shortDesc: 'Cefaleas, migrañas y sistema nervioso',
       description: 'Abordaje integral y diagnóstico de afecciones del sistema nervioso central y periférico, cefaleas crónicas, neuropatías y trastornos motores.',
       features: [
         'Evaluación clínica neurológica completa',
         'Manejo especializado de migrañas y cefaleas',
         'Tratamiento del dolor neuropático y radiculopatías',
-        'Interconsulta directa con fisioterapia'
+        'Interconsulta directa con fisioterapia y rehabilitación'
       ],
       equipment: 'Consultorio neurológico equipado'
     },
@@ -89,9 +65,25 @@ export const ServicesPage = () => {
         'Artritis reumatoidea, lúpica y espondiloartritis',
         'Artrosis severa y dolor articular crónico',
         'Fibromialgia y fatiga musculoesquelética',
-        'Planes combinados con kinesiología'
+        'Planes combinados con kinesiología y ozonoterapia'
       ],
       equipment: 'Consultorio de reumatología clínica'
+    },
+    {
+      id: 'esp-1',
+      category: 'especialidades',
+      name: 'Traumatología',
+      icon: Bone,
+      badge: 'Médica',
+      shortDesc: 'Huesos, fracturas y lesiones',
+      description: 'Diagnóstico, tratamiento y seguimiento médico y quirúrgico de patologías óseas, articulares, fracturas, esguinces, artrosis y lesiones deportivas.',
+      features: [
+        'Traumatología general, articular y de columna',
+        'Infiltraciones articulares y ecoguiadas',
+        'Manejo agudo de fracturas, luxaciones y yesos',
+        'Artroscopía y cirugías ortopédicas'
+      ],
+      equipment: 'Sala de yesos y consultorio traumatológico'
     },
     {
       id: 'esp-4',
@@ -128,22 +120,6 @@ export const ServicesPage = () => {
       equipment: 'Gimnasio terapéutico y módulos de fisioterapia'
     },
     {
-      id: 'esp-rehab-func',
-      category: 'rehabilitacion',
-      name: 'Readaptación Funcional & RPG',
-      icon: Activity,
-      badge: 'Rehabilitación',
-      shortDesc: 'Reeducación postural y reintegro activo',
-      description: 'Programas de reeducación postural global, acondicionamiento neuromuscular y retorno progresivo y seguro a las actividades de la vida diaria y deportivas.',
-      features: [
-        'Reeducación Postural Global (RPG)',
-        'Readaptación funcional post-alta kinésica',
-        'Entrenamiento neuromuscular y propioceptivo',
-        'Prevención de sobrecargas y recidivas de lesiones'
-      ],
-      equipment: 'Gimnasio de biomecánica y elementos funcionales'
-    },
-    {
       id: 'esp-7',
       category: 'rehabilitacion',
       name: 'Osteopatía',
@@ -162,79 +138,63 @@ export const ServicesPage = () => {
     {
       id: 'esp-8',
       category: 'rehabilitacion',
-      name: 'ATM & Bruxismo',
+      name: 'ATM',
       icon: Smile,
       badge: 'Rehabilitación',
-      shortDesc: 'Bruxismo y dolor mandibular',
+      shortDesc: 'Bruxismo y dolor temporomandibular',
       description: 'Tratamiento kinésico específico de disfunciones temporomandibulares, bruxismo, dolor orofacial y contracturas cervicales asociadas.',
       features: [
         'Terapia manual intra y extraoral',
         'Descompresión de la articulación temporomandibular',
         'Reeducación de la dinámica masticatoria',
-        'Interdisciplina con odontólogos'
+        'Interdisciplina con odontólogos y cirujanos maxilofaciales'
       ],
       equipment: 'Gabinete especializado en ATM'
     },
     {
       id: 'esp-9',
       category: 'rehabilitacion',
-      name: 'Piso Pélvico',
+      name: 'Piso Pélvico Femenino',
       icon: Heart,
       badge: 'Rehabilitación',
-      shortDesc: 'Postparto e incontinencia',
+      shortDesc: 'Postparto, continencia y uroginecología',
       description: 'Fisioterapia uroginecológica y pelviperineal para la prevención y rehabilitación de disfunciones del suelo pélvico en mujeres.',
       features: [
-        'Tratamiento de incontinencia urinaria',
+        'Tratamiento de incontinencia urinaria de esfuerzo y urgencia',
         'Rehabilitación integral postparto y prolapsos',
-        'Biofeedback perineal y ejercicios guiados',
+        'Biofeedback perineal y control muscular consciente',
         'Gimnasia abdominal hipopresiva (GAH)'
       ],
-      equipment: 'Gabinete privado con biofeedback'
+      equipment: 'Gabinete privado con biofeedback perineal'
     },
 
     // --- DIAGNÓSTICO ---
     {
       id: 'esp-10',
       category: 'diagnostico',
-      name: 'Radiología Digital',
+      name: 'Radiología',
       icon: ScanLine,
       badge: 'Diagnóstico',
-      shortDesc: 'Rayos X y entrega inmediata',
+      shortDesc: 'Rayos X directos y entrega inmediata',
       description: 'Radiología digital directa de alta definición con mínima dosis de exposición y revelado instantáneo para estudios osteoarticulares y de columna.',
       features: [
         'Radiografías digitales de todos los segmentos',
-        'Estudios comparativos y dinámicos',
-        'Entrega digital inmediata para tu médico',
-        'Integración con Historia Clínica Electrónica'
+        'Estudios comparativos y dinámicos de alta definición',
+        'Entrega digital inmediata para tu médico tratante',
+        'Integración con Historia Clínica'
       ],
       equipment: 'Equipo de Rayos X digital Siemens'
     },
-    {
-      id: 'esp-11',
-      category: 'diagnostico',
-      name: 'Estudio de la Pisada',
-      icon: Footprints,
-      badge: 'Diagnóstico',
-      shortDesc: 'Baropodometría y plantillas',
-      description: 'Baropodometría computarizada y análisis biomecánico estático y dinámico de presiones plantares durante la marcha y la carrera.',
-      features: [
-        'Análisis computarizado de marcha y apoyo',
-        'Detección de pie plano, cavo y fascitis',
-        'Diseño de plantillas ortopédicas a medida',
-        'Evaluación deportiva y pediátrica'
-      ],
-      equipment: 'Plataforma baropodométrica computarizada'
-    },
 
-    // --- TRATAMIENTOS ---
+    // --- TRATAMIENTOS COMPLEMENTARIOS ---
     {
       id: 'esp-12',
       category: 'complementarios',
       name: 'Ozonoterapia',
       icon: Sparkles,
-      badge: 'Tratamientos',
-      shortDesc: 'Alivio del dolor y regeneración',
-      description: 'Terapia biológica con ozono medicinal con potente efecto analgésico, antiinflamatorio, antioxidante y oxigenador tisular.',
+      badge: 'Complementarios',
+      shortDesc: 'Alivio del dolor y regeneración biológica',
+      description: 'Terapia biológica con ozono medicinal con potente efecto analgésico, antiinflamatorio, antioxidante y oxigenador tisular en columna y articulaciones.',
       features: [
         'Infiltraciones articulares y paravertebrales',
         'Alivio significativo de artrosis y lumbalgias',
@@ -244,30 +204,47 @@ export const ServicesPage = () => {
       equipment: 'Generador de ozono medicinal certificado'
     },
     {
+      id: 'esp-11',
+      category: 'complementarios',
+      name: 'Estudio de la Pisada',
+      icon: Footprints,
+      badge: 'Complementarios',
+      shortDesc: 'Baropodometría y plantillas ortopédicas',
+      description: 'Baropodometría computarizada y análisis biomecánico estático y dinámico de presiones plantares durante la marcha y la carrera.',
+      features: [
+        'Análisis computarizado de marcha y apoyo plantar',
+        'Detección de pie plano, cavo, pronación y fascitis plantar',
+        'Diseño y confección de plantillas ortopédicas a medida',
+        'Evaluación preventiva para deportistas y pacientes pediátricos'
+      ],
+      equipment: 'Plataforma baropodométrica computarizada'
+    },
+    {
       id: 'esp-13',
       category: 'complementarios',
       name: 'Medicina Estética',
       icon: Sparkles,
-      badge: 'Tratamientos',
-      shortDesc: 'Bioestimulación y colágeno',
+      badge: 'Complementarios',
+      shortDesc: 'Bioestimulación y bienestar dérmico',
       description: 'Procedimientos médicos no quirúrgicos orientados a la bioestimulación celular, revitalización dérmica, tonificación y bienestar integral.',
       features: [
         'Bioestimulación de colágeno y ácido hialurónico',
-        'Tratamientos dérmicos regenerativos',
-        'Asesoramiento médico personalizado',
-        'Insumos aprobados por ANMAT'
+        'Tratamientos dérmicos regenerativos y revitalización',
+        'Asesoramiento médico personalizado no invasivo',
+        'Insumos aprobados por ANMAT en estricta asepsia'
       ],
       equipment: 'Gabinete médico en estricta asepsia'
     }
   ];
 
   const filteredCards = serviceCards.filter((c) => {
-    const matchesCategory = c.category === activeCategory;
-    const matchesSearch =
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.shortDesc.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.description.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      c.name.toLowerCase().includes(term) ||
+      c.shortDesc.toLowerCase().includes(term) ||
+      c.description.toLowerCase().includes(term)
+    );
   });
 
   return (
@@ -338,49 +315,6 @@ export const ServicesPage = () => {
           >
             Atención especializada, diagnóstico por imágenes y rehabilitación en Arroyito.
           </p>
-
-          {/* Quick Metrics Bar — 2 Tarjetas Glassmorphism */}
-          <div
-            className="services-metrics-grid"
-            style={{
-              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-              maxWidth: '640px'
-            }}
-          >
-            <div className="services-metric-card">
-              <div
-                className="services-metric-icon-wrap"
-                style={{
-                  background: 'radial-gradient(circle, rgba(37, 124, 230, 0.28) 0%, rgba(7, 106, 188, 0.12) 100%)',
-                  borderColor: 'rgba(96, 165, 250, 0.3)'
-                }}
-              >
-                <Layers size={20} color="#60A5FA" />
-              </div>
-              <div className="services-metric-content">
-                <div className="services-metric-value">13 Áreas</div>
-                <div className="services-metric-label">Especialidades</div>
-                <div className="services-metric-sub">Atención integral</div>
-              </div>
-            </div>
-
-            <div className="services-metric-card">
-              <div
-                className="services-metric-icon-wrap"
-                style={{
-                  background: 'radial-gradient(circle, rgba(168, 85, 247, 0.26) 0%, rgba(126, 34, 206, 0.1) 100%)',
-                  borderColor: 'rgba(192, 132, 252, 0.3)'
-                }}
-              >
-                <ScanLine size={20} color="#C084FC" />
-              </div>
-              <div className="services-metric-content">
-                <div className="services-metric-value">Digital</div>
-                <div className="services-metric-label">Rayos X & Eco</div>
-                <div className="services-metric-sub">Diagnóstico directo</div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -410,46 +344,6 @@ export const ServicesPage = () => {
             onFocus={(e) => (e.target.style.borderColor = '#076ABC')}
             onBlur={(e) => (e.target.style.borderColor = '#D2E3FC')}
           />
-        </div>
-
-        {/* Category Filters — Pills con scroll horizontal suave */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            overflowX: 'auto',
-            paddingBottom: '0.75rem',
-            marginBottom: '1.5rem',
-            WebkitOverflowScrolling: 'touch',
-            scrollbarWidth: 'none'
-          }}
-        >
-          {serviceCategories.map((cat) => {
-            const isSelected = activeCategory === cat.id;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => { setActiveCategory(cat.id); setExpandedId(null); }}
-                style={{
-                  background: isSelected ? '#076ABC' : '#F5F8FE',
-                  color: isSelected ? '#ffffff' : '#002182',
-                  border: isSelected ? '1.5px solid #076ABC' : '1.5px solid #D2E3FC',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '100px',
-                  fontSize: '0.84rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                  transition: 'all 0.15s ease',
-                  boxShadow: isSelected ? '0 3px 10px rgba(7, 106, 188, 0.25)' : 'none'
-                }}
-              >
-                {cat.label}
-              </button>
-            );
-          })}
         </div>
 
         {/* Services Count Banner */}
