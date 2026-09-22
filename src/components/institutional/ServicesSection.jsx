@@ -64,11 +64,11 @@ export const ServicesSection = () => {
       icon: Dumbbell,
       color: '#002182',
       items: [
-        { name: 'Kinesiología', detail: 'Recuperación motora y post-quirúrgica', icon: Dumbbell },
-        { name: 'Fisioterapia', detail: 'Magneto, ultrasonido y analgesia', icon: Zap },
-        { name: 'Osteopatía', detail: 'Terapia manual biomecánica', icon: Layers },
-        { name: 'ATM', detail: 'Bruxismo y dolor mandibular', icon: Smile },
-        { name: 'Piso Pélvico Fem.', detail: 'Fisioterapia perineal y uroginecológica', icon: Heart }
+        { name: 'Kinesiología & Fisioterapia', detail: 'Recuperación motora, fisiatría activa y analgesia', icon: Dumbbell },
+        { name: 'Osteopatía', detail: 'Terapia manual biomecánica y estructural', icon: Layers },
+        { name: 'ATM & Bruxismo', detail: 'Tratamiento articular temporomandibular', icon: Smile },
+        { name: 'Piso Pélvico Femenino', detail: 'Fisioterapia perineal y uroginecológica', icon: Heart },
+        { name: 'Readaptación Funcional', detail: 'Reeducación postural y reintegro deportivo', icon: Activity }
       ]
     },
     {

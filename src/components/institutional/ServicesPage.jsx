@@ -15,7 +15,6 @@ import {
   Sparkles,
   CheckCircle2,
   CalendarPlus,
-  Clock,
   ChevronDown,
   Search,
   Stethoscope
@@ -62,8 +61,7 @@ export const ServicesPage = () => {
         'Manejo agudo de fracturas, luxaciones y yesos',
         'Artroscopía y cirugías ortopédicas'
       ],
-      equipment: 'Sala de yesos y quirófano ambulatorio',
-      duration: '30 min'
+      equipment: 'Sala de yesos y quirófano ambulatorio'
     },
     {
       id: 'esp-2',
@@ -79,8 +77,7 @@ export const ServicesPage = () => {
         'Tratamiento del dolor neuropático y radiculopatías',
         'Interconsulta directa con fisioterapia'
       ],
-      equipment: 'Consultorio neurológico equipado',
-      duration: '40 min'
+      equipment: 'Consultorio neurológico equipado'
     },
     {
       id: 'esp-3',
@@ -96,8 +93,7 @@ export const ServicesPage = () => {
         'Fibromialgia y fatiga musculoesquelética',
         'Planes combinados con kinesiología'
       ],
-      equipment: 'Consultorio de reumatología clínica',
-      duration: '30-40 min'
+      equipment: 'Consultorio de reumatología clínica'
     },
     {
       id: 'esp-4',
@@ -113,44 +109,41 @@ export const ServicesPage = () => {
         'Nutrición deportiva y recuperación post-lesión',
         'Reeducación de hábitos metabólicos'
       ],
-      equipment: 'Analizador de bioimpedancia',
-      duration: '30-45 min'
+      equipment: 'Analizador de bioimpedancia'
     },
 
     // --- REHABILITACIÓN ---
     {
       id: 'esp-5',
       category: 'rehabilitacion',
-      name: 'Kinesiología',
+      name: 'Kinesiología & Fisioterapia',
       icon: Dumbbell,
       badge: 'Rehabilitación',
-      shortDesc: 'Rehabilitación y gimnasio',
-      description: 'Recuperación funcional y motora activa con planes individualizados para restablecer la movilidad, fuerza muscular y estabilidad articular.',
+      shortDesc: 'Rehabilitación motora y analgesia',
+      description: 'Abordaje integral unificado: combinamos la rehabilitación motora activa en gimnasio terapéutico con fisioterapia analgésica e instrumental de avanzada para una recuperación óptima.',
       features: [
         'Rehabilitación pre y post-quirúrgica',
-        'Reeducación biomecánica y postural',
-        'Fortalecimiento muscular progresivo',
-        'Supervisión personalizada por kinesiólogo'
+        'Magnetoterapia de alta potencia, ultrasonido y electroestimulación (TENS)',
+        'Fortalecimiento muscular progresivo y reeducación biomecánica',
+        'Supervisión personalizada por kinesiólogos y fisioterapeutas colegiados'
       ],
-      equipment: 'Gimnasio biomecánico de 180 m²',
-      duration: '45 min'
+      equipment: 'Gimnasio terapéutico y módulos de fisioterapia'
     },
     {
-      id: 'esp-6',
+      id: 'esp-rehab-func',
       category: 'rehabilitacion',
-      name: 'Fisioterapia',
-      icon: Zap,
+      name: 'Readaptación Funcional & RPG',
+      icon: Activity,
       badge: 'Rehabilitación',
-      shortDesc: 'Magneto, ultrasonido y TENS',
-      description: 'Terapia instrumental de avanzada para analgesia, desinflamación profunda y aceleración biológica de cicatrización tisular.',
+      shortDesc: 'Reeducación postural y reintegro activo',
+      description: 'Programas de reeducación postural global, acondicionamiento neuromuscular y retorno progresivo y seguro a las actividades de la vida diaria y deportivas.',
       features: [
-        'Magnetoterapia de alta potencia',
-        'Ultrasonido terapéutico y electroestimulación (TENS)',
-        'Corrientes rusas e interferenciales',
-        'Termoterapia y relajación muscular profunda'
+        'Reeducación Postural Global (RPG)',
+        'Readaptación funcional post-alta kinésica',
+        'Entrenamiento neuromuscular y propioceptivo',
+        'Prevención de sobrecargas y recidivas de lesiones'
       ],
-      equipment: 'Módulos fisioterapéuticos de última generación',
-      duration: '40 min'
+      equipment: 'Gimnasio de biomecánica y elementos funcionales'
     },
     {
       id: 'esp-7',
@@ -166,8 +159,7 @@ export const ServicesPage = () => {
         'Alivio de tensiones miofasciales crónicas',
         'Enfoque holístico e integrador del dolor'
       ],
-      equipment: 'Camilla osteopática articulada',
-      duration: '45 min'
+      equipment: 'Camilla osteopática articulada'
     },
     {
       id: 'esp-8',
@@ -183,8 +175,7 @@ export const ServicesPage = () => {
         'Reeducación de la dinámica masticatoria',
         'Interdisciplina con odontólogos'
       ],
-      equipment: 'Gabinete especializado en ATM',
-      duration: '40 min'
+      equipment: 'Gabinete especializado en ATM'
     },
     {
       id: 'esp-9',
@@ -200,8 +191,7 @@ export const ServicesPage = () => {
         'Biofeedback perineal y ejercicios guiados',
         'Gimnasia abdominal hipopresiva (GAH)'
       ],
-      equipment: 'Gabinete privado con biofeedback',
-      duration: '45 min'
+      equipment: 'Gabinete privado con biofeedback'
     },
 
     // --- DIAGNÓSTICO ---
@@ -219,8 +209,7 @@ export const ServicesPage = () => {
         'Entrega digital inmediata para tu médico',
         'Integración con Historia Clínica Electrónica'
       ],
-      equipment: 'Equipo de Rayos X digital Siemens',
-      duration: '15-20 min'
+      equipment: 'Equipo de Rayos X digital Siemens'
     },
     {
       id: 'esp-11',
@@ -236,8 +225,7 @@ export const ServicesPage = () => {
         'Diseño de plantillas ortopédicas a medida',
         'Evaluación deportiva y pediátrica'
       ],
-      equipment: 'Plataforma baropodométrica computarizada',
-      duration: '30 min'
+      equipment: 'Plataforma baropodométrica computarizada'
     },
 
     // --- TRATAMIENTOS ---
@@ -255,8 +243,7 @@ export const ServicesPage = () => {
         'Regeneración biológica sin fármacos químicos',
         'Procedimiento ambulatorio rápido y seguro'
       ],
-      equipment: 'Generador de ozono medicinal certificado',
-      duration: '30 min'
+      equipment: 'Generador de ozono medicinal certificado'
     },
     {
       id: 'esp-13',
@@ -272,8 +259,7 @@ export const ServicesPage = () => {
         'Asesoramiento médico personalizado',
         'Insumos aprobados por ANMAT'
       ],
-      equipment: 'Gabinete médico en estricta asepsia',
-      duration: '30-45 min'
+      equipment: 'Gabinete médico en estricta asepsia'
     }
   ];
 
@@ -633,30 +619,22 @@ export const ServicesPage = () => {
                         ))}
                       </div>
 
-                      {/* Fila compacta de equipamiento y tiempo */}
+                      {/* Fila compacta de equipamiento */}
                       <div
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: '0.5rem',
+                          gap: '0.4rem',
                           background: '#EBF3FD',
                           borderRadius: '10px',
                           padding: '0.5rem 0.75rem',
                           marginBottom: '0.85rem',
                           fontSize: '0.74rem',
-                          color: '#002182',
-                          flexWrap: 'wrap'
+                          color: '#002182'
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                          <Sparkles size={13} color="#076ABC" />
-                          <span style={{ fontWeight: 700 }}>{service.equipment}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#076ABC', fontWeight: 800 }}>
-                          <Clock size={13} />
-                          <span>{service.duration}</span>
-                        </div>
+                        <Sparkles size={13} color="#076ABC" style={{ flexShrink: 0 }} />
+                        <span style={{ fontWeight: 700 }}>{service.equipment}</span>
                       </div>
 
                       {/* Botón de Sacar Turno Directo */}

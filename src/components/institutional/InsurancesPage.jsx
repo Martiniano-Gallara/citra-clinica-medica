@@ -8,7 +8,6 @@ import {
   ChevronDown,
   Sparkles,
   HelpCircle,
-  Check,
   X,
   ExternalLink,
   Stethoscope,
@@ -456,21 +455,15 @@ export const InsurancesPage = () => {
                           style={{
                             fontSize: '0.66rem',
                             fontWeight: 800,
-                            background: hi.copay === 0 ? 'rgba(22, 163, 74, 0.12)' : '#EFF6FF',
-                            color: hi.copay === 0 ? '#15803d' : '#2563EB',
-                            border: `1px solid ${hi.copay === 0 ? 'rgba(22, 163, 74, 0.25)' : '#BFDBFE'}`,
-                            padding: '0.12rem 0.45rem',
+                            background: '#EFF6FF',
+                            color: '#076ABC',
+                            border: '1px solid #BFDBFE',
+                            padding: '0.14rem 0.55rem',
                             borderRadius: '100px',
                             whiteSpace: 'nowrap'
                           }}
                         >
-                          {hi.copay === 0 ? (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                              <Check size={11} /> Sin Copago
-                            </span>
-                          ) : (
-                            `Copago $${hi.copay?.toLocaleString('es-AR')}`
-                          )}
+                          Consultar a secretaría
                         </span>
                       </div>
 

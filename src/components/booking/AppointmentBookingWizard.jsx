@@ -586,18 +586,6 @@ export const AppointmentBookingWizard = () => {
                             </div>
 
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                              <span
-                                style={{
-                                  fontSize: '0.68rem',
-                                  fontWeight: 800,
-                                  background: '#F1F5F9',
-                                  color: '#475569',
-                                  padding: '0.15rem 0.5rem',
-                                  borderRadius: '6px'
-                                }}
-                              >
-                                {spec.estimatedDuration || 30} min
-                              </span>
                               {isSelected && <CheckCircle2 size={20} color="#076ABC" />}
                             </div>
                           </div>

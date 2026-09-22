@@ -11,7 +11,7 @@ const PRIMARY_INSURANCES = [
     id: 'hi-1',
     name: 'OSDE',
     logo: '/logos/logo-osde.png',
-    badge: 'Sin Copago',
+    badge: 'Consultar a secretaría',
     copay: 0
   },
   {
@@ -39,7 +39,7 @@ const PRIMARY_INSURANCES = [
     id: 'hi-5',
     name: 'PAMI',
     logo: '/logos/logo-pami.png',
-    badge: 'Sin Copago',
+    badge: 'Consultar a secretaría',
     copay: 0
   }
 ];
