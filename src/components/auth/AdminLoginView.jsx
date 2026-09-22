@@ -12,6 +12,7 @@ import {
   Stethoscope,
   Briefcase,
   ShieldCheck,
+  Shield,
   X,
   CheckCircle2,
   Activity
@@ -149,32 +150,88 @@ export const AdminLoginView = () => {
           width: 100%;
           max-width: 450px;
         }
-        .admin-login-mobile-back {
+        .admin-login-mobile-restricted {
           display: none;
         }
         @media (max-width: 1023px) {
           .admin-login-fullscreen-root {
             flex-direction: column;
-            background: #ffffff;
+            background: radial-gradient(circle at 50% 20%, #002182 0%, #001344 60%, #020718 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.5rem;
+            min-height: 100vh;
           }
           .admin-login-left-showcase {
-            display: none;
+            display: none !important;
           }
           .admin-login-right-panel {
-            flex: 1;
-            width: 100%;
-            min-height: 100vh;
-            padding: 2rem 1.25rem;
-            justify-content: center;
+            display: none !important;
           }
-          .admin-login-mobile-back {
+          .admin-login-mobile-restricted {
             display: flex;
-            align-self: flex-start;
-            margin-bottom: 1.5rem;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            max-width: 380px;
             width: 100%;
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 2.5rem 1.75rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            box-sizing: border-box;
           }
         }
       `}</style>
+
+      {/* Mobile restriction screen */}
+      <div className="admin-login-mobile-restricted">
+        <div
+          style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '16px',
+            background: '#EFF6FF',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#076ABC',
+            marginBottom: '1.25rem',
+            border: '1.5px solid #BFDBFE'
+          }}
+        >
+          <Shield size={28} />
+        </div>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#002182', margin: '0 0 0.5rem' }}>
+          Acceso de Escritorio
+        </h2>
+        <p style={{ fontSize: '0.86rem', color: '#496386', lineHeight: 1.55, margin: '0 0 1.5rem' }}>
+          El Portal de Administración y gestión clínica de CITRA es de uso exclusivo para computadoras y estaciones de trabajo de la clínica.
+        </p>
+        <button
+          onClick={() => setCurrentView('home')}
+          style={{
+            width: '100%',
+            background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+            color: '#ffffff',
+            border: 'none',
+            padding: '0.8rem 1rem',
+            borderRadius: '12px',
+            fontWeight: 800,
+            fontSize: '0.88rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            boxShadow: '0 4px 14px rgba(7, 106, 188, 0.28)'
+          }}
+        >
+          <ArrowLeft size={16} />
+          Volver a la Web Institucional
+        </button>
+      </div>
 
       {/* Left Showcase (Desktop First Full-Screen Presentation) */}
       <div className="admin-login-left-showcase">
