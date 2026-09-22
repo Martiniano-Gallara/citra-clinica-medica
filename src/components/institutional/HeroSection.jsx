@@ -230,12 +230,12 @@ export const HeroSection = () => {
             <span>Sacar Turno</span>
           </a>
 
-          {/* Contacto y Horarios con flecha hacia abajo que lleva a la sección #contacto */}
+          {/* Consultar Servicios con flecha hacia abajo que lleva a la sección #servicios */}
           <a
-            href="#contacto"
+            href="#servicios"
             onClick={(e) => {
               e.preventDefault();
-              const el = document.getElementById('contacto');
+              const el = document.getElementById('servicios');
               if (el) {
                 el.scrollIntoView({ behavior: 'smooth' });
               }
@@ -270,7 +270,7 @@ export const HeroSection = () => {
               e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 33, 130, 0.05)';
             }}
           >
-            <span>Contacto y Horarios</span>
+            <span>Consultar Servicios</span>
             <ArrowDown size={15} color="#076ABC" />
           </a>
         </div>
