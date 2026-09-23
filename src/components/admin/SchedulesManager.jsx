@@ -57,6 +57,7 @@ export const SchedulesManager = () => {
   const [adminDocEnd, setAdminDocEnd] = useState(selectedDocObj?.scheduleEnd || '14:00');
   const [adminDocSlot, setAdminDocSlot] = useState(selectedDocObj?.slotDuration || 30);
   const [adminDocBlocked, setAdminDocBlocked] = useState(selectedDocObj?.blockedDates || []);
+  const [adminDocScheduleDisplay, setAdminDocScheduleDisplay] = useState(selectedDocObj?.scheduleDisplay || '');
   const [adminNewBlockedDate, setAdminNewBlockedDate] = useState('');
 
   React.useEffect(() => {
@@ -66,6 +67,7 @@ export const SchedulesManager = () => {
       setAdminDocEnd(selectedDocObj.scheduleEnd || '14:00');
       setAdminDocSlot(selectedDocObj.slotDuration || 30);
       setAdminDocBlocked(selectedDocObj.blockedDates || []);
+      setAdminDocScheduleDisplay(selectedDocObj.scheduleDisplay || '');
     }
   }, [selectedAdminDoctorId, selectedDocObj]);
 
@@ -96,7 +98,8 @@ export const SchedulesManager = () => {
       scheduleStart: adminDocStart,
       scheduleEnd: adminDocEnd,
       slotDuration: Number(adminDocSlot),
-      blockedDates: adminDocBlocked
+      blockedDates: adminDocBlocked,
+      scheduleDisplay: adminDocScheduleDisplay.trim() || undefined
     });
     addToast('Agenda de Profesional Actualizada', `Se guardó la disponibilidad de ${selectedDocObj.name}.`, 'success');
   };
@@ -745,6 +748,52 @@ export const SchedulesManager = () => {
                 })}
               </div>
             </div>
+          </div>
+
+          {/* Texto Público de Días y Horarios para la Web */}
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '18px',
+              border: '1.5px solid #D2E3FC',
+              padding: '1.75rem',
+              boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.85rem' }}>
+              <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#EBF3FD', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#076ABC' }}>
+                <Clock size={20} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#002182' }}>
+                  Texto de Días y Horarios para la Web (Visible a Pacientes)
+                </h3>
+                <div style={{ fontSize: '0.75rem', color: '#496386' }}>
+                  Texto visible en la web para {selectedDocObj?.name} (ej: "Consultar en secretaría" o fechas del mes)
+                </div>
+              </div>
+            </div>
+            <input
+              type="text"
+              value={adminDocScheduleDisplay}
+              onChange={(e) => setAdminDocScheduleDisplay(e.target.value)}
+              placeholder="ej: Consultar en secretaría / Martes, miércoles y jueves por la tarde"
+              style={{
+                width: '100%',
+                padding: '0.75rem 1rem',
+                borderRadius: '10px',
+                border: '1.5px solid #D2E3FC',
+                fontSize: '0.9rem',
+                outline: 'none',
+                fontWeight: 700,
+                color: '#002182',
+                boxSizing: 'border-box',
+                background: '#F8FAFE'
+              }}
+            />
+            <span style={{ fontSize: '0.73rem', color: '#64748b', marginTop: '6px', display: 'block' }}>
+              Podés modificar este texto mensualmente cuando cambien las fechas de atención del profesional. Al presionar "Guardar Horarios", se reflejará en la web.
+            </span>
           </div>
 
           {/* Días Bloqueados del Médico */}

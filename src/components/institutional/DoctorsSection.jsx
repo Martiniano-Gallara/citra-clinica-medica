@@ -139,13 +139,15 @@ export const DoctorsSection = () => {
                     Matrícula: {doc.license || 'MN 114829 / MP 33490'}
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.78rem', color: '#496386', marginBottom: '1.25rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Clock size={14} color="#076ABC" />
-                      <span>{doc.workingDays ? doc.workingDays.join(', ') : 'Lun, Mié, Vie'}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.8rem', color: '#496386', marginBottom: '1.25rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.45rem' }}>
+                      <Clock size={15} color="#076ABC" style={{ flexShrink: 0, marginTop: '2px' }} />
+                      <span style={{ fontWeight: 700, color: '#002182', lineHeight: 1.35 }}>
+                        {doc.scheduleDisplay || (doc.workingDays ? doc.workingDays.join(', ') : 'Consultar en secretaría')}
+                      </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <MapPin size={14} color="#076ABC" />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                      <MapPin size={15} color="#076ABC" style={{ flexShrink: 0 }} />
                       <span>{doc.roomName || 'Consultorio Principal'}</span>
                     </div>
                   </div>

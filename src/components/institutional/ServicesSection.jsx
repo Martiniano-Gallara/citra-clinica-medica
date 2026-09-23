@@ -25,11 +25,11 @@ export const ServicesSection = () => {
       badge: 'Especialistas',
       description: 'Tocá la especialidad que necesitás para solicitar tu turno directo con secretaría:',
       items: [
-        { name: 'Traumatología', detail: 'Huesos, articulaciones y lesiones deportivas', icon: Bone },
-        { name: 'Neurología', detail: 'Cefaleas, migrañas y sistema nervioso central', icon: Brain },
-        { name: 'Reumatología', detail: 'Artritis y dolores articulares inflamatorios', icon: Activity },
-        { name: 'Nutrición', detail: 'Planes nutricionales clínicos y personalizados', icon: Apple },
-        { name: 'Atención PAMI', detail: 'Atención médica integral para afiliados PAMI', icon: Heart }
+        { name: 'Traumatología', detail: 'Dr. Blanco (Mar, mié y jue tarde) · Dr. Lagos (Lun 18 hs)', icon: Bone },
+        { name: 'Neurología', detail: 'Dra. Ferreira · Consultar en secretaría', icon: Brain },
+        { name: 'Reumatología', detail: 'Dra. Miretti · Consultar en secretaría', icon: Activity },
+        { name: 'Nutrición', detail: 'Lic. Tsakoumagkos · Consultar en secretaría', icon: Apple },
+        { name: 'Atención PAMI', detail: 'Dra. Allione · Martes y jueves (solo por la mañana)', icon: Heart }
       ]
     },
     {
@@ -39,10 +39,10 @@ export const ServicesSection = () => {
       badge: 'Gimnasio Terapéutico',
       description: 'Tocá el área de rehabilitación para coordinar tus sesiones con secretaría:',
       items: [
-        { name: 'Kinesiología & Fisioterapia', detail: 'Recuperación motora, analgesia y fisiatría', icon: Dumbbell },
-        { name: 'Osteopatía', detail: 'Terapia manual estructural y cadenas biomecánicas', icon: Layers },
-        { name: 'ATM (Mandíbula)', detail: 'Articulación temporomandibular y bruxismo', icon: Smile },
-        { name: 'Suelo Pélvico', detail: 'Rehabilitación perineal y uroginecológica', icon: Heart }
+        { name: 'Kinesiología & Fisioterapia', detail: 'Lic. Barrea (8 a 16) · Lic. Baravalle (8 a 14) · Lic. Mondino (14 a 20:30)', icon: Dumbbell },
+        { name: 'Osteopatía', detail: 'Lic. Mondino · Confirmar con el profesional o en CITRA', icon: Layers },
+        { name: 'ATM (Mandíbula)', detail: 'Lic. Baravalle · Confirmar con la profesional o en CITRA', icon: Smile },
+        { name: 'Suelo Pélvico', detail: 'Lic. Baravalle · Confirmar con la profesional o en CITRA', icon: Heart }
       ]
     },
     {
@@ -52,11 +52,11 @@ export const ServicesSection = () => {
       badge: 'Estudios & Tratamientos',
       description: 'Tocá el servicio o estudio para consultar disponibilidad y turnos:',
       items: [
-        { name: 'Radiología Digital', detail: 'Rayos X directos de alta definición y entrega inmediata', icon: ScanLine },
-        { name: 'Ozonoterapia', detail: 'Alivio articular y regeneración biológica', icon: Sparkles },
-        { name: 'Estudio de Pisada y Plantillas', detail: 'Baropodometría computarizada y ortesis a medida', icon: Footprints },
-        { name: 'Medicina Estética', detail: 'Procedimientos médico-estéticos y reparadores', icon: Sparkles },
-        { name: 'Shama Yoga', detail: 'Yoga postural terapéutico y adultos mayores', icon: Activity }
+        { name: 'Radiología Digital', detail: 'Lic. Emilio · Próximamente (Consultar en secretaría)', icon: ScanLine },
+        { name: 'Ozonoterapia', detail: 'Dr. Luque · Consultar en secretaría', icon: Sparkles },
+        { name: 'Estudio de Pisada y Plantillas', detail: 'Lic. Salvagno · Consultar en secretaría', icon: Footprints },
+        { name: 'Medicina Estética', detail: 'Dra. Allione · Lunes, miércoles y viernes', icon: Sparkles },
+        { name: 'Shama Yoga', detail: 'Profe Maru · Lunes y martes (Adultos mayores: mar 10 hs)', icon: Activity }
       ]
     }
   ];
@@ -172,7 +172,7 @@ export const ServicesSection = () => {
             background: '#F8FAFD',
             borderRadius: '22px',
             border: '1.5px solid #D2E3FC',
-            padding: '1.5rem 1.35rem 1.75rem',
+            padding: '1.35rem clamp(0.9rem, 3.5vw, 1.35rem) 1.5rem',
             boxShadow: '0 6px 20px rgba(0, 33, 130, 0.04)',
             display: 'flex',
             flexDirection: 'column',
@@ -180,7 +180,16 @@ export const ServicesSection = () => {
           }}
         >
           {/* Header de la categoría activa */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.65rem' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.5rem',
+              marginBottom: '0.75rem'
+            }}
+          >
             <div
               style={{
                 display: 'inline-flex',
@@ -188,16 +197,17 @@ export const ServicesSection = () => {
                 gap: '0.4rem',
                 background: '#076ABC',
                 color: '#ffffff',
-                padding: '0.35rem 0.85rem',
+                padding: '0.35rem 0.8rem',
                 borderRadius: '100px',
-                fontSize: '0.76rem',
+                fontSize: 'clamp(0.7rem, 2.4vw, 0.76rem)',
                 fontWeight: 900,
                 letterSpacing: '0.04em',
-                whiteSpace: 'nowrap'
+                maxWidth: '100%',
+                boxSizing: 'border-box'
               }}
             >
-              <CheckCircle2 size={14} color="#ffffff" />
-              <span>{activeCategory.title}</span>
+              <CheckCircle2 size={14} color="#ffffff" style={{ flexShrink: 0 }} />
+              <span style={{ lineHeight: 1.2 }}>{activeCategory.title}</span>
             </div>
 
             <span
@@ -209,7 +219,8 @@ export const ServicesSection = () => {
                 border: '1px solid #D2E3FC',
                 padding: '0.25rem 0.65rem',
                 borderRadius: '100px',
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
+                flexShrink: 0
               }}
             >
               {activeCategory.badge}
@@ -246,7 +257,7 @@ export const ServicesSection = () => {
                       : '0 1px 3px rgba(0, 33, 130, 0.02)'
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0, flex: 1 }}>
                     <div
                       style={{
                         width: '38px',
@@ -264,7 +275,7 @@ export const ServicesSection = () => {
                       <ItemIcon size={18} />
                     </div>
 
-                    <div style={{ minWidth: 0 }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
                       <div
                         style={{
                           fontSize: '0.94rem',
@@ -354,8 +365,8 @@ export const ServicesSection = () => {
               e.currentTarget.style.boxShadow = '0 6px 20px rgba(37, 211, 102, 0.3)';
             }}
           >
-            <WhatsAppIcon size={20} color="#ffffff" />
-            <span>
+            <WhatsAppIcon size={20} color="#ffffff" style={{ flexShrink: 0 }} />
+            <span style={{ textAlign: 'center', lineHeight: 1.25 }}>
               Sacar Turno para {selectedService?.name || activeCategory.items[0].name}
             </span>
           </button>

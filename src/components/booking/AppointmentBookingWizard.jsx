@@ -740,8 +740,8 @@ export const AppointmentBookingWizard = () => {
                           <div style={{ fontSize: '0.74rem', color: '#076ABC', fontWeight: 700 }}>
                             {doc.specialty}
                           </div>
-                          <div style={{ fontSize: '0.7rem', color: '#7994B8', marginTop: '2px' }}>
-                            {doc.roomName || 'Consultorios CITRA'}
+                          <div style={{ fontSize: '0.7rem', color: '#002182', fontWeight: 700, marginTop: '2px', lineHeight: 1.25 }}>
+                            {doc.scheduleDisplay || (doc.workingDays ? doc.workingDays.join(', ') : 'Consultar en secretaría')}
                           </div>
                         </div>
                         {isSelected && <CheckCircle2 size={20} color="#076ABC" />}

@@ -30,6 +30,7 @@ export const DoctorsManager = () => {
   const [slotDuration, setSlotDuration] = useState(30);
   const [priceConsultation, setPriceConsultation] = useState(25000);
   const [selectedDays, setSelectedDays] = useState(['Lunes', 'Miércoles', 'Viernes']);
+  const [scheduleDisplay, setScheduleDisplay] = useState('');
 
   const allDays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
@@ -52,6 +53,7 @@ export const DoctorsManager = () => {
     setSlotDuration(30);
     setPriceConsultation(25000);
     setSelectedDays(['Lunes', 'Miércoles', 'Viernes']);
+    setScheduleDisplay('Consultar en secretaría');
     setIsModalOpen(true);
   };
 
@@ -66,6 +68,7 @@ export const DoctorsManager = () => {
     setSlotDuration(doc.slotDuration || 30);
     setPriceConsultation(doc.priceConsultation || 25000);
     setSelectedDays(doc.workingDays || ['Lunes', 'Miércoles', 'Viernes']);
+    setScheduleDisplay(doc.scheduleDisplay || '');
     setIsModalOpen(true);
   };
 
@@ -86,7 +89,8 @@ export const DoctorsManager = () => {
         scheduleEnd,
         slotDuration: Number(slotDuration),
         priceConsultation: Number(priceConsultation),
-        workingDays: selectedDays
+        workingDays: selectedDays,
+        scheduleDisplay: scheduleDisplay.trim() || undefined
       });
     } else {
       addDoctor({
@@ -99,7 +103,8 @@ export const DoctorsManager = () => {
         scheduleEnd,
         slotDuration: Number(slotDuration),
         priceConsultation: Number(priceConsultation),
-        workingDays: selectedDays
+        workingDays: selectedDays,
+        scheduleDisplay: scheduleDisplay.trim() || undefined
       });
     }
 
@@ -212,8 +217,8 @@ export const DoctorsManager = () => {
                   <Clock size={14} color="#076ABC" />
                   <span>{doc.scheduleStart || '08:30'} a {doc.scheduleEnd || '17:00'} hs ({doc.slotDuration || 30} min)</span>
                 </div>
-                <div style={{ fontSize: '0.75rem', color: '#7994B8', marginTop: '2px' }}>
-                  Días: {doc.workingDays ? doc.workingDays.join(', ') : 'Lun, Mié, Vie'}
+                <div style={{ fontSize: '0.75rem', color: '#076ABC', marginTop: '2px', fontWeight: 700 }}>
+                  Horario Web: {doc.scheduleDisplay || (doc.workingDays ? doc.workingDays.join(', ') : 'Consultar en secretaría')}
                 </div>
               </div>
             </div>
@@ -428,6 +433,23 @@ export const DoctorsManager = () => {
                     );
                   })}
                 </div>
+              </div>
+
+              {/* Texto de Días y Horarios para la Web */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                  Texto de Días y Horarios para la Web (Visible al paciente)
+                </label>
+                <input
+                  type="text"
+                  value={scheduleDisplay}
+                  onChange={(e) => setScheduleDisplay(e.target.value)}
+                  placeholder="ej: Consultar en secretaría / Martes y jueves por la tarde"
+                  style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+                />
+                <span style={{ fontSize: '0.73rem', color: '#64748b', marginTop: '3px', display: 'block' }}>
+                  Texto que verán los pacientes en la página de CITRA. Podés cambiarlo cada mes si varían las fechas de atención.
+                </span>
               </div>
 
               <button
