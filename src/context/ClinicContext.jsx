@@ -62,12 +62,11 @@ export const ClinicProvider = ({ children }) => {
   });
   const [patients, setPatients] = useState(() => loadStorage('patients', INITIAL_PATIENTS));
   const [appointments, setAppointments] = useState(() => {
-    const loaded = loadStorage('appointments', INITIAL_APPOINTMENTS);
-    return loaded.map((a) =>
-      a.doctorId === 'doc-1' || (a.doctorName && a.doctorName.includes('Morales'))
-        ? { ...a, doctorId: 'doc-1', doctorName: 'Dr. Alejandro Blanco' }
-        : a
-    );
+    const loaded = loadStorage('appointments', null);
+    if (!loaded || !Array.isArray(loaded) || loaded.length < INITIAL_APPOINTMENTS.length) {
+      return INITIAL_APPOINTMENTS;
+    }
+    return loaded;
   });
   const [consultations, setConsultations] = useState(() => {
     const loaded = loadStorage('consultations', INITIAL_CONSULTATIONS);
