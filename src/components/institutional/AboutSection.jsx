@@ -61,10 +61,10 @@ export const AboutSection = () => {
               }}
             >
               <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#257CE6', lineHeight: 1 }}>
-                25+
+                +5
               </div>
               <div style={{ fontSize: '0.85rem', fontWeight: 700, marginTop: '0.3rem' }}>
-                Años de liderazgo en traumatología
+                Años construyendo CITRA en Arroyito
               </div>
               <div style={{ fontSize: '0.72rem', color: '#D2E3FC', marginTop: '0.25rem' }}>
                 Atención humanizada y tecnología de punta

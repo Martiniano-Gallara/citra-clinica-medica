@@ -5,15 +5,9 @@ import {
   ShieldCheck,
   Search,
   CheckCircle2,
-  CalendarPlus,
-  ChevronDown,
   Sparkles,
-  HelpCircle,
-  X,
-  ExternalLink,
-  Stethoscope,
-  Activity,
-  Zap
+  ChevronDown,
+  X
 } from 'lucide-react';
 
 const INSURANCE_LOGOS = {
@@ -25,10 +19,9 @@ const INSURANCE_LOGOS = {
 };
 
 export const InsurancesPage = () => {
-  const { healthInsurances, setCurrentView } = useClinic();
+  const { healthInsurances } = useClinic();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('prepagas');
-  const [expandedId, setExpandedId] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState('todos');
   const [expandedFaq, setExpandedFaq] = useState(null);
 
   const getResolvedLogo = (hi) => {
@@ -47,18 +40,19 @@ export const InsurancesPage = () => {
   };
 
   const filterTabs = [
+    { id: 'todos', label: 'Todas' },
     { id: 'prepagas', label: 'Prepagas' },
     { id: 'sociales', label: 'Obras Sociales' },
     { id: 'particular', label: 'Particular' }
   ];
 
   const filteredInsurances = healthInsurances.filter((hi) => {
-    const matchesSearch =
-      hi.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (hi.plans && hi.plans.some((p) => p.toLowerCase().includes(searchTerm.toLowerCase())));
+    const q = searchTerm.toLowerCase().trim();
+    const matchesSearch = !q || hi.name.toLowerCase().includes(q);
 
     if (!matchesSearch) return false;
 
+    if (selectedCategory === 'todos') return true;
     if (selectedCategory === 'prepagas') {
       return ['OSDE', 'Swiss Medical', 'Galeno', 'Medicus'].some((n) => hi.name.includes(n));
     }
@@ -71,15 +65,6 @@ export const InsurancesPage = () => {
     return true;
   });
 
-  const handleBook = () => {
-    setCurrentView('booking');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const toggleExpand = (id) => {
-    setExpandedId((prev) => (prev === id ? null : id));
-  };
-
   const toggleFaq = (index) => {
     setExpandedFaq((prev) => (prev === index ? null : index));
   };
@@ -87,29 +72,27 @@ export const InsurancesPage = () => {
   const faqs = [
     {
       q: '¿Qué necesito presentar el día de mi turno?',
-      a: 'Tu DNI original y tu credencial médica (física o desde la app oficial en el celular). Si tu cobertura requiere Token o código de validación, tenelo listo al momento del ingreso en recepción.'
+      a: 'Tu DNI original y tu credencial médica (física o digital desde la app oficial de tu cobertura).'
     },
     {
-      q: '¿Cómo se autorizan las sesiones de Kinesiología y Fisioterapia?',
-      a: 'En CITRA gestionamos la autorización de forma electrónica directa con las obras sociales y prepagas para que no tengas que desplazarte ni hacer trámites adicionales.'
+      q: '¿Cómo coordino sesiones de Kinesiología y Fisioterapia?',
+      a: 'Escribinos a secretaría vía WhatsApp con tu orden médica para verificar tu cobertura y coordinar tus días de atención.'
     },
     {
-      q: '¿Puedo atenderme en CITRA de manera particular?',
-      a: 'Sí. Disponemos de aranceles institucionales preferenciales para consultas médicas, sesiones de rehabilitación motora y radiología digital. Emitimos factura oficial para reintegro.'
+      q: '¿Puedo atenderme de manera particular?',
+      a: 'Sí, podés atenderte de forma particular en todas nuestras especialidades médicas y de rehabilitación.'
     }
   ];
 
   return (
-    <div style={{ background: '#ffffff', minHeight: '100vh' }}>
-      {/* Header Banner — Rediseño Premium: Atmósfera Tech, Glassmorphism y Métricas */}
+    <div style={{ background: '#F8FAFD', minHeight: '100vh' }}>
+      {/* Header Banner */}
       <section className="services-hero-banner">
-        {/* Fondo con microretícula y halos de iluminación ambiental */}
         <div aria-hidden="true" className="services-hero-grid-bg" />
         <div aria-hidden="true" className="services-hero-glow-cyan" />
         <div aria-hidden="true" className="services-hero-glow-blue" />
 
         <div style={{ maxWidth: '1020px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-          {/* Badge institucional superior */}
           <div
             style={{
               display: 'inline-flex',
@@ -166,63 +149,8 @@ export const InsurancesPage = () => {
               opacity: 0.95
             }}
           >
-            Convenios directos y atención médica sin trámites innecesarios en Arroyito.
+            Convenios directos y atención médica sin vueltas en Arroyito.
           </p>
-
-          {/* Quick Selectors Bar — Botones Glassmorphic de Marcas Populares */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              overflowX: 'auto',
-              paddingTop: '0.85rem',
-              borderTop: '1px solid rgba(210, 227, 252, 0.18)',
-              scrollbarWidth: 'none',
-              WebkitOverflowScrolling: 'touch'
-            }}
-          >
-            <span style={{ fontSize: '0.74rem', color: '#93C5FD', fontWeight: 700, whiteSpace: 'nowrap', marginRight: '0.2rem' }}>
-              Populares:
-            </span>
-            {[
-              { name: 'OSDE', color: '#00529b' },
-              { name: 'Swiss Medical', color: '#e11d48' },
-              { name: 'Galeno', color: '#2563eb' },
-              { name: 'Apross', color: '#00A896' },
-              { name: 'PAMI', color: '#002B49' },
-              { name: 'Medicus', color: '#7c3aed' }
-            ].map((brand, i) => {
-              const isActive = searchTerm.toLowerCase() === brand.name.toLowerCase();
-              return (
-                <button
-                  key={i}
-                  onClick={() => setSearchTerm(isActive ? '' : brand.name)}
-                  style={{
-                    background: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.12)',
-                    color: isActive ? '#002182' : '#ffffff',
-                    border: isActive ? '1px solid #ffffff' : '1px solid rgba(255, 255, 255, 0.2)',
-                    backdropFilter: 'blur(8px)',
-                    WebkitBackdropFilter: 'blur(8px)',
-                    padding: '0.32rem 0.75rem',
-                    borderRadius: '100px',
-                    fontSize: '0.74rem',
-                    fontWeight: 800,
-                    whiteSpace: 'nowrap',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                    transition: 'all 0.15s ease',
-                    boxShadow: isActive ? '0 3px 10px rgba(0, 0, 0, 0.25)' : 'none'
-                  }}
-                >
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isActive ? brand.color : '#38BDF8' }} />
-                  <span>{brand.name}</span>
-                </button>
-              );
-            })}
-          </div>
         </div>
       </section>
 
@@ -235,7 +163,7 @@ export const InsurancesPage = () => {
             <Search size={18} color="#076ABC" style={{ position: 'absolute', left: '1.1rem', top: '50%', transform: 'translateY(-50%)' }} />
             <input
               type="text"
-              placeholder="Buscar cobertura..."
+              placeholder="Buscar obra social o prepaga..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
@@ -303,9 +231,9 @@ export const InsurancesPage = () => {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => { setSelectedCategory(tab.id); setExpandedId(null); }}
+                  onClick={() => setSelectedCategory(tab.id)}
                   style={{
-                    background: isSelected ? 'linear-gradient(135deg, #076ABC 0%, #002182 100%)' : '#F5F8FE',
+                    background: isSelected ? 'linear-gradient(135deg, #076ABC 0%, #002182 100%)' : '#ffffff',
                     color: isSelected ? '#ffffff' : '#002182',
                     border: isSelected ? '1.5px solid #076ABC' : '1.5px solid #D2E3FC',
                     padding: '0.45rem 0.95rem',
@@ -327,41 +255,26 @@ export const InsurancesPage = () => {
         </div>
 
         {/* Header Summary */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem', padding: '0 0.25rem' }}>
-          <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#496386' }}>
-            Mostrando {filteredInsurances.length} {filteredInsurances.length === 1 ? 'convenio habilitado' : 'convenios habilitados'}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', padding: '0 0.25rem' }}>
+          <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#496386' }}>
+            Mostrando {filteredInsurances.length} {filteredInsurances.length === 1 ? 'convenio' : 'convenios'}
           </span>
-          <button
-            onClick={() => setExpandedId(expandedId ? null : (filteredInsurances[0]?.id || null))}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#076ABC',
-              fontSize: '0.76rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              padding: 0
-            }}
-          >
-            {expandedId ? 'Colapsar detalles' : 'Ver detalle'}
-          </button>
         </div>
 
-        {/* Insurances List — Acordeones Rediseñados con Logos Reales y Tarjetas Elevadas */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2.5rem' }}>
+        {/* Insurances List — Tarjetas Limpias, Resumidas y Sin Datos Falsos */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem', marginBottom: '2.5rem' }}>
           {filteredInsurances.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '3.5rem 1rem', background: '#F8FAFD', borderRadius: '18px', border: '1.5px dashed #D2E3FC' }}>
+            <div style={{ textAlign: 'center', padding: '3.5rem 1rem', background: '#ffffff', borderRadius: '18px', border: '1.5px dashed #D2E3FC' }}>
               <ShieldCheck size={40} color="#7994B8" style={{ margin: '0 auto 0.85rem' }} />
               <div style={{ fontSize: '1rem', fontWeight: 800, color: '#002182', marginBottom: '0.3rem' }}>
                 No encontramos convenios para "{searchTerm}"
               </div>
               <div style={{ fontSize: '0.84rem', color: '#496386', maxWidth: '420px', margin: '0 auto' }}>
-                Probá buscando por otro nombre o contactá a nuestra mesa de entrada para verificar tu plan particular.
+                Probá buscando por otro nombre o consultá directamente a secretaría por WhatsApp.
               </div>
             </div>
           ) : (
             filteredInsurances.map((hi) => {
-              const isExpanded = expandedId === hi.id;
               const logoSrc = getResolvedLogo(hi);
               const category = getCategoryLabel(hi.name);
 
@@ -369,40 +282,32 @@ export const InsurancesPage = () => {
                 <div
                   key={hi.id}
                   style={{
-                    background: isExpanded ? '#ffffff' : '#F9FBFE',
-                    border: isExpanded ? '1.5px solid #076ABC' : '1.5px solid #DCE7F7',
+                    background: '#ffffff',
+                    border: '1.5px solid #E2EDFC',
                     borderRadius: '16px',
-                    overflow: 'hidden',
-                    transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
-                    boxShadow: isExpanded ? '0 8px 24px rgba(7, 106, 188, 0.12)' : '0 2px 6px rgba(0, 33, 130, 0.02)'
+                    padding: '1.25rem 1.35rem',
+                    boxShadow: '0 2px 10px rgba(0, 33, 130, 0.03)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.85rem',
+                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
                   }}
                 >
-                  {/* Fila Principal */}
-                  <div
-                    onClick={() => toggleExpand(hi.id)}
-                    style={{
-                      padding: '0.85rem 1rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.85rem',
-                      cursor: 'pointer',
-                      userSelect: 'none'
-                    }}
-                  >
-                    {/* Contenedor de Logo Oficial en Caja Blanca */}
+                  {/* Fila superior: Logo + Nombre + Badge */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
                     <div
                       style={{
-                        width: '48px',
-                        height: '48px',
+                        width: '52px',
+                        height: '52px',
                         borderRadius: '12px',
                         background: '#ffffff',
                         border: '1.5px solid #D2E3FC',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        padding: '4px',
+                        padding: '5px',
                         flexShrink: 0,
-                        boxShadow: '0 2px 6px rgba(0, 33, 130, 0.05)',
+                        boxShadow: '0 2px 6px rgba(0, 33, 130, 0.04)',
                         overflow: 'hidden'
                       }}
                     >
@@ -422,7 +327,7 @@ export const InsurancesPage = () => {
                       <span
                         style={{
                           display: logoSrc ? 'none' : 'flex',
-                          fontSize: '0.92rem',
+                          fontSize: '0.95rem',
                           fontWeight: 900,
                           color: hi.logoColor || '#076ABC'
                         }}
@@ -431,246 +336,82 @@ export const InsurancesPage = () => {
                       </span>
                     </div>
 
-                    {/* Información y Datos de Cobertura */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap', marginBottom: '0.2rem' }}>
-                        <span style={{ fontSize: '0.98rem', fontWeight: 900, color: '#002182' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.2rem' }}>
+                        <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#002182' }}>
                           {hi.name}
-                        </span>
-                        
+                        </h3>
                         <span
                           style={{
-                            fontSize: '0.66rem',
+                            fontSize: '0.7rem',
                             fontWeight: 800,
                             background: '#EBF3FD',
                             color: '#076ABC',
-                            padding: '0.12rem 0.45rem',
-                            borderRadius: '6px',
-                            whiteSpace: 'nowrap'
+                            padding: '0.15rem 0.55rem',
+                            borderRadius: '100px',
+                            border: '1px solid #D2E3FC'
                           }}
                         >
                           {category}
                         </span>
-
-                        <a
-                          href={`https://wa.me/543576450214?text=${encodeURIComponent(`Hola CITRA, quisiera consultar en secretaría por la cobertura de ${hi.name}.`)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          style={{
-                            fontSize: '0.66rem',
-                            fontWeight: 800,
-                            background: '#EFF6FF',
-                            color: '#076ABC',
-                            border: '1px solid #BFDBFE',
-                            padding: '0.15rem 0.55rem',
-                            borderRadius: '100px',
-                            whiteSpace: 'nowrap',
-                            textDecoration: 'none',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.3rem',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                            boxShadow: '0 1px 2px rgba(7, 106, 188, 0.06)'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#25D366';
-                            e.currentTarget.style.color = '#ffffff';
-                            e.currentTarget.style.borderColor = '#22C55E';
-                            e.currentTarget.style.transform = 'translateY(-1px)';
-                            e.currentTarget.style.boxShadow = '0 3px 8px rgba(37, 211, 102, 0.25)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#EFF6FF';
-                            e.currentTarget.style.color = '#076ABC';
-                            e.currentTarget.style.borderColor = '#BFDBFE';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = '0 1px 2px rgba(7, 106, 188, 0.06)'
-                          }}
-                          title="Consultar por WhatsApp al 3576 450214"
-                        >
-                          <WhatsAppIcon size={12} />
-                          <span>Consultar a secretaría</span>
-                        </a>
                       </div>
-
-                      <div style={{ fontSize: '0.76rem', color: '#496386', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {hi.plans ? `Planes: ${hi.plans.join(', ')}` : 'Convenio activo con validación digital'}
+                      <div style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <CheckCircle2 size={13} color="#16a34a" />
+                        <span>Convenio activo en CITRA</span>
                       </div>
-                    </div>
-
-                    {/* Botón Circular Flecha */}
-                    <div
-                      style={{
-                        width: '30px',
-                        height: '30px',
-                        borderRadius: '50%',
-                        background: isExpanded ? '#EBF3FD' : '#ffffff',
-                        border: '1px solid #D2E3FC',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#076ABC',
-                        transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                        transition: 'transform 0.25s ease',
-                        flexShrink: 0
-                      }}
-                    >
-                      <ChevronDown size={16} />
                     </div>
                   </div>
 
-                  {/* Cuerpo Expandido con Prestaciones y CTA */}
-                  {isExpanded && (
-                    <div
-                      style={{
-                        padding: '0.75rem 1rem 1rem',
-                        borderTop: '1px solid #EDF3FD',
-                        background: '#ffffff'
-                      }}
-                    >
-                      {/* Chips de Prestaciones Cubiertas */}
-                      <div style={{ marginBottom: '0.85rem' }}>
-                        <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.4rem' }}>
-                          Prestaciones Habilitadas en Sede:
-                        </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                          <span style={{ fontSize: '0.74rem', fontWeight: 700, background: '#EFF6FF', color: '#1E40AF', padding: '0.2rem 0.6rem', borderRadius: '6px', border: '1px solid #DBEAFE', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                            <Stethoscope size={13} color="#1E40AF" /> Consultas Traumatología & Esp.
-                          </span>
-                          <span style={{ fontSize: '0.74rem', fontWeight: 700, background: '#ECFDF5', color: '#065F46', padding: '0.2rem 0.6rem', borderRadius: '6px', border: '1px solid #A7F3D0', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                            <Activity size={13} color="#065F46" /> Kinesiología & Fisioterapia
-                          </span>
-                          <span style={{ fontSize: '0.74rem', fontWeight: 700, background: '#F5F3FF', color: '#5B21B6', padding: '0.2rem 0.6rem', borderRadius: '6px', border: '1px solid #DDD6FE', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                            <Zap size={13} color="#5B21B6" /> Radiología Digital & Ecografía
-                          </span>
-                        </div>
-                      </div>
+                  {/* Descripción simple de 1 renglón */}
+                  <p style={{ margin: 0, fontSize: '0.84rem', color: '#496386', lineHeight: 1.45 }}>
+                    Consultá con secretaría los alcances de cobertura y aranceles según tu plan para coordinar tu atención.
+                  </p>
 
-                      {/* Planes Habilitados */}
-                      {hi.plans && (
-                        <div style={{ marginBottom: '0.85rem' }}>
-                          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.35rem' }}>
-                            Planes con Cobertura:
-                          </div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                            {hi.plans.map((p, pIdx) => (
-                              <span
-                                key={pIdx}
-                                style={{
-                                  fontSize: '0.74rem',
-                                  fontWeight: 800,
-                                  background: '#F8FAFD',
-                                  color: '#002182',
-                                  border: '1px solid #D2E3FC',
-                                  padding: '0.2rem 0.55rem',
-                                  borderRadius: '6px'
-                                }}
-                              >
-                                {p}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Nota de Admisión Rápida */}
-                      <div
-                        style={{
-                          background: '#F8FAFD',
-                          borderRadius: '10px',
-                          padding: '0.65rem 0.85rem',
-                          border: '1px solid #D2E3FC',
-                          marginBottom: '0.95rem',
-                          fontSize: '0.78rem',
-                          color: '#496386',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem'
-                        }}
-                      >
-                        <CheckCircle2 size={16} color="#076ABC" style={{ flexShrink: 0 }} />
-                        <span>Presentá tu DNI y credencial médica (o app digital con Token) en la mesa de recepción.</span>
-                      </div>
-
-                      {/* Botones de Acción: Sacar Turno y WhatsApp Secretaría */}
-                      <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-                        <button
-                          onClick={handleBook}
-                          style={{
-                            flex: '1 1 200px',
-                            background: 'linear-gradient(135deg, #257CE6 0%, #076ABC 100%)',
-                            color: '#ffffff',
-                            border: 'none',
-                            padding: '0.85rem 1.2rem',
-                            borderRadius: '12px',
-                            fontWeight: 800,
-                            fontSize: '0.92rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.5rem',
-                            cursor: 'pointer',
-                            boxShadow: '0 4px 14px rgba(7, 106, 188, 0.3)',
-                            minHeight: '46px',
-                            transition: 'all 0.2s ease'
-                          }}
-                        >
-                          <CalendarPlus size={18} />
-                          Sacar Turno con {hi.name}
-                        </button>
-
-                        <a
-                          href={`https://wa.me/543576450214?text=${encodeURIComponent(`Hola CITRA, quisiera consultar en secretaría por la cobertura de ${hi.name}.`)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            background: '#F0FDF4',
-                            border: '1.5px solid #BBF7D0',
-                            color: '#15803D',
-                            padding: '0.85rem 1.15rem',
-                            borderRadius: '12px',
-                            fontWeight: 800,
-                            fontSize: '0.88rem',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.45rem',
-                            cursor: 'pointer',
-                            textDecoration: 'none',
-                            minHeight: '46px',
-                            transition: 'all 0.2s ease',
-                            flexShrink: 0
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#25D366';
-                            e.currentTarget.style.color = '#ffffff';
-                            e.currentTarget.style.borderColor = '#22C55E';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#F0FDF4';
-                            e.currentTarget.style.color = '#15803D';
-                            e.currentTarget.style.borderColor = '#BBF7D0';
-                          }}
-                          title="Enviar WhatsApp a secretaría (3576 450214)"
-                        >
-                          <WhatsAppIcon size={18} />
-                          <span>WhatsApp Secretaría</span>
-                        </a>
-                      </div>
-                    </div>
-                  )}
+                  {/* Botón único directo a WhatsApp */}
+                  <a
+                    href={`https://wa.me/543576450214?text=${encodeURIComponent(`Hola CITRA, quisiera consultar por la cobertura de ${hi.name}.`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      width: '100%',
+                      background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '0.8rem 1.1rem',
+                      borderRadius: '12px',
+                      fontWeight: 800,
+                      fontSize: '0.88rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                      cursor: 'pointer',
+                      textDecoration: 'none',
+                      boxShadow: '0 4px 14px rgba(37, 211, 102, 0.28)',
+                      minHeight: '44px',
+                      transition: 'all 0.2s ease',
+                      boxSizing: 'border-box'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 18px rgba(37, 211, 102, 0.38)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 14px rgba(37, 211, 102, 0.28)';
+                    }}
+                  >
+                    <WhatsAppIcon size={17} color="#ffffff" />
+                    <span>Consultar Cobertura de {hi.name}</span>
+                  </a>
                 </div>
               );
             })
           )}
         </div>
 
-
-
         {/* Preguntas Frecuentes (FAQs) */}
-        <div style={{ marginBottom: '2.5rem' }}>
+        <div style={{ marginBottom: '2rem' }}>
           <div style={{ fontSize: '0.74rem', fontWeight: 900, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.3rem' }}>
             PREGUNTAS FRECUENTES
           </div>
@@ -685,7 +426,7 @@ export const InsurancesPage = () => {
                 <div
                   key={idx}
                   style={{
-                    background: '#F8FAFD',
+                    background: '#ffffff',
                     border: '1.5px solid #E2EDFC',
                     borderRadius: '14px',
                     overflow: 'hidden',
@@ -733,8 +474,6 @@ export const InsurancesPage = () => {
             })}
           </div>
         </div>
-
-
 
       </section>
     </div>

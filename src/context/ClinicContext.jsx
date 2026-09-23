@@ -55,11 +55,10 @@ export const ClinicProvider = ({ children }) => {
   const [healthInsurances, setHealthInsurances] = useState(() => loadStorage('healthInsurances', INITIAL_HEALTH_INSURANCES));
   const [doctors, setDoctors] = useState(() => {
     const loaded = loadStorage('doctors', INITIAL_DOCTORS);
-    return loaded.map((d) =>
-      d.id === 'doc-1' || d.email === 'dr.blanco@citra.com.ar' || (d.name && d.name.includes('Morales'))
-        ? { ...d, id: 'doc-1', name: 'Dr. Alejandro Blanco', fullName: 'Dr. Alejandro Blanco', email: 'dr.blanco@citra.com.ar' }
-        : d
-    );
+    return INITIAL_DOCTORS.map((initDoc) => {
+      const savedDoc = Array.isArray(loaded) ? loaded.find((d) => d.id === initDoc.id) : null;
+      return savedDoc ? { ...savedDoc, ...initDoc } : initDoc;
+    });
   });
   const [patients, setPatients] = useState(() => loadStorage('patients', INITIAL_PATIENTS));
   const [appointments, setAppointments] = useState(() => {
@@ -99,15 +98,16 @@ export const ClinicProvider = ({ children }) => {
   const [tasks, setTasks] = useState(() => loadStorage('tasks', INITIAL_TASKS_AND_ALERTS));
   const [users, setUsers] = useState(() => {
     const loaded = loadStorage('users', INITIAL_USERS);
-    return loaded.map((u) => {
-      if (u.id === 'usr-1' || u.doctorId === 'doc-1' || (u.name && u.name.includes('Morales') && u.adminType === 'doctor')) {
-        return { ...u, id: 'usr-1', name: 'Dr. Alejandro Blanco', email: 'dr.blanco@citra.com.ar', adminType: 'doctor', doctorId: 'doc-1' };
-      }
-      if (u.id === 'usr-6') {
-        return { ...u, name: 'Dr. Roberto Morales', email: 'roberto.morales@citra.com.ar' };
-      }
-      return u;
-    });
+    const userMap = new Map();
+    INITIAL_USERS.forEach((u) => userMap.set(u.email.toLowerCase(), u));
+    if (Array.isArray(loaded)) {
+      loaded.forEach((u) => {
+        if (!userMap.has(u.email?.toLowerCase())) {
+          userMap.set(u.email?.toLowerCase(), u);
+        }
+      });
+    }
+    return Array.from(userMap.values());
   });
   const [currentUser, setCurrentUser] = useState(() => {
     const loaded = loadStorage('currentUser', INITIAL_USERS[0]);

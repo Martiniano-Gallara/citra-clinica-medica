@@ -8,7 +8,8 @@ import {
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
 export const HeroSection = () => {
-  const { setCurrentView } = useClinic();
+  const { setCurrentView, doctors } = useClinic();
+  const activeDoctorsCount = doctors?.filter((d) => d.active !== false).length || 13;
 
   return (
     <section id="inicio" style={{ background: '#F5F8FE' }}>
@@ -192,15 +193,20 @@ export const HeroSection = () => {
             </span>
           </h1>
 
-          {/* BOTÓN DE SACAR TURNO POR WHATSAPP */}
+          {/* BOTÓN PRINCIPAL AZUL: CONSULTAR SERVICIOS (DESLIZA A #servicios) */}
           <a
-            href={`https://wa.me/543576450214?text=${encodeURIComponent('Hola CITRA, quisiera solicitar un turno.')}`}
-            target="_blank"
-            rel="noopener noreferrer"
+            href="#servicios"
+            onClick={(e) => {
+              e.preventDefault();
+              const el = document.getElementById('servicios');
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
             style={{
               width: '100%',
               maxWidth: '290px',
-              background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+              background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
               color: '#ffffff',
               textDecoration: 'none',
               padding: '0.95rem 1.6rem',
@@ -212,30 +218,29 @@ export const HeroSection = () => {
               justifyContent: 'center',
               gap: '0.6rem',
               cursor: 'pointer',
-              boxShadow: '0 8px 24px rgba(37, 211, 102, 0.35)',
+              boxShadow: '0 8px 24px rgba(7, 106, 188, 0.35)',
               minHeight: '48px',
               transition: 'all 0.2s ease',
               boxSizing: 'border-box'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 10px 28px rgba(37, 211, 102, 0.45)';
+              e.currentTarget.style.boxShadow = '0 10px 28px rgba(7, 106, 188, 0.45)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(37, 211, 102, 0.35)';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(7, 106, 188, 0.35)';
             }}
           >
-            <WhatsAppIcon size={20} color="#ffffff" />
-            <span>Sacar Turno</span>
+            <span>Consultar Servicios</span>
           </a>
 
-          {/* Consultar Servicios con flecha hacia abajo que lleva a la sección #servicios */}
+          {/* Contacto y Horarios con flecha hacia abajo que lleva a la sección #contacto */}
           <a
-            href="#servicios"
+            href="#contacto"
             onClick={(e) => {
               e.preventDefault();
-              const el = document.getElementById('servicios');
+              const el = document.getElementById('contacto');
               if (el) {
                 el.scrollIntoView({ behavior: 'smooth' });
               }
@@ -270,7 +275,7 @@ export const HeroSection = () => {
               e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 33, 130, 0.05)';
             }}
           >
-            <span>Consultar Servicios</span>
+            <span>Contacto y Horarios</span>
             <ArrowDown size={15} color="#076ABC" />
           </a>
         </div>
@@ -322,15 +327,15 @@ export const HeroSection = () => {
           }}
         >
           <div>
-            <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#002182', whiteSpace: 'nowrap' }}>+25 años</div>
+            <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#002182', whiteSpace: 'nowrap' }}>+5 años</div>
             <div style={{ fontSize: '0.78rem', color: '#496386', fontWeight: 700, marginTop: '0.15rem' }}>Trayectoria</div>
           </div>
           <div>
-            <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#076ABC', whiteSpace: 'nowrap' }}>15.000+</div>
+            <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#076ABC', whiteSpace: 'nowrap' }}>10.000+</div>
             <div style={{ fontSize: '0.78rem', color: '#496386', fontWeight: 700, marginTop: '0.15rem' }}>Pacientes</div>
           </div>
           <div>
-            <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#002182', whiteSpace: 'nowrap' }}>20+</div>
+            <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#002182', whiteSpace: 'nowrap' }}>{activeDoctorsCount}</div>
             <div style={{ fontSize: '0.78rem', color: '#496386', fontWeight: 700, marginTop: '0.15rem' }}>Especialistas</div>
           </div>
         </div>
