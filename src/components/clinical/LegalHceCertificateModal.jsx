@@ -15,13 +15,18 @@ import {
 export const LegalHceCertificateModal = ({ isOpen, onClose, targetPatient = null }) => {
   const {
     patients,
+    scopedPatients,
     consultations,
+    scopedConsultations,
+    doctors,
     currentDoctor,
     isDoctor
   } = useClinic();
 
+  const effectivePatients = isDoctor ? scopedPatients : patients;
+
   const [selectedPatientId, setSelectedPatientId] = useState(
-    targetPatient?.id || patients[0]?.id || ''
+    targetPatient?.id || effectivePatients[0]?.id || ''
   );
 
   useEffect(() => {
@@ -31,18 +36,24 @@ export const LegalHceCertificateModal = ({ isOpen, onClose, targetPatient = null
   }, [targetPatient]);
 
   const activePatient = useMemo(() => {
-    return patients.find((p) => p.id === selectedPatientId) || targetPatient || patients[0];
-  }, [patients, selectedPatientId, targetPatient]);
+    return effectivePatients.find((p) => p.id === selectedPatientId) || targetPatient || effectivePatients[0];
+  }, [effectivePatients, selectedPatientId, targetPatient]);
 
   const patientConsultations = useMemo(() => {
     if (!activePatient) return [];
-    return consultations.filter(
+    const consList = isDoctor ? scopedConsultations : consultations;
+    return consList.filter(
       (c) => c.patientId === activePatient.id || c.patientDni === activePatient.dni
     );
-  }, [consultations, activePatient]);
+  }, [isDoctor, scopedConsultations, consultations, activePatient]);
 
-  const activeDoctorName = isDoctor && currentDoctor ? currentDoctor.name : (activePatient?.doctorName || 'Dr. Alejandro Blanco');
-  const activeDoctorLicense = isDoctor && currentDoctor ? currentDoctor.license : 'M.P. 34.892 · M.N. 114.829';
+  const latestConsultation = patientConsultations[0];
+  const activeDoctorName = isDoctor && currentDoctor
+    ? currentDoctor.name
+    : (latestConsultation?.doctorName || activePatient?.doctorName || doctors[0]?.name || 'Dirección Médica');
+  const activeDoctorLicense = isDoctor && currentDoctor
+    ? currentDoctor.license
+    : (latestConsultation?.doctorLicense || (doctors.find((d) => d.name === activeDoctorName)?.license) || doctors[0]?.license || '');
 
   const currentDateStr = new Date().toISOString().split('T')[0];
   const currentTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

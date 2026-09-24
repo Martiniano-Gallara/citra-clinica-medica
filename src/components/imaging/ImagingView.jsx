@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
+import { NewImagingStudyModal } from './NewImagingStudyModal';
 import {
   Eye,
   Plus,
@@ -271,6 +272,7 @@ export const ImagingView = () => {
             boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)',
             transition: 'transform 0.15s ease, box-shadow 0.15s ease'
           }}
+          onClick={() => setIsImagingStudyModalOpen(true)}
           onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-1px)')}
           onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
         >
@@ -1576,6 +1578,9 @@ export const ImagingView = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de Solicitud y Carga de Estudios */}
+      <NewImagingStudyModal />
     </div>
   );
 };

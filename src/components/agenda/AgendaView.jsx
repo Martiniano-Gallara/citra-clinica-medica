@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { getTodayArgentina, addDays } from '../../utils/dateUtils';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -80,19 +81,15 @@ export const AgendaView = () => {
 
   // Date Navigation
   const handlePrevDay = () => {
-    const d = new Date(filterDate);
-    d.setDate(d.getDate() - 1);
-    setFilterDate(d.toISOString().split('T')[0]);
+    setFilterDate(addDays(filterDate, -1));
   };
 
   const handleNextDay = () => {
-    const d = new Date(filterDate);
-    d.setDate(d.getDate() + 1);
-    setFilterDate(d.toISOString().split('T')[0]);
+    setFilterDate(addDays(filterDate, 1));
   };
 
   const handleToday = () => {
-    setFilterDate('2026-08-28');
+    setFilterDate(getTodayArgentina());
   };
 
   // Date label in Spanish
@@ -757,7 +754,7 @@ export const AgendaView = () => {
                               className="btn btn-sm btn-outline"
                               style={{ padding: '4px 6px', color: '#059669', borderColor: '#a7f3d0' }}
                               onClick={() => {
-                                sendWhatsAppReminder(app);
+                                sendWhatsAppReminder(app.id);
                                 addToast('WhatsApp Enviado', `Recordatorio enviado a ${app.patientName}`, 'success');
                               }}
                               title="Enviar recordatorio WhatsApp"

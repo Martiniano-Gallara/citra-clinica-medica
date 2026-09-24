@@ -3,18 +3,21 @@ import { useClinic } from '../../context/ClinicContext';
 import { Modal } from '../common/Modal';
 import { Lock, AlertCircle } from 'lucide-react';
 
+import { getTodayArgentina } from '../../utils/dateUtils';
+
 export const BlockTimeModal = () => {
   const {
     isBlockTimeModalOpen,
     setIsBlockTimeModalOpen,
     doctors,
+    patients,
     addAppointment,
     addToast
   } = useClinic();
 
   const [formData, setFormData] = useState({
     doctorId: doctors[0]?.id || '',
-    date: '2026-08-28',
+    date: getTodayArgentina(),
     time: '14:00',
     duration: 60,
     reason: 'Bloqueo por Reunión Clínica / Congreso'
@@ -23,12 +26,14 @@ export const BlockTimeModal = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     const doc = doctors.find((d) => d.id === formData.doctorId);
+    const validPatientId = patients.find((p) => p.id === 'pat-block')?.id || patients[0]?.id || 'pat-1';
+
     addAppointment({
-      patientId: 'block',
-      patientName: `[BLOQUEO DE HORARIO] — ${formData.reason}`,
+      patientId: validPatientId,
+      patientName: `[BLOQUEO INSTITUCIONAL] — ${formData.reason}`,
       patientPhone: '-',
-      patientDni: '-',
-      patientInsurance: 'Clínica',
+      patientDni: '00000000',
+      patientInsurance: 'Institucional / Clínica',
       doctorId: formData.doctorId,
       doctorName: doc ? doc.name : 'Médico',
       specialtyId: doc?.specialtyId || '',
@@ -38,14 +43,14 @@ export const BlockTimeModal = () => {
       date: formData.date,
       time: formData.time,
       duration: formData.duration,
-      status: 'cancelado',
-      reason: formData.reason,
+      status: 'confirmado',
+      reason: `[BLOQUEO DE HORARIO] ${formData.reason}`,
       copayAmount: 0,
       isPaid: true,
       paymentMethod: '-',
-      notes: 'Franja bloqueada en agenda'
+      notes: 'Franja bloqueada institucionalmente en agenda'
     });
-    addToast('Horario Bloqueado', `Franja horaria bloqueada para ${doc?.name}.`, 'warning');
+    addToast('Horario Bloqueado', `Franja horaria reservada para ${doc?.name || 'el profesional'}.`, 'warning');
     setIsBlockTimeModalOpen(false);
   };
 

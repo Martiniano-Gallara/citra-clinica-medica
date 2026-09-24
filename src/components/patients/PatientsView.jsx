@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { sanitizeCsvCell, getTodayArgentina } from '../../utils/dateUtils';
 import {
   Users,
   Search,
@@ -101,14 +102,26 @@ export const PatientsView = () => {
 
   const exportPatientsCSV = () => {
     const headers = 'ID,Nombre,DNI,FechaNacimiento,Edad,Genero,GrupoSanguineo,Telefono,Email,ObraSocial,Plan,NumeroAfiliado,Alergias\n';
-    const rows = filteredPatients.map((p) =>
-      `"${p.id}","${p.name}","${p.dni}","${p.birthDate}","${calculateAge(p.birthDate)}","${p.gender}","${p.bloodType || 'A+'}","${p.phone}","${p.email}","${p.insuranceName}","${p.insurancePlan}","${p.insuranceNumber || ''}","${(p.allergies || []).join(';') || 'Ninguna'}"`
-    ).join('\n');
+    const rows = filteredPatients.map((p) => [
+      sanitizeCsvCell(p.id),
+      sanitizeCsvCell(p.name),
+      sanitizeCsvCell(p.dni),
+      sanitizeCsvCell(p.birthDate),
+      sanitizeCsvCell(calculateAge(p.birthDate)),
+      sanitizeCsvCell(p.gender),
+      sanitizeCsvCell(p.bloodType || 'A+'),
+      sanitizeCsvCell(p.phone),
+      sanitizeCsvCell(p.email),
+      sanitizeCsvCell(p.insuranceName),
+      sanitizeCsvCell(p.insurancePlan),
+      sanitizeCsvCell(p.insuranceNumber || ''),
+      sanitizeCsvCell((p.allergies || []).join(';') || 'Ninguna')
+    ].join(',')).join('\n');
     const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `CITRA_Pacientes_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `CITRA_Pacientes_${getTodayArgentina()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -121,9 +134,10 @@ export const PatientsView = () => {
         patientId: pat.id,
         patientName: pat.name,
         patientDni: pat.dni,
-        doctorId: currentDoctor?.id || 'doc-1',
-        doctorName: currentDoctor?.name || 'Dr. Alejandro Blanco',
-        specialtyName: currentDoctor?.specialty || 'Traumatología',
+        doctorId: currentDoctor?.id || '',
+        doctorName: currentDoctor?.name || '',
+        doctorLicense: currentDoctor?.license || '',
+        specialtyName: currentDoctor?.specialty || '',
         reason: 'Consulta médica programada'
       });
       setIsNewConsultationModalOpen(true);

@@ -103,7 +103,7 @@ export const AdminLoginView = () => {
   const isLockedOut = lockoutRemainingSecs > 0;
 
   // Handle direct login submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -121,8 +121,8 @@ export const AdminLoginView = () => {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      const res = loginAdmin(cleanEmail, cleanPass);
+    try {
+      const res = await loginAdmin(cleanEmail, cleanPass);
       setLoading(false);
 
       if (!res.success) {
@@ -160,19 +160,23 @@ export const AdminLoginView = () => {
           // ignore
         }
       }
-    }, 350);
+    } catch (err) {
+      setLoading(false);
+      setErrorMsg('Error de conexión o validación con el servidor central.');
+    }
   };
 
   // 1-Click quick login handler for demo/testing
-  const handleQuickLogin = (targetUser) => {
+  const handleQuickLogin = async (targetUser) => {
     if (!targetUser || isLockedOut) return;
     setEmail(targetUser.email);
     setPassword('citra2026');
     setLoading(true);
-    setTimeout(() => {
-      loginAdmin(targetUser.email, 'citra2026');
+    try {
+      await loginAdmin(targetUser.email, 'citra2026');
+    } finally {
       setLoading(false);
-    }, 200);
+    }
   };
 
   const handleRecoverySubmit = async (e) => {

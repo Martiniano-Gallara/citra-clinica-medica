@@ -19,7 +19,9 @@ import {
   Download,
   Activity,
   FileCheck2,
-  Pill
+  Pill,
+  Check,
+  CheckCircle2
 } from 'lucide-react';
 
 export const PatientDetailModal = () => {

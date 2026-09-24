@@ -162,6 +162,16 @@ export const AppointmentBookingWizard = () => {
     }
   }, [availableDates, selectedDate]);
 
+  // Doctors matching selected specialty
+  const filteredDoctors = selectedSpecialty
+    ? doctors.filter((d) =>
+        d.specialtyId === selectedSpecialty.id ||
+        d.specialty === selectedSpecialty.name ||
+        (Array.isArray(d.specialtyIds) && d.specialtyIds.includes(selectedSpecialty.id)) ||
+        (d.specialty && selectedSpecialty.name && d.specialty.toLowerCase().includes(selectedSpecialty.name.toLowerCase()))
+      )
+    : doctors;
+
   // Generate available time slots based on doctor's schedule or general slots
   const generateTimeSlots = () => {
     const slots = [];
@@ -175,21 +185,37 @@ export const AppointmentBookingWizard = () => {
     let currentMin = startH * 60 + startM;
     const endMin = endH * 60 + endM;
 
-    const occupiedTimes = appointments
-      .filter((a) => {
-        if (a.date !== selectedDate || a.status === 'cancelado') return false;
-        if (selectedDoctor && selectedDoctor.id !== 'any') {
-          return a.doctorId === selectedDoctor.id;
-        }
-        return false;
-      })
-      .map((a) => a.time);
-
     while (currentMin < endMin) {
       const h = Math.floor(currentMin / 60);
       const m = currentMin % 60;
       const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-      const isOccupied = occupiedTimes.includes(timeStr);
+
+      let isOccupied = false;
+      if (selectedDoctor && selectedDoctor.id !== 'any') {
+        isOccupied = appointments.some(
+          (a) =>
+            a.date === selectedDate &&
+            a.doctorId === selectedDoctor.id &&
+            a.time === timeStr &&
+            a.status !== 'cancelado'
+        );
+      } else {
+        // Mode: 'Primer profesional disponible'
+        // A slot is occupied only if ALL doctors in filteredDoctors have an active appointment at this date & time
+        const eligibleDocs = filteredDoctors.length > 0 ? filteredDoctors : doctors;
+        const availableDocExists = eligibleDocs.some((doc) => {
+          const isBooked = appointments.some(
+            (a) =>
+              a.date === selectedDate &&
+              a.doctorId === doc.id &&
+              a.time === timeStr &&
+              a.status !== 'cancelado'
+          );
+          return !isBooked;
+        });
+        isOccupied = !availableDocExists;
+      }
+
       slots.push({ time: timeStr, isOccupied, hour: h });
       currentMin += intervalMinutes;
     }
@@ -200,16 +226,6 @@ export const AppointmentBookingWizard = () => {
   const timeSlots = generateTimeSlots();
   const morningSlots = timeSlots.filter((s) => s.hour < 13);
   const afternoonSlots = timeSlots.filter((s) => s.hour >= 13);
-
-  // Doctors matching selected specialty
-  const filteredDoctors = selectedSpecialty
-    ? doctors.filter((d) =>
-        d.specialtyId === selectedSpecialty.id ||
-        d.specialty === selectedSpecialty.name ||
-        (Array.isArray(d.specialtyIds) && d.specialtyIds.includes(selectedSpecialty.id)) ||
-        (d.specialty && selectedSpecialty.name && d.specialty.toLowerCase().includes(selectedSpecialty.name.toLowerCase()))
-      )
-    : doctors;
 
   // Specialty category filter
   const filteredSpecialties = specialties.filter((s) => {
@@ -250,9 +266,20 @@ export const AppointmentBookingWizard = () => {
       return;
     }
 
-    const assignedDoctor = selectedDoctor && selectedDoctor.id !== 'any'
-      ? selectedDoctor
-      : filteredDoctors[0] || doctors[0];
+    let assignedDoctor = selectedDoctor && selectedDoctor.id !== 'any' ? selectedDoctor : null;
+    if (!assignedDoctor) {
+      const eligibleDocs = filteredDoctors.length > 0 ? filteredDoctors : doctors;
+      assignedDoctor = eligibleDocs.find((doc) => {
+        const isBooked = appointments.some(
+          (a) =>
+            a.date === selectedDate &&
+            a.doctorId === doc.id &&
+            a.time === selectedTime &&
+            a.status !== 'cancelado'
+        );
+        return !isBooked;
+      }) || eligibleDocs[0] || doctors[0];
+    }
 
     const newAppointmentData = {
       patientId: authPatient ? authPatient.id : `pat-temp-${Date.now()}`,

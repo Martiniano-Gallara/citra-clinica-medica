@@ -41,16 +41,16 @@ export const ConsentFormsModal = () => {
     addToast
   } = useClinic();
 
-  // Active doctor resolution (strictly Dr. Alejandro Blanco when isDoctor)
+  // Active doctor resolution (strictly authenticated physician)
   const activeDoctor = useMemo(() => {
     if (isDoctor && currentDoctor) return currentDoctor;
+    if (currentDoctor) return currentDoctor;
     return (
-      doctors.find((d) => d.name?.includes('Blanco')) ||
       doctors[0] || {
         id: 'doc-1',
         name: 'Dr. Alejandro Blanco',
-        license: 'M.P. 34.892 · M.N. 114.829',
-        specialty: 'Traumatología & Cirugía Artroscópica'
+        license: 'MP 38.412 / ME 19.820',
+        specialty: 'Traumatología'
       }
     );
   }, [isDoctor, currentDoctor, doctors]);
@@ -63,9 +63,7 @@ export const ConsentFormsModal = () => {
 
   // Revocation modal state
   const [revokingId, setRevokingId] = useState(null);
-  const [revocationReason, setRevocationReason] = useState(
-    'Decisión voluntaria del paciente previo a la realización del procedimiento.'
-  );
+  const [revocationReason, setRevocationReason] = useState('');
 
   // Traumatology Fast Procedures Protocols
   const procedureProtocols = [
@@ -77,7 +75,7 @@ export const ConsentFormsModal = () => {
         'Infección articular (artritis séptica < 0.05%), dolor local transitorio, sinovitis reactiva química leve, hematoma o equimosis en el sitio de punción, reacción de hipersensibilidad al producto.',
       benefits:
         'Alivio sostenido del dolor gonartrósico, viscosuplementación del cartílago hialino articular, reducción de la fricción femorotibial y recuperación de la movilidad funcional.',
-      witness: 'Romina Maidana (DNI 32.105.880)'
+      witness: ''
     },
     {
       label: 'Artroscopía Rodilla / Plastia LCA',
@@ -87,7 +85,7 @@ export const ConsentFormsModal = () => {
         'Riesgo anestésico general o raquídeo, hemartrosis articular postquirúrgica, trombosis venosa profunda (TVP), rigidez articular transitoria en flexo-extensión, fallo de fijación ligamentaria o re-rotura de injerto.',
       benefits:
         'Restitución anatómica de la estabilidad articular antero-posterior de la rodilla, prevención de lesiones meniscales secundarias y posibilidad de reintegro deportivo progresivo.',
-      witness: 'Lic. Facundo Quiroga (DNI 30.412.981)'
+      witness: ''
     },
     {
       label: 'Cirugía Manguito Rotador (Hombro)',
@@ -97,7 +95,7 @@ export const ConsentFormsModal = () => {
         'Rigidez postquirúrgica (capsulitis adhesiva u hombro congelado), dehiscencia o desinserción tendinosa parcial, infección de heridas quirúrgicas, dolor neuropático residual prolongado.',
       benefits:
         'Cese del dolor nocturno de hombro, recuperación progresiva de la fuerza en abducción y rotación externa, y preservación de la congruencia glenohumeral.',
-      witness: 'Romina Maidana (DNI 32.105.880)'
+      witness: ''
     },
     {
       label: 'Reducción Fractura / Yeso',
@@ -107,7 +105,7 @@ export const ConsentFormsModal = () => {
         'Síndrome compartimental por compresión excesiva, maceración o escaras cutáneas por roce, pérdida secundaria de reducción que amerite cirugía, rigidez articular por inmovilización.',
       benefits:
         'Alineación anatómica de los fragmentos óseos, consolidación de la fractura en posición funcional y mitigación inmediata del dolor traumático.',
-      witness: 'Lic. Facundo Quiroga (DNI 30.412.981)'
+      witness: ''
     }
   ];
 
@@ -116,18 +114,20 @@ export const ConsentFormsModal = () => {
     patientId: patients[0]?.id || '',
     procedureType: procedureProtocols[0].procedureType,
     title: procedureProtocols[0].title,
-    doctorId: activeDoctor.id,
-    doctorName: activeDoctor.name,
-    doctorLicense: activeDoctor.license || 'M.P. 34.892 · M.N. 114.829',
-    specialtyName: activeDoctor.specialty || 'Traumatología & Cirugía Artroscópica',
+    doctorId: activeDoctor?.id || '',
+    doctorName: activeDoctor?.name || '',
+    doctorLicense: activeDoctor?.license || '',
+    specialtyName: activeDoctor?.specialty || '',
     risksExplained: procedureProtocols[0].risks,
     benefitsExpected: procedureProtocols[0].benefits,
-    patientSignatureType: 'Firma Biométrica Digital con DNI',
-    witnessName: procedureProtocols[0].witness
+    patientSignatureType: 'Firma Ológrafa / Electrónica Declarada',
+    witnessName: ''
   });
 
   // Effective consent collection based on role
-  const effectiveConsents = scopedConsentForms || consentForms;
+  const effectiveConsents = useMemo(() => {
+    return isDoctor ? scopedConsentForms : consentForms;
+  }, [isDoctor, scopedConsentForms, consentForms]);
 
   // Filtered consents
   const filteredConsents = useMemo(() => {
@@ -197,9 +197,14 @@ export const ConsentFormsModal = () => {
   // Execute Revocation
   const handleConfirmRevoke = () => {
     if (!revokingId) return;
-    revokeConsentForm(revokingId, revocationReason);
+    if (!revocationReason || !revocationReason.trim()) {
+      addToast('Motivo Requerido', 'Debe detallar el motivo expreso de la revocación del consentimiento.', 'warning');
+      return;
+    }
+    revokeConsentForm(revokingId, revocationReason.trim());
     addToast('Consentimiento Revocado', 'Se ha registrado la revocación formal de la voluntad del paciente.', 'info');
     setRevokingId(null);
+    setRevocationReason('');
   };
 
   // Print Action
@@ -940,9 +945,9 @@ export const ConsentFormsModal = () => {
                       background: '#ffffff'
                     }}
                   >
-                    <option value="Firma Biométrica Digital con DNI">Firma Biométrica Digital con DNI</option>
-                    <option value="Firma Electrónica Validada por Token">Firma Electrónica Validada por Token</option>
-                    <option value="Firma Digital PKI X.509">Firma Digital PKI X.509</option>
+                    <option value="Firma Ológrafa / Electrónica Declarada">Firma Ológrafa / Electrónica Declarada</option>
+                    <option value="Firma Electrónica Validada por Token SMS/Email">Firma Electrónica Validada por Token SMS/Email</option>
+                    <option value="Firma Ológrafa en Soporte Digital / Papel Físico">Firma Ológrafa en Soporte Digital / Papel Físico</option>
                   </select>
                 </div>
               </div>
@@ -1368,6 +1373,7 @@ export const ConsentFormsModal = () => {
 
               <textarea
                 rows={3}
+                placeholder="Detalle el motivo manifestado por el paciente para la revocación..."
                 value={revocationReason}
                 onChange={(e) => setRevocationReason(e.target.value)}
                 style={{

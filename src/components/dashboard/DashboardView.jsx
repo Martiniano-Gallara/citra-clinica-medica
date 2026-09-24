@@ -191,57 +191,59 @@ export const DashboardView = () => {
             </p>
           </div>
 
-          {/* Role Persona Switcher Pills */}
-          <div
-            style={{
-              background: 'rgba(0, 0, 0, 0.25)',
-              padding: '6px',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid rgba(210, 227, 252, 0.2)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px'
-            }}
-          >
-            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#D2E3FC', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Simular Rol de Usuario:
+          {/* Role Persona Switcher Pills (Development only) */}
+          {import.meta.env.DEV && (
+            <div
+              style={{
+                background: 'rgba(0, 0, 0, 0.25)',
+                padding: '6px',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid rgba(210, 227, 252, 0.2)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px'
+              }}
+            >
+              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#D2E3FC', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Simular Rol de Usuario (DEV):
+              </div>
+              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                {[
+                  { id: 'Director Médico', label: 'Director' },
+                  { id: 'Médico Traumatólogo', label: 'Traumatólogo' },
+                  { id: 'Kinesiólogo / Fisiatra', label: 'Kinesiólogo' },
+                  { id: 'Recepcionista Principal', label: 'Recepción' },
+                  { id: 'Administración & Facturación', label: 'Facturación' },
+                  { id: 'Superadministrador', label: 'Admin' }
+                ].map((r) => {
+                  const isCurr = currentUser.role === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => {
+                        switchUserRole(r.id);
+                        addToast('Rol de Usuario Cambiado', `Ahora visualizando como ${r.id}`, 'info');
+                      }}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        fontSize: '0.76rem',
+                        fontWeight: isCurr ? 800 : 600,
+                        background: isCurr ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
+                        color: isCurr ? '#002182' : '#ffffff',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'var(--transition)'
+                      }}
+                    >
+                      {r.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-              {[
-                { id: 'Director Médico', label: 'Director' },
-                { id: 'Médico Traumatólogo', label: 'Traumatólogo' },
-                { id: 'Kinesiólogo / Fisiatra', label: 'Kinesiólogo' },
-                { id: 'Recepcionista Principal', label: 'Recepción' },
-                { id: 'Administración & Facturación', label: 'Facturación' },
-                { id: 'Superadministrador', label: 'Admin' }
-              ].map((r) => {
-                const isCurr = currentUser.role === r.id;
-                return (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() => {
-                      switchUserRole(r.id);
-                      addToast('Rol de Usuario Cambiado', `Ahora visualizando como ${r.id}`, 'info');
-                    }}
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: '6px',
-                      fontSize: '0.76rem',
-                      fontWeight: isCurr ? 800 : 600,
-                      background: isCurr ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
-                      color: isCurr ? '#002182' : '#ffffff',
-                      border: 'none',
-                      cursor: 'pointer',
-                      transition: 'var(--transition)'
-                    }}
-                  >
-                    {r.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          )}
         </div>
       </div>
 

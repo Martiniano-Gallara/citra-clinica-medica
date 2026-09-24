@@ -3,6 +3,7 @@ import { useClinic } from '../../context/ClinicContext';
 import { Modal } from '../common/Modal';
 import { Calendar, Clock, User, UserCheck, Building, AlertCircle, Trash2 } from 'lucide-react';
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
+import { getTodayArgentina } from '../../utils/dateUtils';
 
 export const AppointmentModal = () => {
   const {
@@ -17,6 +18,7 @@ export const AppointmentModal = () => {
     addAppointment,
     updateAppointment,
     deleteAppointment,
+    sendWhatsAppReminder,
     isDoctor,
     currentDoctor,
     addToast
@@ -34,7 +36,7 @@ export const AppointmentModal = () => {
     specialtyName: '',
     roomId: '',
     roomName: '',
-    date: '2026-08-28',
+    date: getTodayArgentina(),
     time: '09:00',
     duration: 30,
     status: 'confirmado',
@@ -149,6 +151,11 @@ export const AppointmentModal = () => {
       return;
     }
 
+    if (conflictWarning) {
+      addToast('Conflicto de Horario', conflictWarning, 'error');
+      return;
+    }
+
     if (appointmentModalData) {
       updateAppointment(appointmentModalData.id, formData);
     } else {
@@ -158,11 +165,15 @@ export const AppointmentModal = () => {
   };
 
   const handleSendReminderWhatsApp = () => {
-    addToast(
-      'Recordatorio Enviado',
-      `Mensaje de WhatsApp enviado a ${formData.patientName} (${formData.patientPhone}) para el turno del ${formData.date} a las ${formData.time} hs.`,
-      'success'
-    );
+    if (sendWhatsAppReminder) {
+      sendWhatsAppReminder(formData);
+    } else {
+      addToast(
+        'Recordatorio Enviado',
+        `Mensaje de WhatsApp enviado a ${formData.patientName} (${formData.patientPhone}) para el turno del ${formData.date} a las ${formData.time} hs.`,
+        'success'
+      );
+    }
   };
 
   const filteredPatients = patientSearch
@@ -206,7 +217,12 @@ export const AppointmentModal = () => {
             >
               Cancelar
             </button>
-            <button type="button" className="btn btn-primary" onClick={handleSubmit}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleSubmit}
+              disabled={Boolean(conflictWarning)}
+            >
               {appointmentModalData ? 'Guardar Cambios' : 'Confirmar Turno'}
             </button>
           </div>

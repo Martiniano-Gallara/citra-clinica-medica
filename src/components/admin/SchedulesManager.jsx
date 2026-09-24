@@ -31,7 +31,7 @@ export const SchedulesManager = () => {
   const [closingTime, setClosingTime] = useState(clinicSchedule?.closingTime || '20:00');
   const [saturdayClosing, setSaturdayClosing] = useState(clinicSchedule?.saturdayClosingTime || '13:00');
   const [slotDuration, setSlotDuration] = useState(clinicSchedule?.slotDuration || 30);
-  const [blockedDates, setBlockedDates] = useState(clinicSchedule?.blockedDates || ['2026-12-25', '2026-01-01']);
+  const [blockedDates, setBlockedDates] = useState(clinicSchedule?.blockedDates || ['2026-12-25', '2027-01-01']);
   const [newBlockedDate, setNewBlockedDate] = useState('');
 
   const allWorkingDays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];

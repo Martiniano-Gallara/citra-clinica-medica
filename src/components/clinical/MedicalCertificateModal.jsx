@@ -31,6 +31,8 @@ export const MedicalCertificateModal = () => {
     isMedicalCertificateModalOpen,
     setIsMedicalCertificateModalOpen,
     patients,
+    scopedPatients,
+    doctors,
     currentUser,
     currentDoctor,
     isDoctor,
@@ -40,14 +42,16 @@ export const MedicalCertificateModal = () => {
     addToast
   } = useClinic();
 
+  const effectivePatients = isDoctor ? scopedPatients : patients;
+
   // Active tab inside modal: 'editor' | 'preview' | 'history'
   const [modalTab, setModalTab] = useState('editor');
 
   // Form State
-  const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id || '');
+  const [selectedPatientId, setSelectedPatientId] = useState(effectivePatients[0]?.id || '');
   const [certificateType, setCertificateType] = useState('Certificado de Reposo Laboral / Licencia Médica');
-  const [diagnosis, setDiagnosis] = useState('M54.5 - Lumbalgia Aguda Severa con Radiculopatía L5');
-  const [restDays, setRestDays] = useState(7);
+  const [diagnosis, setDiagnosis] = useState('');
+  const [restDays, setRestDays] = useState(3);
   const [restStartDate, setRestStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [customContent, setCustomContent] = useState('');
   const [issuedCertificate, setIssuedCertificate] = useState(null);
@@ -62,12 +66,12 @@ export const MedicalCertificateModal = () => {
     { label: 'Asistencia a Consulta', cie: 'Z76.0 - Emisión de Certificado Médico / Asistencia a Consultorio', days: 0, type: 'Certificado de Asistencia a Consulta Médica' }
   ];
 
-  const selectedPatient = patients.find((p) => p.id === selectedPatientId) || patients[0];
+  const selectedPatient = effectivePatients.find((p) => p.id === selectedPatientId) || effectivePatients[0];
 
-  // Professional details (Dr. Blanco)
-  const doctorName = (isDoctor && currentDoctor ? currentDoctor.name : currentUser?.name) || 'Dr. Alejandro Blanco';
-  const doctorLicense = (isDoctor && currentDoctor ? currentDoctor.license : 'M.P. 34.892 · M.N. 114.829');
-  const doctorSpecialty = (isDoctor && currentDoctor ? currentDoctor.specialty : 'Traumatología & Ortopedia');
+  // Professional details
+  const doctorName = (isDoctor && currentDoctor ? currentDoctor.name : currentUser?.name) || doctors[0]?.name || 'Dr. Alejandro Blanco';
+  const doctorLicense = (isDoctor && currentDoctor ? currentDoctor.license : (doctors?.find((d) => d.name === doctorName)?.license || doctors?.[0]?.license || 'MP 38.412 / ME 19.820'));
+  const doctorSpecialty = (isDoctor && currentDoctor ? currentDoctor.specialty : (doctors?.find((d) => d.name === doctorName)?.specialty || doctors?.[0]?.specialty || 'Traumatología'));
 
   // Date calculations
   const calculateEndDate = (startDateStr, days) => {

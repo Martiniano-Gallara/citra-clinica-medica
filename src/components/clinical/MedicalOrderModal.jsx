@@ -7,24 +7,25 @@ export const MedicalOrderModal = () => {
     isMedicalOrderModalOpen,
     setIsMedicalOrderModalOpen,
     patients,
+    scopedPatients,
     currentUser,
+    currentDoctor,
+    isDoctor,
     addMedicalOrder
   } = useClinic();
 
-  const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id || '');
+  const effectivePatients = isDoctor ? scopedPatients : patients;
+
+  const [selectedPatientId, setSelectedPatientId] = useState(effectivePatients[0]?.id || '');
   const [orderType, setOrderType] = useState('Derivación / Orden de Kinesiología');
-  const [diagnosis, setDiagnosis] = useState('S83.5 - Traumatismo / Reconstrucción LCA Rodilla Derecha');
-  const [justification, setJustification] = useState('Plan de reeducación propioceptiva, fortalecimiento muscular de cadena cinética cerrada y retorno a la actividad física.');
-  const [studies, setStudies] = useState([
-    'Cinesioterapia activa resistida x 10 sesiones',
-    'Reentrenamiento neuromuscular y propiocepción en bosu',
-    'Test Isocinético de fuerza muscular'
-  ]);
+  const [diagnosis, setDiagnosis] = useState('');
+  const [justification, setJustification] = useState('');
+  const [studies, setStudies] = useState([]);
   const [newStudyInput, setNewStudyInput] = useState('');
 
   if (!isMedicalOrderModalOpen) return null;
 
-  const selectedPatient = patients.find((p) => p.id === selectedPatientId) || patients[0];
+  const selectedPatient = effectivePatients.find((p) => p.id === selectedPatientId) || effectivePatients[0];
 
   const handleAddStudy = () => {
     if (newStudyInput.trim() && !studies.includes(newStudyInput.trim())) {
@@ -45,9 +46,9 @@ export const MedicalOrderModal = () => {
       patientId: selectedPatient.id,
       patientName: selectedPatient.name,
       patientDni: selectedPatient.dni,
-      doctorId: currentUser.id || 'doc-1',
-      doctorName: currentUser.name || 'Dr. Alejandro Blanco',
-      doctorLicense: currentUser.sisaLicense || 'MP 38.412 / ME 19.820',
+      doctorId: (isDoctor && currentDoctor ? currentDoctor.id : currentUser?.id) || '',
+      doctorName: (isDoctor && currentDoctor ? currentDoctor.name : currentUser?.name) || 'Profesional Médico CITRA',
+      doctorLicense: (isDoctor && currentDoctor ? currentDoctor.license : (currentUser?.sisaLicense || currentUser?.license)) || '',
       orderType,
       diagnosis,
       studiesRequested: studies,

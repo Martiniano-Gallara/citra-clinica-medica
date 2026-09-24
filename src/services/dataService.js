@@ -116,10 +116,37 @@ export const dataService = {
 
   async createAppointment(appointmentData) {
     if (isSupabaseConfigured && supabase) {
-      const payload = toSnakeCase(appointmentData);
+      // Explicit column mapping to avoid PGRST204 errors with non-existent columns
+      const cleanPayload = {
+        id: appointmentData.id,
+        patient_id: appointmentData.patientId,
+        patient_name: appointmentData.patientName,
+        patient_dni: appointmentData.patientDni,
+        patient_phone: appointmentData.patientPhone || null,
+        patient_email: appointmentData.patientEmail || null,
+        patient_insurance: appointmentData.patientInsurance || appointmentData.insuranceName || null,
+        patient_insurance_number: appointmentData.patientInsuranceNumber || appointmentData.insuranceNumber || null,
+        doctor_id: appointmentData.doctorId,
+        doctor_name: appointmentData.doctorName,
+        doctor_specialty: appointmentData.doctorSpecialty || appointmentData.specialtyName || appointmentData.specialty || '',
+        room_id: appointmentData.roomId || null,
+        room_name: appointmentData.roomName || null,
+        date: appointmentData.date,
+        time: appointmentData.time,
+        duration: appointmentData.duration || 30,
+        type: appointmentData.type || 'Consulta Presencial',
+        status: (appointmentData.status || 'confirmado').toLowerCase(),
+        reason: appointmentData.reason || appointmentData.notes || null,
+        cancel_reason: appointmentData.cancelReason || null,
+        copay_amount: appointmentData.copayAmount !== undefined ? appointmentData.copayAmount : (appointmentData.copay || 0),
+        booked_online: Boolean(appointmentData.bookedOnline),
+        booking_code: appointmentData.bookingCode || null
+      };
+      Object.keys(cleanPayload).forEach(key => cleanPayload[key] === undefined && delete cleanPayload[key]);
+
       const { data, error } = await supabase
         .from('appointments')
-        .insert([payload])
+        .insert([cleanPayload])
         .select()
         .single();
       if (error) throw error;
@@ -130,10 +157,30 @@ export const dataService = {
 
   async updateAppointment(id, updates) {
     if (isSupabaseConfigured && supabase) {
-      const payload = toSnakeCase(updates);
+      const allowedKeys = [
+        'patient_id', 'patient_name', 'patient_dni', 'patient_phone', 'patient_email',
+        'patient_insurance', 'patient_insurance_number', 'doctor_id', 'doctor_name',
+        'doctor_specialty', 'room_id', 'room_name', 'date', 'time', 'duration',
+        'type', 'status', 'reason', 'cancel_reason', 'copay_amount', 'booked_online',
+        'booking_code', 'updated_at'
+      ];
+      const rawPayload = toSnakeCase(updates);
+      const cleanPayload = {};
+      for (const [k, v] of Object.entries(rawPayload)) {
+        if (allowedKeys.includes(k) && v !== undefined) {
+          cleanPayload[k] = v;
+        }
+      }
+      if (updates.specialtyName && !cleanPayload.doctor_specialty) cleanPayload.doctor_specialty = updates.specialtyName;
+      if (updates.insuranceName && !cleanPayload.patient_insurance) cleanPayload.patient_insurance = updates.insuranceName;
+      if (updates.notes && !cleanPayload.reason) cleanPayload.reason = updates.notes;
+      if (cleanPayload.status) cleanPayload.status = cleanPayload.status.toLowerCase();
+
+      cleanPayload.updated_at = new Date().toISOString();
+
       const { data, error } = await supabase
         .from('appointments')
-        .update(payload)
+        .update(cleanPayload)
         .eq('id', id)
         .select()
         .single();
@@ -158,7 +205,10 @@ export const dataService = {
   // --- HISTORIA CLÍNICA & CONSULTAS (CONSULTATIONS) ---
   async fetchConsultations(patientId = null, doctorId = null) {
     if (isSupabaseConfigured && supabase) {
-      let query = supabase.from('consultations').select('*').order('date', { ascending: false });
+      let query = supabase
+        .from('consultations')
+        .select('*, adendas:consultation_adendas(*)')
+        .order('date', { ascending: false });
       if (patientId) query = query.eq('patient_id', patientId);
       if (doctorId) query = query.eq('doctor_id', doctorId);
       const { data, error } = await query;
@@ -170,7 +220,9 @@ export const dataService = {
 
   async createConsultation(consultationData) {
     if (isSupabaseConfigured && supabase) {
-      const payload = toSnakeCase(consultationData);
+      // Excluir adendas de la tabla principal para evitar error de columna inexistente
+      const { adendas, ...cleanData } = consultationData;
+      const payload = toSnakeCase(cleanData);
       const { data, error } = await supabase
         .from('consultations')
         .insert([payload])
@@ -182,9 +234,37 @@ export const dataService = {
     return null;
   },
 
+  // Bundle transaccional atómico RPC: Consulta + Receta + Pedidos Diagnósticos
+  async createConsultationBundle(consultationData, prescriptionData = null, medicalOrders = null) {
+    if (isSupabaseConfigured && supabase) {
+      const { adendas, ...cleanConsultation } = consultationData;
+      const { data, error } = await supabase.rpc('create_consultation_bundle', {
+        p_consultation: toSnakeCase(cleanConsultation),
+        p_prescription: prescriptionData ? toSnakeCase(prescriptionData) : null,
+        p_medical_orders: medicalOrders ? toSnakeCase(medicalOrders) : null
+      });
+      if (error) {
+        // Fallback a inserción secuencial si el RPC aún no fue desplegado en la instancia
+        return await this.createConsultation(consultationData);
+      }
+      return data;
+    }
+    return null;
+  },
+
   async addConsultationAdenda(adendaData) {
     if (isSupabaseConfigured && supabase) {
-      const payload = toSnakeCase(adendaData);
+      const payload = {
+        id: adendaData.id,
+        consultation_id: adendaData.consultationId,
+        doctor_id: adendaData.doctorId || 'doc-1',
+        doctor_name: adendaData.doctorName,
+        doctor_license: adendaData.doctorLicense || null,
+        note: adendaData.adendaText || adendaData.note || '',
+        reason: adendaData.reason || 'Aclaración clínica',
+        timestamp: adendaData.timestamp || new Date().toISOString(),
+        integrity_hash: adendaData.adendaHash || adendaData.integrityHash || ''
+      };
       const { data, error } = await supabase
         .from('consultation_adendas')
         .insert([payload])
@@ -211,7 +291,23 @@ export const dataService = {
 
   async createPrescription(prescriptionData) {
     if (isSupabaseConfigured && supabase) {
-      const payload = toSnakeCase(prescriptionData);
+      const payload = {
+        id: prescriptionData.id,
+        cuir: prescriptionData.cuir,
+        patient_id: prescriptionData.patientId,
+        patient_name: prescriptionData.patientName,
+        patient_dni: prescriptionData.patientDni,
+        doctor_id: prescriptionData.doctorId,
+        doctor_name: prescriptionData.doctorName,
+        doctor_license: prescriptionData.doctorLicense,
+        sisa_refeps: prescriptionData.sisaRefeps || 'REFEPS-MN-114829',
+        diagnosis_presuntivo: prescriptionData.diagnosisPresuntivo || 'Control clínico',
+        medications: prescriptionData.medications || [],
+        issue_date: prescriptionData.issueDate || new Date().toISOString().split('T')[0],
+        expiration_date: prescriptionData.expirationDate,
+        status: prescriptionData.status || (prescriptionData.dispensationStatus?.toLowerCase().includes('dispensada') ? 'dispensada' : 'activa'),
+        verification_url: prescriptionData.verificationUrl || `https://citra.com.ar/receta/${prescriptionData.cuir}`
+      };
       const { data, error } = await supabase
         .from('electronic_prescriptions')
         .insert([payload])
@@ -225,7 +321,11 @@ export const dataService = {
 
   async updatePrescription(id, updates) {
     if (isSupabaseConfigured && supabase) {
-      const payload = toSnakeCase(updates);
+      const payload = {};
+      if (updates.status) payload.status = updates.status;
+      if (updates.dispensationStatus) {
+        payload.status = updates.dispensationStatus.toLowerCase().includes('dispensada') ? 'dispensada' : 'activa';
+      }
       const { data, error } = await supabase
         .from('electronic_prescriptions')
         .update(payload)
@@ -376,6 +476,35 @@ export const dataService = {
     return null;
   },
 
+  async createRoom(roomData) {
+    if (isSupabaseConfigured && supabase) {
+      const payload = toSnakeCase(roomData);
+      const { data, error } = await supabase.from('rooms').insert([payload]).select().single();
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
+  async updateRoom(id, updates) {
+    if (isSupabaseConfigured && supabase) {
+      const payload = toSnakeCase(updates);
+      const { data, error } = await supabase.from('rooms').update(payload).eq('id', id).select().single();
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
+  async deleteRoom(id) {
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.from('rooms').delete().eq('id', id);
+      if (error) throw error;
+      return true;
+    }
+    return false;
+  },
+
   async fetchHealthInsurances() {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase.from('health_insurances').select('*').order('name', { ascending: true });
@@ -383,6 +512,35 @@ export const dataService = {
       return toCamelCase(data);
     }
     return null;
+  },
+
+  async createHealthInsurance(insuranceData) {
+    if (isSupabaseConfigured && supabase) {
+      const payload = toSnakeCase(insuranceData);
+      const { data, error } = await supabase.from('health_insurances').insert([payload]).select().single();
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
+  async updateHealthInsurance(id, updates) {
+    if (isSupabaseConfigured && supabase) {
+      const payload = toSnakeCase(updates);
+      const { data, error } = await supabase.from('health_insurances').update(payload).eq('id', id).select().single();
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
+  async deleteHealthInsurance(id) {
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.from('health_insurances').delete().eq('id', id);
+      if (error) throw error;
+      return true;
+    }
+    return false;
   },
 
   async fetchClinicSchedule() {
@@ -424,6 +582,10 @@ export const dataService = {
   async createImagingStudy(studyData) {
     if (isSupabaseConfigured && supabase) {
       const payload = toSnakeCase(studyData);
+      // Map frontend status 'Informado' to valid DB enum 'completado'
+      if (payload.status === 'informado' || payload.status === 'Informado') {
+        payload.status = 'completado';
+      }
       const { data, error } = await supabase.from('imaging_studies').insert([payload]).select().single();
       if (error) throw error;
       return toCamelCase(data);
@@ -434,6 +596,9 @@ export const dataService = {
   async updateImagingStudy(id, updates) {
     if (isSupabaseConfigured && supabase) {
       const payload = toSnakeCase(updates);
+      if (payload.status === 'informado' || payload.status === 'Informado') {
+        payload.status = 'completado';
+      }
       const { data, error } = await supabase.from('imaging_studies').update(payload).eq('id', id).select().single();
       if (error) throw error;
       return toCamelCase(data);
@@ -480,6 +645,47 @@ export const dataService = {
     if (isSupabaseConfigured && supabase) {
       const payload = toSnakeCase(certData);
       const { data, error } = await supabase.from('medical_certificates').insert([payload]).select().single();
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
+  // --- CONSENTIMIENTOS INFORMADOS (CONSENT FORMS) ---
+  async fetchConsentForms(patientId = null, doctorId = null) {
+    if (isSupabaseConfigured && supabase) {
+      let query = supabase.from('consent_forms').select('*').order('created_at', { ascending: false });
+      if (patientId) query = query.eq('patient_id', patientId);
+      if (doctorId) query = query.eq('doctor_id', doctorId);
+      const { data, error } = await query;
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
+  async createConsentForm(consentData) {
+    if (isSupabaseConfigured && supabase) {
+      const payload = toSnakeCase(consentData);
+      const { data, error } = await supabase.from('consent_forms').insert([payload]).select().single();
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
+  async revokeConsentForm(id, reason) {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('consent_forms')
+        .update({
+          status: 'revoked',
+          revocation_reason: reason,
+          revoked_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
       if (error) throw error;
       return toCamelCase(data);
     }

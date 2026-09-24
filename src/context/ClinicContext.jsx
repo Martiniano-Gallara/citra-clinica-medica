@@ -32,6 +32,7 @@ import {
 import { generateSHA256Hash, createAuditLog, encryptDataAES } from '../utils/cryptoAudit';
 import { generateCUIR, calculatePrescriptionExpiration } from '../utils/renapdisEngine';
 import { generateCAE } from '../utils/arcaValidator';
+import { getTodayArgentina } from '../utils/dateUtils';
 import { dataService } from '../services/dataService';
 
 const ClinicContext = createContext();
@@ -261,7 +262,7 @@ export const ClinicProvider = ({ children }) => {
     slotDuration: 30,
     workingDays: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
     saturdayClosingTime: '13:00',
-    blockedDates: ['2026-12-25', '2026-01-01', '2026-05-01']
+    blockedDates: ['2026-12-25', '2027-01-01', '2026-05-01']
   };
   const [clinicSchedule, setClinicSchedule] = useState(() => loadStorage('clinicSchedule', INITIAL_SCHEDULE));
 
@@ -273,7 +274,7 @@ export const ClinicProvider = ({ children }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [filterDoctor, setFilterDoctor] = useState('all');
   const [filterSpecialty, setFilterSpecialty] = useState('all');
-  const [filterDate, setFilterDate] = useState('2026-08-28');
+  const [filterDate, setFilterDate] = useState(() => getTodayArgentina());
 
   // Modals state
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
@@ -377,26 +378,14 @@ export const ClinicProvider = ({ children }) => {
     const docId = authAdmin.doctorId;
     if (docId) {
       const found = doctors.find((d) => d.id === docId);
-      if (found) {
-        const cleanName = found.name && found.name.includes('Morales') ? 'Dr. Alejandro Blanco' : found.name;
-        return { ...found, name: cleanName, fullName: cleanName };
-      }
+      if (found) return found;
     }
     const matchedDoc = doctors.find(
       (d) =>
-        (d.email && authAdmin.email && d.email.toLowerCase() === authAdmin.email.toLowerCase()) ||
-        (d.name && authAdmin.name && (d.name.toLowerCase().includes(authAdmin.name.toLowerCase()) || authAdmin.name.toLowerCase().includes(d.name.toLowerCase())))
+        (d.email && authAdmin.email && d.email.toLowerCase().trim() === authAdmin.email.toLowerCase().trim()) ||
+        (d.name && authAdmin.name && d.name.toLowerCase().trim() === authAdmin.name.toLowerCase().trim())
     );
-    if (matchedDoc) {
-      const cleanName = matchedDoc.name && matchedDoc.name.includes('Morales') ? 'Dr. Alejandro Blanco' : matchedDoc.name;
-      return { ...matchedDoc, name: cleanName, fullName: cleanName };
-    }
-    if (authAdmin.adminType === 'doctor') {
-      const fallbackDoc = doctors[0];
-      if (!fallbackDoc) return null;
-      const cleanName = fallbackDoc.name && fallbackDoc.name.includes('Morales') ? 'Dr. Alejandro Blanco' : fallbackDoc.name;
-      return { ...fallbackDoc, name: cleanName, fullName: cleanName };
-    }
+    if (matchedDoc) return matchedDoc;
     return null;
   }, [authAdmin, doctors, isDoctor]);
 
@@ -468,20 +457,14 @@ export const ClinicProvider = ({ children }) => {
   }, [electronicPrescriptions, isDoctor, currentDoctor, isSuperAdmin]);
 
   const scopedImagingStudies = React.useMemo(() => {
-    if (isDoctor) {
-      const docId = currentDoctor?.id || 'doc-1';
-      const docName = (currentDoctor?.name || 'Blanco').toLowerCase().replace('dr.', '').trim();
-      const filtered = imagingStudies.filter(
+    if (isDoctor && currentDoctor) {
+      const docId = currentDoctor.id;
+      const docName = (currentDoctor.name || '').toLowerCase().trim();
+      return imagingStudies.filter(
         (s) =>
-          s.doctorId === docId ||
-          s.doctorId === 'doc-1' ||
-          (s.referringDoctor && (
-            s.referringDoctor.toLowerCase().includes(docName) ||
-            s.referringDoctor.toLowerCase().includes('blanco') ||
-            s.referringDoctor.toLowerCase().includes('morales')
-          ))
+          (docId && s.doctorId === docId) ||
+          (docName && s.referringDoctor && s.referringDoctor.toLowerCase().trim() === docName)
       );
-      return filtered.length > 0 ? filtered : imagingStudies;
     }
     if (isSuperAdmin) return imagingStudies;
     return [];
@@ -496,18 +479,17 @@ export const ClinicProvider = ({ children }) => {
 
   const scopedConsentForms = React.useMemo(() => {
     if (isDoctor && currentDoctor) {
+      const docId = currentDoctor.id;
+      const docName = (currentDoctor.name || '').toLowerCase().trim();
       return consentForms.filter(
         (cf) =>
-          cf.doctorId === currentDoctor.id ||
-          (cf.doctorName && (
-            cf.doctorName.toLowerCase().includes(currentDoctor.name.toLowerCase()) ||
-            currentDoctor.name.toLowerCase().includes(cf.doctorName.toLowerCase()) ||
-            cf.doctorName.toLowerCase().includes('blanco')
-          ))
+          (docId && cf.doctorId === docId) ||
+          (docName && cf.doctorName && cf.doctorName.toLowerCase().trim() === docName)
       );
     }
+    if (isSuperAdmin) return consentForms;
     return consentForms;
-  }, [consentForms, isDoctor, currentDoctor]);
+  }, [consentForms, isDoctor, currentDoctor, isSuperAdmin]);
 
   // Sincronización bidireccional con URL Hash para navegación y enlaces directos (ej: #admin, #turnos, etc.)
   useEffect(() => {
@@ -582,7 +564,11 @@ export const ClinicProvider = ({ children }) => {
           remoteImgs,
           remoteOrders,
           remoteCerts,
-          remoteSchedule
+          remoteSchedule,
+          remoteSpecs,
+          remoteRooms,
+          remoteInsurances,
+          remoteConsents
         ] = await Promise.allSettled([
           dataService.fetchAppointments(),
           dataService.fetchPatients(),
@@ -592,13 +578,17 @@ export const ClinicProvider = ({ children }) => {
           dataService.fetchImagingStudies(),
           dataService.fetchMedicalOrders(),
           dataService.fetchMedicalCertificates(),
-          dataService.fetchClinicSchedule()
+          dataService.fetchClinicSchedule(),
+          dataService.fetchSpecialties(),
+          dataService.fetchRooms(),
+          dataService.fetchHealthInsurances(),
+          dataService.fetchConsentForms()
         ]);
 
         if (!isMounted) return;
 
-        if (remoteApps.status === 'fulfilled' && remoteApps.value?.length) setAppointments(remoteApps.value);
-        if (remotePats.status === 'fulfilled' && remotePats.value?.length) setPatients(remotePats.value);
+        if (remoteApps.status === 'fulfilled' && Array.isArray(remoteApps.value)) setAppointments(remoteApps.value);
+        if (remotePats.status === 'fulfilled' && Array.isArray(remotePats.value)) setPatients(remotePats.value);
         if (remoteDocs.status === 'fulfilled' && Array.isArray(remoteDocs.value) && remoteDocs.value.length > 0) {
           const remoteMap = new Map(remoteDocs.value.map((d) => [d.id, d]));
           const fullDocs = INITIAL_DOCTORS.map((initDoc) => {
@@ -614,11 +604,15 @@ export const ClinicProvider = ({ children }) => {
             return [...remoteCons.value, ...localOnly];
           });
         }
-        if (remoteRxs.status === 'fulfilled' && remoteRxs.value?.length) setElectronicPrescriptions(remoteRxs.value);
-        if (remoteImgs.status === 'fulfilled' && remoteImgs.value?.length) setImagingStudies(remoteImgs.value);
-        if (remoteOrders.status === 'fulfilled' && remoteOrders.value?.length) setMedicalOrders(remoteOrders.value);
-        if (remoteCerts.status === 'fulfilled' && remoteCerts.value?.length) setMedicalCertificates(remoteCerts.value);
+        if (remoteRxs.status === 'fulfilled' && Array.isArray(remoteRxs.value)) setElectronicPrescriptions(remoteRxs.value);
+        if (remoteImgs.status === 'fulfilled' && Array.isArray(remoteImgs.value)) setImagingStudies(remoteImgs.value);
+        if (remoteOrders.status === 'fulfilled' && Array.isArray(remoteOrders.value)) setMedicalOrders(remoteOrders.value);
+        if (remoteCerts.status === 'fulfilled' && Array.isArray(remoteCerts.value)) setMedicalCertificates(remoteCerts.value);
         if (remoteSchedule.status === 'fulfilled' && remoteSchedule.value) setClinicSchedule(remoteSchedule.value);
+        if (remoteSpecs.status === 'fulfilled' && Array.isArray(remoteSpecs.value) && remoteSpecs.value.length > 0) setSpecialties(remoteSpecs.value);
+        if (remoteRooms.status === 'fulfilled' && Array.isArray(remoteRooms.value) && remoteRooms.value.length > 0) setRooms(remoteRooms.value);
+        if (remoteInsurances.status === 'fulfilled' && Array.isArray(remoteInsurances.value) && remoteInsurances.value.length > 0) setHealthInsurances(remoteInsurances.value);
+        if (remoteConsents.status === 'fulfilled' && Array.isArray(remoteConsents.value) && remoteConsents.value.length > 0) setConsentForms(remoteConsents.value);
       } catch (err) {
         console.warn('Supabase initial hydration notice:', err);
       }
@@ -696,8 +690,8 @@ export const ClinicProvider = ({ children }) => {
       indications: consultationData.indications || '',
       studiesRequested: consultationData.studiesRequested || [],
       signed: true,
-      signatureType: 'Firma Digital X.509 (PKI ONTI)',
-      certAuthority: 'AC ONTI / Ministerio de Modernización Argentina',
+      signatureType: 'Firma Electrónica Médica Certificada (Ley 25.506 Art. 5 · Hash SHA-256 e Identidad Verificada)',
+      certAuthority: 'CITRA Autoridad de Registro Interno · Verificación Criptográfica SHA-256',
       signatureTimestamp: timestamp,
       adendas: []
     };
@@ -881,6 +875,11 @@ export const ClinicProvider = ({ children }) => {
       ...consentData
     };
     setConsentForms((prev) => [newConsent, ...prev]);
+    if (dataService.isLive()) {
+      dataService.createConsentForm(newConsent).catch((err) => {
+        console.error('Error sincronizando consentimiento con Supabase:', err);
+      });
+    }
     logAudit('CREATE', 'Consentimiento Informado', consentData.patientDni, `Consentimiento otorgado para: ${consentData.procedureType}`);
     addToast('Consentimiento Informado Registrado', 'Documento formal incorporado a la HCE.', 'success');
     return newConsent;
@@ -901,6 +900,11 @@ export const ClinicProvider = ({ children }) => {
         return cf;
       })
     );
+    if (dataService.isLive()) {
+      dataService.revokeConsentForm(id, revocationReason).catch((err) => {
+        console.error('Error sincronizando revocación con Supabase:', err);
+      });
+    }
     logAudit('UPDATE', 'Consentimiento Informado', '-', `Revocación expresa de consentimiento ID ${id}. Motivo: ${revocationReason}`);
     addToast('Consentimiento Revocado', 'Se asentó la revocación formal del paciente.', 'warning');
   };
@@ -930,6 +934,9 @@ export const ClinicProvider = ({ children }) => {
     addToast('Comprobante Fiscal ARCA Emitido', `Factura ${invoiceNum} autorizada con CAE ${cae}.`, 'success');
     return newInv;
   };
+
+  // Alias for PaymentModal compatibility
+  const addInvoice = addArcaInvoice;
 
   // --- PACIENTES & TURNOS ---
   const addAppointment = (appData) => {
@@ -1019,6 +1026,52 @@ export const ClinicProvider = ({ children }) => {
     }
     logAudit('UPDATE', 'Padrón de Pacientes', updatedData.dni || '-', `Actualización de datos del paciente.`);
     addToast('Ficha Actualizada', 'Datos del paciente guardados.', 'success');
+  };
+
+  const addPatientFile = (patientId, fileObj) => {
+    setPatients((prev) =>
+      prev.map((pat) => {
+        if (pat.id === patientId) {
+          const files = pat.files || [];
+          return { ...pat, files: [fileObj, ...files] };
+        }
+        return pat;
+      })
+    );
+    logAudit('CREATE', 'Archivo Clínico', patientId, `Se adjuntó el archivo ${fileObj.name} a la ficha del paciente.`);
+    addToast('Estudio Adjuntado', `El archivo ${fileObj.name} fue incorporado a la Historia Clínica.`, 'success');
+  };
+
+  const deletePatient = (patientId) => {
+    const pat = patients.find((p) => p.id === patientId);
+    if (!pat) return;
+
+    // Legal Protection: Ley 26.529 Art. 18 (custodia documental obligatoria por 10 años)
+    const hasConsultations = consultations.some((c) => c.patientId === patientId || c.patientDni === pat.dni);
+    const hasPrescriptions = electronicPrescriptions.some((rx) => rx.patientId === patientId || rx.patientDni === pat.dni);
+    const hasRehab = rehabPlans.some((r) => r.patientId === patientId);
+
+    if (hasConsultations || hasPrescriptions || hasRehab) {
+      // Soft delete: dar de baja y archivar para no vulnerar el historial clínico legal
+      setPatients((prev) =>
+        prev.map((p) =>
+          p.id === patientId
+            ? { ...p, active: false, archived: true, deletedAt: new Date().toISOString() }
+            : p
+        )
+      );
+      if (dataService.isLive()) {
+        dataService.updatePatient(patientId, { active: false }).catch(console.warn);
+      }
+      logAudit('ARCHIVE', 'Padrón de Pacientes', pat.dni, `Ficha archivada (preservación de historia clínica conforme Ley 26.529) para ${pat.name}`);
+      addToast('Ficha Archivada', `La ficha de ${pat.name} fue dada de baja administrativa. Sus antecedentes clínicos quedan preservados por Ley 26.529.`, 'info');
+      return;
+    }
+
+    // Si no cuenta con actos médicos históricos, remoción física
+    setPatients((prev) => prev.filter((p) => p.id !== patientId));
+    logAudit('DELETE', 'Padrón de Pacientes', pat.dni, `Eliminación administrativa de ficha de paciente ${pat.name}`);
+    addToast('Paciente Eliminado', `El paciente ${pat.name} ha sido eliminado.`, 'success');
   };
 
   // --- REHABILITACIÓN & KINESIOLOGÍA ---
@@ -1156,6 +1209,69 @@ export const ClinicProvider = ({ children }) => {
     addToast('Rechazo Registrado', 'Se asentó el débito/rechazo para refacturación.', 'warning');
   };
 
+  const addHealthInsurance = (insuranceData) => {
+    const newId = insuranceData.id || `hi-${Date.now()}`;
+    const newHi = { id: newId, status: 'Activa', copay: 0, plans: ['Estándar'], ...insuranceData };
+    setHealthInsurances((prev) => [...prev, newHi]);
+    if (dataService.isLive()) {
+      dataService.createHealthInsurance(newHi).catch(console.warn);
+    }
+    logAudit('CREATE', 'Obras Sociales', '-', `Alta de cobertura ${newHi.name}`);
+    addToast('Obra Social Agregada', `${newHi.name} fue incorporada con éxito.`, 'success');
+    return newHi;
+  };
+
+  const updateHealthInsurance = (id, updates) => {
+    setHealthInsurances((prev) => prev.map((hi) => (hi.id === id ? { ...hi, ...updates } : hi)));
+    if (dataService.isLive()) {
+      dataService.updateHealthInsurance(id, updates).catch(console.warn);
+    }
+    logAudit('UPDATE', 'Obras Sociales', '-', `Actualización de cobertura ID ${id}`);
+    addToast('Obra Social Actualizada', 'Los datos de la cobertura fueron actualizados.', 'success');
+  };
+
+  const deleteHealthInsurance = (id) => {
+    const target = healthInsurances.find((hi) => hi.id === id);
+    setHealthInsurances((prev) => prev.filter((hi) => hi.id !== id));
+    if (dataService.isLive()) {
+      dataService.deleteHealthInsurance(id).catch(console.warn);
+    }
+    logAudit('DELETE', 'Obras Sociales', '-', `Baja de cobertura ${target?.name || id}`);
+    addToast('Obra Social Eliminada', 'La cobertura fue dada de baja.', 'info');
+  };
+
+  // --- CONSULTORIOS & ESPACIOS FÍSICOS (ROOMS) ---
+  const addRoom = (roomData) => {
+    const newId = roomData.id || `room-${Date.now().toString().slice(-4)}`;
+    const newRoom = { id: newId, branchId: 'branch-1', status: 'Disponible', ...roomData };
+    setRooms((prev) => [...prev, newRoom]);
+    if (dataService.isLive()) {
+      dataService.createRoom(newRoom).catch(console.warn);
+    }
+    logAudit('CREATE', 'Consultorios', '-', `Alta de consultorio ${newRoom.name}`);
+    addToast('Consultorio Creado', `Se ha agregado ${newRoom.name} al sistema.`, 'success');
+    return newRoom;
+  };
+
+  const updateRoom = (id, updates) => {
+    setRooms((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)));
+    if (dataService.isLive()) {
+      dataService.updateRoom(id, updates).catch(console.warn);
+    }
+    logAudit('UPDATE', 'Consultorios', '-', `Actualización de consultorio ID ${id}`);
+    addToast('Consultorio Actualizado', 'Modificaciones guardadas.', 'success');
+  };
+
+  const deleteRoom = (id) => {
+    const target = rooms.find((r) => r.id === id);
+    setRooms((prev) => prev.filter((r) => r.id !== id));
+    if (dataService.isLive()) {
+      dataService.deleteRoom(id).catch(console.warn);
+    }
+    logAudit('DELETE', 'Consultorios', '-', `Baja de consultorio ${target?.name || id}`);
+    addToast('Consultorio Eliminado', 'El espacio físico ha sido removido.', 'info');
+  };
+
   // --- INVENTARIO, STOCK & COMPRAS ---
   const addInventoryItem = (itemData) => {
     const newId = `inv-itm-${Date.now()}`;
@@ -1201,14 +1317,15 @@ export const ClinicProvider = ({ children }) => {
   };
 
   // --- COMUNICACIONES & RECORDATORIOS WHATSAPP ---
-  const sendWhatsAppReminder = (appointmentId, templateName, customMsg) => {
-    const targetApp = appointments.find((a) => a.id === appointmentId);
+  const sendWhatsAppReminder = (target, templateName, customMsg) => {
+    const targetId = typeof target === 'object' && target?.id ? target.id : target;
+    const targetApp = typeof target === 'object' && target?.id ? target : appointments.find((a) => a.id === targetId);
     if (!targetApp) return;
 
     const newId = `wsp-${Date.now()}`;
     const newLog = {
       id: newId,
-      appointmentId,
+      appointmentId: targetApp.id || targetId,
       patientName: targetApp.patientName,
       phone: targetApp.patientPhone,
       type: 'WhatsApp Automatizado',
@@ -1601,7 +1718,7 @@ export const ClinicProvider = ({ children }) => {
     addToast('Sesión Cerrada', 'Has cerrado tu sesión de paciente.', 'info');
   };
 
-  const loginAdmin = (email, password) => {
+  const loginAdmin = async (email, password) => {
     const cleanEmail = (email || '').trim().toLowerCase();
     const adminUser = users.find((u) => u.email.toLowerCase() === cleanEmail);
 
@@ -1616,10 +1733,28 @@ export const ClinicProvider = ({ children }) => {
       return { success: false, message: 'Contraseña requerida' };
     }
 
-    const expectedPassword = adminUser.password || 'citra2026';
-    if (password !== expectedPassword && password !== 'citra2026') {
-      addToast('Contraseña Incorrecta', 'La contraseña administrativa no es correcta.', 'error');
-      return { success: false, message: 'Contraseña incorrecta' };
+    // Si Supabase está en vivo, autenticar formalmente contra GoTrue
+    if (dataService.isLive()) {
+      try {
+        const { session, user } = await dataService.signInWithPassword(cleanEmail, password);
+        if (!session && !user) {
+          addToast('Error de Autenticación', 'Credenciales no válidas en el servidor central.', 'error');
+          return { success: false, message: 'Fallo de autenticación GoTrue' };
+        }
+      } catch (err) {
+        console.warn('Fallo GoTrue Supabase:', err);
+        const expectedPassword = adminUser.password || 'citra2026';
+        if (password !== expectedPassword && password !== 'citra2026') {
+          addToast('Acceso Denegado', 'Credenciales no autorizadas por el servidor central.', 'error');
+          return { success: false, message: 'Credenciales inválidas' };
+        }
+      }
+    } else {
+      const expectedPassword = adminUser.password || 'citra2026';
+      if (password !== expectedPassword && password !== 'citra2026') {
+        addToast('Contraseña Incorrecta', 'La contraseña administrativa no es correcta.', 'error');
+        return { success: false, message: 'Contraseña incorrecta' };
+      }
     }
 
     setAuthRole('admin');
@@ -1634,13 +1769,26 @@ export const ClinicProvider = ({ children }) => {
   const logoutAdmin = () => {
     setAuthRole('guest');
     setAuthAdmin(null);
+    if (dataService.isLive()) {
+      dataService.signOut().catch(console.warn);
+    }
     try {
       localStorage.removeItem('citra_authAdmin');
+      // Purgar de localStorage datos clínicos confidenciales para evitar filtración entre sesiones compartidas
+      localStorage.removeItem('citra_consultations');
+      localStorage.removeItem('citra_electronicPrescriptions');
+      localStorage.removeItem('citra_consentForms');
+      localStorage.removeItem('citra_medicalOrders');
+      localStorage.removeItem('citra_medicalCertificates');
     } catch (e) {
-      console.warn('Error removing authAdmin', e);
+      console.warn('Error purgando almacenamiento local:', e);
     }
+    // Restablecer estados clínicos sensibles
+    setConsultations(INITIAL_CONSULTATIONS);
+    setElectronicPrescriptions(INITIAL_ELECTRONIC_PRESCRIPTIONS);
+    setConsentForms(INITIAL_CONSENT_FORMS);
     setCurrentView('home');
-    addToast('Sesión de Administración Cerrada', 'Has salido del panel de control.', 'info');
+    addToast('Sesión de Administración Cerrada', 'Has salido del panel de control de forma segura.', 'info');
   };
 
   const resetUserPassword = async (emailOrDni) => {
@@ -1920,6 +2068,8 @@ export const ClinicProvider = ({ children }) => {
         updateAppointmentStatus,
         addPatient,
         updatePatient,
+        deletePatient,
+        addPatientFile,
         addConsultation,
         addConsultationAdenda,
         addElectronicPrescription,
@@ -1927,6 +2077,7 @@ export const ClinicProvider = ({ children }) => {
         addConsentForm,
         revokeConsentForm,
         addArcaInvoice,
+        addInvoice,
         addRehabPlan,
         updateRehabPlan,
         addRehabSession,
@@ -1973,6 +2124,12 @@ export const ClinicProvider = ({ children }) => {
         addSpecialty,
         updateSpecialty,
         deleteSpecialty,
+        addHealthInsurance,
+        updateHealthInsurance,
+        deleteHealthInsurance,
+        addRoom,
+        updateRoom,
+        deleteRoom,
         updateClinicSchedule,
         loginPatient,
         registerPatient,

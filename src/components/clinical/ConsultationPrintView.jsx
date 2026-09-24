@@ -616,10 +616,10 @@ export const ConsultationPrintView = () => {
                     {cons.specialtyName || 'Traumatología y Ortopedia'}
                   </div>
                   <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                    {cons.doctorLicense || 'M.P. 34.892 · M.N. 114.829'}
+                    {cons.doctorLicense || 'Matrícula Profesional Verificada'}
                   </div>
                   <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                    <CheckCircle2 size={12} color="#059669" /> Firma Digital Registrada
+                    <CheckCircle2 size={12} color="#059669" /> Firma Electrónica Médica Certificada
                   </div>
                 </div>
               </div>

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { getTodayArgentina, addDays } from '../../utils/dateUtils';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -51,7 +52,7 @@ export const AppointmentsManager = () => {
   } = useClinic();
 
   // Selected date (defaults to today's date dynamically, with full navigation)
-  const todayIso = new Date().toISOString().split('T')[0];
+  const todayIso = getTodayArgentina();
   const [selectedDate, setSelectedDate] = useState(todayIso);
   // Status filter pill: 'all', 'en_sala', 'pendientes', 'atendidos'
   const [statusFilter, setStatusFilter] = useState('all');
@@ -124,15 +125,11 @@ export const AppointmentsManager = () => {
 
   // Date Navigation handlers
   const handlePrevDay = () => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() - 1);
-    setSelectedDate(d.toISOString().split('T')[0]);
+    setSelectedDate(addDays(selectedDate, -1));
   };
 
   const handleNextDay = () => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() + 1);
-    setSelectedDate(d.toISOString().split('T')[0]);
+    setSelectedDate(addDays(selectedDate, 1));
   };
 
   const handleToday = () => {
@@ -166,33 +163,32 @@ export const AppointmentsManager = () => {
     setExpandedAppointmentId((prev) => (prev === appId ? null : appId));
   };
 
-  // View Existing Consultation / Medical Record
+  // View Existing Consultation / Medical Record strictly for this appointment
   const handleViewConsultation = (app) => {
     const exactCons = (consultations || []).find(
-      (c) => c.appointmentId === app.id || (c.patientDni === app.patientDni && c.date === app.date)
+      (c) => c.appointmentId === app.id
     );
     if (exactCons && setSelectedConsultationForPrint) {
       setSelectedConsultationForPrint(exactCons);
-      addToast('Historia Clínica', `Abriendo registro de consulta de ${app.patientName}.`, 'info');
+      addToast('Historia Clínica', `Abriendo registro de consulta de ${app.patientName} vinculado a este turno.`, 'info');
       return;
     }
 
-    const anyCons = (consultations || []).find(
-      (c) => c.patientId === app.patientId || c.patientDni === app.patientDni
+    // Fallback strictly for the same patient on the exact same date if created without appointmentId
+    const sameDateCons = (consultations || []).find(
+      (c) => (c.patientId === app.patientId || c.patientDni === app.patientDni) && c.date === app.date
     );
-    if (anyCons && setSelectedConsultationForPrint) {
-      setSelectedConsultationForPrint(anyCons);
-      addToast('Historia Clínica', `Abriendo consulta de ${app.patientName}.`, 'info');
+    if (sameDateCons && setSelectedConsultationForPrint) {
+      setSelectedConsultationForPrint(sameDateCons);
+      addToast('Historia Clínica', `Abriendo consulta de ${app.patientName} correspondiente a la fecha del turno.`, 'info');
       return;
     }
 
-    const matchedPat = (patients || []).find((p) => p.id === app.patientId || p.dni === app.patientDni);
-    if (matchedPat && setSelectedPatientForDetail) {
-      setSelectedPatientForDetail(matchedPat);
-      addToast('Historia Clínica', `Abriendo expediente clínico de ${app.patientName}.`, 'info');
-    } else {
-      addToast('Historia Clínica', `No se encontró registro clínico previo para ${app.patientName}.`, 'warning');
-    }
+    addToast(
+      'Sin Consulta Registrada',
+      `Este turno de ${app.patientName} no tiene una consulta asentada aún. Puede registrar la consulta correspondiente presionando "Atender".`,
+      'warning'
+    );
   };
 
   // Call / Start Consultation Action (Only for pending / in room appointments)
@@ -204,7 +200,15 @@ export const AppointmentsManager = () => {
     }
 
     if (setIsNewConsultationModalOpen && setConsultationPreloadData) {
-      setConsultationPreloadData(app);
+      setConsultationPreloadData({
+        appointmentId: app.id,
+        patientId: app.patientId,
+        patientName: app.patientName,
+        patientDni: app.patientDni,
+        doctorId: app.doctorId,
+        doctorName: app.doctorName,
+        reason: app.reason || 'Consulta programada'
+      });
       setIsNewConsultationModalOpen(true);
       const hasExistingHC = (consultations || []).some(
         (c) => c.patientId === app.patientId || c.patientDni === app.patientDni
@@ -213,7 +217,7 @@ export const AppointmentsManager = () => {
         hasExistingHC ? 'Evolución Médica' : 'Consulta Médica',
         hasExistingHC
           ? `Atendiendo a ${app.patientName} — Registrando nueva evolución en su Historia Clínica existente.`
-          : `Iniciando consulta para ${app.patientName} en ${currentDoctor?.roomName || 'Consultorio 102'}.`,
+          : `Iniciando consulta para ${app.patientName} en ${currentDoctor?.roomName || 'Consultorio'}.`,
         'info'
       );
     } else {
@@ -1109,7 +1113,7 @@ export const AppointmentsManager = () => {
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        if (sendWhatsAppReminder) sendWhatsAppReminder(app);
+                                        if (sendWhatsAppReminder) sendWhatsAppReminder(app.id);
                                         else addToast('WhatsApp', `Mensaje enviado a ${app.patientPhone}`, 'info');
                                       }}
                                       style={{

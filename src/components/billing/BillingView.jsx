@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { sanitizeCsvCell, getTodayArgentina } from '../../utils/dateUtils';
 import {
   Receipt,
   DollarSign,
@@ -61,25 +62,25 @@ export const BillingView = () => {
   const handleExportCSV = () => {
     const headers = ['Nro Comprobante', 'CAE ARCA', 'Vto CAE', 'Fecha', 'Paciente', 'DNI', 'Concepto', 'Médico', 'Importe ($)', 'Honorario Médico ($)', 'Metodo Pago', 'Estado'];
     const rows = filteredInvoices.map((i) => [
-      i.invoiceNumber,
-      i.cae || '74291823901248',
-      i.caeVto || '2026-09-07',
-      i.date,
-      `"${i.patientName}"`,
-      i.dni || '-',
-      `"${i.concept}"`,
-      `"${i.doctorName || '-'}"`,
-      i.amount,
-      i.doctorHonorario || Math.round(i.amount * 0.75),
-      `"${i.paymentMethod}"`,
-      i.status
+      sanitizeCsvCell(i.invoiceNumber),
+      sanitizeCsvCell(i.cae || '74291823901248'),
+      sanitizeCsvCell(i.caeVto || '2026-09-07'),
+      sanitizeCsvCell(i.date),
+      sanitizeCsvCell(i.patientName),
+      sanitizeCsvCell(i.dni || '-'),
+      sanitizeCsvCell(i.concept),
+      sanitizeCsvCell(i.doctorName || '-'),
+      sanitizeCsvCell(i.amount),
+      sanitizeCsvCell(i.doctorHonorario || Math.round(i.amount * 0.75)),
+      sanitizeCsvCell(i.paymentMethod),
+      sanitizeCsvCell(i.status)
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.map(sanitizeCsvCell).join(','), ...rows.map((e) => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `CITRA_Libro_IVA_Ventas_ARCA_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `CITRA_Libro_IVA_Ventas_ARCA_${getTodayArgentina()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

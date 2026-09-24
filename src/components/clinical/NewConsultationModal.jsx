@@ -33,19 +33,35 @@ export const NewConsultationModal = () => {
     addToast
   } = useClinic();
 
-  // Active doctor resolution (strictly Dr. Blanco when in doctor role)
+  // Active doctor resolution (strictly current authenticated physician or appointment's doctor)
   const activeDoctor = useMemo(() => {
     if (isDoctor && currentDoctor) return currentDoctor;
+    if (consultationPreloadData?.doctorId) {
+      const found = doctors.find((d) => d.id === consultationPreloadData.doctorId);
+      if (found) return found;
+    }
+    if (currentDoctor) return currentDoctor;
     return (
-      doctors.find((d) => d.name?.includes('Blanco')) ||
       doctors[0] || {
         id: 'doc-1',
         name: 'Dr. Alejandro Blanco',
-        license: 'M.P. 34.892 · M.N. 114.829',
-        specialty: 'Traumatología & Cirugía Artroscópica'
+        license: 'MP 38.412 / ME 19.820',
+        specialty: 'Traumatología'
       }
     );
-  }, [isDoctor, currentDoctor, doctors]);
+  }, [isDoctor, currentDoctor, doctors, consultationPreloadData]);
+
+  const initialVitals = {
+    bpSystolic: '',
+    bpDiastolic: '',
+    heartRate: '',
+    respiratoryRate: '',
+    temperature: '',
+    weight: '',
+    height: '',
+    bmi: '',
+    bmiCategory: ''
+  };
 
   const [formData, setFormData] = useState({
     appointmentId: '',
@@ -53,24 +69,14 @@ export const NewConsultationModal = () => {
     patientName: '',
     patientDni: '',
     patientInsurance: '',
-    doctorId: activeDoctor.id,
-    doctorName: activeDoctor.name,
-    doctorLicense: activeDoctor.license || 'M.P. 34.892 · M.N. 114.829',
-    specialtyName: activeDoctor.specialty || 'Traumatología & Cirugía Artroscópica',
+    doctorId: activeDoctor?.id || '',
+    doctorName: activeDoctor?.name || '',
+    doctorLicense: activeDoctor?.license || '',
+    specialtyName: activeDoctor?.specialty || '',
     reason: '',
     symptoms: '',
-    vitals: {
-      bpSystolic: 120,
-      bpDiastolic: 80,
-      heartRate: 72,
-      respiratoryRate: 16,
-      temperature: 36.5,
-      weight: 74,
-      height: 1.74,
-      bmi: 24.4,
-      bmiCategory: 'Peso normal'
-    },
-    diagnosis: 'S83.5 - Traumatismo / Reconstrucción de ligamento cruzado anterior de rodilla',
+    vitals: initialVitals,
+    diagnosis: '',
     secondaryDiagnosis: '',
     evolution: '',
     prescriptions: [],
@@ -78,6 +84,7 @@ export const NewConsultationModal = () => {
     studiesRequested: ''
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [diagnosisQuery, setDiagnosisQuery] = useState('');
   const [showDiagnosisDropdown, setShowDiagnosisDropdown] = useState(false);
 
@@ -90,17 +97,23 @@ export const NewConsultationModal = () => {
       setFormData((prev) => ({
         ...prev,
         appointmentId: consultationPreloadData.appointmentId || '',
-        patientId: targetPat?.id || '',
+        patientId: targetPat?.id || consultationPreloadData.patientId || '',
         patientName: targetPat?.name || consultationPreloadData.patientName || '',
         patientDni: targetPat?.dni || consultationPreloadData.patientDni || '',
         patientInsurance: targetPat?.insuranceName || '',
-        doctorId: activeDoctor.id,
-        doctorName: activeDoctor.name,
-        doctorLicense: activeDoctor.license,
-        specialtyName: activeDoctor.specialty,
+        doctorId: activeDoctor?.id || '',
+        doctorName: activeDoctor?.name || '',
+        doctorLicense: activeDoctor?.license || '',
+        specialtyName: activeDoctor?.specialty || '',
         reason: consultationPreloadData.reason || '',
+        symptoms: '',
         evolution: consultationPreloadData.evolution || '',
-        diagnosis: consultationPreloadData.diagnosis || prev.diagnosis
+        diagnosis: consultationPreloadData.diagnosis || '',
+        secondaryDiagnosis: '',
+        vitals: consultationPreloadData.vitals || initialVitals,
+        prescriptions: consultationPreloadData.prescriptions || [],
+        indications: consultationPreloadData.indications || '',
+        studiesRequested: consultationPreloadData.studiesRequested || ''
       }));
     } else {
       const defaultPat = patients[0] || {};
@@ -111,22 +124,19 @@ export const NewConsultationModal = () => {
         patientName: defaultPat.name || '',
         patientDni: defaultPat.dni || '',
         patientInsurance: defaultPat.insuranceName || '',
-        doctorId: activeDoctor.id,
-        doctorName: activeDoctor.name,
-        doctorLicense: activeDoctor.license,
-        specialtyName: activeDoctor.specialty,
-        reason: 'Control clínico traumatológico programado',
-        diagnosis: 'S83.5 - Traumatismo / Reconstrucción de ligamento cruzado anterior de rodilla',
+        doctorId: activeDoctor?.id || '',
+        doctorName: activeDoctor?.name || '',
+        doctorLicense: activeDoctor?.license || '',
+        specialtyName: activeDoctor?.specialty || '',
+        reason: '',
+        symptoms: '',
+        vitals: initialVitals,
+        diagnosis: '',
         secondaryDiagnosis: '',
-        evolution:
-          'Paciente lúcido, afebril, hemodinámicamente estable. Al examen ortopédico traumatológico: adecuada alineación del eje de extremidad, arcos de movilidad conservados dentro del rango esperado. Sin signos de flogosis ni derrame articular agudo. Pulsos periféricos distales presentes y simétricos.',
-        prescriptions: [
-          { medication: 'Diclofenac 75mg', dosage: '1 comp.', frequency: 'Cada 12 hs', duration: '5 días' },
-          { medication: 'Omeprazol 20mg', dosage: '1 cáps.', frequency: 'En ayunas', duration: '7 días' }
-        ],
-        indications:
-          '1. Crioterapia local 15 minutos 3 veces al día post-actividad.\n2. Continuar plan de rehabilitación kinesiológica y fortalecimiento en CITRA.\n3. Pautas de alarma ante dolor súbito o impotencia funcional.',
-        studiesRequested: 'Resonancia Magnética Nuclear de Rodilla (RMN)'
+        evolution: '',
+        prescriptions: [],
+        indications: '',
+        studiesRequested: ''
       }));
     }
   }, [consultationPreloadData, isNewConsultationModalOpen, patients, activeDoctor]);
@@ -202,6 +212,8 @@ export const NewConsultationModal = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    if (isSubmitting) return;
+
     if (existingForAppointment) {
       addToast(
         'Turno Ya Atendido',
@@ -211,34 +223,78 @@ export const NewConsultationModal = () => {
       return;
     }
 
-    if (!formData.patientName || !formData.diagnosis) {
-      addToast('Datos Incompletos', 'Debe seleccionar un paciente y registrar el diagnóstico principal.', 'warning');
+    if (!formData.patientName || !formData.diagnosis || !formData.diagnosis.trim()) {
+      addToast('Datos Incompletos', 'Debe seleccionar un paciente y registrar el diagnóstico principal (CIE-10).', 'warning');
       return;
     }
 
-    const payload = {
-      ...formData,
-      doctorId: activeDoctor.id,
-      doctorName: activeDoctor.name,
-      doctorLicense: activeDoctor.license,
-      specialtyName: activeDoctor.specialty,
-      studiesRequested: formData.studiesRequested
-        ? typeof formData.studiesRequested === 'string'
-          ? formData.studiesRequested.split(',').map((s) => s.trim()).filter(Boolean)
-          : formData.studiesRequested
-        : [],
-      prescriptions: formData.prescriptions.filter((p) => p.medication && p.medication.trim())
-    };
+    if (formData.diagnosis.trim().length < 3) {
+      addToast('Diagnóstico Inválido', 'Debe ingresar un diagnóstico clínico con código CIE-10 válido.', 'warning');
+      return;
+    }
 
-    addConsultation(payload);
-    setIsNewConsultationModalOpen(false);
-    addToast(
-      hasExistingHC ? 'Evolución Clínica Registrada' : 'Consulta Médica Registrada',
-      hasExistingHC
-        ? `Se anexó la nueva evolución a la Historia Clínica de ${formData.patientName}.`
-        : `Apertura exitosa de Historia Clínica para ${formData.patientName}.`,
-      'success'
-    );
+    // Physiological bounds validation
+    const { bpSystolic, bpDiastolic, heartRate, temperature, respiratoryRate, weight, height } = formData.vitals;
+    if (bpSystolic && (Number(bpSystolic) < 50 || Number(bpSystolic) > 260)) {
+      addToast('Signo Vital Fuera de Rango', 'Presión arterial sistólica fuera de rango fisiológico (50-260 mmHg).', 'warning');
+      return;
+    }
+    if (bpDiastolic && (Number(bpDiastolic) < 30 || Number(bpDiastolic) > 160)) {
+      addToast('Signo Vital Fuera de Rango', 'Presión arterial diastólica fuera de rango fisiológico (30-160 mmHg).', 'warning');
+      return;
+    }
+    if (heartRate && (Number(heartRate) < 30 || Number(heartRate) > 240)) {
+      addToast('Signo Vital Fuera de Rango', 'Frecuencia cardíaca fuera de rango fisiológico (30-240 lpm).', 'warning');
+      return;
+    }
+    if (temperature && (Number(temperature) < 32 || Number(temperature) > 44)) {
+      addToast('Signo Vital Fuera de Rango', 'Temperatura fuera de rango fisiológico (32-44 °C).', 'warning');
+      return;
+    }
+    if (respiratoryRate && (Number(respiratoryRate) < 6 || Number(respiratoryRate) > 60)) {
+      addToast('Signo Vital Fuera de Rango', 'Frecuencia respiratoria fuera de rango fisiológico (6-60 rpm).', 'warning');
+      return;
+    }
+    if (weight && (Number(weight) < 1 || Number(weight) > 350)) {
+      addToast('Signo Vital Fuera de Rango', 'Peso corporal fuera de rango (1-350 kg).', 'warning');
+      return;
+    }
+    if (height && (Number(height) < 0.4 || Number(height) > 2.5)) {
+      addToast('Signo Vital Fuera de Rango', 'Altura en metros fuera de rango (0.40 - 2.50 m).', 'warning');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        ...formData,
+        doctorId: activeDoctor.id,
+        doctorName: activeDoctor.name,
+        doctorLicense: activeDoctor.license,
+        specialtyName: activeDoctor.specialty,
+        studiesRequested: formData.studiesRequested
+          ? typeof formData.studiesRequested === 'string'
+            ? formData.studiesRequested.split(',').map((s) => s.trim()).filter(Boolean)
+            : formData.studiesRequested
+          : [],
+        prescriptions: formData.prescriptions.filter((p) => p.medication && p.medication.trim())
+      };
+
+      addConsultation(payload);
+      setIsNewConsultationModalOpen(false);
+      addToast(
+        hasExistingHC ? 'Evolución Clínica Registrada' : 'Consulta Médica Registrada',
+        hasExistingHC
+          ? `Se anexó la nueva evolución a la Historia Clínica de ${formData.patientName}.`
+          : `Apertura exitosa de Historia Clínica para ${formData.patientName}.`,
+        'success'
+      );
+    } catch (err) {
+      console.error('Error al registrar consulta:', err);
+      addToast('Error', 'No se pudo asentar la consulta médica.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const matchedCIE10 = diagnosisQuery
@@ -1234,26 +1290,31 @@ export const NewConsultationModal = () => {
 
               <button
                 type="submit"
+                disabled={isSubmitting}
                 style={{
-                  background: '#002182',
+                  background: isSubmitting ? '#94a3b8' : '#002182',
                   color: '#ffffff',
                   border: 'none',
                   padding: '0.65rem 1.6rem',
                   borderRadius: '10px',
                   fontSize: '0.88rem',
                   fontWeight: 800,
-                  cursor: 'pointer',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
                   boxShadow: '0 4px 12px rgba(0, 33, 130, 0.25)',
                   transition: 'all 0.15s ease'
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#001a66')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = '#002182')}
+                onMouseEnter={(e) => {
+                  if (!isSubmitting) e.currentTarget.style.background = '#001a66';
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSubmitting) e.currentTarget.style.background = '#002182';
+                }}
               >
                 <CheckCircle2 size={17} />
-                {hasExistingHC ? 'Guardar Evolución' : 'Abrir Historia Clínica'}
+                {isSubmitting ? 'Registrando...' : hasExistingHC ? 'Guardar Evolución' : 'Abrir Historia Clínica'}
               </button>
             </div>
           </div>

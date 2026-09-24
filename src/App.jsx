@@ -1,6 +1,7 @@
 import React from 'react';
 import { ClinicProvider, useClinic } from './context/ClinicContext';
 import { Toast } from './components/common/Toast';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 // Institutional & Patient Portal Views
 import { Navbar } from './components/institutional/Navbar';
@@ -109,11 +110,12 @@ const MainLayout = () => {
     </div>
   );
 };
-
 export default function App() {
   return (
-    <ClinicProvider>
-      <MainLayout />
-    </ClinicProvider>
+    <ErrorBoundary>
+      <ClinicProvider>
+        <MainLayout />
+      </ClinicProvider>
+    </ErrorBoundary>
   );
 }

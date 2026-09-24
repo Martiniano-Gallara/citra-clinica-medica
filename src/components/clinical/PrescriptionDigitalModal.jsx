@@ -61,9 +61,9 @@ export const PrescriptionDigitalModal = () => {
         }
       ];
 
-  const effectiveDiagnosis = rx.diagnosisPresuntivo || rx.diagnosis || 'Control y tratamiento traumatológico';
-  const effectiveDoctorName = rx.doctorName === 'Dr. Blanco' ? 'Dr. Alejandro Blanco' : (rx.doctorName || 'Dr. Alejandro Blanco');
-  const effectiveDoctorLicense = rx.doctorLicense === 'MN 114.829 / MP 44.920' || !rx.doctorLicense ? 'M.N. 114.829 · M.P. 44.920' : (rx.doctorLicense || rx.doctorMatricula || 'M.N. 114.829 · M.P. 44.920');
+  const effectiveDiagnosis = rx.diagnosisPresuntivo || rx.diagnosis || 'Control y tratamiento médico';
+  const effectiveDoctorName = rx.doctorName || 'Profesional Médico CITRA';
+  const effectiveDoctorLicense = rx.doctorLicense || rx.doctorMatricula || 'Matrícula Profesional Registrada';
 
   return (
     <div

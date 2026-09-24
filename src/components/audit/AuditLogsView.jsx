@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { sanitizeCsvCell, getTodayArgentina } from '../../utils/dateUtils';
 import { ShieldCheck, Search, Filter, Lock, Download, AlertCircle, FileSpreadsheet } from 'lucide-react';
 
 export const AuditLogsView = () => {
@@ -35,23 +36,23 @@ export const AuditLogsView = () => {
   const handleExportCSV = () => {
     const headers = ['ID', 'Fecha y Hora UTC', 'Usuario', 'Rol', 'Accion', 'Recurso', 'DNI Objetivo', 'Detalle', 'IP', 'Hash SHA-256'];
     const rows = filteredLogs.map((l) => [
-      l.id,
-      l.timestamp,
-      `"${l.userName}"`,
-      l.userRole,
-      l.action,
-      `"${l.resource}"`,
-      l.targetDni,
-      `"${l.details.replace(/"/g, '""')}"`,
-      l.ipAddress,
-      l.eventHash
+      sanitizeCsvCell(l.id),
+      sanitizeCsvCell(l.timestamp),
+      sanitizeCsvCell(l.userName),
+      sanitizeCsvCell(l.userRole),
+      sanitizeCsvCell(l.action),
+      sanitizeCsvCell(l.resource),
+      sanitizeCsvCell(l.targetDni),
+      sanitizeCsvCell(l.details),
+      sanitizeCsvCell(l.ipAddress),
+      sanitizeCsvCell(l.eventHash)
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.map(sanitizeCsvCell).join(','), ...rows.map((e) => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `CITRA_Auditoria_Seguridad_Inmutable_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `CITRA_Auditoria_Seguridad_Inmutable_${getTodayArgentina()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
