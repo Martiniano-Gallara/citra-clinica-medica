@@ -1071,24 +1071,90 @@ button, input, select, textarea {
 
 /* Print styles */
 @media print {
-  body * {
-    visibility: hidden;
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm;
   }
-  .printable-area, .printable-area * {
-    visibility: visible;
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
-  .printable-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 20px;
-    background: white;
-    color: black;
-  }
-  .no-print {
+
+  /* Ocultar interfaz de navegación, barras laterales, botones y elementos no imprimibles */
+  aside,
+  header,
+  nav,
+  footer,
+  .admin-sidebar,
+  .admin-sidebar-backdrop,
+  .admin-topbar,
+  .admin-header,
+  .navbar,
+  .footer,
+  .toast-container,
+  .no-print,
+  button,
+  .btn {
     display: none !important;
+  }
+
+  /* Si hay un modal imprimible abierto, asegurarse de que su overlay ocupe desde el inicio */
+  .consultation-print-overlay,
+  .prescription-modal-overlay,
+  .legal-hce-overlay,
+  .statistics-print-overlay {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+    z-index: 999999 !important;
+  }
+
+  /* Soporte universal para hojas imprimibles */
+  .printable-area,
+  .consultation-print-sheet,
+  .prescription-printable-document,
+  .legal-hce-sheet {
+    visibility: visible !important;
+    display: block !important;
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .printable-area *,
+  .consultation-print-sheet *,
+  .prescription-printable-document *,
+  .legal-hce-sheet * {
+    visibility: visible !important;
+  }
+
+  .print-avoid-break {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 }
 

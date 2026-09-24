@@ -67,14 +67,15 @@ export const ClinicalRecordsView = () => {
   const [isLegalHceModalOpen, setIsLegalHceModalOpen] = useState(false);
   const [showLegalFrameworkInfo, setShowLegalFrameworkInfo] = useState(true);
 
-  // Strict Scoping: Doctor only sees his own consultations
+  // Strict Scoping: Always enforce scopedConsultations & scopedPatients
+  // (Prevents medical confidentiality leaks if component is accessed by non-doctor roles)
   const effectiveConsultations = useMemo(() => {
-    return isDoctor ? scopedConsultations : consultations;
-  }, [isDoctor, scopedConsultations, consultations]);
+    return scopedConsultations;
+  }, [scopedConsultations]);
 
   const effectivePatients = useMemo(() => {
-    return isDoctor ? scopedPatients : patients;
-  }, [isDoctor, scopedPatients, patients]);
+    return scopedPatients;
+  }, [scopedPatients]);
 
   const filteredConsultations = useMemo(() => {
     return effectiveConsultations.filter((c) => {

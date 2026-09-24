@@ -86,10 +86,10 @@ export const AdminLoginView = () => {
   const [recoverySuccess, setRecoverySuccess] = useState(false);
   const [recoveryLoading, setRecoveryLoading] = useState(false);
 
-  // Administrative / reception staff
+  // Administrative & Direction staff (Superadmin + Mesa de Entrada)
   const adminStaffUsers = useMemo(() => {
     return users.filter(
-      (u) => u.adminType === 'administrative' || (!u.doctorId && !u.adminType)
+      (u) => u.adminType === 'administrative' || u.adminType === 'superadmin' || (!u.doctorId && !u.adminType)
     );
   }, [users]);
 

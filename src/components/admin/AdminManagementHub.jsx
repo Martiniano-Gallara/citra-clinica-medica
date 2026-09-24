@@ -395,7 +395,7 @@ export const AdminManagementHub = () => {
     if (!isDoctor) return authAdmin?.name || 'Lic. Facundo Quiroga';
     const raw = currentDoctor?.name || authAdmin?.name || 'Dr. Alejandro Blanco';
     const clean = raw.includes('Morales') ? 'Dr. Alejandro Blanco' : raw;
-    return clean.startsWith('Dr.') ? clean : `Dr. ${clean}`;
+    return clean;
   })();
 
   return (
@@ -686,11 +686,17 @@ export const AdminManagementHub = () => {
               >
                 {(users || [])
                   .filter((u) => u.adminType === 'doctor' || u.adminType === 'administrative' || u.adminType === 'superadmin')
-                  .map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name} ({u.adminType === 'doctor' ? 'Médico' : 'Recepción/Admin'})
-                    </option>
-                  ))}
+                  .map((u) => {
+                    let roleLabel = '';
+                    if (u.adminType === 'superadmin') roleLabel = 'Dirección / Superadmin';
+                    else if (u.adminType === 'administrative') roleLabel = 'Mesa de Entrada / Recepción';
+                    else roleLabel = u.specialty || 'Profesional';
+                    return (
+                      <option key={u.id} value={u.id}>
+                        {u.name} ({roleLabel})
+                      </option>
+                    );
+                  })}
               </select>
             </div>
 
@@ -1223,12 +1229,24 @@ export const AdminManagementHub = () => {
               >
                 {/* Card 1: Turnos Totales */}
                 <div
+                  onClick={() => setActiveTab('appointments')}
+                  title="Click para ver todos los turnos programados"
                   style={{
                     background: '#ffffff',
                     borderRadius: '18px',
                     border: '1.5px solid #D2E3FC',
                     padding: '1.5rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#076ABC';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#D2E3FC';
+                    e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
@@ -1249,12 +1267,24 @@ export const AdminManagementHub = () => {
 
                 {/* Card 2: Turnos Hoy */}
                 <div
+                  onClick={() => setActiveTab('appointments')}
+                  title="Click para ver la agenda del día"
                   style={{
                     background: '#ffffff',
                     borderRadius: '18px',
                     border: '1.5px solid #D2E3FC',
                     padding: '1.5rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#92400e';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#D2E3FC';
+                    e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
@@ -1275,12 +1305,24 @@ export const AdminManagementHub = () => {
 
                 {/* Card 3: Pacientes Registrados */}
                 <div
+                  onClick={() => setActiveTab('patients')}
+                  title="Click para ver el padrón de pacientes"
                   style={{
                     background: '#ffffff',
                     borderRadius: '18px',
                     border: '1.5px solid #D2E3FC',
                     padding: '1.5rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#002182';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#D2E3FC';
+                    e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
@@ -1301,12 +1343,24 @@ export const AdminManagementHub = () => {
 
                 {/* Card 4: Cuerpo Médico Activo */}
                 <div
+                  onClick={() => setActiveTab('schedules')}
+                  title="Click para ver disponibilidad y horarios de profesionales"
                   style={{
                     background: '#ffffff',
                     borderRadius: '18px',
                     border: '1.5px solid #D2E3FC',
                     padding: '1.5rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#065f46';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#D2E3FC';
+                    e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
@@ -1327,12 +1381,24 @@ export const AdminManagementHub = () => {
 
                 {/* Card 5: Consultorios Físicos */}
                 <div
+                  onClick={() => setActiveTab('rooms')}
+                  title="Click para ver y gestionar consultorios físicos"
                   style={{
                     background: '#ffffff',
                     borderRadius: '18px',
                     border: '1.5px solid #D2E3FC',
                     padding: '1.5rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#076ABC';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#D2E3FC';
+                    e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
@@ -1551,6 +1617,15 @@ export const AdminManagementHub = () => {
                       return (
                         <div
                           key={a.id}
+                          onClick={() => {
+                            if (typeof setAppointmentModalData === 'function') {
+                              setAppointmentModalData(a);
+                            }
+                            if (typeof setIsAppointmentModalOpen === 'function') {
+                              setIsAppointmentModalOpen(true);
+                            }
+                          }}
+                          title="Click para ver o editar turno"
                           style={{
                             background: '#F5F8FE',
                             padding: '0.85rem 1.1rem',
@@ -1559,7 +1634,16 @@ export const AdminManagementHub = () => {
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             border: '1px solid #EDF3FD',
+                            cursor: 'pointer',
                             transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#EBF3FD';
+                            e.currentTarget.style.borderColor = '#076ABC';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#F5F8FE';
+                            e.currentTarget.style.borderColor = '#EDF3FD';
                           }}
                         >
                           <div>
@@ -1693,6 +1777,8 @@ export const AdminManagementHub = () => {
                       return (
                         <div
                           key={r.id}
+                          onClick={() => setActiveTab('rooms')}
+                          title={`Click para gestionar ${r.name}`}
                           style={{
                             background: '#F5F8FE',
                             border: '1px solid #D2E3FC',
@@ -1700,7 +1786,17 @@ export const AdminManagementHub = () => {
                             padding: '0.75rem',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '0.25rem'
+                            gap: '0.25rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = '#076ABC';
+                            e.currentTarget.style.background = '#EBF3FD';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = '#D2E3FC';
+                            e.currentTarget.style.background = '#F5F8FE';
                           }}
                         >
                           <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#002182' }}>

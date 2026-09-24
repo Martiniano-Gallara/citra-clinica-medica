@@ -55,9 +55,13 @@ export const ClinicProvider = ({ children }) => {
   const [healthInsurances, setHealthInsurances] = useState(() => loadStorage('healthInsurances', INITIAL_HEALTH_INSURANCES));
   const [doctors, setDoctors] = useState(() => {
     const loaded = loadStorage('doctors', INITIAL_DOCTORS);
+    if (!Array.isArray(loaded) || loaded.length < INITIAL_DOCTORS.length) {
+      return INITIAL_DOCTORS;
+    }
+    const loadedMap = new Map(loaded.map((d) => [d.id, d]));
     return INITIAL_DOCTORS.map((initDoc) => {
-      const savedDoc = Array.isArray(loaded) ? loaded.find((d) => d.id === initDoc.id) : null;
-      return savedDoc ? { ...savedDoc, ...initDoc } : initDoc;
+      const savedDoc = loadedMap.get(initDoc.id);
+      return savedDoc ? { ...initDoc, ...savedDoc, active: true } : initDoc;
     });
   });
   const [patients, setPatients] = useState(() => loadStorage('patients', INITIAL_PATIENTS));
@@ -71,7 +75,7 @@ export const ClinicProvider = ({ children }) => {
   const [consultations, setConsultations] = useState(() => {
     const loaded = loadStorage('consultations', INITIAL_CONSULTATIONS);
     return loaded.map((c) =>
-      c.doctorId === 'doc-1' || (c.doctorName && c.doctorName.includes('Morales'))
+      c.doctorName && c.doctorName.includes('Morales')
         ? { ...c, doctorId: 'doc-1', doctorName: 'Dr. Alejandro Blanco' }
         : c
     );
@@ -79,7 +83,7 @@ export const ClinicProvider = ({ children }) => {
   const [electronicPrescriptions, setElectronicPrescriptions] = useState(() => {
     const loaded = loadStorage('electronicPrescriptions', INITIAL_ELECTRONIC_PRESCRIPTIONS);
     return loaded.map((rx) =>
-      rx.doctorId === 'doc-1' || (rx.doctorName && rx.doctorName.includes('Morales'))
+      rx.doctorName && rx.doctorName.includes('Morales')
         ? { ...rx, doctorId: 'doc-1', doctorName: 'Dr. Alejandro Blanco' }
         : rx
     );
@@ -87,7 +91,7 @@ export const ClinicProvider = ({ children }) => {
   const [consentForms, setConsentForms] = useState(() => {
     const loaded = loadStorage('consentForms', INITIAL_CONSENT_FORMS);
     return loaded.map((cf) =>
-      cf.doctorId === 'doc-1' || (cf.doctorName && cf.doctorName.includes('Morales'))
+      cf.doctorName && cf.doctorName.includes('Morales')
         ? { ...cf, doctorId: 'doc-1', doctorName: 'Dr. Alejandro Blanco' }
         : cf
     );
@@ -97,21 +101,28 @@ export const ClinicProvider = ({ children }) => {
   const [tasks, setTasks] = useState(() => loadStorage('tasks', INITIAL_TASKS_AND_ALERTS));
   const [users, setUsers] = useState(() => {
     const loaded = loadStorage('users', INITIAL_USERS);
+    const validLoaded = Array.isArray(loaded)
+      ? loaded.filter(u => {
+          const email = (u.email || '').toLowerCase();
+          const name = (u.name || '').toLowerCase();
+          if (email.includes('morales') || name.includes('morales')) return false;
+          if (email.includes('arrieta') || name.includes('arrieta')) return false;
+          return true;
+        })
+      : [];
     const userMap = new Map();
     INITIAL_USERS.forEach((u) => userMap.set(u.email.toLowerCase(), u));
-    if (Array.isArray(loaded)) {
-      loaded.forEach((u) => {
-        if (!userMap.has(u.email?.toLowerCase())) {
-          userMap.set(u.email?.toLowerCase(), u);
-        }
-      });
-    }
+    validLoaded.forEach((u) => {
+      if (!userMap.has(u.email?.toLowerCase())) {
+        userMap.set(u.email?.toLowerCase(), u);
+      }
+    });
     return Array.from(userMap.values());
   });
   const [currentUser, setCurrentUser] = useState(() => {
-    const loaded = loadStorage('currentUser', INITIAL_USERS[0]);
-    if (loaded && (loaded.id === 'usr-1' || loaded.doctorId === 'doc-1' || (loaded.name && loaded.name.includes('Morales') && !loaded.role?.includes('Director')))) {
-      return { ...loaded, id: 'usr-1', name: 'Dr. Alejandro Blanco', email: 'dr.blanco@citra.com.ar', adminType: 'doctor', doctorId: 'doc-1' };
+    const loaded = loadStorage('currentUser', null);
+    if (!loaded || (loaded.name && loaded.name.includes('Morales')) || (loaded.email && loaded.email.includes('morales')) || (loaded.email && loaded.email.includes('arrieta'))) {
+      return INITIAL_USERS[0];
     }
     return loaded;
   });
@@ -166,13 +177,16 @@ export const ClinicProvider = ({ children }) => {
   const [authAdmin, setAuthAdmin] = useState(() => {
     const saved = loadStorage('authAdmin', null);
     if (saved && saved.id) {
+      if ((saved.name && saved.name.includes('Morales')) || (saved.email && saved.email.includes('morales')) || (saved.email && saved.email.includes('arrieta'))) {
+        return INITIAL_USERS[0];
+      }
       const savedUsers = loadStorage('users', INITIAL_USERS);
       const matched = savedUsers.find(
-        (u) => u.id === saved.id || u.email?.toLowerCase() === saved.email?.toLowerCase()
+        (u) => (u.id === saved.id || u.email?.toLowerCase() === saved.email?.toLowerCase()) && !u.email?.includes('morales') && !u.email?.includes('arrieta')
       );
       return matched
         ? { ...matched, adminType: matched.adminType || saved.adminType, doctorId: matched.doctorId || saved.doctorId }
-        : null;
+        : INITIAL_USERS[0];
     }
     return null;
   });
@@ -213,15 +227,26 @@ export const ClinicProvider = ({ children }) => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState('login'); // 'login' | 'register'
 
-  // Storage Sanitization Effect: ensures that old references to 'Alejandro Morales' for doc-1 in localStorage are wiped
+  // Storage Sanitization Effect: ensures that old references to Roberto Morales / Silvina Arrieta in localStorage are wiped
   useEffect(() => {
     try {
-      const keysToCheck = ['citra_doctors', 'citra_authAdmin', 'citra_currentUser', 'citra_appointments', 'citra_consultations', 'citra_electronicPrescriptions'];
-      keysToCheck.forEach((key) => {
+      const keysToClean = ['citra_users', 'citra_authAdmin', 'citra_currentUser', 'citra_doctors', 'citra_appointments', 'citra_consultations', 'citra_electronicPrescriptions'];
+      keysToClean.forEach((key) => {
         const item = localStorage.getItem(key);
-        if (item && item.includes('Morales') && !item.includes('Roberto Morales')) {
-          const replaced = item.replaceAll('Dr. Alejandro Morales', 'Dr. Alejandro Blanco').replaceAll('Alejandro Morales', 'Dr. Alejandro Blanco');
-          localStorage.setItem(key, replaced);
+        if (item) {
+          if (item.includes('Roberto Morales') || item.includes('Silvina Arrieta') || item.includes('roberto.morales') || item.includes('auditoria@citra.com.ar')) {
+            if (key === 'citra_authAdmin' || key === 'citra_currentUser') {
+              localStorage.setItem(key, JSON.stringify(INITIAL_USERS[0]));
+            } else if (key === 'citra_users') {
+              localStorage.setItem(key, JSON.stringify(INITIAL_USERS));
+            } else if (key === 'citra_doctors') {
+              localStorage.setItem(key, JSON.stringify(INITIAL_DOCTORS));
+            }
+          }
+          if (item.includes('Dr. Alejandro Morales') || item.includes('Alejandro Morales')) {
+            const replaced = item.replaceAll('Dr. Alejandro Morales', 'Dr. Alejandro Blanco').replaceAll('Alejandro Morales', 'Dr. Alejandro Blanco');
+            localStorage.setItem(key, replaced);
+          }
         }
       });
     } catch (e) {
@@ -574,8 +599,21 @@ export const ClinicProvider = ({ children }) => {
 
         if (remoteApps.status === 'fulfilled' && remoteApps.value?.length) setAppointments(remoteApps.value);
         if (remotePats.status === 'fulfilled' && remotePats.value?.length) setPatients(remotePats.value);
-        if (remoteDocs.status === 'fulfilled' && remoteDocs.value?.length) setDoctors(remoteDocs.value);
-        if (remoteCons.status === 'fulfilled' && remoteCons.value?.length) setConsultations(remoteCons.value);
+        if (remoteDocs.status === 'fulfilled' && Array.isArray(remoteDocs.value) && remoteDocs.value.length > 0) {
+          const remoteMap = new Map(remoteDocs.value.map((d) => [d.id, d]));
+          const fullDocs = INITIAL_DOCTORS.map((initDoc) => {
+            const remote = remoteMap.get(initDoc.id);
+            return remote ? { ...initDoc, ...remote, active: true } : initDoc;
+          });
+          setDoctors(fullDocs);
+        }
+        if (remoteCons.status === 'fulfilled' && Array.isArray(remoteCons.value) && remoteCons.value.length > 0) {
+          setConsultations((prev) => {
+            const remoteMap = new Map(remoteCons.value.map((c) => [c.id, c]));
+            const localOnly = prev.filter((localC) => !remoteMap.has(localC.id));
+            return [...remoteCons.value, ...localOnly];
+          });
+        }
         if (remoteRxs.status === 'fulfilled' && remoteRxs.value?.length) setElectronicPrescriptions(remoteRxs.value);
         if (remoteImgs.status === 'fulfilled' && remoteImgs.value?.length) setImagingStudies(remoteImgs.value);
         if (remoteOrders.status === 'fulfilled' && remoteOrders.value?.length) setMedicalOrders(remoteOrders.value);
@@ -669,7 +707,14 @@ export const ClinicProvider = ({ children }) => {
 
     setConsultations((prev) => [finalizedRecord, ...prev]);
     if (dataService.isLive()) {
-      dataService.createConsultation(finalizedRecord).catch(console.warn);
+      dataService.createConsultation(finalizedRecord).catch((err) => {
+        console.error('Error sincronizando consulta con Supabase Cloud:', err);
+        addToast(
+          'Aviso de Sincronización Remota',
+          'La consulta se guardó en este dispositivo, pero falló la sincronización con el servidor central.',
+          'warning'
+        );
+      });
     }
 
     // Generar automáticamente la Receta Electrónica ReNaPDiS si hay medicamentos prescritos
@@ -1450,6 +1495,41 @@ export const ClinicProvider = ({ children }) => {
     addToast('Perfil Actualizado', 'Tus datos profesionales y credenciales han sido guardados.', 'success');
   };
 
+  // --- GESTIÓN DE USUARIOS Y ROLES (Ley 25.326) ---
+  const updateUser = (userId, updatedData) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, ...updatedData } : u))
+    );
+    if (authAdmin && authAdmin.id === userId) {
+      setAuthAdmin((prev) => ({ ...prev, ...updatedData }));
+      setCurrentUser((prev) => ({ ...prev, ...updatedData }));
+    }
+    logAudit('UPDATE', 'Usuarios & Roles', '-', `Modificación de permisos/rol para usuario ${updatedData.name || userId}`);
+    addToast('Usuario Actualizado', 'Los roles y permisos fueron actualizados correctamente.', 'success');
+  };
+
+  const addUser = (userData) => {
+    const newId = `usr-${Date.now()}`;
+    const newUser = {
+      id: newId,
+      status: 'Activo',
+      mfaEnabled: true,
+      lastAccess: 'Nunca',
+      password: 'citra2026',
+      ...userData
+    };
+    setUsers((prev) => [...prev, newUser]);
+    logAudit('CREATE', 'Usuarios & Roles', '-', `Alta de usuario institucional: ${newUser.name} (${newUser.role})`);
+    addToast('Usuario Registrado', `Se habilitó la cuenta para ${newUser.name}.`, 'success');
+    return newUser;
+  };
+
+  const deleteUser = (userId) => {
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+    logAudit('DELETE', 'Usuarios & Roles', '-', `Baja de usuario ID ${userId}`);
+    addToast('Usuario Eliminado', 'La cuenta ha sido dada de baja.', 'info');
+  };
+
   const switchAdminUser = (userIdOrEmail) => {
     const targetUser = users.find(
       (u) => u.id === userIdOrEmail || u.email?.toLowerCase() === (userIdOrEmail || '').toLowerCase()
@@ -1554,6 +1634,11 @@ export const ClinicProvider = ({ children }) => {
   const logoutAdmin = () => {
     setAuthRole('guest');
     setAuthAdmin(null);
+    try {
+      localStorage.removeItem('citra_authAdmin');
+    } catch (e) {
+      console.warn('Error removing authAdmin', e);
+    }
     setCurrentView('home');
     addToast('Sesión de Administración Cerrada', 'Has salido del panel de control.', 'info');
   };
@@ -1910,7 +1995,10 @@ export const ClinicProvider = ({ children }) => {
         updateDoctorSchedule,
         updateDoctorInsurances,
         updateDoctorProfile,
-        switchAdminUser
+        switchAdminUser,
+        updateUser,
+        addUser,
+        deleteUser
       }}
     >
       {children}

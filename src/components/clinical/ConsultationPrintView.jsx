@@ -60,38 +60,85 @@ export const ConsultationPrintView = () => {
     >
       <style>{`
         @media print {
-          body {
+          @page {
+            size: A4 portrait;
+            margin: 10mm 12mm;
+          }
+          html, body {
             background: #ffffff !important;
+            color: #0f172a !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          /* Ocultar toda la interfaz de la aplicación, navegación y modales de fondo */
+          aside, header, nav, footer,
+          .admin-container, .admin-sidebar, .admin-sidebar-backdrop, .admin-topbar, .admin-header,
+          .navbar, .toast-container, .no-print,
+          .consultation-print-header, .consultation-print-footer,
+          button, .btn {
+            display: none !important;
+          }
+          .modal-overlay:not(.consultation-print-overlay) {
+            display: none !important;
           }
           .consultation-print-overlay {
-            position: static !important;
-            background: transparent !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: 0 !important;
+            background: #ffffff !important;
             backdrop-filter: none !important;
             padding: 0 !important;
+            margin: 0 !important;
             display: block !important;
+            z-index: 999999 !important;
+            overflow: visible !important;
           }
           .consultation-print-modal {
+            position: static !important;
             box-shadow: none !important;
             border: none !important;
             max-width: 100% !important;
+            width: 100% !important;
             max-height: none !important;
+            height: auto !important;
             border-radius: 0 !important;
             overflow: visible !important;
-          }
-          .consultation-print-header,
-          .consultation-print-footer {
-            display: none !important;
+            background: #ffffff !important;
+            padding: 0 !important;
+            margin: 0 !important;
           }
           .consultation-print-sheet-wrapper {
             padding: 0 !important;
+            margin: 0 !important;
             overflow: visible !important;
+            max-height: none !important;
+            height: auto !important;
           }
           .consultation-print-sheet {
             box-shadow: none !important;
             border: none !important;
             border-radius: 0 !important;
             padding: 0 !important;
+            margin: 0 auto !important;
             max-width: 100% !important;
+            width: 100% !important;
+            visibility: visible !important;
+            display: block !important;
+          }
+          .consultation-print-sheet * {
+            visibility: visible !important;
+          }
+          .print-avoid-break {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
           }
         }
       `}</style>
@@ -220,7 +267,7 @@ export const ConsultationPrintView = () => {
           style={{ padding: '1.75rem', overflowY: 'auto', flex: 1 }}
         >
           <div
-            className="consultation-print-sheet"
+            className="consultation-print-sheet printable-area"
             style={{
               background: '#ffffff',
               borderRadius: '12px',
@@ -236,6 +283,7 @@ export const ConsultationPrintView = () => {
           >
             {/* INSTITUTIONAL HEADER */}
             <div
+              className="print-avoid-break"
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -272,6 +320,7 @@ export const ConsultationPrintView = () => {
 
             {/* PATIENT & DOCTOR DATA */}
             <div
+              className="print-avoid-break"
               style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
@@ -309,7 +358,7 @@ export const ConsultationPrintView = () => {
             </div>
 
             {/* MOTIVO DE CONSULTA Y DIAGNÓSTICO */}
-            <div style={{ marginBottom: '1.35rem' }}>
+            <div className="print-avoid-break" style={{ marginBottom: '1.35rem' }}>
               <div
                 style={{
                   fontSize: '0.78rem',
@@ -341,7 +390,7 @@ export const ConsultationPrintView = () => {
 
             {/* SIGNOS VITALES */}
             {cons.vitals && (
-              <div style={{ marginBottom: '1.35rem' }}>
+              <div className="print-avoid-break" style={{ marginBottom: '1.35rem' }}>
                 <div
                   style={{
                     fontSize: '0.78rem',
@@ -401,7 +450,7 @@ export const ConsultationPrintView = () => {
 
             {/* PRESCRIPCIÓN MÉDICA (Rp/) */}
             {cons.prescriptions && cons.prescriptions.length > 0 && (
-              <div style={{ marginBottom: '1.35rem' }}>
+              <div className="print-avoid-break" style={{ marginBottom: '1.35rem' }}>
                 <div
                   style={{
                     fontSize: '0.78rem',
@@ -538,6 +587,7 @@ export const ConsultationPrintView = () => {
 
             {/* SIGNATURE & LEGAL INTEGRITY FOOTER */}
             <div
+              className="print-avoid-break"
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',

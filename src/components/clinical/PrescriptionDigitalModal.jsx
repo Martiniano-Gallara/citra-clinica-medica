@@ -86,41 +86,74 @@ export const PrescriptionDigitalModal = () => {
         @media print {
           @page {
             size: A4 portrait;
-            margin: 12mm 16mm;
+            margin: 10mm 12mm;
           }
           body, html {
             background: #ffffff !important;
             color: #0f172a !important;
             margin: 0 !important;
             padding: 0 !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          /* Ocultar toda la interfaz de la aplicación */
-          header, nav, aside, .sidebar, .topbar, .no-print, .prescription-action-bar, button {
+          /* Ocultar toda la interfaz de la aplicación, navegación y modales de fondo */
+          header, nav, aside, footer,
+          .admin-container, .admin-sidebar, .admin-sidebar-backdrop, .admin-topbar, .admin-header,
+          .navbar, .toast-container, .no-print,
+          .prescription-action-bar, button, .btn {
+            display: none !important;
+          }
+          .modal-overlay:not(.prescription-modal-overlay) {
             display: none !important;
           }
           .prescription-modal-overlay {
-            position: static !important;
-            background: transparent !important;
-            padding: 0 !important;
-            display: block !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: 0 !important;
+            background: #ffffff !important;
             backdrop-filter: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: block !important;
+            z-index: 999999 !important;
+            overflow: visible !important;
           }
           .prescription-modal-container {
+            position: static !important;
             box-shadow: none !important;
             border: none !important;
             padding: 0 !important;
+            margin: 0 !important;
             max-width: 100% !important;
             width: 100% !important;
+            max-height: none !important;
+            height: auto !important;
             background: #ffffff !important;
             border-radius: 0 !important;
+            overflow: visible !important;
           }
           .prescription-printable-document {
             box-shadow: none !important;
             border: none !important;
             padding: 0 !important;
             margin: 0 auto !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            visibility: visible !important;
+            display: block !important;
+          }
+          .prescription-printable-document * {
+            visibility: visible !important;
+          }
+          .print-avoid-break {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
           }
         }
       `}</style>
@@ -275,7 +308,7 @@ export const PrescriptionDigitalModal = () => {
           }}
         >
           <div
-            className="prescription-printable-document"
+            className="prescription-printable-document printable-area"
             style={{
               background: '#ffffff',
               color: '#0f172a',

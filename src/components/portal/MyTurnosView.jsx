@@ -1038,6 +1038,7 @@ export const MyTurnosView = () => {
 
               {/* Ticket Card */}
               <div
+                className="printable-area"
                 style={{
                   background: '#F8FAFE',
                   border: '1.5px dashed #076ABC',

@@ -1124,154 +1124,440 @@ export const InsurancesView = () => {
   // ADMINISTRATIVE VIEW: GESTIÓN INSTITUCIONAL COMPLETA
   // ====================================================
   return (
-    <div className="view-container">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       {/* Header */}
-      <div className="view-header">
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem'
+        }}
+      >
         <div>
-          <h1 className="view-title">Obras Sociales & Prepagas</h1>
-          <p className="view-subtitle">
+          <h1 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.25rem', letterSpacing: '-0.02em' }}>
+            Obras Sociales & Prepagas
+          </h1>
+          <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
             Administración de convenios institucionales, aranceles del Nomenclador Nacional, validación de tokens en tiempo real y débitos.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div>
           <button
             type="button"
-            className="btn btn-primary"
             onClick={() => setIsOnlineAuthModalOpen(true)}
+            style={{
+              background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+              color: '#ffffff',
+              border: 'none',
+              padding: '0.65rem 1.15rem',
+              borderRadius: '10px',
+              fontSize: '0.86rem',
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(7, 106, 188, 0.35)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(7, 106, 188, 0.25)';
+            }}
           >
-            <KeyRound size={18} />
+            <KeyRound size={17} />
             Validar / Autorizar Token Online
           </button>
         </div>
       </div>
 
-      {/* KPI Stats */}
-      <div className="dashboard-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: '1.5rem' }}>
-        <div className="kpi-card">
-          <div className="kpi-icon-wrapper kpi-teal">
-            <Shield size={22} />
+      {/* KPI Stats Grid */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '1rem'
+        }}
+      >
+        {/* Card 1 */}
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '14px',
+            border: '1px solid #e2e8f0',
+            padding: '1.15rem 1.25rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.02)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            gap: '0.5rem'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Convenios Vigentes
+            </span>
+            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#eff6ff', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Shield size={18} />
+            </div>
           </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Convenios Vigentes</span>
-            <span className="kpi-value">{totalAgreements}</span>
-            <span className="kpi-meta text-success">OSDE, Swiss, Apross, PAMI</span>
+          <div>
+            <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>
+              {totalAgreements}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#166534', fontWeight: 600, marginTop: '0.35rem' }}>
+              OSDE, Swiss, Apross, PAMI
+            </div>
           </div>
         </div>
 
-        <div className="kpi-card">
-          <div className="kpi-icon-wrapper kpi-mint">
-            <CheckCircle2 size={22} />
+        {/* Card 2 */}
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '14px',
+            border: '1px solid #e2e8f0',
+            padding: '1.15rem 1.25rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.02)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            gap: '0.5rem'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Autorizaciones Aprobadas
+            </span>
+            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#f0fdf4', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CheckCircle2 size={18} />
+            </div>
           </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Autorizaciones Aprobadas</span>
-            <span className="kpi-value">{approvedAuths}</span>
-            <span className="kpi-meta text-success">Tasa de aprobación 92%</span>
+          <div>
+            <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>
+              {approvedAuths}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 600, marginTop: '0.35rem' }}>
+              Tasa de aprobación 92%
+            </div>
           </div>
         </div>
 
-        <div className="kpi-card">
-          <div className="kpi-icon-wrapper kpi-warning">
-            <AlertCircle size={22} />
+        {/* Card 3 */}
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '14px',
+            border: '1px solid #e2e8f0',
+            padding: '1.15rem 1.25rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.02)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            gap: '0.5rem'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Débitos / Rechazos
+            </span>
+            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <AlertCircle size={18} />
+            </div>
           </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Débitos / Rechazos</span>
-            <span className="kpi-value">{rejectedAuths}</span>
-            <span className="kpi-meta text-warning">En revisión para refacturar</span>
+          <div>
+            <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#dc2626', lineHeight: 1.1 }}>
+              {rejectedAuths}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#b91c1c', fontWeight: 600, marginTop: '0.35rem' }}>
+              En revisión para refacturar
+            </div>
           </div>
         </div>
 
-        <div className="kpi-card">
-          <div className="kpi-icon-wrapper kpi-teal">
-            <Percent size={22} />
+        {/* Card 4 */}
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '14px',
+            border: '1px solid #e2e8f0',
+            padding: '1.15rem 1.25rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.02)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            gap: '0.5rem'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Nomenclador Arancelado
+            </span>
+            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#faf5ff', color: '#9333ea', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Percent size={18} />
+            </div>
           </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Nomenclador Arancelado</span>
-            <span className="kpi-value">{nomenclatorItems.length} cód</span>
-            <span className="kpi-meta text-muted">Trauma & Kinesiología</span>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
+              <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>
+                {nomenclatorItems.length}
+              </span>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>códigos</span>
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, marginTop: '0.35rem' }}>
+              Trauma & Kinesiología
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Navigation Filter Tabs */}
-      <div className="filter-bar" style={{ justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+      {/* Navigation Filter Tabs & Search Bar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          flexWrap: 'wrap',
+          background: '#ffffff',
+          padding: '0.65rem 0.85rem',
+          borderRadius: '14px',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 2px 6px rgba(0, 33, 130, 0.02)'
+        }}
+      >
+        <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
           <button
             type="button"
-            className={`btn btn-sm ${activeTab === 'agreements' ? 'btn-primary' : 'btn-outline'}`}
             onClick={() => setActiveTab('agreements')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              padding: '0.55rem 0.95rem',
+              borderRadius: '10px',
+              border: activeTab === 'agreements' ? '1px solid #002182' : '1px solid #e2e8f0',
+              background: activeTab === 'agreements' ? '#002182' : '#ffffff',
+              color: activeTab === 'agreements' ? '#ffffff' : '#475569',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
           >
             <Shield size={15} />
             Convenios & Prepagas ({insuranceAgreements.length})
           </button>
+
           <button
             type="button"
-            className={`btn btn-sm ${activeTab === 'authorizations' ? 'btn-primary' : 'btn-outline'}`}
             onClick={() => setActiveTab('authorizations')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              padding: '0.55rem 0.95rem',
+              borderRadius: '10px',
+              border: activeTab === 'authorizations' ? '1px solid #002182' : '1px solid #e2e8f0',
+              background: activeTab === 'authorizations' ? '#002182' : '#ffffff',
+              color: activeTab === 'authorizations' ? '#ffffff' : '#475569',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
           >
             <KeyRound size={15} />
             Autorizaciones Online ({authorizations.length})
           </button>
+
           <button
             type="button"
-            className={`btn btn-sm ${activeTab === 'nomenclator' ? 'btn-primary' : 'btn-outline'}`}
             onClick={() => setActiveTab('nomenclator')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              padding: '0.55rem 0.95rem',
+              borderRadius: '10px',
+              border: activeTab === 'nomenclator' ? '1px solid #002182' : '1px solid #e2e8f0',
+              background: activeTab === 'nomenclator' ? '#002182' : '#ffffff',
+              color: activeTab === 'nomenclator' ? '#ffffff' : '#475569',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
           >
             <FileText size={15} />
             Nomenclador Nacional ({nomenclatorItems.length})
           </button>
         </div>
 
-        <div className="search-box-inline">
-          <Search size={15} className="search-icon" />
+        {/* Search Input Box */}
+        <div style={{ position: 'relative', minWidth: '260px', maxWidth: '380px', flex: '1 1 260px' }}>
+          <Search
+            size={16}
+            style={{
+              position: 'absolute',
+              left: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#94a3b8'
+            }}
+          />
           <input
             type="text"
             placeholder="Buscar convenio, CUIT, autorización..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              padding: '0.55rem 0.85rem 0.55rem 2.35rem',
+              borderRadius: '10px',
+              border: '1px solid #cbd5e1',
+              fontSize: '0.82rem',
+              outline: 'none',
+              background: '#f8fafc',
+              color: '#0f172a',
+              transition: 'all 0.15s ease'
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = '#002182';
+              e.target.style.background = '#ffffff';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#cbd5e1';
+              e.target.style.background = '#f8fafc';
+            }}
           />
         </div>
       </div>
 
       {/* Content for Administrative Tabs */}
       {activeTab === 'agreements' && (
-        <div className="card">
-          <div className="table-responsive">
-            <table className="data-table">
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            border: '1px solid #e2e8f0',
+            overflow: 'hidden',
+            boxShadow: '0 4px 15px rgba(0, 33, 130, 0.03)'
+          }}
+        >
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
               <thead>
-                <tr>
-                  <th>Obra Social / Prepaga</th>
-                  <th>CUIT & Convenio</th>
-                  <th>Validación Online</th>
-                  <th>Plazo de Pago</th>
-                  <th>Estado</th>
+                <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#0f172a', fontWeight: 800 }}>
+                  <th style={{ padding: '0.9rem 1.25rem' }}>Obra Social / Prepaga</th>
+                  <th style={{ padding: '0.9rem 1.25rem' }}>CUIT & Convenio</th>
+                  <th style={{ padding: '0.9rem 1.25rem' }}>Validación Online</th>
+                  <th style={{ padding: '0.9rem 1.25rem' }}>Plazo de Pago</th>
+                  <th style={{ padding: '0.9rem 1.25rem', textAlign: 'right' }}>Estado</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredAgreements.map((agr) => (
-                  <tr key={agr.id}>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                        {renderInsuranceLogo({ name: agr.insuranceName }, 38)}
-                        <div>
-                          <div style={{ fontWeight: 800, color: 'var(--text-main)' }}>{agr.insuranceName}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{agr.agreementType}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{agr.cuit}</span>
-                    </td>
-                    <td>
-                      <span className="badge badge-teal" style={{ fontSize: '0.78rem' }}>
-                        {agr.onlineValidation}
-                      </span>
-                    </td>
-                    <td>{agr.paymentTermDays} días</td>
-                    <td>
-                      <span className="badge badge-success">{agr.status}</span>
+                {filteredAgreements.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ padding: '3rem 1.5rem', textAlign: 'center', color: '#64748b' }}>
+                      <Shield size={36} style={{ color: '#cbd5e1', marginBottom: '0.5rem' }} />
+                      <div style={{ fontWeight: 700, color: '#1e293b' }}>No se encontraron convenios</div>
+                      <div style={{ fontSize: '0.82rem' }}>Intente ajustar el término de búsqueda.</div>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredAgreements.map((agr) => {
+                    const statusColor = agr.status?.toLowerCase().includes('coseguro')
+                      ? { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' }
+                      : agr.status?.toLowerCase().includes('capitado')
+                      ? { bg: '#faf5ff', color: '#7e22ce', border: '#e9d5ff' }
+                      : { bg: '#f0fdf4', color: '#166534', border: '#bbf7d0' };
+
+                    return (
+                      <tr
+                        key={agr.id}
+                        style={{
+                          borderBottom: '1px solid #f1f5f9',
+                          transition: 'background 0.15s ease'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; }}
+                      >
+                        <td style={{ padding: '0.95rem 1.25rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                            {renderInsuranceLogo({ name: agr.insuranceName }, 38)}
+                            <div>
+                              <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.92rem' }}>{agr.insuranceName}</div>
+                              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{agr.agreementType}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: '0.95rem 1.25rem' }}>
+                          <span
+                            style={{
+                              fontFamily: 'monospace',
+                              fontWeight: 700,
+                              color: '#334155',
+                              background: '#f8fafc',
+                              border: '1px solid #e2e8f0',
+                              padding: '0.2rem 0.55rem',
+                              borderRadius: '6px',
+                              fontSize: '0.82rem'
+                            }}
+                          >
+                            {agr.cuit}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.95rem 1.25rem' }}>
+                          <span
+                            style={{
+                              fontSize: '0.78rem',
+                              fontWeight: 600,
+                              color: '#0369a1',
+                              background: '#f0f9ff',
+                              border: '1px solid #bae6fd',
+                              padding: '0.25rem 0.65rem',
+                              borderRadius: '6px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.35rem'
+                            }}
+                          >
+                            <KeyRound size={12} color="#0284c7" />
+                            {agr.onlineValidation}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.95rem 1.25rem' }}>
+                          <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.92rem' }}>{agr.paymentTermDays}</span>{' '}
+                          <span style={{ fontSize: '0.78rem', color: '#64748b' }}>días</span>
+                        </td>
+                        <td style={{ padding: '0.95rem 1.25rem', textAlign: 'right' }}>
+                          <span
+                            style={{
+                              background: statusColor.bg,
+                              color: statusColor.color,
+                              border: `1px solid ${statusColor.border}`,
+                              borderRadius: '100px',
+                              padding: '0.25rem 0.75rem',
+                              fontWeight: 700,
+                              fontSize: '0.76rem',
+                              display: 'inline-block'
+                            }}
+                          >
+                            ● {agr.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -1280,18 +1566,26 @@ export const InsurancesView = () => {
 
       {/* Tab 2: Autorizaciones Online Registradas */}
       {activeTab === 'authorizations' && (
-        <div className="card">
-          <div className="table-responsive">
-            <table className="data-table">
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            border: '1px solid #e2e8f0',
+            overflow: 'hidden',
+            boxShadow: '0 4px 15px rgba(0, 33, 130, 0.03)'
+          }}
+        >
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
               <thead>
-                <tr>
-                  <th>Paciente / DNI</th>
-                  <th>Obra Social</th>
-                  <th>Práctica Homologada</th>
-                  <th>Token Digital</th>
-                  <th>Fecha & Hora</th>
-                  <th>Copago</th>
-                  <th>Estado</th>
+                <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#0f172a', fontWeight: 800 }}>
+                  <th style={{ padding: '0.9rem 1.25rem' }}>Paciente / DNI</th>
+                  <th style={{ padding: '0.9rem 1.25rem' }}>Obra Social</th>
+                  <th style={{ padding: '0.9rem 1.25rem' }}>Práctica Homologada</th>
+                  <th style={{ padding: '0.9rem 1.25rem' }}>Token Digital</th>
+                  <th style={{ padding: '0.9rem 1.25rem' }}>Fecha & Hora</th>
+                  <th style={{ padding: '0.9rem 1.25rem' }}>Copago</th>
+                  <th style={{ padding: '0.9rem 1.25rem', textAlign: 'right' }}>Estado</th>
                 </tr>
               </thead>
               <tbody>
@@ -1302,27 +1596,35 @@ export const InsurancesView = () => {
                     (a.tokenProvided && a.tokenProvided.toLowerCase().includes(searchTerm.toLowerCase()))
                   )
                   .map((auth) => (
-                    <tr key={auth.id}>
-                      <td>
+                    <tr
+                      key={auth.id}
+                      style={{
+                        borderBottom: '1px solid #f1f5f9',
+                        transition: 'background 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; }}
+                    >
+                      <td style={{ padding: '0.95rem 1.25rem' }}>
                         <div style={{ fontWeight: 800, color: '#002182' }}>{auth.patientName}</div>
                         <div style={{ fontSize: '0.75rem', color: '#64748b' }}>DNI {auth.patientDni}</div>
                       </td>
-                      <td>
+                      <td style={{ padding: '0.95rem 1.25rem' }}>
                         <span style={{ fontWeight: 700, color: '#0f172a' }}>{auth.insuranceName}</span>
                       </td>
-                      <td>
+                      <td style={{ padding: '0.95rem 1.25rem' }}>
                         <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#002182' }}>
                           {auth.nomenclatorCode} — {auth.description}
                         </div>
                       </td>
-                      <td>
+                      <td style={{ padding: '0.95rem 1.25rem' }}>
                         <span
                           style={{
                             fontFamily: 'monospace',
                             fontWeight: 800,
-                            background: '#EFF6FF',
-                            color: '#1D4ED8',
-                            border: '1px solid #BFDBFE',
+                            background: '#eff6ff',
+                            color: '#1d4ed8',
+                            border: '1px solid #bfdbfe',
                             padding: '0.2rem 0.55rem',
                             borderRadius: '6px',
                             fontSize: '0.82rem'
@@ -1331,10 +1633,10 @@ export const InsurancesView = () => {
                           {auth.tokenProvided}
                         </span>
                       </td>
-                      <td style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                      <td style={{ padding: '0.95rem 1.25rem', fontSize: '0.82rem', color: '#64748b' }}>
                         {auth.requestedAt || '2026-08-28 10:15'}
                       </td>
-                      <td>
+                      <td style={{ padding: '0.95rem 1.25rem' }}>
                         {auth.copayCharged > 0 ? (
                           <span style={{ fontWeight: 800, color: '#b45309' }}>
                             ${auth.copayCharged?.toLocaleString()}
@@ -1343,17 +1645,36 @@ export const InsurancesView = () => {
                           <span style={{ color: '#059669', fontWeight: 700 }}>$0 (Cubierto)</span>
                         )}
                       </td>
-                      <td>
+                      <td style={{ padding: '0.95rem 1.25rem', textAlign: 'right' }}>
                         <span
-                          className={`badge ${
-                            auth.status === 'Aprobada Online'
-                              ? 'badge-success'
-                              : auth.status === 'Rechazada'
-                              ? 'badge-danger'
-                              : 'badge-warning'
-                          }`}
+                          style={{
+                            background:
+                              auth.status === 'Aprobada Online'
+                                ? '#f0fdf4'
+                                : auth.status === 'Rechazada'
+                                ? '#fef2f2'
+                                : '#fffbeb',
+                            color:
+                              auth.status === 'Aprobada Online'
+                                ? '#166534'
+                                : auth.status === 'Rechazada'
+                                ? '#991b1b'
+                                : '#92400e',
+                            border: `1px solid ${
+                              auth.status === 'Aprobada Online'
+                                ? '#bbf7d0'
+                                : auth.status === 'Rechazada'
+                                ? '#fecaca'
+                                : '#fde68a'
+                            }`,
+                            padding: '0.25rem 0.65rem',
+                            borderRadius: '100px',
+                            fontSize: '0.76rem',
+                            fontWeight: 700,
+                            display: 'inline-block'
+                          }}
                         >
-                          {auth.status}
+                          ● {auth.status}
                         </span>
                       </td>
                     </tr>
@@ -1366,16 +1687,24 @@ export const InsurancesView = () => {
 
       {/* Tab 3: Nomenclador Nacional Completo Institucional */}
       {activeTab === 'nomenclator' && (
-        <div className="card">
-          <div className="table-responsive">
-            <table className="data-table">
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            border: '1px solid #e2e8f0',
+            overflow: 'hidden',
+            boxShadow: '0 4px 15px rgba(0, 33, 130, 0.03)'
+          }}
+        >
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
               <thead>
-                <tr>
-                  <th>Código</th>
-                  <th>Práctica Médica</th>
-                  <th>Categoría</th>
-                  <th>Especialidad</th>
-                  <th style={{ textAlign: 'right' }}>Arancel Base</th>
+                <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#0f172a', fontWeight: 800 }}>
+                  <th style={{ padding: '0.9rem 1.25rem' }}>Código</th>
+                  <th style={{ padding: '0.9rem 1.25rem' }}>Práctica Médica</th>
+                  <th style={{ padding: '0.9rem 1.25rem' }}>Categoría</th>
+                  <th style={{ padding: '0.9rem 1.25rem' }}>Especialidad</th>
+                  <th style={{ padding: '0.9rem 1.25rem', textAlign: 'right' }}>Arancel Base</th>
                 </tr>
               </thead>
               <tbody>
@@ -1386,8 +1715,16 @@ export const InsurancesView = () => {
                     item.category?.toLowerCase().includes(searchTerm.toLowerCase())
                   )
                   .map((item) => (
-                    <tr key={item.code}>
-                      <td>
+                    <tr
+                      key={item.code}
+                      style={{
+                        borderBottom: '1px solid #f1f5f9',
+                        transition: 'background 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; }}
+                    >
+                      <td style={{ padding: '0.95rem 1.25rem' }}>
                         <span
                           style={{
                             fontFamily: 'monospace',
@@ -1403,20 +1740,30 @@ export const InsurancesView = () => {
                           {item.code}
                         </span>
                       </td>
-                      <td>
+                      <td style={{ padding: '0.95rem 1.25rem' }}>
                         <div style={{ fontWeight: 700, color: '#0f172a' }}>{item.name}</div>
                       </td>
-                      <td>
-                        <span className="badge badge-outline" style={{ fontSize: '0.78rem' }}>
+                      <td style={{ padding: '0.95rem 1.25rem' }}>
+                        <span
+                          style={{
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            background: '#f1f5f9',
+                            color: '#475569',
+                            padding: '0.2rem 0.55rem',
+                            borderRadius: '6px',
+                            display: 'inline-block'
+                          }}
+                        >
                           {item.category}
                         </span>
                       </td>
-                      <td>
+                      <td style={{ padding: '0.95rem 1.25rem' }}>
                         <span style={{ fontSize: '0.82rem', color: '#475569' }}>
                           {item.specialty || 'General / Traumatología'}
                         </span>
                       </td>
-                      <td style={{ textAlign: 'right' }}>
+                      <td style={{ padding: '0.95rem 1.25rem', textAlign: 'right' }}>
                         <span style={{ fontWeight: 800, color: '#002182', fontSize: '0.94rem' }}>
                           ${item.arancelBase?.toLocaleString()}
                         </span>

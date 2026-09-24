@@ -1315,6 +1315,7 @@ export const AppointmentBookingWizard = () => {
                 {/* Voucher Ticket Card */}
                 <div
                   id="ticket-imprimible"
+                  className="printable-area"
                   style={{
                     background: '#ffffff',
                     border: '2px dashed #076ABC',

@@ -1503,10 +1503,10 @@ export const INITIAL_TASKS_AND_ALERTS = [
 export const INITIAL_USERS = [
   {
     id: 'usr-1',
-    name: 'Dr. Blanco',
+    name: 'Dr. Alejandro Blanco',
     fullName: 'Dr. Alejandro Blanco',
     email: 'dr.blanco@citra.com.ar',
-    role: 'Traumatología',
+    role: 'Traumatología y Ortopedia · Dirección Médica',
     adminType: 'doctor',
     doctorId: 'doc-1',
     specialty: 'Traumatología',
@@ -1699,6 +1699,7 @@ export const INITIAL_USERS = [
   {
     id: 'usr-2',
     name: 'Romina Maidana',
+    fullName: 'Romina Maidana',
     email: 'recepcion@citra.com.ar',
     role: 'Mesa de Entrada & Recepción',
     title: 'Recepción Centralizada (Gestión de turnos de todos los profesionales)',
@@ -1712,38 +1713,16 @@ export const INITIAL_USERS = [
   {
     id: 'usr-3',
     name: 'Lic. Facundo Quiroga',
+    fullName: 'Lic. Facundo Quiroga',
     email: 'admin@citra.com.ar',
-    role: 'Administración & Facturación',
-    adminType: 'administrative',
+    role: 'Administración General & Dirección Administrativa',
+    title: 'Dirección Administrativa & Facturación',
+    adminType: 'superadmin',
     sisaLicense: '-',
     mfaEnabled: true,
     status: 'Activo',
-    lastAccess: 'Hace 10 min',
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'
-  },
-  {
-    id: 'usr-5',
-    name: 'Dra. Silvina Arrieta',
-    email: 'auditoria@citra.com.ar',
-    role: 'Auditor Médico Externo',
-    adminType: 'administrative',
-    sisaLicense: 'REFEPS-MN-89210',
-    mfaEnabled: true,
-    status: 'Activo',
-    lastAccess: 'Ayer',
-    avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80'
-  },
-  {
-    id: 'usr-6',
-    name: 'Dr. Roberto Morales',
-    email: 'roberto.morales@citra.com.ar',
-    role: 'Director Médico / Superadmin',
-    adminType: 'superadmin',
-    sisaLicense: 'SYS-SEC-01',
-    mfaEnabled: true,
-    status: 'Activo',
     lastAccess: 'En línea',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80'
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'
   }
 ];
 
