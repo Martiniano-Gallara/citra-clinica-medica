@@ -14,35 +14,35 @@ const PRIMARY_INSURANCES = [
   {
     id: 'hi-1',
     name: 'OSDE',
-    logo: '/logos/logo-osde.png',
+    logo: './logos/logo-osde.png',
     badge: 'Consultar a secretaría',
     copay: 0
   },
   {
     id: 'hi-2',
     name: 'Swiss Medical',
-    logo: '/logos/logo-swiss-medical.png',
+    logo: './logos/logo-swiss-medical.png',
     badge: 'Planes Adheridos',
     copay: 1500
   },
   {
     id: 'hi-3',
     name: 'Galeno',
-    logo: '/logos/logo-galeno.png',
+    logo: './logos/logo-galeno.png',
     badge: 'Planes Adheridos',
     copay: 2000
   },
   {
     id: 'hi-4',
     name: 'Apross',
-    logo: '/logos/logo-apross.png',
+    logo: './logos/logo-apross.png',
     badge: 'Convenio Provincial',
     copay: 1200
   },
   {
     id: 'hi-5',
     name: 'PAMI',
-    logo: '/logos/logo-pami.png',
+    logo: './logos/logo-pami.png',
     badge: 'Consultar a secretaría',
     copay: 0
   }

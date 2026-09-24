@@ -11,11 +11,11 @@ import {
 } from 'lucide-react';
 
 const INSURANCE_LOGOS = {
-  'OSDE': '/logos/logo-osde.png',
-  'Swiss Medical': '/logos/logo-swiss-medical.png',
-  'Galeno': '/logos/logo-galeno.png',
-  'Apross': '/logos/logo-apross.png',
-  'PAMI': '/logos/logo-pami.png'
+  'OSDE': './logos/logo-osde.png',
+  'Swiss Medical': './logos/logo-swiss-medical.png',
+  'Galeno': './logos/logo-galeno.png',
+  'Apross': './logos/logo-apross.png',
+  'PAMI': './logos/logo-pami.png'
 };
 
 export const InsurancesPage = () => {

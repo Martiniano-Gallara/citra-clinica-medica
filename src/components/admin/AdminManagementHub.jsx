@@ -177,12 +177,10 @@ export const AdminManagementHub = () => {
     electronicPrescriptions,
     healthInsurances,
     consultations,
-    imagingStudies,
     setSelectedPatientForDetail,
     // RBAC & Scoping
     currentDoctor,
     isDoctor,
-    isAdministrative,
     isSuperAdmin,
     scopedAppointments,
     scopedPatients,
@@ -209,7 +207,6 @@ export const AdminManagementHub = () => {
 
   // Doctor Specific KPIs
   const doctorAppointments = scopedAppointments;
-  const todayDoctorAppointments = doctorAppointments.filter((a) => a.date === todayStr);
   const doctorPatients = scopedPatients;
 
   // Sidebar Grouped Navigation Sections according to Role (Doctor vs Administrativo)
@@ -294,7 +291,7 @@ export const AdminManagementHub = () => {
     });
 
     return adminSections;
-  }, [isDoctor, isSuperAdmin, doctorAppointments.length, doctorPatients.length, scopedConsultations.length, scopedElectronicPrescriptions.length, scopedImagingStudies.length, scopedHealthInsurances.length, appointments.length, patients.length, healthInsurances.length]);
+  }, [isDoctor, isSuperAdmin, doctorAppointments.length, doctorPatients.length, scopedConsultations.length, scopedElectronicPrescriptions.length, scopedImagingStudies.length, scopedHealthInsurances.length, appointments.length, patients.length, healthInsurances.length, availableRooms]);
 
   // RBAC Guard Effect: automatically redirect to dashboard if tab not permitted for current role
   React.useEffect(() => {

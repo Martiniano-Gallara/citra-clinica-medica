@@ -141,9 +141,23 @@ export const SettingsView = () => {
       addToast('Error', 'Las contraseñas no coinciden.', 'warning');
       return;
     }
+
+    const userEmail = authAdmin?.email || currentDoctor?.email;
+    if (userEmail) {
+      setUsers((prev) =>
+        prev.map((u) => (u.email?.toLowerCase() === userEmail.toLowerCase() ? { ...u, password: newPassword } : u))
+      );
+      if (setAuthAdmin && authAdmin) {
+        setAuthAdmin((prev) => ({ ...prev, password: newPassword }));
+      }
+    }
+
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
+    if (logAudit) {
+      logAudit('UPDATE_PASSWORD', 'Seguridad & Credenciales', authAdmin?.email || '-', 'El profesional actualizó su contraseña de acceso.');
+    }
     addToast('Contraseña Actualizada', 'Tu clave de acceso ha sido cambiada con éxito.', 'success');
   };
 
