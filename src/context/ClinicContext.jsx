@@ -587,8 +587,20 @@ export const ClinicProvider = ({ children }) => {
 
         if (!isMounted) return;
 
-        if (remoteApps.status === 'fulfilled' && Array.isArray(remoteApps.value)) setAppointments(remoteApps.value);
-        if (remotePats.status === 'fulfilled' && Array.isArray(remotePats.value)) setPatients(remotePats.value);
+        if (remoteApps.status === 'fulfilled' && Array.isArray(remoteApps.value) && remoteApps.value.length > 0) {
+          setAppointments((prev) => {
+            const remoteMap = new Map(remoteApps.value.map((a) => [a.id, a]));
+            const localOnly = prev.filter((localA) => !remoteMap.has(localA.id));
+            return [...remoteApps.value, ...localOnly];
+          });
+        }
+        if (remotePats.status === 'fulfilled' && Array.isArray(remotePats.value) && remotePats.value.length > 0) {
+          setPatients((prev) => {
+            const remoteMap = new Map(remotePats.value.map((p) => [p.id, p]));
+            const localOnly = prev.filter((localP) => !remoteMap.has(localP.id));
+            return [...remotePats.value, ...localOnly];
+          });
+        }
         if (remoteDocs.status === 'fulfilled' && Array.isArray(remoteDocs.value) && remoteDocs.value.length > 0) {
           const remoteMap = new Map(remoteDocs.value.map((d) => [d.id, d]));
           const fullDocs = INITIAL_DOCTORS.map((initDoc) => {
@@ -604,10 +616,34 @@ export const ClinicProvider = ({ children }) => {
             return [...remoteCons.value, ...localOnly];
           });
         }
-        if (remoteRxs.status === 'fulfilled' && Array.isArray(remoteRxs.value)) setElectronicPrescriptions(remoteRxs.value);
-        if (remoteImgs.status === 'fulfilled' && Array.isArray(remoteImgs.value)) setImagingStudies(remoteImgs.value);
-        if (remoteOrders.status === 'fulfilled' && Array.isArray(remoteOrders.value)) setMedicalOrders(remoteOrders.value);
-        if (remoteCerts.status === 'fulfilled' && Array.isArray(remoteCerts.value)) setMedicalCertificates(remoteCerts.value);
+        if (remoteRxs.status === 'fulfilled' && Array.isArray(remoteRxs.value) && remoteRxs.value.length > 0) {
+          setElectronicPrescriptions((prev) => {
+            const remoteMap = new Map(remoteRxs.value.map((r) => [r.id, r]));
+            const localOnly = prev.filter((localR) => !remoteMap.has(localR.id));
+            return [...remoteRxs.value, ...localOnly];
+          });
+        }
+        if (remoteImgs.status === 'fulfilled' && Array.isArray(remoteImgs.value) && remoteImgs.value.length > 0) {
+          setImagingStudies((prev) => {
+            const remoteMap = new Map(remoteImgs.value.map((s) => [s.id, s]));
+            const localOnly = prev.filter((localS) => !remoteMap.has(localS.id));
+            return [...remoteImgs.value, ...localOnly];
+          });
+        }
+        if (remoteOrders.status === 'fulfilled' && Array.isArray(remoteOrders.value) && remoteOrders.value.length > 0) {
+          setMedicalOrders((prev) => {
+            const remoteMap = new Map(remoteOrders.value.map((o) => [o.id, o]));
+            const localOnly = prev.filter((localO) => !remoteMap.has(localO.id));
+            return [...remoteOrders.value, ...localOnly];
+          });
+        }
+        if (remoteCerts.status === 'fulfilled' && Array.isArray(remoteCerts.value) && remoteCerts.value.length > 0) {
+          setMedicalCertificates((prev) => {
+            const remoteMap = new Map(remoteCerts.value.map((c) => [c.id, c]));
+            const localOnly = prev.filter((localC) => !remoteMap.has(localC.id));
+            return [...remoteCerts.value, ...localOnly];
+          });
+        }
         if (remoteSchedule.status === 'fulfilled' && remoteSchedule.value) setClinicSchedule(remoteSchedule.value);
         if (remoteSpecs.status === 'fulfilled' && Array.isArray(remoteSpecs.value) && remoteSpecs.value.length > 0) setSpecialties(remoteSpecs.value);
         if (remoteRooms.status === 'fulfilled' && Array.isArray(remoteRooms.value) && remoteRooms.value.length > 0) setRooms(remoteRooms.value);
