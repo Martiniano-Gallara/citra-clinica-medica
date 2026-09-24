@@ -14,15 +14,10 @@ import {
   X,
   CheckCircle2,
   Activity,
-  ChevronDown,
-  ChevronUp,
   UserCheck,
-  Search,
   Users,
-  Check,
   Clock,
-  Sparkles,
-  Info
+  Sparkles
 } from 'lucide-react';
 
 export const AdminLoginView = () => {
@@ -81,10 +76,8 @@ export const AdminLoginView = () => {
     return () => clearInterval(interval);
   }, [lockoutUntil]);
 
-  // Accordion state for all 13 specialists
-  const [isAccordionOpen, setIsAccordionOpen] = useState(false);
-  const [specialistCategory, setSpecialistCategory] = useState('all');
-  const [specialistSearch, setSpecialistSearch] = useState('');
+  // Selected user for temporary quick login dropdown
+  const [selectedQuickUserId, setSelectedQuickUserId] = useState('');
 
   // Password Recovery modal state
   const [isRecovering, setIsRecovering] = useState(false);
@@ -93,59 +86,19 @@ export const AdminLoginView = () => {
   const [recoverySuccess, setRecoverySuccess] = useState(false);
   const [recoveryLoading, setRecoveryLoading] = useState(false);
 
-  // Reception user (Mesa de Entrada)
-  const receptionUser = useMemo(() => {
-    return (
-      users.find((u) => u.email === 'recepcion@citra.com.ar') ||
-      users.find((u) => u.adminType === 'administrative' && u.name?.includes('Romina')) || {
-        id: 'usr-2',
-        name: 'Romina Maidana',
-        email: 'recepcion@citra.com.ar',
-        role: 'Mesa de Entrada & Recepción',
-        adminType: 'administrative'
-      }
+  // Administrative / reception staff
+  const adminStaffUsers = useMemo(() => {
+    return users.filter(
+      (u) => u.adminType === 'administrative' || (!u.doctorId && !u.adminType)
     );
   }, [users]);
 
-  // List of all 13 specialists
-  const specialists = useMemo(() => {
-    return users.filter((u) => u.adminType === 'doctor' || (u.doctorId && u.doctorId.startsWith('doc-')));
+  // Medical specialists (13 doctors)
+  const medicalSpecialists = useMemo(() => {
+    return users.filter(
+      (u) => u.adminType === 'doctor' || (u.doctorId && u.doctorId.startsWith('doc-'))
+    );
   }, [users]);
-
-  // Filtered specialists inside accordion
-  const filteredSpecialists = useMemo(() => {
-    return specialists.filter((s) => {
-      // Category filter
-      if (specialistCategory === 'trauma') {
-        const spec = (s.specialty || s.role || '').toLowerCase();
-        if (!spec.includes('trauma') && !spec.includes('pie') && !spec.includes('mano')) return false;
-      } else if (specialistCategory === 'kine') {
-        const spec = (s.specialty || s.role || '').toLowerCase();
-        if (!spec.includes('kine') && !spec.includes('pelv') && !spec.includes('osteo') && !spec.includes('atm')) {
-          return false;
-        }
-      } else if (specialistCategory === 'especialidades') {
-        const spec = (s.specialty || s.role || '').toLowerCase();
-        if (
-          spec.includes('trauma') ||
-          (spec.includes('kine') && !spec.includes('pisada'))
-        ) {
-          return false;
-        }
-      }
-
-      // Search query
-      if (specialistSearch.trim()) {
-        const q = specialistSearch.toLowerCase().trim();
-        const matchesName = s.name?.toLowerCase().includes(q);
-        const matchesSpec = (s.specialty || s.role || '').toLowerCase().includes(q);
-        const matchesEmail = s.email?.toLowerCase().includes(q);
-        if (!matchesName && !matchesSpec && !matchesEmail) return false;
-      }
-
-      return true;
-    });
-  }, [specialists, specialistCategory, specialistSearch]);
 
   const isLockedOut = lockoutRemainingSecs > 0;
 
@@ -407,7 +360,7 @@ export const AdminLoginView = () => {
         <div className="admin-login-left-glow-bottom" />
 
         {/* Top Header Row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', zIndex: 2 }}>
           <button
             type="button"
             onClick={() => setCurrentView('home')}
@@ -439,22 +392,6 @@ export const AdminLoginView = () => {
             <ArrowLeft size={16} />
             Volver a la Web Institucional
           </button>
-
-          <span
-            style={{
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              letterSpacing: '0.08em',
-              color: 'rgba(255, 255, 255, 0.85)',
-              textTransform: 'uppercase',
-              background: 'rgba(255, 255, 255, 0.08)',
-              padding: '0.35rem 0.75rem',
-              borderRadius: '100px',
-              border: '1px solid rgba(255, 255, 255, 0.15)'
-            }}
-          >
-            CITRA CLINIC OS
-          </span>
         </div>
 
         {/* Center Presentation */}
@@ -502,7 +439,7 @@ export const AdminLoginView = () => {
               margin: '0 0 1.75rem'
             }}
           >
-            Acceso unificado para el equipo de profesionales de la salud, mesa de entrada, kinesiología y dirección médica de la Sede Arroyito (Av. Carlos Pontin 556).
+            Acceso unificado para el equipo de profesionales de la salud, mesa de entrada, kinesiología y dirección médica.
           </p>
 
           {/* 3 Authentic Clinical Modules */}
@@ -617,11 +554,8 @@ export const AdminLoginView = () => {
           </div>
         </div>
 
-        {/* Bottom Footer Status Row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.76rem', color: 'rgba(255, 255, 255, 0.75)', zIndex: 2 }}>
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 10px #22C55E' }} />
-          <span>Servidor Sede Arroyito Conectado · Cifrado Seguro TLS 1.3 · Hash SHA-256</span>
-        </div>
+        {/* Left Bottom Spacer */}
+        <div style={{ height: '24px', zIndex: 2 }} />
       </div>
 
       {/* Right Login Panel */}
@@ -641,27 +575,6 @@ export const AdminLoginView = () => {
               }}
             />
 
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                background: '#eff6ff',
-                border: '1px solid #bfdbfe',
-                color: '#1d4ed8',
-                padding: '0.25rem 0.75rem',
-                borderRadius: '100px',
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-                marginBottom: '0.5rem'
-              }}
-            >
-              <Lock size={12} />
-              Acceso Restringido · Personal Acreditado
-            </div>
-
             <h1
               style={{
                 margin: 0,
@@ -673,349 +586,145 @@ export const AdminLoginView = () => {
             >
               Portal de Administración
             </h1>
-            <p style={{ margin: '0.35rem 0 0', fontSize: '0.8rem', color: '#64748b' }}>
-              Gestión clínica, turnos y recepción · Sede Arroyito
+            <p style={{ margin: '0.35rem 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+              Gestión clínica, turnos y recepción
             </p>
           </div>
 
           {/* ============================================================== */}
-          {/* SECCIÓN DESTACADA: MESA DE ENTRADA & RECEPCIÓN */}
-          {/* ============================================================== */}
-          <div
-            style={{
-              background: 'linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%)',
-              border: '1.5px solid #7dd3fc',
-              borderRadius: '14px',
-              padding: '0.85rem 1rem',
-              marginBottom: '1rem',
-              boxShadow: '0 4px 12px rgba(2, 132, 199, 0.08)'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                <div
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '8px',
-                    background: '#0284c7',
-                    color: '#ffffff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}
-                >
-                  <UserCheck size={16} />
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0369a1', lineHeight: 1.2 }}>
-                    Mesa de Entrada & Recepción
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: '#0284c7', fontWeight: 600 }}>
-                    Romina Maidana · recepcion@citra.com.ar
-                  </div>
-                </div>
-              </div>
-              <span
-                style={{
-                  background: '#ffffff',
-                  color: '#0369a1',
-                  border: '1px solid #bae6fd',
-                  fontSize: '0.66rem',
-                  fontWeight: 800,
-                  padding: '0.2rem 0.5rem',
-                  borderRadius: '100px'
-                }}
-              >
-                Mesa Central
-              </span>
-            </div>
-
-            <div style={{ fontSize: '0.72rem', color: '#334155', lineHeight: 1.45, margin: '0.35rem 0 0.65rem' }}>
-              Recibe a los pacientes en sala y <strong>puede asignar y reprogramar turnos a todos los médicos</strong> de la clínica.
-            </div>
-
-            <button
-              type="button"
-              onClick={() => handleQuickLogin(receptionUser)}
-              disabled={isLockedOut || loading}
-              style={{
-                width: '100%',
-                background: 'linear-gradient(135deg, #0284c7 0%, #002182 100%)',
-                color: '#ffffff',
-                border: 'none',
-                padding: '0.55rem 0.85rem',
-                borderRadius: '10px',
-                fontWeight: 800,
-                fontSize: '0.8rem',
-                cursor: isLockedOut ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.45rem',
-                boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={(e) => {
-                if (!isLockedOut) e.currentTarget.style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              <Sparkles size={14} color="#fef08a" />
-              Ingresar como Recepción (Asignar Turnos a Todos los Médicos)
-            </button>
-          </div>
-
-          {/* ============================================================== */}
-          {/* ACORDEÓN: NÓMINA DE ESPECIALISTAS (13 PROFESIONALES) */}
+          {/* MENÚ DESPLEGABLE DE INICIO RÁPIDO (TEMPORAL) */}
           {/* ============================================================== */}
           <div
             style={{
               background: '#f8fafc',
-              border: `1.5px solid ${isAccordionOpen ? '#93c5fd' : '#e2e8f0'}`,
+              border: '1.5px solid #e2e8f0',
               borderRadius: '14px',
+              padding: '0.85rem 1rem',
               marginBottom: '1.25rem',
-              overflow: 'hidden',
-              transition: 'all 0.2s ease'
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
             }}
           >
-            {/* Accordion Header Toggle */}
-            <button
-              type="button"
-              onClick={() => setIsAccordionOpen(!isAccordionOpen)}
+            <div
               style={{
-                width: '100%',
-                background: 'none',
-                border: 'none',
-                padding: '0.75rem 1rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                cursor: 'pointer',
-                textAlign: 'left'
+                marginBottom: '0.45rem'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <div
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '8px',
-                    background: '#eff6ff',
-                    color: '#076abc',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}
-                >
-                  <Stethoscope size={15} />
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>
-                    Nómina de Especialistas CITRA
-                  </div>
-                  <div style={{ fontSize: '0.68rem', color: '#64748b' }}>
-                    13 profesionales activos · Aislamiento estricto de historias clínicas
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                <span
-                  style={{
-                    background: '#eff6ff',
-                    color: '#076abc',
-                    border: '1px solid #bfdbfe',
-                    fontSize: '0.66rem',
-                    fontWeight: 800,
-                    padding: '0.2rem 0.5rem',
-                    borderRadius: '100px'
-                  }}
-                >
-                  13 Médicos
-                </span>
-                {isAccordionOpen ? <ChevronUp size={16} color="#076abc" /> : <ChevronDown size={16} color="#64748b" />}
-              </div>
-            </button>
-
-            {/* Accordion Expandable Content */}
-            {isAccordionOpen && (
-              <div
+              <label
+                htmlFor="quick-login-select"
                 style={{
-                  borderTop: '1px solid #e2e8f0',
-                  background: '#ffffff',
-                  padding: '0.75rem 0.85rem'
+                  fontSize: '0.74rem',
+                  fontWeight: 800,
+                  color: '#475569',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem'
                 }}
               >
-                {/* Search & Category Filter Pills */}
-                <div style={{ marginBottom: '0.65rem' }}>
-                  <div style={{ position: 'relative', marginBottom: '0.5rem' }}>
-                    <Search
-                      size={13}
-                      style={{
-                        position: 'absolute',
-                        left: '9px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        color: '#94a3b8'
-                      }}
-                    />
-                    <input
-                      type="text"
-                      value={specialistSearch}
-                      onChange={(e) => setSpecialistSearch(e.target.value)}
-                      placeholder="Buscar por especialista o área..."
-                      style={{
-                        width: '100%',
-                        boxSizing: 'border-box',
-                        padding: '0.35rem 0.5rem 0.35rem 1.85rem',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '0.74rem',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
+                <UserCheck size={14} color="#0284c7" />
+                Inicio Rápido (Temporal)
+              </label>
+              <span
+                style={{
+                  fontSize: '0.66rem',
+                  background: '#e0f2fe',
+                  color: '#0369a1',
+                  fontWeight: 700,
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '100px'
+                }}
+              >
+                {users.length} cuentas
+              </span>
+            </div>
 
-                  <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
-                    {[
-                      { id: 'all', label: 'Todos (13)' },
-                      { id: 'trauma', label: 'Traumatología (3)' },
-                      { id: 'kine', label: 'Kinesiología (3)' },
-                      { id: 'especialidades', label: 'Otras Especialidades (7)' }
-                    ].map((tab) => (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => setSpecialistCategory(tab.id)}
-                        style={{
-                          background: specialistCategory === tab.id ? '#002182' : '#f1f5f9',
-                          color: specialistCategory === tab.id ? '#ffffff' : '#475569',
-                          border: 'none',
-                          padding: '0.22rem 0.5rem',
-                          borderRadius: '6px',
-                          fontSize: '0.66rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          transition: 'all 0.1s ease'
-                        }}
-                      >
-                        {tab.label}
-                      </button>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <select
+                id="quick-login-select"
+                value={selectedQuickUserId}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedQuickUserId(val);
+                  const chosen = users.find((u) => u.id === val);
+                  if (chosen) {
+                    setEmail(chosen.email);
+                    setPassword('citra2026');
+                    setErrorMsg('');
+                  } else {
+                    setEmail('');
+                    setPassword('');
+                  }
+                }}
+                disabled={isLockedOut || loading}
+                style={{
+                  flex: 1,
+                  padding: '0.6rem 0.75rem',
+                  borderRadius: '10px',
+                  border: '1.5px solid #cbd5e1',
+                  background: '#ffffff',
+                  fontSize: '0.82rem',
+                  color: '#0f172a',
+                  fontWeight: 600,
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="">Seleccionar cuenta para ingresar...</option>
+                {adminStaffUsers.length > 0 && (
+                  <optgroup label="Recepción y Administración">
+                    {adminStaffUsers.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name} — {u.role || 'Administración'}
+                      </option>
                     ))}
-                  </div>
-                </div>
+                  </optgroup>
+                )}
+                {medicalSpecialists.length > 0 && (
+                  <optgroup label="Cuerpo Médico / Especialistas">
+                    {medicalSpecialists.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name} — {u.specialty || u.role}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
 
-                {/* Notice on Isolation */}
-                <div
-                  style={{
-                    background: '#eff6ff',
-                    border: '1px solid #bfdbfe',
-                    borderRadius: '8px',
-                    padding: '0.45rem 0.6rem',
-                    marginBottom: '0.65rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.4rem',
-                    fontSize: '0.68rem',
-                    color: '#1e3a8a',
-                    lineHeight: 1.35
-                  }}
-                >
-                  <ShieldCheck size={14} color="#076abc" style={{ flexShrink: 0 }} />
-                  <div>
-                    <strong>Aislamiento Estricto:</strong> Cada especialista tiene información médica exclusiva. No comparten pacientes ni turnos entre sí.
-                  </div>
-                </div>
-
-                {/* Specialist Scrollable List */}
-                <div
-                  className="specialist-scroll-area"
-                  style={{
-                    maxHeight: '230px',
-                    overflowY: 'auto',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.45rem',
-                    paddingRight: '0.2rem'
-                  }}
-                >
-                  {filteredSpecialists.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '1rem', color: '#94a3b8', fontSize: '0.75rem' }}>
-                      No se encontraron especialistas con ese criterio.
-                    </div>
-                  ) : (
-                    filteredSpecialists.map((doc) => (
-                      <div
-                        key={doc.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '0.45rem 0.6rem',
-                          background: '#f8fafc',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '10px',
-                          gap: '0.5rem'
-                        }}
-                      >
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {doc.name}
-                          </div>
-                          <div style={{ fontSize: '0.68rem', color: '#076abc', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {doc.specialty || doc.role}
-                          </div>
-                          <div style={{ fontSize: '0.64rem', color: '#94a3b8' }}>
-                            {doc.email}
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleQuickLogin(doc)}
-                          disabled={isLockedOut || loading}
-                          style={{
-                            background: '#ffffff',
-                            border: '1px solid #bfdbfe',
-                            color: '#002182',
-                            padding: '0.35rem 0.65rem',
-                            borderRadius: '8px',
-                            fontSize: '0.72rem',
-                            fontWeight: 800,
-                            cursor: isLockedOut ? 'not-allowed' : 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            flexShrink: 0,
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                            transition: 'all 0.15s ease'
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isLockedOut) {
-                              e.currentTarget.style.background = '#002182';
-                              e.currentTarget.style.color = '#ffffff';
-                              e.currentTarget.style.borderColor = '#002182';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#ffffff';
-                            e.currentTarget.style.color = '#002182';
-                            e.currentTarget.style.borderColor = '#bfdbfe';
-                          }}
-                        >
-                          Acceder
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
+              <button
+                type="button"
+                onClick={() => {
+                  const target = users.find((u) => u.id === selectedQuickUserId);
+                  if (target) handleQuickLogin(target);
+                }}
+                disabled={!selectedQuickUserId || isLockedOut || loading}
+                style={{
+                  background:
+                    selectedQuickUserId && !isLockedOut && !loading
+                      ? 'linear-gradient(135deg, #0284c7 0%, #002182 100%)'
+                      : '#cbd5e1',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '0.6rem 1rem',
+                  borderRadius: '10px',
+                  fontWeight: 800,
+                  fontSize: '0.8rem',
+                  cursor: selectedQuickUserId && !isLockedOut && !loading ? 'pointer' : 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  whiteSpace: 'nowrap',
+                  boxShadow: selectedQuickUserId ? '0 2px 8px rgba(2, 132, 199, 0.25)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <Sparkles size={14} />
+                Ingresar
+              </button>
+            </div>
           </div>
 
           {/* Rate-Limiting Lockout Alert */}
@@ -1282,87 +991,6 @@ export const AdminLoginView = () => {
             </button>
           </form>
 
-          {/* ============================================================== */}
-          {/* SELLOS DE AUDITORÍA Y CIBERSEGURIDAD MÉDICA */}
-          {/* ============================================================== */}
-          <div
-            style={{
-              marginTop: '1.5rem',
-              paddingTop: '1.25rem',
-              borderTop: '1px solid #f1f5f9'
-            }}
-          >
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '0.5rem',
-                marginBottom: '0.85rem'
-              }}
-            >
-              <div
-                style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  padding: '0.45rem',
-                  textAlign: 'center'
-                }}
-              >
-                <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#002182' }}>
-                  TLS 1.3
-                </div>
-                <div style={{ fontSize: '0.6rem', color: '#64748b' }}>
-                  Cifrado E2E
-                </div>
-              </div>
-
-              <div
-                style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  padding: '0.45rem',
-                  textAlign: 'center'
-                }}
-              >
-                <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#059669' }}>
-                  Ley 25.326
-                </div>
-                <div style={{ fontSize: '0.6rem', color: '#64748b' }}>
-                  Datos Protegidos
-                </div>
-              </div>
-
-              <div
-                style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  padding: '0.45rem',
-                  textAlign: 'center'
-                }}
-              >
-                <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#7c3aed' }}>
-                  SHA-256
-                </div>
-                <div style={{ fontSize: '0.6rem', color: '#64748b' }}>
-                  Audit Trail
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                fontSize: '0.68rem',
-                color: '#94a3b8',
-                textAlign: 'center',
-                lineHeight: 1.45
-              }}
-            >
-              Portal exclusivo para personal médico y administrativo de CITRA Sede Arroyito. Todo intento de acceso no autorizado es registrado con trazabilidad de IP y dispositivo.
-            </div>
-          </div>
         </div>
       </div>
 
