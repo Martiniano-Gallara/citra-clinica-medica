@@ -218,6 +218,16 @@ CREATE TRIGGER trg_immutable_consent_forms
 BEFORE UPDATE OR DELETE ON public.consent_forms
 FOR EACH ROW EXECUTE FUNCTION public.enforce_consent_immutability();
 
+-- Asegurar compatibilidad de columnas en audit_logs
+DO $$ BEGIN
+    ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS module VARCHAR(100);
+    ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS target_id VARCHAR(100);
+    ALTER TABLE public.audit_logs ALTER COLUMN resource DROP NOT NULL;
+    ALTER TABLE public.audit_logs ALTER COLUMN event_hash DROP NOT NULL;
+EXCEPTION
+    WHEN OTHERS THEN NULL;
+END $$;
+
 -- 8. Trigger de Auditoría en Servidor con Diffs (A3)
 CREATE OR REPLACE FUNCTION public.audit_row_change()
 RETURNS TRIGGER AS $$
@@ -243,11 +253,14 @@ BEGIN
         user_name,
         user_role,
         action,
-        module,
-        target_id,
+        resource,
+        target_dni,
         details,
         ip_address,
-        timestamp
+        timestamp,
+        event_hash,
+        module,
+        target_id
     ) VALUES (
         'audit-' || gen_random_uuid()::text,
         v_user_id,
@@ -255,10 +268,13 @@ BEGIN
         COALESCE(public.get_auth_role()::text, 'system'),
         TG_OP,
         TG_TABLE_NAME,
-        COALESCE(NEW.id, OLD.id, 'N/A'),
+        COALESCE(CASE WHEN TG_OP != 'DELETE' AND to_jsonb(NEW) ? 'patient_dni' THEN NEW.patient_dni ELSE '-' END, '-'),
         v_details::text,
         COALESCE(inet_client_addr()::text, '127.0.0.1'),
-        NOW()
+        NOW(),
+        md5(TG_TABLE_NAME || TG_OP || NOW()::text || COALESCE(NEW.id, OLD.id, '')),
+        TG_TABLE_NAME,
+        COALESCE(NEW.id, OLD.id, 'N/A')
     );
 
     RETURN COALESCE(NEW, OLD);

@@ -31,6 +31,7 @@ export const PrescriptionsManager = () => {
     addElectronicPrescription,
     updatePrescriptionStatus,
     patients,
+    scopedPatients,
     doctors,
     setSelectedPrescriptionForView,
     setIsPrescriptionModalOpen,
@@ -126,19 +127,19 @@ export const PrescriptionsManager = () => {
 
   // Modal para prescribir nueva receta
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
-  const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id || '');
+  const [selectedPatientId, setSelectedPatientId] = useState('');
   const [selectedDoctorId, setSelectedDoctorId] = useState(isDoctor && currentDoctor ? currentDoctor.id : (doctors[0]?.id || ''));
-  const [diagnosis, setDiagnosis] = useState('M54.5 - Lumbago no especificado / Lumbalgia mecánica');
+  const [diagnosis, setDiagnosis] = useState('');
   const [medicationsList, setMedicationsList] = useState([
     {
-      name: 'Ibuprofeno',
-      concentration: '600 mg',
+      name: '',
+      concentration: '',
       form: 'Comprimidos',
-      quantity: '1 caja x 20 comprimidos',
-      instructions: '1 comprimido cada 8 horas con las comidas durante 5 días'
+      quantity: '1 caja',
+      instructions: '1 comprimido cada 8 horas'
     }
   ]);
-  const [indications, setIndications] = useState('Reposo relativo y no realizar esfuerzos bruscos.');
+  const [indications, setIndications] = useState('');
 
   const handleAddMedication = () => {
     setMedicationsList((prev) => [
@@ -173,7 +174,12 @@ export const PrescriptionsManager = () => {
 
   const handleCreatePrescription = (e) => {
     e.preventDefault();
-    const pat = patients.find((p) => p.id === selectedPatientId) || patients[0];
+    const availablePatients = isDoctor ? scopedPatients : patients;
+    const pat = availablePatients.find((p) => p.id === selectedPatientId);
+    if (!pat) {
+      addToast('Paciente Requerido', 'Debe seleccionar un paciente de la lista.', 'warning');
+      return;
+    }
     const doc = isDoctor && currentDoctor ? currentDoctor : (doctors.find((d) => d.id === selectedDoctorId) || doctors[0]);
 
     const validMeds = medicationsList.filter((m) => m.name.trim());
@@ -190,7 +196,7 @@ export const PrescriptionsManager = () => {
       patientPlan: pat.plan || 'Arancel Pleno',
       doctorId: doc.id,
       doctorName: doc.name,
-      doctorLicense: doc.license || doc.matricula || 'MN 114.829 / MP 44.920',
+      doctorLicense: doc.license || doc.matricula || '',
       doctorSpecialty: doc.specialty || 'Traumatología y Ortopedia',
       diagnosis: diagnosis.trim(),
       diagnosisPresuntivo: diagnosis.trim(),
@@ -219,8 +225,11 @@ export const PrescriptionsManager = () => {
   };
 
   const sharePrescriptionWhatsApp = (prescription) => {
+    const pat = patients.find((p) => p.id === prescription.patientId || p.dni === prescription.patientDni);
+    const cleanPhone = (pat?.phone || '').replace(/\D/g, '');
+    const targetPhone = cleanPhone ? (cleanPhone.startsWith('54') ? cleanPhone : `54${cleanPhone}`) : '';
     const text = `Hola ${prescription.patientName}, desde Clínica CITRA te compartimos tu Receta Médica Electrónica Oficial (CUIR: ${prescription.cuir}). Podés presentarla en farmacias de todo el país. Vigencia: 30 días.`;
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    const url = targetPhone ? `https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
 
@@ -794,9 +803,10 @@ export const PrescriptionsManager = () => {
                       background: '#ffffff'
                     }}
                   >
-                    {patients.map((pat) => (
+                    <option value="">-- Seleccionar Paciente --</option>
+                    {(isDoctor ? scopedPatients : patients).map((pat) => (
                       <option key={pat.id} value={pat.id}>
-                        {pat.name} (DNI {pat.dni}) · {pat.insurance || 'Particular'}
+                        {pat.name} (DNI {pat.dni}) · {pat.insurance || pat.insuranceName || 'Particular'}
                       </option>
                     ))}
                   </select>

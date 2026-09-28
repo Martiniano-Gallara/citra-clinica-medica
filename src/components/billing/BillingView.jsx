@@ -317,13 +317,18 @@ export const BillingView = () => {
                       type="button"
                       className="btn btn-outline btn-sm"
                       onClick={() => {
-                        const amount = prompt('Monto del Egreso Menor ($):', '2500');
+                        const amountStr = prompt('Monto del Egreso Menor ($):', '2500');
+                        if (!amountStr) return;
+                        const numAmount = Number(amountStr);
+                        if (isNaN(numAmount) || numAmount <= 0) {
+                          addToast('Monto Inválido', 'Debe ingresar un monto numérico mayor a 0.', 'warning');
+                          return;
+                        }
                         const concept = prompt('Concepto del Egreso:', 'Artículos de limpieza / librería');
-                        if (amount && concept) {
+                        if (concept) {
                           if (typeof addCashMovement === 'function') {
-                            addCashMovement('egreso', Number(amount), concept, caja.cashierName || 'Recepción');
+                            addCashMovement('EGRESO', numAmount, concept, caja.cashierName || 'Recepción');
                           }
-                          addToast('Egreso Registrado', `Se asentó egreso de $${Number(amount).toLocaleString()} por ${concept}.`, 'info');
                         }
                       }}
                     >

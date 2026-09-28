@@ -17,15 +17,15 @@ export const PatientFormModal = () => {
   const [formData, setFormData] = useState({
     name: '',
     dni: '',
-    birthDate: '1990-01-01',
-    gender: 'Masculino',
-    bloodType: '0+',
+    birthDate: '',
+    gender: '',
+    bloodType: 'N/E',
     phone: '',
     email: '',
     address: '',
     insuranceId: healthInsurances[0]?.id || '',
     insuranceName: healthInsurances[0]?.name || '',
-    insurancePlan: 'Plan 210',
+    insurancePlan: '',
     insuranceNumber: '',
     allergies: '',
     antecedentes: '',
@@ -36,6 +36,9 @@ export const PatientFormModal = () => {
     if (patientFormModalData) {
       setFormData({
         ...patientFormModalData,
+        birthDate: patientFormModalData.birthDate || '',
+        gender: patientFormModalData.gender || '',
+        bloodType: patientFormModalData.bloodType || 'N/E',
         allergies: Array.isArray(patientFormModalData.allergies)
           ? patientFormModalData.allergies.join(', ')
           : patientFormModalData.allergies || '',
@@ -47,15 +50,15 @@ export const PatientFormModal = () => {
       setFormData({
         name: '',
         dni: '',
-        birthDate: '1990-01-01',
-        gender: 'Masculino',
-        bloodType: '0+',
+        birthDate: '',
+        gender: '',
+        bloodType: 'N/E',
         phone: '',
         email: '',
         address: '',
         insuranceId: healthInsurances[0]?.id || '',
         insuranceName: healthInsurances[0]?.name || '',
-        insurancePlan: 'Plan 210',
+        insurancePlan: '',
         insuranceNumber: '',
         allergies: '',
         antecedentes: '',
@@ -174,6 +177,7 @@ export const PatientFormModal = () => {
               value={formData.gender}
               onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
             >
+              <option value="">-- No especificado --</option>
               <option value="Masculino">Masculino</option>
               <option value="Femenino">Femenino</option>
               <option value="No binario / Otro">No binario / Otro</option>
@@ -187,6 +191,7 @@ export const PatientFormModal = () => {
               value={formData.bloodType}
               onChange={(e) => setFormData({ ...formData, bloodType: e.target.value })}
             >
+              <option value="N/E">No especificado (N/E)</option>
               {['0+', '0-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'].map((bg) => (
                 <option key={bg} value={bg}>{bg}</option>
               ))}

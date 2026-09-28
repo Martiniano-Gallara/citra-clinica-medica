@@ -174,9 +174,12 @@ export const AppointmentsManager = () => {
       return;
     }
 
-    // Fallback strictly for the same patient on the exact same date if created without appointmentId
+    // Fallback strictly for the same patient and same doctor on the exact same date if created without appointmentId
     const sameDateCons = (consultations || []).find(
-      (c) => (c.patientId === app.patientId || c.patientDni === app.patientDni) && c.date === app.date
+      (c) =>
+        (c.patientId === app.patientId || c.patientDni === app.patientDni) &&
+        c.date === app.date &&
+        (c.doctorId === app.doctorId || !app.doctorId)
     );
     if (sameDateCons && setSelectedConsultationForPrint) {
       setSelectedConsultationForPrint(sameDateCons);
@@ -244,24 +247,47 @@ export const AppointmentsManager = () => {
       ? currentDoctor
       : (doctors.find((d) => d.id === manualDoctorId) || doctors[0]);
 
+    if (!assignedDoc) {
+      addToast('Profesional requerido', 'Debe seleccionar un profesional médico.', 'warning');
+      return;
+    }
+
+    const duration = assignedDoc.slotDuration || 30;
+    const [h, m] = (manualTime || '10:00').split(':').map(Number);
+    const startMins = h * 60 + m;
+    const endMins = startMins + duration;
+
+    const hasCollision = appointments.some((a) => {
+      if (a.doctorId !== assignedDoc.id || a.date !== selectedDate || a.status === 'cancelado') return false;
+      const [ah, am] = (a.time || '00:00').split(':').map(Number);
+      const aStart = ah * 60 + am;
+      const aEnd = aStart + (a.duration || 30);
+      return Math.max(startMins, aStart) < Math.min(endMins, aEnd);
+    });
+
+    if (hasCollision) {
+      addToast('Conflicto de Horario', `El profesional ya posee un turno agendado en ese rango de horario el ${selectedDate}.`, 'warning');
+      return;
+    }
+
     addAppointment({
       patientId: `pat-${Date.now()}`,
       patientName: manualPatientName.trim(),
       patientDni: manualPatientDni.trim(),
-      patientPhone: manualPatientPhone.trim() || '+54 9 351 000-0000',
+      patientPhone: manualPatientPhone.trim(),
       patientInsurance: manualPatientInsurance,
       doctorId: assignedDoc.id,
       doctorName: assignedDoc.name,
       specialtyName: assignedDoc.specialty,
-      roomName: assignedDoc.roomName || 'Consultorio 102',
+      roomName: assignedDoc.roomName || 'Consultorio 101',
       date: selectedDate,
       time: manualTime,
-      duration: assignedDoc.slotDuration || 30,
+      duration,
       type: 'Consulta Presencial',
       status: 'confirmado',
       reason: manualReason,
       copayAmount: 0,
-      isPaid: true
+      isPaid: false
     });
 
     setIsManualModalOpen(false);

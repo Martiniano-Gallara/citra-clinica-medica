@@ -168,10 +168,16 @@ export const ImagingView = () => {
   const handleShareWhatsApp = (study, e) => {
     if (e) e.stopPropagation();
     const patient = patients.find((p) => p.id === study.patientId || p.dni === study.patientDni);
-    const phone = patient?.phone || '5493510000000';
-    const msg = `*CITRA Diagnóstico por Imágenes*\nEstimado/a ${study.patientName},\nSu informe de *${study.modality}* (${study.bodyPart}) solicitado por ${doctorName} se encuentra disponible y validado.\nConclusión: ${study.conclusion}\nCódigo de estudio: ${study.id}`;
-    addToast('Enlace de WhatsApp', `Mensaje preparado para enviar al ${phone}.`, 'success');
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+    const cleanPhone = (patient?.phone || '').replace(/\D/g, '');
+    const targetPhone = cleanPhone ? (cleanPhone.startsWith('54') ? cleanPhone : `54${cleanPhone}`) : '';
+    const msg = `*CITRA Diagnóstico por Imágenes*\nEstimado/a ${study.patientName},\nSu informe de *${study.modality}* (${study.bodyPart}) se encuentra disponible y validado en nuestro sistema.\nCódigo de estudio: ${study.id}`;
+    if (targetPhone) {
+      addToast('Enlace de WhatsApp', `Mensaje preparado para enviar al +${targetPhone}.`, 'success');
+      window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+    } else {
+      addToast('Enlace de WhatsApp', 'Se abrirá WhatsApp para seleccionar el destinatario.', 'info');
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+    }
   };
 
   // Print report

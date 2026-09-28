@@ -70,11 +70,11 @@ export const AppointmentModal = () => {
         specialtyName: defaultDoc.specialtyName || '',
         roomId: defaultDoc.roomId || '',
         roomName: defaultDoc.roomName || '',
-        date: '2026-08-28',
+        date: getTodayArgentina(),
         time: '09:00',
         duration: defaultDoc.slotDuration || 30,
         status: 'confirmado',
-        reason: 'Consulta de control de rutina',
+        reason: 'Consulta médica programada',
         copayAmount: 0,
         isPaid: false,
         paymentMethod: 'Pendiente',
@@ -92,23 +92,33 @@ export const AppointmentModal = () => {
       return;
     }
     const currentId = appointmentModalData?.id;
-    const hasCollision = appointments.some(
-      (app) =>
-        app.id !== currentId &&
-        app.doctorId === formData.doctorId &&
-        app.date === formData.date &&
-        app.time === formData.time &&
-        app.status !== 'cancelado'
-    );
+    const [h, m] = (formData.time || '00:00').split(':').map(Number);
+    const startMins = h * 60 + m;
+    const endMins = startMins + (Number(formData.duration) || 30);
 
-    if (hasCollision) {
+    const conflictingApp = appointments.find((app) => {
+      if (
+        app.id === currentId ||
+        app.doctorId !== formData.doctorId ||
+        app.date !== formData.date ||
+        app.status === 'cancelado'
+      ) {
+        return false;
+      }
+      const [ah, am] = (app.time || '00:00').split(':').map(Number);
+      const aStart = ah * 60 + am;
+      const aEnd = aStart + (Number(app.duration) || 30);
+      return Math.max(startMins, aStart) < Math.min(endMins, aEnd);
+    });
+
+    if (conflictingApp) {
       setConflictWarning(
-        `¡Atención! El ${formData.doctorName} ya posee otro turno agendado el ${formData.date} a las ${formData.time} hs.`
+        `¡Atención! El ${formData.doctorName} ya posee un turno que se solapa el ${formData.date} a las ${conflictingApp.time} hs (${conflictingApp.duration || 30} min).`
       );
     } else {
       setConflictWarning('');
     }
-  }, [formData.doctorId, formData.date, formData.time, appointments, appointmentModalData, formData.doctorName]);
+  }, [formData.doctorId, formData.date, formData.time, formData.duration, appointments, appointmentModalData, formData.doctorName]);
 
   const handleDoctorChange = (e) => {
     const docId = e.target.value;

@@ -26,32 +26,32 @@ ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 CREATE OR REPLACE FUNCTION public.get_auth_role()
 RETURNS user_role AS $$
     SELECT role FROM public.profiles WHERE id = auth.uid();
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.is_superadmin()
 RETURNS BOOLEAN AS $$
     SELECT (public.get_auth_role() = 'superadmin');
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.is_administrative()
 RETURNS BOOLEAN AS $$
     SELECT (public.get_auth_role() IN ('administrative', 'superadmin'));
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.is_doctor()
 RETURNS BOOLEAN AS $$
     SELECT (public.get_auth_role() = 'doctor');
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.get_current_doctor_id()
 RETURNS VARCHAR AS $$
     SELECT id FROM public.doctors WHERE user_id = auth.uid() LIMIT 1;
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.get_current_patient_id()
 RETURNS VARCHAR AS $$
     SELECT id FROM public.patients WHERE user_id = auth.uid() LIMIT 1;
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 -- ====================================================================
 -- 3. POLÍTICAS PARA PROFILES
@@ -147,12 +147,16 @@ FOR INSERT WITH CHECK (
 );
 
 -- Modificación (Cancelación o cambio de estado):
--- - El paciente solo puede cancelar sus propios turnos futuros.
+-- - El paciente solo puede cancelar sus propios turnos futuros (status = 'cancelled').
 -- - El médico puede actualizar el estado a 'en_sala', 'atendido', 'ausente'.
 -- - La administración puede reprogramar o cancelar.
 CREATE POLICY "appointments_update_policy" ON appointments
 FOR UPDATE USING (
     patient_id = public.get_current_patient_id()
+    OR doctor_id = public.get_current_doctor_id()
+    OR public.is_administrative()
+) WITH CHECK (
+    (patient_id = public.get_current_patient_id() AND status = 'cancelled')
     OR doctor_id = public.get_current_doctor_id()
     OR public.is_administrative()
 );
@@ -245,10 +249,10 @@ FOR SELECT USING (
     public.is_superadmin()
 );
 
--- Inserción autorizada para registrar eventos del sistema
+-- Inserción autorizada para registrar eventos del sistema (requiere sesión autenticada)
 CREATE POLICY "audit_logs_insert_policy" ON audit_logs
 FOR INSERT WITH CHECK (
-    auth.uid() IS NOT NULL OR auth.role() = 'anon'
+    auth.uid() IS NOT NULL OR public.is_administrative()
 );
 
 -- PROHIBICIÓN TOTAL DE UPDATE Y DELETE EN AUDIT LOGS:
@@ -278,7 +282,9 @@ CREATE POLICY "orders_insert_policy" ON medical_orders FOR INSERT WITH CHECK (pu
 CREATE POLICY "certificates_select_policy" ON medical_certificates FOR SELECT USING (
     patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative()
 );
-CREATE POLICY "certificates_insert_policy" ON medical_certificates FOR INSERT WITH CHECK (public.is_doctor() OR public.is_administrative());
+CREATE POLICY "certificates_insert_policy" ON medical_certificates FOR INSERT WITH CHECK (
+    public.is_doctor() AND doctor_id = public.get_current_doctor_id()
+);
 
 CREATE POLICY "rehab_select_policy" ON rehab_plans FOR SELECT USING (
     patient_id = public.get_current_patient_id() OR public.is_doctor() OR public.is_administrative()

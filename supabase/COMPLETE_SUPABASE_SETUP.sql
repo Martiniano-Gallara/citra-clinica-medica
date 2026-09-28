@@ -357,7 +357,10 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 
 -- 19. Función de creación segura de perfil al registrar usuario en Supabase Auth
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+LANGUAGE plpgsql AS $$
 BEGIN
     INSERT INTO public.profiles (id, email, first_name, last_name, role)
     VALUES (
@@ -365,7 +368,7 @@ BEGIN
         NEW.email,
         COALESCE(NEW.raw_user_meta_data->>'first_name', split_part(NEW.email, '@', 1)),
         COALESCE(NEW.raw_user_meta_data->>'last_name', ''),
-        COALESCE((NEW.raw_user_meta_data->>'role')::user_role, 'patient'::user_role)
+        'patient'::user_role -- CITRA-007: Rol asignado siempre como paciente; personal médico/admin requiere promoción explícita
     )
     ON CONFLICT (id) DO UPDATE SET
         email = EXCLUDED.email,
@@ -376,7 +379,7 @@ EXCEPTION
     WHEN OTHERS THEN
         RETURN NEW; -- Garantiza que el alta del usuario nunca sea interrumpida
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth, pg_temp;
+$$;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
@@ -402,57 +405,99 @@ ALTER TABLE rehab_plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE consent_forms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
--- Catálogos institucionales: Lectura pública (Landing, Turnero y Reserva)
-DROP POLICY IF EXISTS "specialties_public_select" ON specialties;
+-- Funciones auxiliares de RLS con aislamiento search_path
+CREATE OR REPLACE FUNCTION public.get_auth_role()
+RETURNS user_role AS $$
+    SELECT role FROM public.profiles WHERE id = auth.uid();
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
+
+CREATE OR REPLACE FUNCTION public.is_superadmin()
+RETURNS BOOLEAN AS $$
+    SELECT (public.get_auth_role() = 'superadmin');
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
+
+CREATE OR REPLACE FUNCTION public.is_administrative()
+RETURNS BOOLEAN AS $$
+    SELECT (public.get_auth_role() IN ('administrative', 'superadmin'));
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
+
+CREATE OR REPLACE FUNCTION public.is_doctor()
+RETURNS BOOLEAN AS $$
+    SELECT (public.get_auth_role() = 'doctor');
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
+
+CREATE OR REPLACE FUNCTION public.get_current_doctor_id()
+RETURNS VARCHAR AS $$
+    SELECT id FROM public.doctors WHERE user_id = auth.uid() LIMIT 1;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
+
+CREATE OR REPLACE FUNCTION public.get_current_patient_id()
+RETURNS VARCHAR AS $$
+    SELECT id FROM public.patients WHERE user_id = auth.uid() LIMIT 1;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
+
+-- Políticas Profiles
+CREATE POLICY "profiles_select_policy" ON profiles FOR SELECT USING (id = auth.uid() OR public.is_administrative());
+CREATE POLICY "profiles_update_self_policy" ON profiles FOR UPDATE USING (id = auth.uid() OR public.is_superadmin()) WITH CHECK ((id = auth.uid() AND role = (SELECT role FROM profiles WHERE id = auth.uid())) OR public.is_superadmin());
+
+-- Catálogos institucionales: Lectura pública
 CREATE POLICY "specialties_public_select" ON specialties FOR SELECT USING (true);
+CREATE POLICY "specialties_admin_all" ON specialties FOR ALL USING (public.is_administrative());
 
-DROP POLICY IF EXISTS "rooms_public_select" ON rooms;
 CREATE POLICY "rooms_public_select" ON rooms FOR SELECT USING (true);
+CREATE POLICY "rooms_admin_all" ON rooms FOR ALL USING (public.is_administrative());
 
-DROP POLICY IF EXISTS "health_insurances_public_select" ON health_insurances;
 CREATE POLICY "health_insurances_public_select" ON health_insurances FOR SELECT USING (true);
+CREATE POLICY "insurances_admin_all" ON health_insurances FOR ALL USING (public.is_administrative());
 
-DROP POLICY IF EXISTS "doctors_public_select" ON doctors;
-CREATE POLICY "doctors_public_select" ON doctors FOR SELECT USING (true);
+CREATE POLICY "doctors_public_select" ON doctors FOR SELECT USING (is_active = TRUE OR public.is_administrative() OR user_id = auth.uid());
+CREATE POLICY "doctors_update_self" ON doctors FOR UPDATE USING (user_id = auth.uid() OR public.is_administrative());
+CREATE POLICY "doctors_admin_insert" ON doctors FOR INSERT WITH CHECK (public.is_administrative());
+CREATE POLICY "doctors_admin_delete" ON doctors FOR DELETE USING (public.is_superadmin());
 
-DROP POLICY IF EXISTS "schedules_public_select" ON clinic_schedules;
 CREATE POLICY "schedules_public_select" ON clinic_schedules FOR SELECT USING (true);
+CREATE POLICY "schedules_admin_all" ON clinic_schedules FOR ALL USING (public.is_administrative());
 
--- Pacientes: Acceso público/anon y autenticado para creación y lectura por DNI
-DROP POLICY IF EXISTS "patients_all_access" ON patients;
-CREATE POLICY "patients_all_access" ON patients FOR ALL USING (true) WITH CHECK (true);
+-- Pacientes: Aislamiento por usuario o personal administrativo/médico
+CREATE POLICY "patients_select_policy" ON patients FOR SELECT USING (
+    user_id = auth.uid() OR public.is_administrative() OR (public.is_doctor() AND EXISTS (SELECT 1 FROM appointments a WHERE a.patient_id = patients.id AND a.doctor_id = public.get_current_doctor_id()))
+);
+CREATE POLICY "patients_update_policy" ON patients FOR UPDATE USING (user_id = auth.uid() OR public.is_administrative());
+CREATE POLICY "patients_insert_policy" ON patients FOR INSERT WITH CHECK (auth.uid() IS NOT NULL OR public.is_administrative());
 
--- Turnos: Acceso público/anon y administrativo para reserva y gestión
-DROP POLICY IF EXISTS "appointments_all_access" ON appointments;
-CREATE POLICY "appointments_all_access" ON appointments FOR ALL USING (true) WITH CHECK (true);
+-- Turnos
+CREATE POLICY "appointments_select_policy" ON appointments FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative());
+CREATE POLICY "appointments_insert_policy" ON appointments FOR INSERT WITH CHECK (patient_id = public.get_current_patient_id() OR public.is_administrative() OR auth.role() = 'anon');
+CREATE POLICY "appointments_update_policy" ON appointments FOR UPDATE USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative()) WITH CHECK ((patient_id = public.get_current_patient_id() AND status = 'cancelled') OR doctor_id = public.get_current_doctor_id() OR public.is_administrative());
 
--- Historias Clínicas y Documentos Médicos: Permisivo para sincronización transparente del SPA
-DROP POLICY IF EXISTS "consultations_all_access" ON consultations;
-CREATE POLICY "consultations_all_access" ON consultations FOR ALL USING (true) WITH CHECK (true);
+-- HCE e Inalterabilidad Ley 26.529
+CREATE POLICY "consultations_select_policy" ON consultations FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_superadmin());
+CREATE POLICY "consultations_insert_policy" ON consultations FOR INSERT WITH CHECK (public.is_doctor() AND doctor_id = public.get_current_doctor_id());
 
-DROP POLICY IF EXISTS "adendas_all_access" ON consultation_adendas;
-CREATE POLICY "adendas_all_access" ON consultation_adendas FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "adendas_select_policy" ON consultation_adendas FOR SELECT USING (EXISTS (SELECT 1 FROM consultations c WHERE c.id = consultation_adendas.consultation_id AND (c.patient_id = public.get_current_patient_id() OR c.doctor_id = public.get_current_doctor_id() OR public.is_superadmin())));
+CREATE POLICY "adendas_insert_policy" ON consultation_adendas FOR INSERT WITH CHECK (public.is_doctor() AND doctor_id = public.get_current_doctor_id());
 
-DROP POLICY IF EXISTS "prescriptions_all_access" ON electronic_prescriptions;
-CREATE POLICY "prescriptions_all_access" ON electronic_prescriptions FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "prescriptions_select_policy" ON electronic_prescriptions FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative());
+CREATE POLICY "prescriptions_insert_policy" ON electronic_prescriptions FOR INSERT WITH CHECK (public.is_doctor() AND doctor_id = public.get_current_doctor_id());
 
-DROP POLICY IF EXISTS "imaging_all_access" ON imaging_studies;
-CREATE POLICY "imaging_all_access" ON imaging_studies FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "imaging_select_policy" ON imaging_studies FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative());
+CREATE POLICY "imaging_insert_policy" ON imaging_studies FOR INSERT WITH CHECK (public.is_doctor() OR public.is_administrative());
+CREATE POLICY "imaging_update_policy" ON imaging_studies FOR UPDATE USING (public.is_administrative() OR doctor_id = public.get_current_doctor_id());
 
-DROP POLICY IF EXISTS "orders_all_access" ON medical_orders;
-CREATE POLICY "orders_all_access" ON medical_orders FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "orders_select_policy" ON medical_orders FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative());
+CREATE POLICY "orders_insert_policy" ON medical_orders FOR INSERT WITH CHECK (public.is_doctor() OR public.is_administrative());
 
-DROP POLICY IF EXISTS "certificates_all_access" ON medical_certificates;
-CREATE POLICY "certificates_all_access" ON medical_certificates FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "certificates_select_policy" ON medical_certificates FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative());
+CREATE POLICY "certificates_insert_policy" ON medical_certificates FOR INSERT WITH CHECK (public.is_doctor() AND doctor_id = public.get_current_doctor_id());
 
-DROP POLICY IF EXISTS "consent_forms_all_access" ON consent_forms;
-CREATE POLICY "consent_forms_all_access" ON consent_forms FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "consent_forms_select_policy" ON consent_forms FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative());
+CREATE POLICY "consent_forms_insert_policy" ON consent_forms FOR INSERT WITH CHECK (public.is_doctor() OR public.is_administrative());
 
-DROP POLICY IF EXISTS "rehab_plans_all_access" ON rehab_plans;
-CREATE POLICY "rehab_plans_all_access" ON rehab_plans FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "rehab_plans_select_policy" ON rehab_plans FOR SELECT USING (patient_id = public.get_current_patient_id() OR public.is_doctor() OR public.is_administrative());
+CREATE POLICY "rehab_plans_all_policy" ON rehab_plans FOR ALL USING (public.is_doctor() OR public.is_administrative());
 
-DROP POLICY IF EXISTS "audit_logs_all_access" ON audit_logs;
-CREATE POLICY "audit_logs_all_access" ON audit_logs FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "audit_logs_select_policy" ON audit_logs FOR SELECT USING (public.is_superadmin());
+CREATE POLICY "audit_logs_insert_policy" ON audit_logs FOR INSERT WITH CHECK (auth.uid() IS NOT NULL OR public.is_administrative());
 
 -- 21. CARGA DE DATOS MAESTROS (SEED DATA COMPLETO DE CITRA)
 -- A) Especialidades

@@ -23,6 +23,21 @@ export const getTodayArgentina = () => {
   }
 };
 
+export const getNowArgentinaTime = () => {
+  try {
+    const formatter = new Intl.DateTimeFormat('es-AR', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+    return formatter.format(new Date());
+  } catch {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+};
+
 export const addDays = (dateStr, days) => {
   if (!dateStr) return getTodayArgentina();
   const [y, m, d] = dateStr.split('-').map(Number);

@@ -14,10 +14,7 @@ import {
   X,
   CheckCircle2,
   Activity,
-  UserCheck,
-  Users,
-  Clock,
-  Sparkles
+  Clock
 } from 'lucide-react';
 
 export const AdminLoginView = () => {
@@ -76,29 +73,12 @@ export const AdminLoginView = () => {
     return () => clearInterval(interval);
   }, [lockoutUntil]);
 
-  // Selected user for temporary quick login dropdown
-  const [selectedQuickUserId, setSelectedQuickUserId] = useState('');
-
   // Password Recovery modal state
   const [isRecovering, setIsRecovering] = useState(false);
   const [recoveryEmail, setRecoveryEmail] = useState('');
   const [recoveryMsg, setRecoveryMsg] = useState('');
   const [recoverySuccess, setRecoverySuccess] = useState(false);
   const [recoveryLoading, setRecoveryLoading] = useState(false);
-
-  // Administrative & Direction staff (Superadmin + Mesa de Entrada)
-  const adminStaffUsers = useMemo(() => {
-    return users.filter(
-      (u) => u.adminType === 'administrative' || u.adminType === 'superadmin' || (!u.doctorId && !u.adminType)
-    );
-  }, [users]);
-
-  // Medical specialists (13 doctors)
-  const medicalSpecialists = useMemo(() => {
-    return users.filter(
-      (u) => u.adminType === 'doctor' || (u.doctorId && u.doctorId.startsWith('doc-'))
-    );
-  }, [users]);
 
   const isLockedOut = lockoutRemainingSecs > 0;
 
@@ -166,18 +146,7 @@ export const AdminLoginView = () => {
     }
   };
 
-  // 1-Click quick login handler for demo/testing
-  const handleQuickLogin = async (targetUser) => {
-    if (!targetUser || isLockedOut) return;
-    setEmail(targetUser.email);
-    setPassword('citra2026');
-    setLoading(true);
-    try {
-      await loginAdmin(targetUser.email, 'citra2026');
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const handleRecoverySubmit = async (e) => {
     e.preventDefault();
@@ -595,141 +564,7 @@ export const AdminLoginView = () => {
             </p>
           </div>
 
-          {/* ============================================================== */}
-          {/* MENÚ DESPLEGABLE DE INICIO RÁPIDO (TEMPORAL) */}
-          {/* ============================================================== */}
-          <div
-            style={{
-              background: '#f8fafc',
-              border: '1.5px solid #e2e8f0',
-              borderRadius: '14px',
-              padding: '0.85rem 1rem',
-              marginBottom: '1.25rem',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '0.45rem'
-              }}
-            >
-              <label
-                htmlFor="quick-login-select"
-                style={{
-                  fontSize: '0.74rem',
-                  fontWeight: 800,
-                  color: '#475569',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem'
-                }}
-              >
-                <UserCheck size={14} color="#0284c7" />
-                Inicio Rápido (Temporal)
-              </label>
-              <span
-                style={{
-                  fontSize: '0.66rem',
-                  background: '#e0f2fe',
-                  color: '#0369a1',
-                  fontWeight: 700,
-                  padding: '0.15rem 0.5rem',
-                  borderRadius: '100px'
-                }}
-              >
-                {users.length} cuentas
-              </span>
-            </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <select
-                id="quick-login-select"
-                value={selectedQuickUserId}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setSelectedQuickUserId(val);
-                  const chosen = users.find((u) => u.id === val);
-                  if (chosen) {
-                    setEmail(chosen.email);
-                    setPassword('citra2026');
-                    setErrorMsg('');
-                  } else {
-                    setEmail('');
-                    setPassword('');
-                  }
-                }}
-                disabled={isLockedOut || loading}
-                style={{
-                  flex: 1,
-                  padding: '0.6rem 0.75rem',
-                  borderRadius: '10px',
-                  border: '1.5px solid #cbd5e1',
-                  background: '#ffffff',
-                  fontSize: '0.82rem',
-                  color: '#0f172a',
-                  fontWeight: 600,
-                  outline: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="">Seleccionar cuenta para ingresar...</option>
-                {adminStaffUsers.length > 0 && (
-                  <optgroup label="Recepción y Administración">
-                    {adminStaffUsers.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name} — {u.role || 'Administración'}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-                {medicalSpecialists.length > 0 && (
-                  <optgroup label="Cuerpo Médico / Especialistas">
-                    {medicalSpecialists.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name} — {u.specialty || u.role}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </select>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const target = users.find((u) => u.id === selectedQuickUserId);
-                  if (target) handleQuickLogin(target);
-                }}
-                disabled={!selectedQuickUserId || isLockedOut || loading}
-                style={{
-                  background:
-                    selectedQuickUserId && !isLockedOut && !loading
-                      ? 'linear-gradient(135deg, #0284c7 0%, #002182 100%)'
-                      : '#cbd5e1',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '0.6rem 1rem',
-                  borderRadius: '10px',
-                  fontWeight: 800,
-                  fontSize: '0.8rem',
-                  cursor: selectedQuickUserId && !isLockedOut && !loading ? 'pointer' : 'not-allowed',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  whiteSpace: 'nowrap',
-                  boxShadow: selectedQuickUserId ? '0 2px 8px rgba(2, 132, 199, 0.25)' : 'none',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <Sparkles size={14} />
-                Ingresar
-              </button>
-            </div>
-          </div>
 
           {/* Rate-Limiting Lockout Alert */}
           {isLockedOut && (

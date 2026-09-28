@@ -1242,22 +1242,24 @@ export const ConsentFormsModal = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontFamily: 'cursive',
+                        fontFamily: selectedConsent.witnessName ? 'cursive' : 'inherit',
                         fontSize: '1rem',
                         color: '#475569'
                       }}
                     >
-                      {selectedConsent.witnessName?.split('(')[0] || 'Romina Maidana'}
+                      {selectedConsent.witnessName ? (selectedConsent.witnessName.split('(')[0] || selectedConsent.witnessName) : '—'}
                     </div>
                     <div style={{ borderTop: '1px solid #0f172a', paddingTop: '4px', fontSize: '0.78rem', fontWeight: 800 }}>
                       Firma del Testigo / Asistente
                     </div>
                     <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                      {selectedConsent.witnessName || 'Romina Maidana (DNI 32.105.880)'}
+                      {selectedConsent.witnessName || 'Sin testigo presencial'}
                     </div>
-                    <div style={{ fontSize: '0.68rem', color: '#059669', fontWeight: 700, marginTop: '2px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                      <CheckCircle2 size={10} /> Asistencia Acreditada
-                    </div>
+                    {selectedConsent.witnessName && (
+                      <div style={{ fontSize: '0.68rem', color: '#059669', fontWeight: 700, marginTop: '2px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                        <CheckCircle2 size={10} /> Asistencia Acreditada
+                      </div>
+                    )}
                   </div>
 
                   {/* DOCTOR SIGNATURE & X.509 SEAL */}

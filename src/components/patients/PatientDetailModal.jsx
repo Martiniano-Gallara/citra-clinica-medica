@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { getTodayArgentina } from '../../utils/dateUtils';
 import { Modal } from '../common/Modal';
 import { Badge } from '../common/Badge';
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
@@ -30,6 +31,7 @@ export const PatientDetailModal = () => {
     setSelectedPatientForDetail,
     appointments,
     consultations,
+    scopedConsultations,
     rehabPlans,
     isDoctor,
     setIsPatientFormModalOpen,
@@ -64,7 +66,7 @@ export const PatientDetailModal = () => {
     if (!bDate) return '-';
     try {
       const birth = new Date(bDate);
-      const today = new Date('2026-08-28');
+      const today = new Date(getTodayArgentina());
       let age = today.getFullYear() - birth.getFullYear();
       const m = today.getMonth() - birth.getMonth();
       if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
@@ -77,8 +79,9 @@ export const PatientDetailModal = () => {
   };
 
   // Filter patient records
-  const patientAppointments = appointments.filter((a) => a.patientId === patient.id);
-  const patientConsultations = consultations.filter((c) => c.patientId === patient.id);
+  const patientAppointments = appointments.filter((a) => a.patientId === patient.id || a.patientDni === patient.dni);
+  const effectiveConsultations = isDoctor ? scopedConsultations : consultations;
+  const patientConsultations = (effectiveConsultations || []).filter((c) => c.patientId === patient.id || c.patientDni === patient.dni);
   const patientRehabPlans = rehabPlans.filter((r) => r.patientId === patient.id);
 
   // File upload handler
@@ -90,7 +93,7 @@ export const PatientDetailModal = () => {
       name: newFileName.endsWith('.pdf') ? newFileName : `${newFileName}.pdf`,
       type: newFileType,
       size: `${(Math.random() * 2 + 0.8).toFixed(1)} MB`,
-      date: '2026-08-28',
+      date: getTodayArgentina(),
       hashSha256: `sha256_${Math.random().toString(36).substring(2, 15)}`
     };
     addPatientFile(patient.id, fileObj);

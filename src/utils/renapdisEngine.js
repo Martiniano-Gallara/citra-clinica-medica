@@ -22,9 +22,9 @@ export const calculatePrescriptionExpiration = (issueDateStr) => {
   return date.toISOString().split('T')[0];
 };
 
-export const generateReNaPDiSVerificationUrl = (cuir, sisaRefepsLicense, patientDni) => {
+export const generateReNaPDiSVerificationUrl = (cuir, sisaRefepsLicense) => {
   const encodedCuir = encodeURIComponent(cuir);
-  return `https://sisa.msal.gov.ar/renapdis/receta/verificar?cuir=${encodedCuir}&refeps=${sisaRefepsLicense}&dni=${patientDni}`;
+  return `https://sisa.msal.gov.ar/renapdis/receta/verificar?cuir=${encodedCuir}&refeps=${encodeURIComponent(sisaRefepsLicense || '')}`;
 };
 
 export const COMMON_DCI_MEDICATIONS = [

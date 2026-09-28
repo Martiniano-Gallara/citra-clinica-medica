@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   base: './',
   server: {
-    host: '0.0.0.0',
+    host: process.env.VITE_DEV_HOST || 'localhost',
     port: 5173,
     strictPort: true
   }

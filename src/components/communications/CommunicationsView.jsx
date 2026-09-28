@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { getTodayArgentina } from '../../utils/dateUtils';
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
 import {
   MessageSquare,
@@ -37,14 +38,18 @@ export const CommunicationsView = () => {
   const [customMessage, setCustomMessage] = useState('');
   const [selectedLogForChat, setSelectedLogForChat] = useState(communications[0] || null);
 
-  const filteredLogs = communications.filter((log) =>
-    log.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.phone.includes(searchTerm) ||
-    log.message.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredLogs = communications.filter((log) => {
+    const q = searchTerm.toLowerCase();
+    return (
+      (log.patientName && log.patientName.toLowerCase().includes(q)) ||
+      (log.phone && log.phone.includes(searchTerm)) ||
+      (log.message && log.message.toLowerCase().includes(q))
+    );
+  });
 
+  const todayStr = getTodayArgentina();
   const pendingAppointments = appointments.filter(
-    (a) => a.date === '2026-08-28' && a.status === 'pendiente'
+    (a) => (a.date === todayStr || !a.date) && (a.status === 'pendiente' || a.status === 'confirmado')
   );
 
   const handleSendReminder = (e) => {

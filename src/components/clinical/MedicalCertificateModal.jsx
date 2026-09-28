@@ -154,9 +154,9 @@ export const MedicalCertificateModal = () => {
       return;
     }
     const cleanPhone = selectedPatient.phone.replace(/[^0-9]/g, '');
-    const certNumber = `CERT-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const certNumber = issuedCertificate?.id || 'CERT-OFICIAL';
     const msg = encodeURIComponent(
-      `Hola ${selectedPatient.name}, adjuntamos su *Certificado Médico Oficial* de CITRA Clínica Médica emitido por ${doctorName}.\n\n*Tipo:* ${certificateType}\n*Diagnóstico:* ${diagnosis}\n*Período:* ${restDays} días (hasta el ${formatDateSpanish(restEndDate)})\n*Verificación Online:* https://citra.com.ar/validar/${certNumber}\n\n_Documento firmado digitalmente con validez oficial plena._`
+      `Hola ${selectedPatient.name}, le compartimos su *Certificado Médico Oficial* de CITRA Clínica Médica emitido por ${doctorName}.\n\n*Tipo:* ${certificateType}\n*Período:* ${restDays} días (hasta el ${formatDateSpanish(restEndDate)})\n*Verificación Online:* https://citra.com.ar/validar/${certNumber}\n\n_Documento firmado digitalmente con validez oficial plena._`
     );
     window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');
   };
@@ -167,7 +167,7 @@ export const MedicalCertificateModal = () => {
       patientId: selectedPatient.id,
       patientName: selectedPatient.name,
       patientDni: selectedPatient.dni,
-      doctorId: currentDoctor?.id || 'doc-1',
+      doctorId: currentDoctor?.id || (doctors[0]?.id || ''),
       doctorName,
       doctorLicense,
       doctorSpecialty,

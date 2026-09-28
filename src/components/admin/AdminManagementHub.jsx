@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { getTodayArgentina } from '../../utils/dateUtils';
 
 // Admin Core Managers
 import { AppointmentsManager } from './AppointmentsManager';
@@ -20,7 +21,6 @@ import { ReportsView } from '../reports/ReportsView';
 import { CommunicationsView } from '../communications/CommunicationsView';
 import { SettingsView } from '../settings/SettingsView';
 import { AuditLogsView } from '../audit/AuditLogsView';
-import { AgendaView } from '../agenda/AgendaView';
 
 // Global Clinical Modals
 import { PatientDetailModal } from '../patients/PatientDetailModal';
@@ -178,6 +178,8 @@ export const AdminManagementHub = () => {
     healthInsurances,
     consultations,
     setSelectedPatientForDetail,
+    setIsAppointmentModalOpen,
+    setAppointmentModalData,
     // RBAC & Scoping
     currentDoctor,
     isDoctor,
@@ -188,7 +190,6 @@ export const AdminManagementHub = () => {
     scopedElectronicPrescriptions,
     scopedImagingStudies,
     scopedHealthInsurances,
-    switchAdminUser,
     users
   } = useClinic();
 
@@ -198,7 +199,7 @@ export const AdminManagementHub = () => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // General KPIs
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getTodayArgentina();
   const totalAppointments = appointments.length;
   const todayAppointments = appointments.filter((a) => a.date === todayStr);
   const activeDoctors = doctors.filter((d) => d.active !== false).length;
@@ -654,49 +655,8 @@ export const AdminManagementHub = () => {
             </h1>
           </div>
 
-          {/* Right: User Badge & Switcher & Logout */}
+          {/* Right: User Badge & Logout */}
           <div className="admin-topbar-right" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-            {/* Quick Profile Switcher (Médico vs Administrativo) */}
-            <div className="admin-profile-switcher" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <label className="admin-profile-label" style={{ fontSize: '0.74rem', fontWeight: 800, color: '#496386' }}>
-                Perfil:
-              </label>
-              <select
-                className="admin-profile-select"
-                value={authAdmin?.id || ''}
-                onChange={(e) => {
-                  if (typeof switchAdminUser === 'function') {
-                    switchAdminUser(e.target.value);
-                  }
-                }}
-                style={{
-                  padding: '0.35rem 0.65rem',
-                  borderRadius: '8px',
-                  border: '1.5px solid #D2E3FC',
-                  background: '#ffffff',
-                  color: '#002182',
-                  fontSize: '0.78rem',
-                  fontWeight: 800,
-                  outline: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                {(users || [])
-                  .filter((u) => u.adminType === 'doctor' || u.adminType === 'administrative' || u.adminType === 'superadmin')
-                  .map((u) => {
-                    let roleLabel = '';
-                    if (u.adminType === 'superadmin') roleLabel = 'Dirección / Superadmin';
-                    else if (u.adminType === 'administrative') roleLabel = 'Mesa de Entrada / Recepción';
-                    else roleLabel = u.specialty || 'Profesional';
-                    return (
-                      <option key={u.id} value={u.id}>
-                        {u.name} ({roleLabel})
-                      </option>
-                    );
-                  })}
-              </select>
-            </div>
-
             {/* Administrator / Doctor Badge */}
             <div
               className="admin-user-badge"

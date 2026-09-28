@@ -23,6 +23,7 @@ export const PrescriptionDigitalModal = () => {
     selectedPrescriptionForView,
     setSelectedPrescriptionForView,
     clinicInfo,
+    patients,
     updatePrescriptionStatus,
     addToast
   } = useClinic();
@@ -30,7 +31,7 @@ export const PrescriptionDigitalModal = () => {
   if (!selectedPrescriptionForView) return null;
 
   const rx = selectedPrescriptionForView;
-  const qrUrl = generateReNaPDiSVerificationUrl(rx.cuir, rx.sisaRefeps, rx.patientDni);
+  const qrUrl = generateReNaPDiSVerificationUrl(rx.cuir, rx.sisaRefeps);
 
   const handlePrint = () => {
     window.print();
@@ -44,8 +45,15 @@ export const PrescriptionDigitalModal = () => {
   };
 
   const handleShareWhatsApp = () => {
-    const text = `Hola ${rx.patientName}, desde CITRA Clínica Médica le compartimos su Receta Médica Oficial (CUIR: ${rx.cuir}). Válida para dispensa en farmacias de todo el país. Vigencia: 30 días. Enlace de validación: ${qrUrl}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    const pat = patients?.find((p) => p.id === rx.patientId || p.dni === rx.patientDni);
+    const cleanPhone = (pat?.phone || '').replace(/\D/g, '');
+    const targetPhone = cleanPhone ? (cleanPhone.startsWith('54') ? cleanPhone : `54${cleanPhone}`) : '';
+    const text = `Hola ${rx.patientName}, desde CITRA Clínica Médica le compartimos su Receta Médica Oficial (CUIR: ${rx.cuir}). Válida para dispensa en farmacias. Vigencia: 30 días. Enlace de validación: ${qrUrl}`;
+    if (targetPhone) {
+      window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}`, '_blank');
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
   };
 
   // Normalizar lista de medicamentos para soportar tanto modelos antiguos como nuevos

@@ -7,7 +7,6 @@ import {
   Shield,
   Clock,
   CreditCard,
-  RotateCcw,
   Save,
   Plus,
   Trash2,
@@ -40,12 +39,13 @@ export const SettingsView = () => {
     setHealthInsurances,
     users,
     setUsers,
-    resetToDefaults,
     addToast,
     isDoctor,
     currentDoctor,
     updateDoctorProfile,
-    authAdmin
+    authAdmin,
+    setAuthAdmin,
+    logAudit
   } = useClinic();
 
   // Admin tabs
@@ -54,23 +54,17 @@ export const SettingsView = () => {
 
   // Doctor personal profile form
   const [doctorForm, setDoctorForm] = useState({
-    name: (() => {
-      const raw = currentDoctor?.name || authAdmin?.name || 'Dr. Alejandro Blanco';
-      return raw.includes('Morales') ? 'Dr. Alejandro Blanco' : raw;
-    })(),
-    specialty: currentDoctor?.specialty || 'Traumatología & Cirugía Artroscópica',
-    license: currentDoctor?.license || 'MP 34.892 · MN 114.829',
-    sisaRefeps: currentDoctor?.sisaRefeps || 'REFEPS-MN-114829',
-    phone: currentDoctor?.phone || '+54 3576 45-2201',
-    email: (() => {
-      const raw = currentDoctor?.email || authAdmin?.email || 'dr.blanco@citra.com.ar';
-      return raw.includes('morales') ? 'dr.blanco@citra.com.ar' : raw;
-    })(),
-    consultationPrice: currentDoctor?.consultationPrice || currentDoctor?.priceConsultation || 25000,
-    feePercentage: currentDoctor?.feePercentage || 75,
-    bio: currentDoctor?.bio || 'Especialista en lesiones osteoarticulares, artroscopía de rodilla, reemplazo protésico y traumatología deportiva de alto rendimiento.',
-    cuirCode: 'CUIR-AR-TRAUMA-9941',
-    pkiCertificateValidUntil: '15/12/2027',
+    name: currentDoctor?.name || authAdmin?.name || '',
+    specialty: currentDoctor?.specialty || '',
+    license: currentDoctor?.license || '',
+    sisaRefeps: currentDoctor?.sisaRefeps || '',
+    phone: currentDoctor?.phone || '',
+    email: currentDoctor?.email || authAdmin?.email || '',
+    consultationPrice: currentDoctor?.consultationPrice || currentDoctor?.priceConsultation || 0,
+    feePercentage: currentDoctor?.feePercentage || 70,
+    bio: currentDoctor?.bio || '',
+    cuirCode: currentDoctor?.cuirCode || '',
+    pkiCertificateValidUntil: currentDoctor?.pkiCertificateValidUntil || '',
     pkiSerial: 'PKI-ONTI-2024-X509-881290B'
   });
 
@@ -620,13 +614,6 @@ export const SettingsView = () => {
             <span>Configuración del Sistema SaaS</span>
           </h1>
           <p>Parámetros institucionales, roles de usuario, sedes, especialidades y obras sociales</p>
-        </div>
-
-        <div className="page-actions-group">
-          <button className="btn btn-danger btn-sm" onClick={resetToDefaults}>
-            <RotateCcw size={15} />
-            <span>Restaurar Datos de Demostración</span>
-          </button>
         </div>
       </div>
 

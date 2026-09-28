@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { getTodayArgentina } from '../../utils/dateUtils';
+import { generateSHA256Hash } from '../../utils/cryptoAudit';
 import {
   Eye,
   X,
@@ -18,6 +20,7 @@ export const NewImagingStudyModal = () => {
     isImagingStudyModalOpen,
     setIsImagingStudyModalOpen,
     patients,
+    scopedPatients,
     doctors,
     currentDoctor,
     isDoctor,
@@ -25,7 +28,7 @@ export const NewImagingStudyModal = () => {
     addToast
   } = useClinic();
 
-  const activeDoctorName = isDoctor && currentDoctor ? currentDoctor.name : 'Dr. Alejandro Blanco';
+  const activeDoctorName = isDoctor && currentDoctor ? currentDoctor.name : (doctors[0]?.name || '');
 
   const imagingPresets = [
     {
@@ -66,18 +69,19 @@ export const NewImagingStudyModal = () => {
     }
   ];
 
-  const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id || '');
-  const [modality, setModality] = useState(imagingPresets[0].modality);
-  const [bodyPart, setBodyPart] = useState(imagingPresets[0].bodyPart);
-  const [center, setCenter] = useState(imagingPresets[0].center);
+  const [selectedPatientId, setSelectedPatientId] = useState('');
+  const [modality, setModality] = useState('Radiografía Digital (RX)');
+  const [bodyPart, setBodyPart] = useState('');
+  const [center, setCenter] = useState('Servicio Radiología CITRA Sede Central');
   const [referringDoctor, setReferringDoctor] = useState(activeDoctorName);
-  const [radiologist, setRadiologist] = useState(imagingPresets[0].radiologist);
-  const [findings, setFindings] = useState(imagingPresets[0].findings);
-  const [conclusion, setConclusion] = useState(imagingPresets[0].conclusion);
+  const [radiologist, setRadiologist] = useState('');
+  const [findings, setFindings] = useState('');
+  const [conclusion, setConclusion] = useState('');
 
   if (!isImagingStudyModalOpen) return null;
 
-  const selectedPatient = patients.find((p) => p.id === selectedPatientId) || patients[0];
+  const availablePatients = isDoctor ? scopedPatients : patients;
+  const selectedPatient = availablePatients.find((p) => p.id === selectedPatientId) || null;
 
   const handleApplyPreset = (preset) => {
     setModality(preset.modality);
@@ -91,22 +95,29 @@ export const NewImagingStudyModal = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!selectedPatient) {
+      addToast('Paciente Requerido', 'Debe seleccionar un paciente de la lista.', 'warning');
+      return;
+    }
+    const todayStr = getTodayArgentina();
+    const hasReport = Boolean(conclusion && conclusion.trim());
     addImagingStudy({
       patientId: selectedPatient.id,
       patientName: selectedPatient.name,
       patientDni: selectedPatient.dni,
+      doctorId: isDoctor && currentDoctor ? currentDoctor.id : undefined,
       modality,
-      bodyPart,
+      bodyPart: bodyPart.trim() || 'Región anatómica a determinar',
       center,
       referringDoctor,
-      radiologist,
+      radiologist: radiologist.trim() || (isDoctor && currentDoctor ? currentDoctor.name : 'Médico Radiólogo'),
       findings,
       conclusion,
-      date: new Date().toISOString().split('T')[0],
-      status: 'Informado',
+      date: todayStr,
+      status: hasReport ? 'Informado' : 'Realizado',
       seriesCount: modality.includes('RMN') ? 4 : modality.includes('TAC') ? 3 : 2,
       fileSize: modality.includes('RMN') ? '48.2 MB' : modality.includes('TAC') ? '62.1 MB' : '18.4 MB',
-      hashSha256: '9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b5c6d7e8f9a0b1c2d3e4f5a6b',
+      hashSha256: generateSHA256Hash(`${selectedPatient.dni}|${modality}|${bodyPart}|${todayStr}|${Date.now()}`),
       thumbnailUrl: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=600&auto=format&fit=crop&q=80'
     });
     setIsImagingStudyModalOpen(false);
@@ -259,7 +270,8 @@ export const NewImagingStudyModal = () => {
               }}
               required
             >
-              {patients.map((pat) => (
+              <option value="">-- Seleccionar Paciente --</option>
+              {availablePatients.map((pat) => (
                 <option key={pat.id} value={pat.id}>
                   {pat.name} — DNI {pat.dni} ({pat.insuranceName || 'Particular'})
                 </option>

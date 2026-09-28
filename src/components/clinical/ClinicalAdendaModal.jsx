@@ -25,9 +25,9 @@ export const ClinicalAdendaModal = () => {
   const [adendaReason, setAdendaReason] = useState('Aclaración Diagnóstica / Evolución Complementaria');
   const [adendaText, setAdendaText] = useState('');
 
-  // Active doctor resolution (strictly Dr. Blanco when isDoctor)
-  const activeDoctorName = isDoctor && currentDoctor ? currentDoctor.name : (currentUser?.name || 'Dr. Alejandro Blanco');
-  const activeDoctorLicense = isDoctor && currentDoctor ? currentDoctor.license : (currentUser?.license || 'M.P. 34.892 (CMPC)');
+  // Active doctor resolution
+  const activeDoctorName = isDoctor && currentDoctor ? currentDoctor.name : (currentUser?.name || '');
+  const activeDoctorLicense = isDoctor && currentDoctor ? currentDoctor.license : (currentUser?.license || '');
 
   const adendaTypes = [
     'Aclaración Diagnóstica',

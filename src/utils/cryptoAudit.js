@@ -38,15 +38,22 @@ const calculatedHashEquals = (h1, h2) => {
 /**
  * Cifrado AES-256 para backups y exportaciones de datos sensibles de salud (Ley 25.326).
  */
-export const encryptDataAES = (data, secretKey = 'CITRA_SECURE_HEALTH_ARG_2026') => {
+export const encryptDataAES = (data, secretKey) => {
+  if (!secretKey || typeof secretKey !== 'string' || secretKey.trim().length < 8) {
+    throw new Error('Se requiere una clave de cifrado segura de al menos 8 caracteres.');
+  }
   const jsonStr = JSON.stringify(data);
   return CryptoJS.AES.encrypt(jsonStr, secretKey).toString();
 };
 
-export const decryptDataAES = (cipherText, secretKey = 'CITRA_SECURE_HEALTH_ARG_2026') => {
+export const decryptDataAES = (cipherText, secretKey) => {
+  if (!secretKey || typeof secretKey !== 'string') {
+    throw new Error('Se requiere una clave de descifrado válida.');
+  }
   try {
     const bytes = CryptoJS.AES.decrypt(cipherText, secretKey);
     const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
+    if (!decryptedData) throw new Error('Contenido vacío tras descifrado');
     return JSON.parse(decryptedData);
   } catch (e) {
     throw new Error('Clave de descifrado incorrecta o archivo de backup corrupto.');
@@ -71,7 +78,7 @@ export const createAuditLog = (user, action, resource, targetDni, details) => {
     resource, // 'Historia Clínica', 'Receta ReNaPDiS', 'Consentimiento', 'Datos Filiatorios', 'Comprobante Fiscal'
     targetDni: targetDni || '-',
     details,
-    ipAddress: '192.168.120.16',
+    ipAddress: typeof window !== 'undefined' ? (window.location?.hostname || 'navegador-local') : 'server',
     eventHash
   };
 };

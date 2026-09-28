@@ -37,6 +37,7 @@ export const PatientsView = () => {
     scopedPatients,
     isDoctor,
     currentDoctor,
+    doctors,
     healthInsurances,
     rehabPlans,
     setSelectedPatientForDetail,
@@ -46,7 +47,8 @@ export const PatientsView = () => {
     setAppointmentModalData,
     setIsNewConsultationModalOpen,
     setConsultationPreloadData,
-    addToast
+    addToast,
+    logAudit
   } = useClinic();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -63,7 +65,7 @@ export const PatientsView = () => {
     if (!bDate) return '-';
     try {
       const birth = new Date(bDate);
-      const today = new Date('2026-08-28');
+      const today = new Date(getTodayArgentina());
       let age = today.getFullYear() - birth.getFullYear();
       const m = today.getMonth() - birth.getMonth();
       if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
@@ -84,12 +86,12 @@ export const PatientsView = () => {
       const cleanQ = searchTerm.toLowerCase().trim();
       const matchSearch =
         cleanQ === '' ||
-        pat.name.toLowerCase().includes(cleanQ) ||
-        pat.dni.toLowerCase().includes(cleanQ) ||
-        pat.phone.includes(cleanQ) ||
-        pat.email.toLowerCase().includes(cleanQ) ||
-        pat.insuranceName.toLowerCase().includes(cleanQ) ||
-        (pat.antecedentes && pat.antecedentes.some((a) => a.toLowerCase().includes(cleanQ)));
+        (pat.name && pat.name.toLowerCase().includes(cleanQ)) ||
+        (pat.dni && pat.dni.toLowerCase().includes(cleanQ)) ||
+        (pat.phone && pat.phone.includes(cleanQ)) ||
+        (pat.email && pat.email.toLowerCase().includes(cleanQ)) ||
+        (pat.insuranceName && pat.insuranceName.toLowerCase().includes(cleanQ)) ||
+        (pat.antecedentes && pat.antecedentes.some((a) => a && a.toLowerCase().includes(cleanQ)));
 
       const matchInsurance = insuranceFilter === 'all' || pat.insuranceId === insuranceFilter;
       const matchAllergy = !allergyOnlyFilter || (pat.allergies && pat.allergies.length > 0);
@@ -109,13 +111,13 @@ export const PatientsView = () => {
       sanitizeCsvCell(p.birthDate),
       sanitizeCsvCell(calculateAge(p.birthDate)),
       sanitizeCsvCell(p.gender),
-      sanitizeCsvCell(p.bloodType || 'A+'),
+      sanitizeCsvCell(p.bloodType || 'N/E'),
       sanitizeCsvCell(p.phone),
       sanitizeCsvCell(p.email),
       sanitizeCsvCell(p.insuranceName),
       sanitizeCsvCell(p.insurancePlan),
       sanitizeCsvCell(p.insuranceNumber || ''),
-      sanitizeCsvCell((p.allergies || []).join(';') || 'Ninguna')
+      sanitizeCsvCell((p.allergies && p.allergies.length > 0) ? p.allergies.join(';') : 'Sin registrar')
     ].join(',')).join('\n');
     const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -125,6 +127,9 @@ export const PatientsView = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    if (logAudit) {
+      logAudit('EXPORT', 'Padrón de Pacientes', '-', `Exportación masiva de padrón (${filteredPatients.length} pacientes) a CSV.`);
+    }
     addToast('Padrón Exportado', 'Se descargó el archivo CSV de pacientes.', 'success');
   };
 
@@ -146,17 +151,18 @@ export const PatientsView = () => {
 
   const handleBookAppointment = (pat) => {
     if (setIsAppointmentModalOpen && setAppointmentModalData) {
+      const targetDoc = currentDoctor || (doctors && doctors[0]) || null;
       setAppointmentModalData({
         patientId: pat.id,
         patientName: pat.name,
         patientDni: pat.dni,
         patientPhone: pat.phone,
         patientInsurance: pat.insuranceName,
-        doctorId: currentDoctor?.id || 'doc-1',
-        doctorName: currentDoctor?.name || 'Dr. Alejandro Blanco',
-        specialtyName: currentDoctor?.specialty || 'Traumatología',
-        roomName: currentDoctor?.roomName || 'Consultorio 102',
-        date: '2026-08-28',
+        doctorId: targetDoc?.id || '',
+        doctorName: targetDoc?.name || '',
+        specialtyName: targetDoc?.specialty || '',
+        roomName: targetDoc?.roomName || 'Consultorio 101',
+        date: getTodayArgentina(),
         time: '10:00',
         duration: 30
       });
@@ -168,7 +174,6 @@ export const PatientsView = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       {/* Global Modals */}
       <PatientFormModal />
-      <PatientDetailModal />
 
       {/* 1. TOP HEADER (CLEAN & NON-SATURATED) */}
       <div

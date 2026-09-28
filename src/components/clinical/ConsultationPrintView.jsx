@@ -352,7 +352,7 @@ export const ConsultationPrintView = () => {
                 </div>
                 <div><strong>Médico:</strong> {cons.doctorName}</div>
                 <div><strong>Especialidad:</strong> {cons.specialtyName || 'Traumatología y Ortopedia'}</div>
-                <div><strong>Matrícula:</strong> {cons.doctorLicense || 'M.P. 34.892'}</div>
+                <div><strong>Matrícula:</strong> {cons.doctorLicense || '—'}</div>
                 {cons.sisaRefeps && <div><strong>Registro:</strong> {cons.sisaRefeps}</div>}
               </div>
             </div>

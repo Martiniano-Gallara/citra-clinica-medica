@@ -26,12 +26,13 @@ export const BlockTimeModal = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     const doc = doctors.find((d) => d.id === formData.doctorId);
-    const validPatientId = patients.find((p) => p.id === 'pat-block')?.id || patients[0]?.id || 'pat-1';
+    const existingBlockPat = patients.find((p) => p.id === 'pat-block' || p.dni === '00000000');
+    const blockPatientId = existingBlockPat ? existingBlockPat.id : 'pat-block';
 
     addAppointment({
-      patientId: validPatientId,
+      patientId: blockPatientId,
       patientName: `[BLOQUEO INSTITUCIONAL] — ${formData.reason}`,
-      patientPhone: '-',
+      patientPhone: '',
       patientDni: '00000000',
       patientInsurance: 'Institucional / Clínica',
       doctorId: formData.doctorId,

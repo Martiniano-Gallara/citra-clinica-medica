@@ -15,8 +15,7 @@ import {
   ExternalLink,
   Lock,
   Stethoscope,
-  BadgeCheck,
-  LogIn
+  BadgeCheck
 } from 'lucide-react';
 
 export const UsersManager = () => {
@@ -25,7 +24,6 @@ export const UsersManager = () => {
     updateUser,
     addUser,
     deleteUser,
-    switchAdminUser,
     authAdmin,
     addToast
   } = useClinic();
@@ -479,29 +477,6 @@ export const UsersManager = () => {
                       {/* Actions */}
                       <td style={{ padding: '0.95rem 1.25rem', textAlign: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem' }}>
-                          {/* Quick switch to operate as this user */}
-                          <button
-                            type="button"
-                            onClick={() => switchAdminUser(u.id)}
-                            title={`Operar el panel como ${u.name}`}
-                            style={{
-                              background: isCurrentLogged ? '#002182' : '#F5F8FE',
-                              border: '1px solid #D2E3FC',
-                              color: isCurrentLogged ? '#ffffff' : '#076ABC',
-                              padding: '0.45rem 0.75rem',
-                              borderRadius: '8px',
-                              fontSize: '0.76rem',
-                              fontWeight: 800,
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.35rem'
-                            }}
-                          >
-                            <LogIn size={13} />
-                            {isCurrentLogged ? 'En uso' : 'Operar'}
-                          </button>
-
                           {/* Edit role and info */}
                           <button
                             type="button"
@@ -526,7 +501,7 @@ export const UsersManager = () => {
                             type="button"
                             onClick={() => {
                               setPasswordUser(u);
-                              setNewPasswordValue('citra2026');
+                              setNewPasswordValue('');
                               setIsPasswordModalOpen(true);
                             }}
                             title="Gestionar clave de acceso"

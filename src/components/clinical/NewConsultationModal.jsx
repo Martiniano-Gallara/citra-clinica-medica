@@ -27,6 +27,7 @@ export const NewConsultationModal = () => {
     currentDoctor,
     isDoctor,
     patients,
+    scopedPatients,
     consultations,
     setSelectedConsultationForPrint,
     addConsultation,
@@ -41,14 +42,7 @@ export const NewConsultationModal = () => {
       if (found) return found;
     }
     if (currentDoctor) return currentDoctor;
-    return (
-      doctors[0] || {
-        id: 'doc-1',
-        name: 'Dr. Alejandro Blanco',
-        license: 'MP 38.412 / ME 19.820',
-        specialty: 'Traumatología'
-      }
-    );
+    return doctors[0] || null;
   }, [isDoctor, currentDoctor, doctors, consultationPreloadData]);
 
   const initialVitals = {
@@ -93,7 +87,7 @@ export const NewConsultationModal = () => {
     if (!isNewConsultationModalOpen) return;
 
     if (consultationPreloadData) {
-      const targetPat = patients.find((p) => p.id === consultationPreloadData.patientId) || patients[0];
+      const targetPat = patients.find((p) => p.id === consultationPreloadData.patientId) || null;
       setFormData((prev) => ({
         ...prev,
         appointmentId: consultationPreloadData.appointmentId || '',
@@ -116,14 +110,13 @@ export const NewConsultationModal = () => {
         studiesRequested: consultationPreloadData.studiesRequested || ''
       }));
     } else {
-      const defaultPat = patients[0] || {};
       setFormData((prev) => ({
         ...prev,
         appointmentId: '',
-        patientId: defaultPat.id || '',
-        patientName: defaultPat.name || '',
-        patientDni: defaultPat.dni || '',
-        patientInsurance: defaultPat.insuranceName || '',
+        patientId: '',
+        patientName: '',
+        patientDni: '',
+        patientInsurance: '',
         doctorId: activeDoctor?.id || '',
         doctorName: activeDoctor?.name || '',
         doctorLicense: activeDoctor?.license || '',
@@ -141,7 +134,7 @@ export const NewConsultationModal = () => {
     }
   }, [consultationPreloadData, isNewConsultationModalOpen, patients, activeDoctor]);
 
-  const currentPatient = patients.find((p) => p.id === formData.patientId) || patients[0];
+  const currentPatient = patients.find((p) => p.id === formData.patientId) || null;
 
   // Detect if this specific appointment already has a registered consultation
   const existingForAppointment = useMemo(() => {
@@ -601,7 +594,8 @@ export const NewConsultationModal = () => {
                   }}
                   required
                 >
-                  {patients.map((pat) => (
+                  <option value="">-- Seleccionar Paciente --</option>
+                  {(isDoctor ? scopedPatients : patients).map((pat) => (
                     <option key={pat.id} value={pat.id}>
                       {pat.name} — DNI {pat.dni} ({pat.insuranceName || 'Particular'})
                     </option>
