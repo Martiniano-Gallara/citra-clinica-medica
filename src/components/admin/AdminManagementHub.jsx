@@ -233,7 +233,6 @@ export const AdminManagementHub = () => {
         {
           title: 'MI GESTIÓN PROFESIONAL',
           items: [
-            { id: 'schedules', label: 'Gestión y Horarios', icon: Clock, badge: null },
             { id: 'reports', label: 'Métricas & Rendimiento', icon: BarChart3, badge: null }
           ]
         },
@@ -897,7 +896,7 @@ export const AdminManagementHub = () => {
                     </button>
 
                     <button
-                      onClick={() => setActiveTab('schedules')}
+                      onClick={() => setActiveTab('prescriptions')}
                       style={{
                         background: '#F5F8FE',
                         border: '1px solid #D2E3FC',
@@ -913,8 +912,8 @@ export const AdminManagementHub = () => {
                       }}
                     >
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <Clock size={17} color="#076ABC" />
-                        Gestión de mis horarios de atención
+                        <Pill size={17} color="#076ABC" />
+                        Recetas Electrónicas Emitidas ({scopedElectronicPrescriptions.length})
                       </span>
                       <ChevronRight size={16} color="#7994B8" />
                     </button>
@@ -1793,8 +1792,8 @@ export const AdminManagementHub = () => {
           {/* TAB 6: ESPECIALIDADES (Solo Superadmin) */}
           {activeTab === 'services' && isSuperAdmin && <ServicesManager />}
 
-          {/* TAB 7: HORARIOS & DISPONIBILIDAD */}
-          {activeTab === 'schedules' && <SchedulesManager />}
+          {/* TAB 7: HORARIOS & DISPONIBILIDAD (Gestión Exclusiva de Secretaría y Administración) */}
+          {activeTab === 'schedules' && !isDoctor && <SchedulesManager />}
 
           {/* TAB 8: CONSULTORIOS (Administración y Superadmin) */}
           {activeTab === 'rooms' && (!isDoctor || isSuperAdmin) && <RoomsManager />}
