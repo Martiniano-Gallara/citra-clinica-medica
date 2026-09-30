@@ -298,101 +298,45 @@ export const AppointmentsManager = () => {
   };
 
   const getStatusBadgeElement = (status) => {
-    switch (status) {
-      case 'en_sala':
-        return (
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '5px',
-              background: '#ecfdf5',
-              color: '#065f46',
-              border: '1px solid #a7f3d0',
-              padding: '0.25rem 0.65rem',
-              borderRadius: '100px',
-              fontSize: '0.74rem',
-              fontWeight: 800
-            }}
-          >
-            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
-            En Sala de Espera
-          </span>
-        );
-      case 'confirmado':
-        return (
-          <span
-            style={{
-              background: '#eff6ff',
-              color: '#1d4ed8',
-              border: '1px solid #bfdbfe',
-              padding: '0.25rem 0.65rem',
-              borderRadius: '100px',
-              fontSize: '0.74rem',
-              fontWeight: 800
-            }}
-          >
-            Confirmado
-          </span>
-        );
-      case 'pendiente':
-        return (
-          <span
-            style={{
-              background: '#fefce8',
-              color: '#a16207',
-              border: '1px solid #fde047',
-              padding: '0.25rem 0.65rem',
-              borderRadius: '100px',
-              fontSize: '0.74rem',
-              fontWeight: 800
-            }}
-          >
-            Por Llegar
-          </span>
-        );
-      case 'atendido':
-        return (
-          <span
-            style={{
-              background: '#f8fafc',
-              color: '#475569',
-              border: '1px solid #cbd5e1',
-              padding: '0.25rem 0.65rem',
-              borderRadius: '100px',
-              fontSize: '0.74rem',
-              fontWeight: 700,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            <CheckCircle2 size={12} /> Atendido
-          </span>
-        );
-      case 'cancelado':
-        return (
-          <span
-            style={{
-              background: '#fef2f2',
-              color: '#991b1b',
-              border: '1px solid #fecaca',
-              padding: '0.25rem 0.65rem',
-              borderRadius: '100px',
-              fontSize: '0.74rem',
-              fontWeight: 700
-            }}
-          >
-            Cancelado
-          </span>
-        );
-      default:
-        return (
-          <span style={{ background: '#f1f5f9', color: '#475569', padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '0.72rem' }}>
-            {status}
-          </span>
-        );
+    if (status === 'atendido') {
+      return (
+        <span
+          style={{
+            background: '#f8fafc',
+            color: '#334155',
+            border: '1px solid #cbd5e1',
+            padding: '0.25rem 0.65rem',
+            borderRadius: '100px',
+            fontSize: '0.74rem',
+            fontWeight: 700,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+        >
+          <CheckCircle2 size={12} color="#059669" /> Atendido
+        </span>
+      );
     }
+    return (
+      <span
+        style={{
+          background: '#fef3c7',
+          color: '#92400e',
+          border: '1px solid #fde68a',
+          padding: '0.25rem 0.65rem',
+          borderRadius: '100px',
+          fontSize: '0.74rem',
+          fontWeight: 800,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '5px'
+        }}
+      >
+        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#d97706', display: 'inline-block' }} />
+        Por Atender
+      </span>
+    );
   };
 
   return (
@@ -418,27 +362,29 @@ export const AppointmentsManager = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsManualModalOpen(true)}
-          style={{
-            background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
-            color: '#ffffff',
-            border: 'none',
-            padding: '0.65rem 1.25rem',
-            borderRadius: '10px',
-            fontSize: '0.88rem',
-            fontWeight: 800,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)'
-          }}
-        >
-          <Plus size={18} />
-          {isDoctor ? 'Nuevo Turno Manual' : 'Asignar Turno a Profesional'}
-        </button>
+        {!isDoctor && (
+          <button
+            type="button"
+            onClick={() => setIsManualModalOpen(true)}
+            style={{
+              background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+              color: '#ffffff',
+              border: 'none',
+              padding: '0.65rem 1.25rem',
+              borderRadius: '10px',
+              fontSize: '0.88rem',
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)'
+            }}
+          >
+            <Plus size={18} />
+            <span>Asignar Turno a Profesional</span>
+          </button>
+        )}
       </div>
 
       {/* 2. OPERATIONAL KPI STRIP: SOLO PENDIENTES DE HOY Y ATENDIDOS */}
@@ -462,7 +408,7 @@ export const AppointmentsManager = () => {
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
             <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Pendientes de Hoy
+              Por Atender Hoy
             </span>
             <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#EBF3FD', color: '#076ABC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Clock size={18} />
@@ -685,7 +631,7 @@ export const AppointmentsManager = () => {
                 cursor: 'pointer'
               }}
             >
-              Pendientes ({pendingCount})
+              Por Atender ({pendingCount})
             </button>
             <button
               type="button"
@@ -736,14 +682,15 @@ export const AppointmentsManager = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
                       <CalendarIcon size={36} style={{ color: '#cbd5e1' }} />
                       <div style={{ fontWeight: 700, color: '#1e293b' }}>No hay turnos registrados para este día o filtro</div>
-                      <div style={{ fontSize: '0.82rem' }}>Utilice el navegador de fechas o haga clic en "{isDoctor ? 'Nuevo Turno Manual' : 'Asignar Turno a Profesional'}".</div>
+                      <div style={{ fontSize: '0.82rem' }}>
+                        {isDoctor ? 'Utilice el navegador de fechas para revisar su agenda de turnos.' : 'Utilice el navegador de fechas o haga clic en "Asignar Turno a Profesional".'}
+                      </div>
                     </div>
                   </td>
                 </tr>
               ) : (
                 filteredAppointments.map((app) => {
                   const isExpanded = expandedAppointmentId === app.id;
-                  const isEnSala = app.status === 'en_sala';
                   const isAtendido = app.status === 'atendido';
 
                   return (
@@ -753,15 +700,15 @@ export const AppointmentsManager = () => {
                         onClick={() => toggleExpand(app.id)}
                         style={{
                           borderBottom: isExpanded ? 'none' : '1px solid #f1f5f9',
-                          background: isExpanded ? '#f0fdf4' : isEnSala ? '#f0fdf4' : '#ffffff',
+                          background: isExpanded ? '#f0fdf4' : '#ffffff',
                           cursor: 'pointer',
                           transition: 'background 0.15s ease'
                         }}
                         onMouseEnter={(e) => {
-                          if (!isExpanded && !isEnSala) e.currentTarget.style.background = '#f8fafc';
+                          if (!isExpanded) e.currentTarget.style.background = '#f8fafc';
                         }}
                         onMouseLeave={(e) => {
-                          if (!isExpanded && !isEnSala) e.currentTarget.style.background = '#ffffff';
+                          if (!isExpanded) e.currentTarget.style.background = '#ffffff';
                         }}
                       >
                         {/* Horario */}
@@ -828,24 +775,7 @@ export const AppointmentsManager = () => {
                             {/* Actions for Administrative vs Doctor */}
                             {!isDoctor ? (
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                {app.status === 'en_sala' ? (
-                                  <span
-                                    style={{
-                                      fontSize: '0.74rem',
-                                      fontWeight: 800,
-                                      color: '#059669',
-                                      background: '#ecfdf5',
-                                      border: '1px solid #a7f3d0',
-                                      padding: '0.35rem 0.65rem',
-                                      borderRadius: '8px',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '4px'
-                                    }}
-                                  >
-                                    <CheckCircle2 size={12} /> En Espera
-                                  </span>
-                                ) : app.status === 'atendido' ? (
+                                {isAtendido ? (
                                   <span
                                     style={{
                                       fontSize: '0.74rem',
@@ -858,62 +788,28 @@ export const AppointmentsManager = () => {
                                   >
                                     Atendido
                                   </span>
-                                ) : app.status === 'cancelado' ? (
-                                  <span style={{ fontSize: '0.74rem', color: '#ef4444', fontWeight: 700 }}>
-                                    Cancelado
-                                  </span>
                                 ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      updateAppointmentStatus(app.id, 'en_sala');
-                                      addToast('Paciente en Sala', `${app.patientName} fue registrado en sala de espera. Notificado a ${app.doctorName}.`, 'success');
-                                    }}
+                                  <span
                                     style={{
-                                      background: '#059669',
-                                      color: '#ffffff',
-                                      border: 'none',
-                                      borderRadius: '8px',
-                                      padding: '0.4rem 0.75rem',
-                                      fontSize: '0.78rem',
+                                      fontSize: '0.74rem',
                                       fontWeight: 800,
-                                      cursor: 'pointer',
-                                      display: 'flex',
+                                      color: '#b45309',
+                                      background: '#fef3c7',
+                                      border: '1px solid #fde68a',
+                                      padding: '0.35rem 0.65rem',
+                                      borderRadius: '8px',
+                                      display: 'inline-flex',
                                       alignItems: 'center',
-                                      gap: '4px',
-                                      boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)'
+                                      gap: '4px'
                                     }}
                                   >
-                                    <CheckCircle2 size={13} />
-                                    Llegó / En Sala
-                                  </button>
+                                    Por Atender
+                                  </span>
                                 )}
                               </div>
                             ) : (
-                              // Doctor Actions
-                              isEnSala ? (
-                                <button
-                                  type="button"
-                                  onClick={() => handleStartConsultation(app)}
-                                  style={{
-                                    background: '#059669',
-                                    color: '#ffffff',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    padding: '0.45rem 0.85rem',
-                                    fontSize: '0.82rem',
-                                    fontWeight: 800,
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '5px',
-                                    boxShadow: '0 2px 8px rgba(5, 150, 105, 0.25)'
-                                  }}
-                                >
-                                  <Stethoscope size={15} />
-                                  Atender
-                                </button>
-                              ) : isAtendido ? (
+                              // Doctor Actions: Only 2 states (Atendido -> Ver Consulta, Por Atender -> Atender)
+                              isAtendido ? (
                                 <button
                                   type="button"
                                   onClick={() => handleViewConsultation(app)}
@@ -922,39 +818,40 @@ export const AppointmentsManager = () => {
                                     color: '#002182',
                                     border: '1px solid #bfdbfe',
                                     borderRadius: '8px',
-                                    padding: '0.35rem 0.65rem',
-                                    fontSize: '0.78rem',
+                                    padding: '0.42rem 0.85rem',
+                                    fontSize: '0.8rem',
                                     fontWeight: 800,
                                     cursor: 'pointer',
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '4px'
+                                    gap: '5px'
                                   }}
                                   title="Ver registro de Historia Clínica de esta consulta"
                                 >
-                                  <FileText size={13} />
-                                  Ver Consulta
+                                  <FileText size={14} />
+                                  <span>Ver Consulta</span>
                                 </button>
                               ) : (
                                 <button
                                   type="button"
-                                  onClick={() => handleCallToRoom(app)}
+                                  onClick={() => handleStartConsultation(app)}
                                   style={{
-                                    background: '#076ABC',
+                                    background: '#059669',
                                     color: '#ffffff',
                                     border: 'none',
                                     borderRadius: '8px',
-                                    padding: '0.4rem 0.75rem',
-                                    fontSize: '0.8rem',
+                                    padding: '0.45rem 0.95rem',
+                                    fontSize: '0.82rem',
                                     fontWeight: 800,
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '5px'
+                                    gap: '6px',
+                                    boxShadow: '0 2px 8px rgba(5, 150, 105, 0.25)'
                                   }}
                                 >
-                                  <Phone size={13} />
-                                  Llamar a Sala
+                                  <Stethoscope size={15} />
+                                  <span>Atender</span>
                                 </button>
                               )
                             )}

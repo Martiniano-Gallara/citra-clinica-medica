@@ -799,9 +799,7 @@ export const AdminManagementHub = () => {
                       </div>
                     ) : (
                       doctorAppointments.slice(0, 6).map((a) => {
-                        const isConfirmado = a.status === 'confirmado';
                         const isAtendido = a.status === 'atendido';
-                        const isEnSala = a.status === 'en_sala';
 
                         return (
                           <div
@@ -838,11 +836,11 @@ export const AdminManagementHub = () => {
                                   borderRadius: '100px',
                                   fontSize: '0.72rem',
                                   fontWeight: 800,
-                                  background: isAtendido ? '#d1fae5' : isEnSala ? '#fef3c7' : isConfirmado ? '#dbeafe' : '#f1f5f9',
-                                  color: isAtendido ? '#065f46' : isEnSala ? '#92400e' : isConfirmado ? '#1e40af' : '#475569'
+                                  background: isAtendido ? '#d1fae5' : '#fef3c7',
+                                  color: isAtendido ? '#065f46' : '#92400e'
                                 }}
                               >
-                                {isAtendido ? 'Atendido' : isEnSala ? 'En Espera' : isConfirmado ? 'Confirmado' : a.status || 'Pendiente'}
+                                {isAtendido ? 'Atendido' : 'Por Atender'}
                               </span>
                             </div>
                           </div>
@@ -1322,9 +1320,7 @@ export const AdminManagementHub = () => {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                     {appointments.slice(0, 5).map((a) => {
-                      const isConfirmado = a.status === 'confirmado';
                       const isAtendido = a.status === 'atendido';
-                      const isEnSala = a.status === 'en_sala';
 
                       return (
                         <div
@@ -1379,12 +1375,11 @@ export const AdminManagementHub = () => {
                                 borderRadius: '100px',
                                 fontSize: '0.72rem',
                                 fontWeight: 800,
-                                textTransform: 'capitalize',
-                                background: isConfirmado ? '#d1fae5' : isAtendido ? '#fee2e2' : isEnSala ? '#fef3c7' : '#EBF3FD',
-                                color: isConfirmado ? '#065f46' : isAtendido ? '#991b1b' : isEnSala ? '#92400e' : '#002182'
+                                background: isAtendido ? '#d1fae5' : '#fef3c7',
+                                color: isAtendido ? '#065f46' : '#92400e'
                               }}
                             >
-                              {a.status === 'en_sala' ? 'En sala' : a.status}
+                              {isAtendido ? 'Atendido' : 'Por Atender'}
                             </span>
                           </div>
                         </div>
