@@ -12,7 +12,17 @@ import {
 } from 'lucide-react';
 
 export const ContactSection = () => {
-  const { addToast } = useClinic();
+  const { addToast, clinicInfo } = useClinic();
+
+  const addressFull = clinicInfo?.addressFull || clinicInfo?.address || 'Av. Carlos Pontin 556, Arroyito, Córdoba (CP 2434).';
+  const addressDetails = clinicInfo?.addressDetails || 'Fácil acceso y estacionamiento.';
+  const phoneFormatted = clinicInfo?.phoneFormatted || clinicInfo?.phone || '3576 450214';
+  const rawPhone = (clinicInfo?.phone || '03576450214').replace(/\D/g, '');
+  const phoneTel = rawPhone.startsWith('0') ? rawPhone : `0${rawPhone}`;
+  const instagram = clinicInfo?.instagram || 'citra.arroyito';
+  const instagramUrl = clinicInfo?.instagramUrl || `https://www.instagram.com/${instagram.replace('@', '')}`;
+  const schedule = clinicInfo?.schedule || 'Lunes a Viernes: 8 a 20 hs';
+  const scheduleHelp = clinicInfo?.scheduleHelp || '¡Estamos para ayudarte!';
 
   const [formData, setFormData] = useState({
     name: '',
@@ -127,8 +137,8 @@ export const ContactSection = () => {
                   Dirección y Acceso
                 </h4>
                 <div style={{ fontSize: '0.88rem', color: '#496386', lineHeight: 1.5 }}>
-                  Av. Carlos Pontin 556, Arroyito, Córdoba (CP 2434).<br />
-                  Fácil acceso y estacionamiento.
+                  {addressFull}<br />
+                  {addressDetails}
                 </div>
               </div>
             </div>
@@ -164,8 +174,8 @@ export const ContactSection = () => {
                   Central Telefónica de Turnos
                 </h4>
                 <div style={{ fontSize: '0.88rem', color: '#496386', lineHeight: 1.5 }}>
-                  <a href="tel:03576450214" style={{ color: '#076ABC', fontWeight: 800, textDecoration: 'none' }}>
-                    3576 450214
+                  <a href={`tel:${phoneTel}`} style={{ color: '#076ABC', fontWeight: 800, textDecoration: 'none' }}>
+                    {phoneFormatted}
                   </a><br />
                   Solicitá tu turno con nuestros especialistas.
                 </div>
@@ -203,10 +213,10 @@ export const ContactSection = () => {
                   Instagram Oficial
                 </h4>
                 <div style={{ fontSize: '0.88rem', color: '#496386', lineHeight: 1.5 }}>
-                  <a href="https://www.instagram.com/citra.arroyito" target="_blank" rel="noopener noreferrer" style={{ color: '#076ABC', fontWeight: 800, textDecoration: 'none' }}>
-                    @citra.arroyito
+                  <a href={instagramUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#076ABC', fontWeight: 800, textDecoration: 'none' }}>
+                    @{instagram.replace('@', '')}
                   </a><br />
-                  Nos enfocamos en tu recuperación y bienestar.
+                  {clinicInfo?.slogan || 'Nos enfocamos en tu recuperación y bienestar.'}
                 </div>
               </div>
             </div>
@@ -242,8 +252,8 @@ export const ContactSection = () => {
                   Horarios de Atención
                 </h4>
                 <div style={{ fontSize: '0.88rem', color: '#496386', lineHeight: 1.5 }}>
-                  Lunes a Viernes: 8 a 20 hs<br />
-                  <span style={{ color: '#076ABC', fontWeight: 700 }}>¡Estamos para ayudarte!</span>
+                  {schedule}<br />
+                  <span style={{ color: '#076ABC', fontWeight: 700 }}>{scheduleHelp}</span>
                 </div>
               </div>
             </div>

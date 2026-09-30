@@ -7,9 +7,6 @@ import {
 } from 'lucide-react';
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
-const WA_NUMBER = '543576450214';
-const WA_TEXT = encodeURIComponent('Hola CITRA, quisiera consultar por coberturas y obras sociales.');
-
 const PRIMARY_INSURANCES = [
   {
     id: 'hi-1',
@@ -49,7 +46,7 @@ const PRIMARY_INSURANCES = [
 ];
 
 export const InsurancesSection = () => {
-  const { setCurrentView } = useClinic();
+  const { setCurrentView, clinicInfo } = useClinic();
 
   const handleViewAll = () => {
     setCurrentView('insurances');
@@ -57,8 +54,11 @@ export const InsurancesSection = () => {
   };
 
   const handleWhatsApp = (insuranceName) => {
-    const text = encodeURIComponent(`Hola CITRA, quisiera consultar sobre cobertura de ${insuranceName}.`);
-    window.open(`https://wa.me/${WA_NUMBER}?text=${text}`, '_blank', 'noopener');
+    const rawWa = (clinicInfo?.whatsapp || '543576450214').replace(/\D/g, '');
+    const cleanWa = rawWa.startsWith('54') ? rawWa : `54${rawWa}`;
+    const clinicName = clinicInfo?.name || 'CITRA';
+    const text = encodeURIComponent(`Hola ${clinicName}, quisiera consultar sobre cobertura de ${insuranceName}.`);
+    window.open(`https://wa.me/${cleanWa}?text=${text}`, '_blank', 'noopener');
   };
 
   return (

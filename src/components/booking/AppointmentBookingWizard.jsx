@@ -42,6 +42,7 @@ export const AppointmentBookingWizard = () => {
     addAppointment,
     healthInsurances,
     clinicSchedule,
+    clinicInfo,
     authRole,
     authPatient,
     setCurrentView,
@@ -1250,7 +1251,7 @@ export const AppointmentBookingWizard = () => {
                       <div>
                         <div style={{ fontSize: '0.72rem', color: '#7994B8', fontWeight: 700 }}>Lugar de Atención:</div>
                         <div style={{ fontWeight: 700, color: '#475569' }}>
-                          Av. Carlos Pontin 556, Arroyito (Sede Central)
+                          {clinicInfo?.address || 'Av. Carlos Pontin 556, Arroyito (Sede Central)'}
                         </div>
                       </div>
                     </div>

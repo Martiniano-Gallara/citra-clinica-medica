@@ -19,10 +19,14 @@ const INSURANCE_LOGOS = {
 };
 
 export const InsurancesPage = () => {
-  const { healthInsurances } = useClinic();
+  const { healthInsurances, clinicInfo } = useClinic();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('todos');
   const [expandedFaq, setExpandedFaq] = useState(null);
+
+  const rawWa = (clinicInfo?.whatsapp || '543576450214').replace(/\D/g, '');
+  const cleanWa = rawWa.startsWith('54') ? rawWa : `54${rawWa}`;
+  const clinicName = clinicInfo?.name || 'CITRA';
 
   const getResolvedLogo = (hi) => {
     if (hi.logo && typeof hi.logo === 'string' && hi.logo.trim() !== '') return hi.logo;
@@ -369,7 +373,7 @@ export const InsurancesPage = () => {
 
                   {/* Botón único directo a WhatsApp */}
                   <a
-                    href={`https://wa.me/543576450214?text=${encodeURIComponent(`Hola CITRA, quisiera consultar por la cobertura de ${hi.name}.`)}`}
+                    href={`https://wa.me/${cleanWa}?text=${encodeURIComponent(`Hola ${clinicName}, quisiera consultar por la cobertura de ${hi.name}.`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{

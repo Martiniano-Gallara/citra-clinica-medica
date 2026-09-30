@@ -531,7 +531,8 @@ export const ClinicProvider = ({ children }) => {
           remoteSpecs,
           remoteRooms,
           remoteInsurances,
-          remoteConsents
+          remoteConsents,
+          remoteClinicInfo
         ] = await Promise.allSettled([
           dataService.fetchAppointments(),
           dataService.fetchPatients(),
@@ -545,10 +546,19 @@ export const ClinicProvider = ({ children }) => {
           dataService.fetchSpecialties(),
           dataService.fetchRooms(),
           dataService.fetchHealthInsurances(),
-          dataService.fetchConsentForms()
+          dataService.fetchConsentForms(),
+          dataService.fetchClinicInfo()
         ]);
 
         if (!isMounted) return;
+
+        if (remoteClinicInfo.status === 'fulfilled' && remoteClinicInfo.value && typeof remoteClinicInfo.value === 'object') {
+          setClinicInfo((prev) => {
+            const merged = { ...prev, ...remoteClinicInfo.value };
+            saveStorage('clinicInfo', merged);
+            return merged;
+          });
+        }
 
         if (remoteApps.status === 'fulfilled' && Array.isArray(remoteApps.value) && remoteApps.value.length > 0) {
           setAppointments((prev) => {
@@ -1871,6 +1881,62 @@ export const ClinicProvider = ({ children }) => {
     return { success: true };
   };
 
+  // --- CONFIGURACIÓN INSTITUCIONAL DE LA CLÍNICA (SAAS & WEB PÚBLICA) ---
+  const updateClinicInfo = async (updatedInfo) => {
+    try {
+      // Normalizar WhatsApp y URL si corresponde
+      let normalized = { ...updatedInfo };
+      if (updatedInfo.whatsapp) {
+        const rawWa = String(updatedInfo.whatsapp).replace(/\D/g, '');
+        const cleanWa = rawWa.startsWith('54') ? rawWa : `54${rawWa}`;
+        normalized.whatsapp = updatedInfo.whatsapp;
+        normalized.whatsappUrl = `https://wa.me/${cleanWa}`;
+      }
+      if (updatedInfo.instagram) {
+        const cleanIg = String(updatedInfo.instagram).replace(/[@/]/g, '').replace(/https?:.*instagram\.com/i, '').trim();
+        normalized.instagram = cleanIg;
+        normalized.instagramUrl = `https://www.instagram.com/${cleanIg}`;
+      }
+      if (updatedInfo.phone) {
+        const rawPhone = String(updatedInfo.phone).replace(/\D/g, '');
+        normalized.phoneFormatted = rawPhone.startsWith('0') ? rawPhone : `0${rawPhone}`;
+      }
+      if (updatedInfo.address && !updatedInfo.addressFull) {
+        normalized.addressFull = `${updatedInfo.address} (CP ${updatedInfo.postalCode || '2434'})`;
+      }
+
+      const merged = { ...clinicInfo, ...normalized };
+      setClinicInfo(merged);
+      saveStorage('clinicInfo', merged);
+
+      // Persistir de inmediato en PostgreSQL Supabase Cloud
+      if (dataService.isLive()) {
+        await dataService.saveClinicInfo(merged);
+      }
+
+      logAudit(
+        'UPDATE_CLINIC_INFO',
+        'Configuración Clínica',
+        '-',
+        `Parámetros institucionales actualizados: ${Object.keys(updatedInfo).join(', ')}`
+      );
+      addToast(
+        'Configuración Guardada',
+        'Los datos de la clínica han sido sincronizados con la base de datos y la web.',
+        'success'
+      );
+      return true;
+    } catch (err) {
+      console.error('Error al actualizar clinicInfo:', err);
+      addToast(
+        'Error al guardar',
+        'No se pudo persistir la configuración en la base de datos.',
+        'error'
+      );
+      return false;
+    }
+  };
+
   // Exportar Backup Cifrado AES-256
   const exportEncryptedBackup = (secretPassphrase) => {
     const fullDatabase = {
@@ -1938,6 +2004,7 @@ export const ClinicProvider = ({ children }) => {
       value={{
         clinicInfo,
         setClinicInfo,
+        updateClinicInfo,
         currentBranchId,
         setCurrentBranchId,
         currentBranch,

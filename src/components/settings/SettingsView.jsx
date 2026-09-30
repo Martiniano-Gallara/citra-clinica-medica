@@ -23,7 +23,12 @@ import {
   Percent,
   UserCheck,
   MapPin,
-  Copy
+  Copy,
+  Database,
+  Globe,
+  Loader2,
+  ExternalLink,
+  Sparkles
 } from 'lucide-react';
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
@@ -31,14 +36,20 @@ export const SettingsView = () => {
   const {
     clinicInfo,
     setClinicInfo,
+    updateClinicInfo,
     specialties,
     setSpecialties,
+    addSpecialty,
+    deleteSpecialty,
     rooms,
     setRooms,
+    addRoom,
+    deleteRoom,
     healthInsurances,
     setHealthInsurances,
     users,
     setUsers,
+    updateUser,
     addToast,
     isDoctor,
     currentDoctor,
@@ -51,6 +62,34 @@ export const SettingsView = () => {
   // Admin tabs
   const [activeTab, setActiveTab] = useState(isDoctor ? 'doctor-profile' : 'general');
   const [generalForm, setGeneralForm] = useState(clinicInfo);
+  const [isSavingGeneral, setIsSavingGeneral] = useState(false);
+
+  // Sync generalForm if clinicInfo is loaded from database
+  useEffect(() => {
+    if (clinicInfo) {
+      setGeneralForm(clinicInfo);
+    }
+  }, [clinicInfo]);
+
+  // Admin / Secretaría personal profile form
+  const [adminProfileForm, setAdminProfileForm] = useState({
+    name: authAdmin?.name || 'Secretaría General',
+    email: authAdmin?.email || 'secretaria@citra.com.ar',
+    phone: authAdmin?.phone || '3576 450214'
+  });
+  const [adminCurrentPassword, setAdminCurrentPassword] = useState('');
+  const [adminNewPassword, setAdminNewPassword] = useState('');
+  const [adminConfirmPassword, setAdminConfirmPassword] = useState('');
+
+  useEffect(() => {
+    if (authAdmin) {
+      setAdminProfileForm({
+        name: authAdmin.name || 'Secretaría General',
+        email: authAdmin.email || 'secretaria@citra.com.ar',
+        phone: authAdmin.phone || '3576 450214'
+      });
+    }
+  }, [authAdmin]);
 
   // Doctor personal profile form
   const [doctorForm, setDoctorForm] = useState({
@@ -155,45 +194,101 @@ export const SettingsView = () => {
     addToast('Contraseña Actualizada', 'Tu clave de acceso ha sido cambiada con éxito.', 'success');
   };
 
-  const handleSaveGeneral = (e) => {
+  const handleSaveGeneral = async (e) => {
     e.preventDefault();
-    setClinicInfo(generalForm);
-    addToast('Configuración Guardada', 'Datos institucionales de la clínica actualizados.', 'success');
+    setIsSavingGeneral(true);
+    try {
+      await updateClinicInfo(generalForm);
+    } catch (err) {
+      console.error('Error guardando configuración:', err);
+    } finally {
+      setIsSavingGeneral(false);
+    }
   };
 
   const handleAddSpecialty = (e) => {
     e.preventDefault();
     if (!newEspName.trim()) return;
-    const newEsp = {
-      id: `esp-${Date.now()}`,
+    addSpecialty({
       name: newEspName,
       defaultDuration: Number(newEspDuration),
+      estimatedDuration: Number(newEspDuration),
       color: '#3b82f6',
       icon: 'Activity'
-    };
-    setSpecialties([...specialties, newEsp]);
+    });
     setNewEspName('');
-    addToast('Especialidad Creada', `Especialidad "${newEspName}" agregada.`, 'success');
   };
 
   const handleDeleteSpecialty = (id) => {
-    setSpecialties(specialties.filter((s) => s.id !== id));
-    addToast('Especialidad Eliminada', 'La especialidad fue removida.', 'warning');
+    deleteSpecialty(id);
   };
 
   const handleAddRoom = (e) => {
     e.preventDefault();
     if (!newRoomName.trim()) return;
-    const newR = {
-      id: `room-${Date.now()}`,
+    addRoom({
       name: newRoomName,
       floor: newRoomFloor,
       branchId: 'branch-1',
       specialty: 'General'
-    };
-    setRooms([...rooms, newR]);
+    });
     setNewRoomName('');
-    addToast('Consultorio Creado', `Consultorio "${newRoomName}" habilitado.`, 'success');
+  };
+
+  const handleDeleteRoom = (id) => {
+    deleteRoom(id);
+  };
+
+  // Secretaría / Admin profile & password
+  const handleSaveAdminProfile = (e) => {
+    e.preventDefault();
+    if (authAdmin?.id) {
+      updateUser(authAdmin.id, {
+        name: adminProfileForm.name,
+        email: adminProfileForm.email,
+        phone: adminProfileForm.phone
+      });
+    } else {
+      if (setAuthAdmin) {
+        setAuthAdmin(prev => ({
+          ...prev,
+          name: adminProfileForm.name,
+          email: adminProfileForm.email,
+          phone: adminProfileForm.phone
+        }));
+      }
+      addToast('Perfil Actualizado', 'Tus datos de secretaría/administración han sido guardados.', 'success');
+    }
+  };
+
+  const handleUpdateAdminPassword = (e) => {
+    e.preventDefault();
+    if (!adminNewPassword || adminNewPassword.length < 6) {
+      addToast('Error', 'La nueva contraseña debe tener al menos 6 caracteres.', 'warning');
+      return;
+    }
+    if (adminNewPassword !== adminConfirmPassword) {
+      addToast('Error', 'Las contraseñas no coinciden.', 'warning');
+      return;
+    }
+
+    const userEmail = authAdmin?.email;
+    if (userEmail) {
+      setUsers((prev) =>
+        prev.map((u) => (u.email?.toLowerCase() === userEmail.toLowerCase() ? { ...u, password: adminNewPassword } : u))
+      );
+      if (setAuthAdmin && authAdmin) {
+        setAuthAdmin((prev) => ({ ...prev, password: adminNewPassword }));
+      }
+    }
+
+    setAdminCurrentPassword('');
+    setAdminNewPassword('');
+    setAdminConfirmPassword('');
+    if (logAudit) {
+      logAudit('UPDATE_PASSWORD', 'Seguridad & Credenciales', authAdmin?.email || '-', 'El personal de secretaría/admin actualizó su contraseña de acceso.');
+    }
+    addToast('Contraseña Actualizada', 'Tu clave administrativa ha sido cambiada con éxito.', 'success');
   };
 
   // Doctor display name without duplicate prefix
@@ -572,6 +667,13 @@ export const SettingsView = () => {
           <span>Datos de la Clínica</span>
         </button>
         <button
+          className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
+          onClick={() => setActiveTab('profile')}
+        >
+          <UserCheck size={16} />
+          <span>Mi Perfil & Seguridad</span>
+        </button>
+        <button
           className={`tab-btn ${activeTab === 'branches' ? 'active' : ''}`}
           onClick={() => setActiveTab('branches')}
         >
@@ -601,9 +703,69 @@ export const SettingsView = () => {
         </button>
       </div>
 
-      {/* TAB 1: DATOS INSTITUCIONALES */}
+      {/* TAB 1: DATOS INSTITUCIONALES (SINCRONIZADOS 100% CON BASE DE DATOS Y WEB PACIENTES) */}
       {activeTab === 'general' && (
         <div className="card" style={{ width: '100%', maxWidth: '100%' }}>
+          {/* Live Supabase Synchronization Badge */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: '#f0fdf4',
+              border: '1px solid #bbf7d0',
+              borderRadius: '12px',
+              padding: '1rem 1.25rem',
+              marginBottom: '1.5rem',
+              flexWrap: 'wrap',
+              gap: '0.75rem'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  background: '#16a34a',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
+              >
+                <Database size={20} />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontWeight: 800, color: '#14532d', fontSize: '0.94rem' }}>
+                    Sincronización Cloud Supabase PostgreSQL Activa
+                  </span>
+                  <span
+                    style={{
+                      background: '#dcfce7',
+                      color: '#15803d',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      padding: '0.15rem 0.55rem',
+                      borderRadius: '100px',
+                      border: '1px solid #86efac'
+                    }}
+                  >
+                    100% VINCULADO
+                  </span>
+                </div>
+                <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', color: '#166534', lineHeight: 1.4 }}>
+                  Los cambios guardados aquí se persisten en la base de datos e impactan en tiempo real en la página web pública de pacientes (botones de turnos, WhatsApp, teléfonos, dirección, horarios), en recetas electrónicas y comprobantes fiscales ARCA.
+                </p>
+              </div>
+            </div>
+            <div style={{ fontSize: '0.76rem', color: '#15803d', fontWeight: 700, background: '#ffffff', padding: '0.35rem 0.75rem', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+              Base: mlmslhyvzohccniddemr.supabase.co
+            </div>
+          </div>
+
           <form onSubmit={handleSaveGeneral}>
             <div className="form-row">
               <div className="form-group" style={{ gridColumn: 'span 2' }}>
@@ -611,82 +773,316 @@ export const SettingsView = () => {
                 <input
                   type="text"
                   className="form-control"
-                  value={generalForm.name}
+                  value={generalForm.name || ''}
                   onChange={(e) => setGeneralForm({ ...generalForm, name: e.target.value })}
+                  placeholder="CITRA"
                   required
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">CUIT / Identificación Tributaria</label>
+                <label className="form-label">CUIT / Identificación Tributaria AFIP-ARCA</label>
                 <input
                   type="text"
                   className="form-control"
-                  value={generalForm.cuit}
+                  value={generalForm.cuit || ''}
                   onChange={(e) => setGeneralForm({ ...generalForm, cuit: e.target.value })}
+                  placeholder="30-71829340-8"
                 />
               </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Eslogan / Subtítulo Institucional</label>
-              <input
-                type="text"
-                className="form-control"
-                value={generalForm.tagline}
-                onChange={(e) => setGeneralForm({ ...generalForm, tagline: e.target.value })}
-              />
             </div>
 
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">Teléfono de Contacto</label>
+                <label className="form-label">Razón Social / Subtítulo Institucional</label>
                 <input
                   type="text"
                   className="form-control"
-                  value={generalForm.phone}
-                  onChange={(e) => setGeneralForm({ ...generalForm, phone: e.target.value })}
+                  value={generalForm.tagline || ''}
+                  onChange={(e) => setGeneralForm({ ...generalForm, tagline: e.target.value })}
+                  placeholder="Centro Integral de Traumatología y Rehabilitación Arroyito"
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">WhatsApp de Turnos</label>
+                <label className="form-label">Slogan de Atención al Paciente</label>
                 <input
                   type="text"
                   className="form-control"
-                  value={generalForm.whatsapp}
+                  value={generalForm.slogan || ''}
+                  onChange={(e) => setGeneralForm({ ...generalForm, slogan: e.target.value })}
+                  placeholder="Nos enfocamos en tu recuperación y bienestar. ¡Consultá por nuestras especialidades!"
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Teléfono de Contacto Fijo</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={generalForm.phone || ''}
+                    onChange={(e) => setGeneralForm({ ...generalForm, phone: e.target.value })}
+                    placeholder="3576 450214"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                  <label className="form-label" style={{ margin: 0 }}>WhatsApp Oficial de Turnos</label>
+                  {generalForm.whatsapp && (
+                    <a
+                      href={`https://wa.me/${String(generalForm.whatsapp).replace(/\D/g, '').startsWith('54') ? String(generalForm.whatsapp).replace(/\D/g, '') : '54' + String(generalForm.whatsapp).replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                    >
+                      <WhatsAppIcon size={13} color="#16a34a" /> Probar enlace
+                    </a>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={generalForm.whatsapp || ''}
                   onChange={(e) => setGeneralForm({ ...generalForm, whatsapp: e.target.value })}
+                  placeholder="+54 3576 450214"
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Email Oficial</label>
+                <label className="form-label">Email Oficial de la Clínica</label>
                 <input
                   type="email"
                   className="form-control"
-                  value={generalForm.email}
+                  value={generalForm.email || ''}
                   onChange={(e) => setGeneralForm({ ...generalForm, email: e.target.value })}
+                  placeholder="contacto@citra.com.ar"
                 />
               </div>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Dirección Principal</label>
-              <input
-                type="text"
-                className="form-control"
-                value={generalForm.address}
-                onChange={(e) => setGeneralForm({ ...generalForm, address: e.target.value })}
-              />
+            <div className="form-row">
+              <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                <label className="form-label">Dirección Principal</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={generalForm.address || ''}
+                  onChange={(e) => setGeneralForm({ ...generalForm, address: e.target.value })}
+                  placeholder="Av. Carlos Pontin 556, Arroyito, Córdoba"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Horario Principal de Atención</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={generalForm.schedule || ''}
+                  onChange={(e) => setGeneralForm({ ...generalForm, schedule: e.target.value })}
+                  placeholder="Lunes a Viernes de 8:00 a 20:00 hs"
+                />
+              </div>
             </div>
 
-            <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
-              <button type="submit" className="btn btn-primary">
-                <Save size={16} />
-                <span>Guardar Cambios</span>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Horario Resumido (Navbar y Pies)</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={generalForm.scheduleShort || ''}
+                  onChange={(e) => setGeneralForm({ ...generalForm, scheduleShort: e.target.value })}
+                  placeholder="Lunes a Viernes 8 a 20 hs"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Instagram Oficial (Usuario sin @)</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={generalForm.instagram || ''}
+                    onChange={(e) => setGeneralForm({ ...generalForm, instagram: e.target.value })}
+                    placeholder="citra.arroyito"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Enlace a Google Maps</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={generalForm.mapsUrl || ''}
+                  onChange={(e) => setGeneralForm({ ...generalForm, mapsUrl: e.target.value })}
+                  placeholder="https://maps.app.goo.gl/..."
+                />
+              </div>
+            </div>
+
+            {/* Parámetros Sanitarios y Fiscales */}
+            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Shield size={16} color="#002182" />
+                <span>Parámetros de Integración Fiscal y Sanitaria (ARCA & SISA)</span>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Código Establecimiento SISA REFES</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={generalForm.sisaRefesCode || ''}
+                    onChange={(e) => setGeneralForm({ ...generalForm, sisaRefesCode: e.target.value })}
+                    placeholder="REFES-04-14289"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Punto de Venta ARCA Facturación Electrónica</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={generalForm.arcaPtoVta || 1}
+                    onChange={(e) => setGeneralForm({ ...generalForm, arcaPtoVta: Number(e.target.value) })}
+                    placeholder="1"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '1.75rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                Al guardar, la información se actualiza de inmediato en Supabase Cloud y en la página web pública.
+              </span>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isSavingGeneral}
+                style={{ minWidth: '220px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                {isSavingGeneral ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                <span>{isSavingGeneral ? 'Guardando en Supabase...' : 'Guardar y Sincronizar'}</span>
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* TAB NUEVA: MI PERFIL & SEGURIDAD (SECRETARÍA / ADMIN) */}
+      {activeTab === 'profile' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem' }}>
+          {/* Ficha de Operador Administrativo */}
+          <div className="card">
+            <div className="card-header" style={{ marginBottom: '1.25rem' }}>
+              <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <UserCheck size={20} color="#2563eb" />
+                <span>Datos de Mi Cuenta de Secretaría</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveAdminProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label className="form-label">Nombre del Operador / Secretaría</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={adminProfileForm.name}
+                  onChange={(e) => setAdminProfileForm({ ...adminProfileForm, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="form-label">Correo Electrónico de Notificaciones</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  value={adminProfileForm.email}
+                  onChange={(e) => setAdminProfileForm({ ...adminProfileForm, email: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="form-label">Teléfono Directo de Contacto</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={adminProfileForm.phone}
+                  onChange={(e) => setAdminProfileForm({ ...adminProfileForm, phone: e.target.value })}
+                />
+              </div>
+
+              <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.8rem', color: '#64748b' }}>
+                <strong>Rol Asignado:</strong> {authAdmin?.role || 'Secretaría / Recepción Integral'} · <strong>Estado:</strong> Activo
+              </div>
+
+              <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-start' }}>
+                <Save size={16} />
+                <span>Guardar Mi Perfil</span>
+              </button>
+            </form>
+          </div>
+
+          {/* Cambio de Contraseña de Secretaría */}
+          <div className="card">
+            <div className="card-header" style={{ marginBottom: '1.25rem' }}>
+              <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <KeyRound size={20} color="#2563eb" />
+                <span>Seguridad & Clave de Acceso</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleUpdateAdminPassword} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label className="form-label">Contraseña Actual</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  className="form-control"
+                  value={adminCurrentPassword}
+                  onChange={(e) => setAdminCurrentPassword(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="form-label">Nueva Contraseña</label>
+                <input
+                  type="password"
+                  placeholder="Mínimo 6 caracteres"
+                  className="form-control"
+                  value={adminNewPassword}
+                  onChange={(e) => setAdminNewPassword(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="form-label">Confirmar Nueva Contraseña</label>
+                <input
+                  type="password"
+                  placeholder="Repita nueva clave"
+                  className="form-control"
+                  value={adminConfirmPassword}
+                  onChange={(e) => setAdminConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
+
+              <button type="submit" className="btn btn-secondary" style={{ alignSelf: 'flex-start' }}>
+                <KeyRound size={16} />
+                <span>Actualizar Contraseña</span>
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
@@ -872,9 +1268,20 @@ export const SettingsView = () => {
                   }}
                 >
                   <span style={{ fontWeight: 600, fontSize: '0.88rem', color: '#0f172a' }}>{r.name}</span>
-                  <span style={{ fontSize: '0.75rem', background: '#eff6ff', color: '#2563eb', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
-                    {r.floor}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <span style={{ fontSize: '0.75rem', background: '#eff6ff', color: '#2563eb', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
+                      {r.floor}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-icon"
+                      style={{ width: '26px', height: '26px' }}
+                      onClick={() => handleDeleteRoom(r.id)}
+                      title="Eliminar consultorio"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

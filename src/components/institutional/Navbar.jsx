@@ -20,7 +20,8 @@ export const Navbar = () => {
   const {
     currentView,
     setCurrentView,
-    authRole
+    authRole,
+    clinicInfo
   } = useClinic();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -34,7 +35,6 @@ export const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Prevent background body scrolling when mobile drawer is open
   useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -77,10 +77,19 @@ export const Navbar = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const rawWa = (clinicInfo?.whatsapp || '543576450214').replace(/\D/g, '');
+  const cleanWa = rawWa.startsWith('54') ? rawWa : `54${rawWa}`;
+  const phoneFijo = (clinicInfo?.phone || '3576450214').replace(/\D/g, '');
+  const phoneDisplay = clinicInfo?.phoneFormatted || clinicInfo?.phone || '3576 450214';
+  const addressDisplay = clinicInfo?.addressFull || clinicInfo?.address || 'Av. Carlos Pontin 556, Arroyito (CP 2434)';
+  const scheduleDisplay = clinicInfo?.scheduleShort || clinicInfo?.schedule || 'Lunes a Viernes: 8 a 20 hs';
+  const mapsUrl = clinicInfo?.mapsUrl || 'https://maps.app.goo.gl/FJhLndjvgSAWb2Si6';
+  const clinicName = clinicInfo?.name || 'CITRA';
+
   const handleBookingClick = (customText) => {
     setMobileMenuOpen(false);
-    const msg = customText || 'Hola CITRA, quisiera solicitar un turno.';
-    window.open(`https://wa.me/543576450214?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
+    const msg = customText || `Hola ${clinicName}, quisiera solicitar un turno.`;
+    window.open(`https://wa.me/${cleanWa}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
   };
 
   const handleAdminAccessClick = () => {
@@ -92,10 +101,6 @@ export const Navbar = () => {
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  const phoneFijo = '3576450214';
-  const mapsUrl = 'https://maps.app.goo.gl/FJhLndjvgSAWb2Si6';
-  const whatsappUrl = `https://wa.me/543576450214?text=${encodeURIComponent('Hola CITRA, quisiera consultar por turnos y especialidades.')}`;
 
   return (
     <>
@@ -129,11 +134,11 @@ export const Navbar = () => {
             onMouseLeave={(e) => { e.currentTarget.style.color = '#D2E3FC'; }}
           >
             <MapPin size={13} color="#257CE6" />
-            Av. Carlos Pontin 556, Arroyito (CP 2434)
+            {addressDisplay}
           </a>
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             <Clock size={13} color="#257CE6" />
-            Lunes a Viernes: 8 a 20 hs
+            {scheduleDisplay}
           </span>
           <a
             href={`tel:0${phoneFijo}`}
@@ -147,7 +152,7 @@ export const Navbar = () => {
             }}
           >
             <Phone size={13} color="#257CE6" />
-            3576 450214
+            {phoneDisplay}
           </a>
         </div>
 

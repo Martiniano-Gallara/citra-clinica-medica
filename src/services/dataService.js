@@ -678,6 +678,63 @@ export const dataService = {
     return null;
   },
 
+  // --- INFORMACIÓN INSTITUCIONAL DE LA CLÍNICA & CONFIGURACIÓN SAAS ---
+  async fetchClinicInfo() {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('audit_logs')
+          .select('*')
+          .eq('action', 'UPDATE_CLINIC_INFO')
+          .order('timestamp', { ascending: false })
+          .limit(1);
+        if (error) {
+          console.warn('Could not fetch clinic info from audit_logs:', error);
+          return null;
+        }
+        if (data && data.length > 0 && data[0].details) {
+          try {
+            return JSON.parse(data[0].details);
+          } catch (e) {
+            console.warn('Failed to parse clinic info from details JSON:', e);
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase fetchClinicInfo notice:', err);
+      }
+    }
+    return null;
+  },
+
+  async saveClinicInfo(clinicInfo) {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const payload = {
+          id: `audit-info-${Date.now()}`,
+          user_id: 'admin-settings',
+          user_name: 'Administración CITRA',
+          user_role: 'Secretaría / Administración',
+          action: 'UPDATE_CLINIC_INFO',
+          resource: 'Configuración Clínica',
+          target_dni: '-',
+          details: JSON.stringify(clinicInfo),
+          ip_address: typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1',
+          event_hash: generateSHA256Hash(JSON.stringify(clinicInfo))
+        };
+        const { error } = await supabase.from('audit_logs').insert([payload]);
+        if (error) {
+          console.warn('Could not save clinic info to Supabase:', error);
+          return false;
+        }
+        return true;
+      } catch (err) {
+        console.warn('Supabase saveClinicInfo notice:', err);
+        return false;
+      }
+    }
+    return false;
+  },
+
   // --- ESTUDIOS RADIOLÓGICOS E IMÁGENES (IMAGING STUDIES) ---
   async fetchImagingStudies(patientId = null, doctorId = null) {
     if (isSupabaseConfigured && supabase) {

@@ -10,7 +10,7 @@ import {
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
 export const DoctorsPage = () => {
-  const { doctors } = useClinic();
+  const { doctors, clinicInfo } = useClinic();
   const [selectedSpecialty, setSelectedSpecialty] = useState('todos');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -51,8 +51,10 @@ export const DoctorsPage = () => {
   });
 
   const handleBook = (doc) => {
-    const text = `Hola CITRA, quisiera solicitar un turno con ${doc.name} (${doc.specialty || 'Especialista'}).`;
-    window.open(`https://wa.me/543576450214?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+    const rawWa = (clinicInfo?.whatsapp || '543576450214').replace(/\D/g, '');
+    const cleanWa = rawWa.startsWith('54') ? rawWa : `54${rawWa}`;
+    const text = `Hola ${clinicInfo?.name || 'CITRA'}, quisiera solicitar un turno con ${doc.name} (${doc.specialty || 'Especialista'}).`;
+    window.open(`https://wa.me/${cleanWa}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
 
   return (

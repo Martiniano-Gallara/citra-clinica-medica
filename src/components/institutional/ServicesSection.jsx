@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useClinic } from '../../context/ClinicContext';
 import {
   Bone,
   Brain,
@@ -17,6 +18,7 @@ import {
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
 export const ServicesSection = () => {
+  const { clinicInfo } = useClinic();
   const categories = [
     {
       id: 'medicas',
@@ -76,8 +78,10 @@ export const ServicesSection = () => {
   };
 
   const handleBook = (serviceName) => {
-    const text = `Hola CITRA, quisiera solicitar un turno para ${serviceName}.`;
-    window.open(`https://wa.me/543576450214?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+    const rawWa = (clinicInfo?.whatsapp || '543576450214').replace(/\D/g, '');
+    const cleanWa = rawWa.startsWith('54') ? rawWa : `54${rawWa}`;
+    const text = `Hola ${clinicInfo?.name || 'CITRA'}, quisiera solicitar un turno para ${serviceName}.`;
+    window.open(`https://wa.me/${cleanWa}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
 
   return (

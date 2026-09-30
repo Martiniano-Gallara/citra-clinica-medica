@@ -26,12 +26,18 @@ const InstagramIcon = ({ size = 20, color = '#ffffff', ...props }) => (
 );
 
 export const HomeDirectContact = () => {
-  const { setCurrentView } = useClinic();
+  const { setCurrentView, clinicInfo } = useClinic();
 
-  const phoneFijo = '3576450214';
-  const mapsUrl = 'https://maps.app.goo.gl/FJhLndjvgSAWb2Si6';
-  const instagramUrl = 'https://www.instagram.com/citra.arroyito';
-  const whatsappUrl = `https://wa.me/543576450214?text=${encodeURIComponent('Hola CITRA, quisiera consultar por turnos y especialidades.')}`;
+  const rawWa = (clinicInfo?.whatsapp || '543576450214').replace(/\D/g, '');
+  const cleanWa = rawWa.startsWith('54') ? rawWa : `54${rawWa}`;
+  const phoneDisplay = clinicInfo?.phoneFormatted || clinicInfo?.phone || '3576 450214';
+  const addressDisplay = clinicInfo?.address || 'Av. Carlos Pontin 556';
+  const scheduleDisplay = clinicInfo?.scheduleShort || clinicInfo?.schedule || 'Lunes a Viernes 8 a 20 hs';
+  const mapsUrl = clinicInfo?.mapsUrl || 'https://maps.app.goo.gl/FJhLndjvgSAWb2Si6';
+  const instagram = clinicInfo?.instagram || 'citra.arroyito';
+  const instagramUrl = clinicInfo?.instagramUrl || `https://www.instagram.com/${instagram.replace('@', '')}`;
+  const clinicName = clinicInfo?.name || 'CITRA';
+  const whatsappUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(`Hola ${clinicName}, quisiera consultar por turnos y especialidades.`)}`;
 
   return (
     <section
@@ -140,7 +146,7 @@ export const HomeDirectContact = () => {
                 Ubicación
               </div>
               <div style={{ fontSize: '0.74rem', color: '#496386', lineHeight: 1.25 }}>
-                Av. Carlos Pontin 556
+                {addressDisplay}
               </div>
             </div>
           </a>
@@ -182,7 +188,7 @@ export const HomeDirectContact = () => {
                 Horarios
               </div>
               <div style={{ fontSize: '0.74rem', color: '#496386', lineHeight: 1.25 }}>
-                Lunes a Viernes 8 a 20 hs
+                {scheduleDisplay}
               </div>
             </div>
           </div>
@@ -238,7 +244,7 @@ export const HomeDirectContact = () => {
                 WhatsApp
               </div>
               <div style={{ fontSize: '0.74rem', color: '#128C7E', fontWeight: 700 }}>
-                3576 450214
+                {phoneDisplay}
               </div>
             </div>
           </a>
@@ -294,7 +300,7 @@ export const HomeDirectContact = () => {
                 Instagram
               </div>
               <div style={{ fontSize: '0.74rem', color: '#E1306C', fontWeight: 700 }}>
-                @citra.arroyito
+                @{instagram.replace('@', '')}
               </div>
             </div>
           </a>
