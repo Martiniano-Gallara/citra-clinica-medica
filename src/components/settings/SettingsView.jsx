@@ -361,27 +361,6 @@ export const SettingsView = () => {
                   />
                 </div>
 
-                {/* Arancel Consulta Base */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
-                    Arancel Consulta Base Privada ($)
-                  </label>
-                  <input
-                    type="number"
-                    value={doctorForm.consultationPrice}
-                    onChange={(e) => setDoctorForm({ ...doctorForm, consultationPrice: Number(e.target.value) })}
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.85rem',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.86rem',
-                      outline: 'none',
-                      background: '#f8fafc',
-                      color: '#0f172a'
-                    }}
-                  />
-                </div>
               </div>
 
               {/* Bio / Perfil Clínico */}

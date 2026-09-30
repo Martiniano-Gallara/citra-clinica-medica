@@ -11,7 +11,8 @@ import {
   Star,
   CheckCircle2,
   X,
-  User
+  User,
+  DollarSign
 } from 'lucide-react';
 
 export const DoctorsManager = () => {
@@ -217,6 +218,10 @@ export const DoctorsManager = () => {
                   <Clock size={14} color="#076ABC" />
                   <span>{doc.scheduleStart || '08:30'} a {doc.scheduleEnd || '17:00'} hs ({doc.slotDuration || 30} min)</span>
                 </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <DollarSign size={14} color="#076ABC" />
+                  <span>Arancel Privado: <strong>${(doc.priceConsultation || 25000).toLocaleString('es-AR')}</strong></span>
+                </div>
                 <div style={{ fontSize: '0.75rem', color: '#076ABC', marginTop: '2px', fontWeight: 700 }}>
                   Horario Web: {doc.scheduleDisplay || (doc.workingDays ? doc.workingDays.join(', ') : 'Consultar en secretaría')}
                 </div>
@@ -337,19 +342,6 @@ export const DoctorsManager = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                    Matrícula (MN / MP)
-                  </label>
-                  <input
-                    type="text"
-                    value={license}
-                    onChange={(e) => setLicense(e.target.value)}
-                    placeholder="MN 124991 / MP 39810"
-                    style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
                     Consultorio Asignado
                   </label>
                   <input
@@ -357,6 +349,19 @@ export const DoctorsManager = () => {
                     value={roomName}
                     onChange={(e) => setRoomName(e.target.value)}
                     placeholder="Consultorio 204"
+                    style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                    Arancel Consulta Privada ($)
+                  </label>
+                  <input
+                    type="number"
+                    value={priceConsultation}
+                    onChange={(e) => setPriceConsultation(Number(e.target.value))}
+                    placeholder="25000"
                     style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none' }}
                   />
                 </div>
