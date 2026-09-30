@@ -14,7 +14,8 @@ import {
   X,
   CheckCircle2,
   Activity,
-  Clock
+  Clock,
+  Users
 } from 'lucide-react';
 
 export const AdminLoginView = () => {
@@ -829,6 +830,96 @@ export const AdminLoginView = () => {
                 : 'Ingresar al Panel de Gestión'}
             </button>
           </form>
+
+          {/* Acceso Rápido de Demostración */}
+          <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid #e2e8f0' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '0.6rem', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Acceso Rápido de Prueba (Demo)
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('admin@citra.com.ar');
+                  setPassword('citra2026');
+                  setErrorMsg('');
+                }}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  fontSize: '0.78rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  color: '#1e293b',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                onMouseLeave={(e) => e.currentTarget.style.background = '#f8fafc'}
+              >
+                <span style={{ fontWeight: 700 }}>Superadmin (Dirección)</span>
+                <span style={{ color: '#076abc', fontSize: '0.72rem' }}>admin@citra.com.ar</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('recepcion@citra.com.ar');
+                  setPassword('citra2026');
+                  setErrorMsg('');
+                }}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  fontSize: '0.78rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  color: '#1e293b',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                onMouseLeave={(e) => e.currentTarget.style.background = '#f8fafc'}
+              >
+                <span style={{ fontWeight: 700 }}>Recepción / Mesa de Entrada</span>
+                <span style={{ color: '#076abc', fontSize: '0.72rem' }}>recepcion@citra.com.ar</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('dr.blanco@citra.com.ar');
+                  setPassword('citra2026');
+                  setErrorMsg('');
+                }}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  fontSize: '0.78rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  color: '#1e293b',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                onMouseLeave={(e) => e.currentTarget.style.background = '#f8fafc'}
+              >
+                <span style={{ fontWeight: 700 }}>Dr. Blanco (Traumatología)</span>
+                <span style={{ color: '#076abc', fontSize: '0.72rem' }}>dr.blanco@citra.com.ar</span>
+              </button>
+            </div>
+            <div style={{ textAlign: 'center', marginTop: '0.45rem', fontSize: '0.7rem', color: '#94a3b8' }}>
+              Contraseña predeterminada: <strong style={{ color: '#475569' }}>citra2026</strong>
+            </div>
+          </div>
 
         </div>
       </div>
