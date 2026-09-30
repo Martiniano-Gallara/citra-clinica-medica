@@ -258,11 +258,11 @@ export const SettingsView = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Stethoscope size={18} color="#002182" />
                 <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  Datos Médicos & Matrículas Habilitantes
+                  Datos del Perfil Profesional
                 </h3>
               </div>
               <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '3px 0 0' }}>
-                Información oficial que se imprime en recetas electrónicas, indicaciones y constancias de atención.
+                Información oficial del profesional para contacto, especialidad y atención.
               </p>
             </div>
 
@@ -314,50 +314,6 @@ export const SettingsView = () => {
                   />
                 </div>
 
-                {/* Matrículas */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
-                    Matrículas (MP / MN)
-                  </label>
-                  <input
-                    type="text"
-                    value={doctorForm.license}
-                    onChange={(e) => setDoctorForm({ ...doctorForm, license: e.target.value })}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.85rem',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.86rem',
-                      outline: 'none',
-                      background: '#f8fafc',
-                      color: '#0f172a'
-                    }}
-                  />
-                </div>
-
-                {/* SISA / REFEPS */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
-                    Registro Nacional SISA / REFEPS
-                  </label>
-                  <input
-                    type="text"
-                    value={doctorForm.sisaRefeps}
-                    onChange={(e) => setDoctorForm({ ...doctorForm, sisaRefeps: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.85rem',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.86rem',
-                      outline: 'none',
-                      background: '#f8fafc',
-                      color: '#0f172a'
-                    }}
-                  />
-                </div>
 
                 {/* Email */}
                 <div>
