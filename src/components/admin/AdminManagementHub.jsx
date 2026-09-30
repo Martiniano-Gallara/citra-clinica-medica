@@ -747,26 +747,6 @@ export const AdminManagementHub = () => {
 
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                   <button
-                    onClick={() => setActiveTab('appointments')}
-                    style={{
-                      background: '#ffffff',
-                      color: '#002182',
-                      border: 'none',
-                      padding: '0.75rem 1.15rem',
-                      borderRadius: '12px',
-                      fontSize: '0.84rem',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                    }}
-                  >
-                    <CalendarCheck size={16} color="#076ABC" />
-                    <span>Mis Turnos</span>
-                  </button>
-                  <button
                     onClick={() => setActiveTab('prescriptions')}
                     style={{
                       background: 'rgba(255, 255, 255, 0.18)',
