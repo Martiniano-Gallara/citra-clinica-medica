@@ -296,8 +296,7 @@ export const SettingsView = () => {
                   <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
                     Especialidad Principal
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={doctorForm.specialty}
                     onChange={(e) => setDoctorForm({ ...doctorForm, specialty: e.target.value })}
                     required
@@ -309,9 +308,20 @@ export const SettingsView = () => {
                       fontSize: '0.86rem',
                       outline: 'none',
                       background: '#f8fafc',
-                      color: '#0f172a'
+                      color: '#0f172a',
+                      cursor: 'pointer'
                     }}
-                  />
+                  >
+                    <option value="">Seleccione una especialidad...</option>
+                    {doctorForm.specialty && !specialties.some((s) => s.name === doctorForm.specialty) && (
+                      <option value={doctorForm.specialty}>{doctorForm.specialty}</option>
+                    )}
+                    {specialties.map((s) => (
+                      <option key={s.id} value={s.name}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
 
