@@ -741,13 +741,13 @@ export const AdminManagementHub = () => {
                     Bienvenido, {doctorAdminName}
                   </h2>
                   <p style={{ margin: 0, fontSize: '0.88rem', color: '#D2E3FC', maxWidth: '650px', lineHeight: 1.5 }}>
-                    Tu panel muestra exclusivamente tus citas, tus pacientes, tus evoluciones médicas y la gestión personalizada de tus días y horarios de atención.
+                    Tu panel muestra exclusivamente tus citas, tus pacientes, tus evoluciones médicas y la atención clínica integral.
                   </p>
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                   <button
-                    onClick={() => setActiveTab('schedules')}
+                    onClick={() => setActiveTab('appointments')}
                     style={{
                       background: '#ffffff',
                       color: '#002182',
@@ -763,8 +763,8 @@ export const AdminManagementHub = () => {
                       boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                     }}
                   >
-                    <Clock size={16} color="#076ABC" />
-                    <span>Mis Horarios</span>
+                    <CalendarCheck size={16} color="#076ABC" />
+                    <span>Mis Turnos</span>
                   </button>
                   <button
                     onClick={() => setActiveTab('prescriptions')}
@@ -788,163 +788,9 @@ export const AdminManagementHub = () => {
                 </div>
               </div>
 
-              {/* Atajos Rápidos del Doctor y Próximos Turnos */}
-              <div className="admin-shortcuts-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.75rem', marginBottom: '2rem' }}>
-                {/* Left: Mis Atajos Clínicos */}
-                <div
-                  style={{
-                    background: '#ffffff',
-                    borderRadius: '18px',
-                    border: '1.5px solid #D2E3FC',
-                    padding: '1.75rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
-                  }}
-                >
-                  <h3 style={{ margin: '0 0 1.25rem', fontSize: '1.15rem', fontWeight: 800, color: '#002182' }}>
-                    Mis Atajos Rápidos de Atención
-                  </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    <button
-                      onClick={() => setActiveTab('appointments')}
-                      style={{
-                        background: '#F5F8FE',
-                        border: '1px solid #D2E3FC',
-                        padding: '0.85rem 1rem',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontWeight: 700,
-                        color: '#002182',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <CalendarCheck size={17} color="#076ABC" />
-                        Ver mis turnos asignados ({doctorAppointments.length})
-                      </span>
-                      <ChevronRight size={16} color="#7994B8" />
-                    </button>
-
-                    <button
-                      onClick={() => setActiveTab('patients')}
-                      style={{
-                        background: '#F5F8FE',
-                        border: '1px solid #D2E3FC',
-                        padding: '0.85rem 1rem',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontWeight: 700,
-                        color: '#002182',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <Users size={17} color="#076ABC" />
-                        Padrón de mis pacientes ({doctorPatients.length})
-                      </span>
-                      <ChevronRight size={16} color="#7994B8" />
-                    </button>
-
-                    <button
-                      onClick={() => setActiveTab('clinical')}
-                      style={{
-                        background: '#F5F8FE',
-                        border: '1px solid #D2E3FC',
-                        padding: '0.85rem 1rem',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontWeight: 700,
-                        color: '#002182',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <FileText size={17} color="#076ABC" />
-                        Historia Clínica (Mis consultas y diagnósticos)
-                      </span>
-                      <ChevronRight size={16} color="#7994B8" />
-                    </button>
-
-                    <button
-                      onClick={() => setActiveTab('prescriptions')}
-                      style={{
-                        background: '#F5F8FE',
-                        border: '1px solid #D2E3FC',
-                        padding: '0.85rem 1rem',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontWeight: 700,
-                        color: '#002182',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <Pill size={17} color="#076ABC" />
-                        Mis Recetas Médicas Electrónicas (CUIR)
-                      </span>
-                      <ChevronRight size={16} color="#7994B8" />
-                    </button>
-
-                    <button
-                      onClick={() => setActiveTab('prescriptions')}
-                      style={{
-                        background: '#F5F8FE',
-                        border: '1px solid #D2E3FC',
-                        padding: '0.85rem 1rem',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontWeight: 700,
-                        color: '#002182',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <Pill size={17} color="#076ABC" />
-                        Recetas Electrónicas Emitidas ({scopedElectronicPrescriptions.length})
-                      </span>
-                      <ChevronRight size={16} color="#7994B8" />
-                    </button>
-
-                    <button
-                      onClick={() => setActiveTab('patients')}
-                      style={{
-                        background: '#F5F8FE',
-                        border: '1px solid #D2E3FC',
-                        padding: '0.85rem 1rem',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontWeight: 700,
-                        color: '#002182',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <Users size={17} color="#076ABC" />
-                        Nómina de Pacientes ({doctorPatients.length})
-                      </span>
-                      <ChevronRight size={16} color="#7994B8" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Right: Próximos Turnos Exclusivos del Doctor */}
+              {/* Próximos Turnos y Pacientes en Seguimiento del Doctor */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.75rem' }}>
+                {/* Left: Mis Próximos Turnos */}
                 <div
                   style={{
                     background: '#ffffff',
@@ -972,7 +818,7 @@ export const AdminManagementHub = () => {
                         No tienes turnos programados en este momento.
                       </div>
                     ) : (
-                      doctorAppointments.slice(0, 5).map((a) => {
+                      doctorAppointments.slice(0, 6).map((a) => {
                         const isConfirmado = a.status === 'confirmado';
                         const isAtendido = a.status === 'atendido';
                         const isEnSala = a.status === 'en_sala';
@@ -1025,11 +871,8 @@ export const AdminManagementHub = () => {
                     )}
                   </div>
                 </div>
-              </div>
 
-              {/* Mis Pacientes Recientes & Mi Disponibilidad Actual */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.75rem' }}>
-                {/* Mis Pacientes Recientes */}
+                {/* Right: Mis Pacientes en Seguimiento */}
                 <div
                   style={{
                     background: '#ffffff',
@@ -1057,7 +900,7 @@ export const AdminManagementHub = () => {
                         No hay pacientes registrados en tu historial.
                       </div>
                     ) : (
-                      doctorPatients.slice(0, 4).map((p) => (
+                      doctorPatients.slice(0, 6).map((p) => (
                         <div
                           key={p.id}
                           style={{
@@ -1097,73 +940,6 @@ export const AdminManagementHub = () => {
                         </div>
                       ))
                     )}
-                  </div>
-                </div>
-
-                {/* Mi Disponibilidad y Consultorio */}
-                <div
-                  style={{
-                    background: '#ffffff',
-                    borderRadius: '18px',
-                    border: '1.5px solid #D2E3FC',
-                    padding: '1.75rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#002182' }}>
-                      Mi Disponibilidad y Consultorio
-                    </h3>
-                    <button
-                      onClick={() => setActiveTab('schedules')}
-                      style={{ background: 'none', border: 'none', color: '#076ABC', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}
-                    >
-                      Configurar
-                    </button>
-                  </div>
-
-                  <div style={{ background: '#F5F8FE', borderRadius: '14px', border: '1px solid #D2E3FC', padding: '1.25rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.85rem' }}>
-                      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#002182', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Clock size={18} />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#002182' }}>
-                          Días de Atención: {(currentDoctor?.workingDays || ['Lunes', 'Miércoles', 'Viernes']).join(', ')}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: '#496386' }}>
-                          Horario: {currentDoctor?.scheduleStart || '08:00'} a {currentDoctor?.scheduleEnd || '14:00'} hs ({currentDoctor?.slotDuration || 30} min/turno)
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.85rem' }}>
-                      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#076ABC', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <DoorClosed size={18} />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#002182' }}>
-                          Lugar: {currentDoctor?.roomName || 'Consultorio 101 — Traumatología'}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: '#496386' }}>
-                          {clinicInfo?.name || 'CITRA'} Sede Central · {clinicInfo?.address || 'Av. Carlos Pontin 556'}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#055294', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Shield size={18} />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#002182' }}>
-                          Arancel Particular: ${currentDoctor?.priceConsultation?.toLocaleString('es-AR') || '25.000'}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: '#496386' }}>
-                          Honorarios: {currentDoctor?.feePercentage || 75}% · Obras Sociales: {scopedHealthInsurances.length} activas
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
