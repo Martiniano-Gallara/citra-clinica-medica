@@ -78,6 +78,7 @@ export const ClinicalRecordsView = () => {
   const [expandedPatientId, setExpandedPatientId] = useState(null);
   const [expandedConsultationId, setExpandedConsultationId] = useState(null);
   const [isLegalHceModalOpen, setIsLegalHceModalOpen] = useState(false);
+  const [targetPatientForExport, setTargetPatientForExport] = useState(null);
 
   // Modal: Solicitud de acceso (requester)
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -256,7 +257,11 @@ export const ClinicalRecordsView = () => {
       <DigitalSignatureModal />
       <LegalHceCertificateModal
         isOpen={isLegalHceModalOpen}
-        onClose={() => setIsLegalHceModalOpen(false)}
+        onClose={() => {
+          setIsLegalHceModalOpen(false);
+          setTargetPatientForExport(null);
+        }}
+        targetPatient={targetPatientForExport}
       />
 
       {/* 1. TOP HEADER: TITLE & PRIVILEGE BADGE */}
@@ -356,48 +361,6 @@ export const ClinicalRecordsView = () => {
               Dr. Lagos (Médico)
             </button>
           </div>
-
-          <button
-            type="button"
-            className="btn btn-outline"
-            onClick={() => setIsLegalHceModalOpen(true)}
-            style={{
-              fontSize: '0.84rem',
-              fontWeight: 800,
-              background: '#F5F8FE',
-              borderColor: '#BFDBFE',
-              color: '#002182'
-            }}
-            title="Exportar copia de historia clínica con validez legal"
-          >
-            <Download size={15} color="#076ABC" />
-            <span>Exportar Copia HCE</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setConsultationPreloadData(null);
-              setIsNewConsultationModalOpen(true);
-            }}
-            style={{
-              background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
-              color: '#ffffff',
-              border: 'none',
-              padding: '0.65rem 1.15rem',
-              borderRadius: '10px',
-              fontSize: '0.88rem',
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)'
-            }}
-          >
-            <Plus size={18} />
-            <span>Nueva Consulta</span>
-          </button>
         </div>
       </div>
 
@@ -788,7 +751,34 @@ export const ClinicalRecordsView = () => {
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTargetPatientForExport(patient);
+                          setIsLegalHceModalOpen(true);
+                        }}
+                        style={{
+                          background: '#F5F8FE',
+                          color: '#002182',
+                          border: '1.5px solid #BFDBFE',
+                          padding: '0.5rem 0.95rem',
+                          borderRadius: '9px',
+                          fontSize: '0.82rem',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'all 0.15s ease'
+                        }}
+                        title={`Exportar historia clínica oficial de ${patient.name}`}
+                      >
+                        <Download size={15} color="#076ABC" />
+                        <span>Exportar Historia Clínica</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={(e) => {
@@ -796,9 +786,9 @@ export const ClinicalRecordsView = () => {
                           toggleExpandPatient(patient.id);
                         }}
                         style={{
-                          background: isExpanded ? '#002182' : '#f1f5f9',
+                          background: isExpanded ? '#002182' : '#ffffff',
                           color: isExpanded ? '#ffffff' : '#334155',
-                          border: '1px solid #cbd5e1',
+                          border: '1.5px solid ' + (isExpanded ? '#002182' : '#cbd5e1'),
                           padding: '0.5rem 0.95rem',
                           borderRadius: '9px',
                           fontSize: '0.82rem',
@@ -832,30 +822,27 @@ export const ClinicalRecordsView = () => {
                         <button
                           type="button"
                           onClick={() => {
-                            setConsultationPreloadData({
-                              patientId: patient.id,
-                              patientName: patient.name,
-                              patientDni: patient.dni,
-                              patientInsurance: patient.insuranceName
-                            });
-                            setIsNewConsultationModalOpen(true);
+                            setTargetPatientForExport(patient);
+                            setIsLegalHceModalOpen(true);
                           }}
                           style={{
-                            background: '#059669',
+                            background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
                             color: '#ffffff',
                             border: 'none',
-                            padding: '0.45rem 0.85rem',
-                            borderRadius: '8px',
-                            fontSize: '0.78rem',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '9px',
+                            fontSize: '0.82rem',
                             fontWeight: 800,
                             cursor: 'pointer',
-                            display: 'flex',
+                            display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '5px'
+                            gap: '6px',
+                            boxShadow: '0 3px 10px rgba(7, 106, 188, 0.25)'
                           }}
+                          title={`Exportar historia clínica completa o seleccionada de ${patient.name}`}
                         >
-                          <Plus size={14} />
-                          <span>+ Asentar Nueva Evolución a este Paciente</span>
+                          <Download size={15} />
+                          <span>Exportar Historia Clínica Completa / Selectiva</span>
                         </button>
                       </div>
 
@@ -863,7 +850,7 @@ export const ClinicalRecordsView = () => {
                         <div style={{ background: '#ffffff', padding: '2rem', borderRadius: '12px', textAlign: 'center', color: '#64748b', border: '1px solid #e2e8f0' }}>
                           <FileText size={32} style={{ color: '#cbd5e1', marginBottom: '0.5rem' }} />
                           <div style={{ fontWeight: 700, color: '#1e293b' }}>Sin evoluciones clínicas registradas aún</div>
-                          <div style={{ fontSize: '0.8rem' }}>Haga clic en "+ Asentar Nueva Evolución" para abrir la historia clínica formal de este paciente.</div>
+                          <div style={{ fontSize: '0.8rem' }}>Las historias clínicas no son opcionales ni manuales; se registran automáticamente al finalizar cada turno médico desde la agenda.</div>
                         </div>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

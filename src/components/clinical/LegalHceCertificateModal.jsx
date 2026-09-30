@@ -20,32 +20,62 @@ export const LegalHceCertificateModal = ({ isOpen, onClose, targetPatient = null
     scopedConsultations,
     doctors,
     currentDoctor,
-    isDoctor
+    isDoctor,
+    isDoctorBlanco,
+    isSuperAdmin
   } = useClinic();
 
-  const effectivePatients = isDoctor ? scopedPatients : patients;
+  const effectivePatients = (isDoctorBlanco || isSuperAdmin || !isDoctor) ? patients : scopedPatients;
 
   const [selectedPatientId, setSelectedPatientId] = useState(
     targetPatient?.id || effectivePatients[0]?.id || ''
   );
 
+  const [exportScope, setExportScope] = useState('all'); // 'all' | 'custom'
+
   useEffect(() => {
     if (targetPatient?.id) {
       setSelectedPatientId(targetPatient.id);
+      setExportScope('all');
     }
   }, [targetPatient]);
 
   const activePatient = useMemo(() => {
-    return effectivePatients.find((p) => p.id === selectedPatientId) || targetPatient || effectivePatients[0];
-  }, [effectivePatients, selectedPatientId, targetPatient]);
+    return targetPatient || effectivePatients.find((p) => p.id === selectedPatientId) || effectivePatients[0];
+  }, [targetPatient, effectivePatients, selectedPatientId]);
+  const [selectedConsultationIds, setSelectedConsultationIds] = useState([]);
 
   const patientConsultations = useMemo(() => {
     if (!activePatient) return [];
-    const consList = isDoctor ? scopedConsultations : consultations;
-    return consList.filter(
+    return consultations.filter(
       (c) => c.patientId === activePatient.id || c.patientDni === activePatient.dni
     );
-  }, [isDoctor, scopedConsultations, consultations, activePatient]);
+  }, [consultations, activePatient]);
+
+  useEffect(() => {
+    if (patientConsultations.length > 0) {
+      setSelectedConsultationIds(patientConsultations.map((c) => c.id));
+    }
+  }, [patientConsultations]);
+
+  const displayedConsultations = useMemo(() => {
+    if (exportScope === 'all') return patientConsultations;
+    return patientConsultations.filter((c) => selectedConsultationIds.includes(c.id));
+  }, [patientConsultations, exportScope, selectedConsultationIds]);
+
+  const toggleConsultationSelection = (id) => {
+    setSelectedConsultationIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const selectAllConsultations = () => {
+    setSelectedConsultationIds(patientConsultations.map((c) => c.id));
+  };
+
+  const clearAllConsultations = () => {
+    setSelectedConsultationIds([]);
+  };
 
   const latestConsultation = patientConsultations[0];
   const activeDoctorName = isDoctor && currentDoctor
@@ -295,7 +325,7 @@ export const LegalHceCertificateModal = ({ isOpen, onClose, targetPatient = null
         {/* CONTROLS (PATIENT SELECTOR) */}
         {!targetPatient && (
           <div
-            className="legal-hce-controls"
+            className="legal-hce-controls no-print"
             style={{
               background: '#f1f5f9',
               borderBottom: '1px solid #e2e8f0',
@@ -332,6 +362,135 @@ export const LegalHceCertificateModal = ({ isOpen, onClose, targetPatient = null
             </select>
           </div>
         )}
+
+        {/* EXPORT OPTIONS: COMPLETA O SELECCIONAR ATENCIONES ESPECÍFICAS */}
+        <div
+          className="no-print"
+          style={{
+            background: '#ffffff',
+            borderBottom: '1.5px solid #e2e8f0',
+            padding: '0.85rem 1.75rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.65rem',
+            flexShrink: 0
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', fontWeight: 800, color: exportScope === 'all' ? '#002182' : '#475569', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="exportScope"
+                  checked={exportScope === 'all'}
+                  onChange={() => setExportScope('all')}
+                />
+                <span>Exportar Historia Clínica Completa ({patientConsultations.length} atenciones)</span>
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', fontWeight: 800, color: exportScope === 'custom' ? '#002182' : '#475569', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="exportScope"
+                  checked={exportScope === 'custom'}
+                  onChange={() => setExportScope('custom')}
+                />
+                <span>Elegir qué atenciones exportar ({selectedConsultationIds.length} seleccionadas)</span>
+              </label>
+            </div>
+
+            {exportScope === 'custom' && (
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  type="button"
+                  onClick={selectAllConsultations}
+                  style={{
+                    background: '#eff6ff',
+                    border: '1px solid #bfdbfe',
+                    color: '#1d4ed8',
+                    padding: '0.25rem 0.65rem',
+                    borderRadius: '6px',
+                    fontSize: '0.74rem',
+                    fontWeight: 800,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Seleccionar Todas
+                </button>
+                <button
+                  type="button"
+                  onClick={clearAllConsultations}
+                  style={{
+                    background: '#f8fafc',
+                    border: '1px solid #cbd5e1',
+                    color: '#64748b',
+                    padding: '0.25rem 0.65rem',
+                    borderRadius: '6px',
+                    fontSize: '0.74rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Desmarcar Todas
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Checklist of individual consultations when custom is chosen */}
+          {exportScope === 'custom' && (
+            <div
+              style={{
+                background: '#f8fafc',
+                border: '1px solid #cbd5e1',
+                borderRadius: '8px',
+                padding: '0.65rem 0.85rem',
+                maxHeight: '140px',
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.4rem'
+              }}
+            >
+              {patientConsultations.length === 0 ? (
+                <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                  Este paciente no posee atenciones registradas para elegir.
+                </div>
+              ) : (
+                patientConsultations.map((c, cIdx) => {
+                  const isChecked = selectedConsultationIds.includes(c.id);
+                  return (
+                    <label
+                      key={c.id || cIdx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '0.8rem',
+                        color: isChecked ? '#0f172a' : '#64748b',
+                        fontWeight: isChecked ? 700 : 500,
+                        background: isChecked ? '#ffffff' : 'transparent',
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        border: isChecked ? '1px solid #D2E3FC' : '1px solid transparent'
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => toggleConsultationSelection(c.id)}
+                      />
+                      <span>
+                        <strong>{c.date} ({c.time} hs)</strong> · Folio #{cIdx + 1} · {c.doctorName} — <em>{c.diagnosis || c.reason || 'Consulta Médica'}</em>
+                      </span>
+                    </label>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </div>
 
         {/* PRINTABLE DOCUMENT BODY */}
         <div
@@ -378,7 +537,9 @@ export const LegalHceCertificateModal = ({ isOpen, onClose, targetPatient = null
 
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: '0.86rem', fontWeight: 900, color: '#0f172a', textTransform: 'uppercase' }}>
-                  Historia Clínica Completa
+                  {exportScope === 'all'
+                    ? 'Historia Clínica Completa'
+                    : `Extracto de Historia Clínica (${displayedConsultations.length} Atenciones Seleccionadas)`}
                 </div>
                 <div style={{ fontSize: '0.78rem', color: '#475569', marginTop: '2px' }}>
                   Fecha de Emisión: <strong>{currentDateStr}</strong>
@@ -427,15 +588,15 @@ export const LegalHceCertificateModal = ({ isOpen, onClose, targetPatient = null
                   marginBottom: '0.85rem'
                 }}
               >
-                Evoluciones Clínicas Registradas ({patientConsultations.length})
+                Evoluciones Clínicas {exportScope === 'all' ? `Registradas (${displayedConsultations.length})` : `Seleccionadas (${displayedConsultations.length})`}
               </div>
 
-              {patientConsultations.length === 0 ? (
+              {displayedConsultations.length === 0 ? (
                 <div style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '8px', fontSize: '0.84rem', color: '#64748b', textAlign: 'center' }}>
-                  No se registran consultas previas en el sistema para este paciente.
+                  No hay atenciones seleccionadas para exportar. Por favor marque al menos una atención en el panel superior.
                 </div>
               ) : (
-                patientConsultations.map((c, idx) => (
+                displayedConsultations.map((c, idx) => (
                   <div
                     key={c.id || idx}
                     style={{
