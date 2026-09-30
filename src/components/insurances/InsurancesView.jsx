@@ -20,7 +20,10 @@ import {
   Sparkles,
   ToggleLeft,
   ToggleRight,
-  ExternalLink
+  ExternalLink,
+  UserCheck,
+  Users,
+  Award
 } from 'lucide-react';
 import { OnlineAuthModal } from './OnlineAuthModal';
 
@@ -33,68 +36,51 @@ export const InsurancesView = () => {
     setIsOnlineAuthModalOpen,
     isDoctor,
     currentDoctor,
+    doctors,
     updateDoctorInsurances,
     addToast
   } = useClinic();
 
-  // Tabs for Doctor vs Administrative
-  const [activeTab, setActiveTab] = useState(isDoctor ? 'my-insurances' : 'agreements');
+  // Tabs for Secretaría / Administrativo: 'doctor-insurances' | 'agreements' | 'authorizations' | 'nomenclator'
+  const [activeTab, setActiveTab] = useState('doctor-insurances');
+  const [selectedDoctorId, setSelectedDoctorId] = useState(() => (doctors && doctors[0]?.id ? doctors[0].id : 'doc-1'));
   const [searchTerm, setSearchTerm] = useState('');
   const [filterState, setFilterState] = useState('all'); // 'all', 'accepted', 'not-accepted'
-
-  React.useEffect(() => {
-    if (isDoctor && !['my-insurances', 'my-nomenclator'].includes(activeTab)) {
-      setActiveTab('my-insurances');
-    } else if (!isDoctor && !['agreements', 'authorizations', 'nomenclator'].includes(activeTab)) {
-      setActiveTab('agreements');
-    }
-  }, [isDoctor]);
-
-  // Interactive Fichas Internas: which insurance ficha is expanded
   const [expandedFichaId, setExpandedFichaId] = useState(null);
 
-  // Clean doctor display name (avoiding "Dr. Dr.")
-  const doctorDisplayName = useMemo(() => {
-    if (!currentDoctor) return 'Dr. Alejandro Blanco';
-    const name = currentDoctor.name || 'Alejandro Blanco';
-    return name.startsWith('Dr.') ? name : `Dr. ${name}`;
-  }, [currentDoctor]);
+  const selectedDoctor = (doctors && doctors.find((d) => d.id === selectedDoctorId)) || doctors?.[0] || null;
+  const doctorAcceptedIds = selectedDoctor?.acceptedInsurances || [];
 
-  const doctorSpecialty = currentDoctor?.specialty || 'Traumatología y Ortopedia';
-
-  // Doctor accepted insurance IDs
-  const doctorAcceptedIds = currentDoctor?.acceptedInsurances || ['hi-1', 'hi-2', 'hi-3', 'hi-7'];
-
-  // Toggle single insurance
+  // Toggle single insurance for the selected doctor
   const handleToggleInsurance = (insId, e) => {
     if (e) e.stopPropagation();
-    if (!currentDoctor?.id) return;
+    if (!selectedDoctor?.id) return;
     const exists = doctorAcceptedIds.includes(insId);
     const nextList = exists
       ? doctorAcceptedIds.filter((id) => id !== insId)
       : [...doctorAcceptedIds, insId];
     if (typeof updateDoctorInsurances === 'function') {
-      updateDoctorInsurances(currentDoctor.id, nextList);
+      updateDoctorInsurances(selectedDoctor.id, nextList);
     }
     const target = healthInsurances.find((h) => h.id === insId);
     if (exists) {
-      addToast('Cobertura Pausada', `Ya no acepta ${target?.name || 'la cobertura'} en su consultorio.`, 'info');
+      addToast('Cobertura Removida', `${selectedDoctor.name} ya no atiende por ${target?.name || 'esta cobertura'}.`, 'info');
     } else {
-      addToast('Cobertura Habilitada', `Ahora acepta ${target?.name || 'la cobertura'} en su consultorio.`, 'success');
+      addToast('Cobertura Habilitada', `${selectedDoctor.name} ahora atiende por ${target?.name || 'esta cobertura'}.`, 'success');
     }
   };
 
-  // Toggle all insurances
+  // Toggle all insurances for the selected doctor
   const handleToggleAll = (enableAll) => {
-    if (!currentDoctor?.id) return;
+    if (!selectedDoctor?.id) return;
     const nextList = enableAll ? healthInsurances.map((h) => h.id) : ['hi-7']; // Keep particular if disabling
     if (typeof updateDoctorInsurances === 'function') {
-      updateDoctorInsurances(currentDoctor.id, nextList);
+      updateDoctorInsurances(selectedDoctor.id, nextList);
     }
     if (enableAll) {
-      addToast('Todas Aceptadas', 'Se habilitaron todas las obras sociales registradas.', 'success');
+      addToast('Todas Habilitadas', `Se habilitaron todas las obras sociales para ${selectedDoctor.name}.`, 'success');
     } else {
-      addToast('Modo Particular', 'Se configuró atención exclusivamente privada / particular.', 'info');
+      addToast('Modo Particular', `Se configuró a ${selectedDoctor.name} exclusivamente en atención privada / particular.`, 'info');
     }
   };
 
@@ -103,27 +89,14 @@ export const InsurancesView = () => {
     setExpandedFichaId((prev) => (prev === insId ? null : insId));
   };
 
-  // Traumatology nomenclator filter for Doctor
-  const doctorNomenclator = useMemo(() => {
-    return nomenclatorItems.filter((item) => {
-      const isTrauma =
-        item.category?.toLowerCase().includes('trauma') ||
-        item.category?.toLowerCase().includes('consulta') ||
-        item.name?.toLowerCase().includes('trauma') ||
-        item.name?.toLowerCase().includes('consulta') ||
-        item.name?.toLowerCase().includes('artro') ||
-        item.name?.toLowerCase().includes('infiltr') ||
-        item.name?.toLowerCase().includes('yeso');
-      return isTrauma;
-    });
-  }, [nomenclatorItems]);
-
-  // Filtered insurances for doctor
+  // Filtered insurances for selected doctor
   const filteredDoctorInsurances = useMemo(() => {
     return healthInsurances.filter((hi) => {
+      const cleanSearch = searchTerm.toLowerCase().trim();
       const matchesSearch =
-        hi.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (hi.plans && hi.plans.some((p) => p.toLowerCase().includes(searchTerm.toLowerCase())));
+        cleanSearch === '' ||
+        hi.name.toLowerCase().includes(cleanSearch) ||
+        (hi.plans && hi.plans.some((p) => p.toLowerCase().includes(cleanSearch)));
       const isAccepted = doctorAcceptedIds.includes(hi.id);
       if (!matchesSearch) return false;
       if (filterState === 'accepted') return isAccepted;
@@ -238,884 +211,63 @@ export const InsurancesView = () => {
   };
 
   // =========================================================================
-  // DOCTOR VIEW: REDISEÑO ULTRA LIMPIO, SIN RUIDO VISUAL Y CON FICHAS INTERNAS
+  // DOCTOR ACCESS RESTRICTION: GESTIÓN EXCLUSIVA DE SECRETARÍA Y ADMINISTRACIÓN
   // =========================================================================
   if (isDoctor) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%' }}>
-        {/* 1. TOP HEADER: MEDICAL-GRADE, CLEAN, NO FILLER TEXT */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '65vh',
+          textAlign: 'center',
+          padding: '2.5rem',
+          background: '#ffffff',
+          borderRadius: '16px',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 4px 16px rgba(0, 33, 130, 0.04)'
+        }}
+      >
         <div
           style={{
+            width: '64px',
+            height: '64px',
+            borderRadius: '16px',
+            background: '#EFF6FF',
+            color: '#002182',
             display: 'flex',
-            justifyContent: 'space-between',
             alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '1rem'
+            justifyContent: 'center',
+            marginBottom: '1.25rem'
           }}
         >
-          <div>
-            <h1 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.25rem', letterSpacing: '-0.02em' }}>
-              Mis Obras Sociales & Coberturas
-            </h1>
-            <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
-              Gestión de coberturas médicas y condiciones de atención en consultorio.
-            </p>
-          </div>
-
-          {/* Quick Bulk Actions */}
-          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
-            <button
-              type="button"
-              onClick={() => handleToggleAll(true)}
-              style={{
-                background: '#ffffff',
-                border: '1px solid #cbd5e1',
-                color: '#1e293b',
-                padding: '0.5rem 0.85rem',
-                borderRadius: '8px',
-                fontSize: '0.82rem',
-                fontWeight: 700,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <CheckCircle2 size={15} color="#059669" />
-              Aceptar Todas
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleToggleAll(false)}
-              style={{
-                background: '#ffffff',
-                border: '1px solid #cbd5e1',
-                color: '#1e293b',
-                padding: '0.5rem 0.85rem',
-                borderRadius: '8px',
-                fontSize: '0.82rem',
-                fontWeight: 700,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <Ban size={14} color="#64748b" />
-              Solo Particular
-            </button>
-          </div>
+          <Shield size={32} />
         </div>
-
-        {/* 2. OPERATIONAL KPI SUMMARY STRIP (CLEAN, SPACIOUS, ZERO WRAPPING BUGS) */}
+        <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.5rem' }}>
+          Gestión Centralizada en Secretaría
+        </h2>
+        <p style={{ fontSize: '0.92rem', color: '#64748b', maxWidth: '540px', lineHeight: 1.6, margin: '0 0 1.5rem' }}>
+          La asignación y parametrización de obras sociales, convenios institucionales y coberturas aceptadas por cada profesional médico es administrada de forma centralizada y exclusiva por el equipo de Secretaría y Recepción.
+        </p>
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-            gap: '1rem'
-          }}
-        >
-          {/* Card 1: Coberturas Aceptadas */}
-          <div
-            style={{
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '12px',
-              padding: '1rem 1.2rem',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.35rem'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Obras Sociales Aceptadas
-              </span>
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: '#eff6ff',
-                  color: '#1d4ed8',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <Shield size={16} />
-              </div>
-            </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a' }}>
-              {doctorAcceptedIds.length}{' '}
-              <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#94a3b8' }}>/ {healthInsurances.length}</span>
-            </div>
-            <div style={{ fontSize: '0.74rem', color: '#059669', fontWeight: 700 }}>
-              {Math.round((doctorAcceptedIds.length / healthInsurances.length) * 100)}% de cartilla habilitada
-            </div>
-          </div>
-
-          {/* Card 2: Consulta Particular */}
-          <div
-            style={{
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '12px',
-              padding: '1rem 1.2rem',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.35rem'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Consulta Particular
-              </span>
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: '#ecfdf5',
-                  color: '#059669',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <DollarSign size={16} />
-              </div>
-            </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a' }}>
-              ${consultationPrice.toLocaleString()}
-            </div>
-            <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-              Arancel base para pacientes privados
-            </div>
-          </div>
-
-          {/* Card 3: Liquidación Médica */}
-          <div
-            style={{
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '12px',
-              padding: '1rem 1.2rem',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.35rem'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Honorarios Profesionales
-              </span>
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: '#fef3c7',
-                  color: '#b45309',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <TrendingUp size={16} />
-              </div>
-            </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a' }}>
-              {feePercentage}%
-            </div>
-            <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-              Retención administrativa clínica: {100 - feePercentage}%
-            </div>
-          </div>
-
-          {/* Card 4: Nomenclador Traumatológico */}
-          <div
-            style={{
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '12px',
-              padding: '1rem 1.2rem',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.35rem'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Prácticas Frecuentes
-              </span>
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: '#ede9fe',
-                  color: '#6d28d9',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <FileText size={16} />
-              </div>
-            </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a' }}>
-              {doctorNomenclator.length} Códigos
-            </div>
-            <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-              Nomenclador de traumatología activo
-            </div>
-          </div>
-        </div>
-
-        {/* 3. TABS & FILTER TOOLBAR (MINIMALIST & FAST) */}
-        <div
-          style={{
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '12px',
-            padding: '0.85rem 1.15rem',
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '1rem',
+            display: 'inline-flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+            gap: '0.5rem',
+            padding: '0.65rem 1.25rem',
+            background: '#F8FAFC',
+            borderRadius: '10px',
+            border: '1px solid #E2E8F0',
+            fontSize: '0.85rem',
+            color: '#475569',
+            fontWeight: 600
           }}
         >
-          {/* Main Navigation Tabs */}
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button
-              type="button"
-              onClick={() => setActiveTab('my-insurances')}
-              style={{
-                padding: '0.45rem 0.95rem',
-                borderRadius: '8px',
-                fontSize: '0.82rem',
-                fontWeight: activeTab === 'my-insurances' ? 800 : 600,
-                border: activeTab === 'my-insurances' ? '1px solid #076ABC' : '1px solid #e2e8f0',
-                background: activeTab === 'my-insurances' ? '#076ABC' : '#ffffff',
-                color: activeTab === 'my-insurances' ? '#ffffff' : '#475569',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <Shield size={14} />
-              Mis Coberturas ({doctorAcceptedIds.length})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('my-nomenclator')}
-              style={{
-                padding: '0.45rem 0.95rem',
-                borderRadius: '8px',
-                fontSize: '0.82rem',
-                fontWeight: activeTab === 'my-nomenclator' ? 800 : 600,
-                border: activeTab === 'my-nomenclator' ? '1px solid #076ABC' : '1px solid #e2e8f0',
-                background: activeTab === 'my-nomenclator' ? '#076ABC' : '#ffffff',
-                color: activeTab === 'my-nomenclator' ? '#ffffff' : '#475569',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <FileText size={14} />
-              Nomenclador Traumatológico ({doctorNomenclator.length})
-            </button>
-          </div>
-
-          {/* Search and Filter Pills */}
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            {activeTab === 'my-insurances' && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginRight: '3px' }}>
-                  Mostrar:
-                </span>
-                {[
-                  { key: 'all', label: `Todas (${healthInsurances.length})` },
-                  { key: 'accepted', label: `Aceptadas (${doctorAcceptedIds.length})` },
-                  { key: 'not-accepted', label: `No atiendo (${healthInsurances.length - doctorAcceptedIds.length})` }
-                ].map((pill) => {
-                  const isActive = filterState === pill.key;
-                  return (
-                    <button
-                      key={pill.key}
-                      type="button"
-                      onClick={() => setFilterState(pill.key)}
-                      style={{
-                        padding: '0.3rem 0.65rem',
-                        borderRadius: '20px',
-                        fontSize: '0.75rem',
-                        fontWeight: isActive ? 800 : 600,
-                        border: isActive ? '1px solid #002182' : '1px solid #e2e8f0',
-                        background: isActive ? '#002182' : '#f8fafc',
-                        color: isActive ? '#ffffff' : '#475569',
-                        cursor: 'pointer',
-                        transition: 'all 0.12s ease'
-                      }}
-                    >
-                      {pill.label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Search */}
-            <div style={{ position: 'relative', width: '220px' }}>
-              <Search
-                size={14}
-                style={{
-                  position: 'absolute',
-                  left: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#94a3b8'
-                }}
-              />
-              <input
-                type="text"
-                placeholder={activeTab === 'my-insurances' ? 'Buscar obra social o plan...' : 'Buscar práctica o código...'}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.45rem 0.75rem 0.45rem 2rem',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '8px',
-                  fontSize: '0.82rem',
-                  outline: 'none',
-                  background: '#f8fafc',
-                  color: '#0f172a'
-                }}
-              />
-            </div>
-          </div>
+          <Info size={16} color="#002182" />
+          Para solicitar modificaciones en las obras sociales que atendés, comunicate con el equipo de Secretaría.
         </div>
-
-        {/* 4. TAB 1: LISTADO DE OBRAS SOCIALES CON FICHAS INTERNAS DESPLEGABLES */}
-        {activeTab === 'my-insurances' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {filteredDoctorInsurances.length === 0 ? (
-              <div
-                style={{
-                  background: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '12px',
-                  padding: '3rem 1.5rem',
-                  textAlign: 'center'
-                }}
-              >
-                <Shield size={38} style={{ color: '#cbd5e1', marginBottom: '0.75rem' }} />
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1e293b', margin: '0 0 0.25rem' }}>
-                  No se encontraron obras sociales
-                </h3>
-                <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 1rem' }}>
-                  No hay coberturas que coincidan con la búsqueda o el filtro aplicado.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchTerm('');
-                    setFilterState('all');
-                  }}
-                  style={{
-                    background: '#f1f5f9',
-                    color: '#334155',
-                    border: '1px solid #cbd5e1',
-                    padding: '0.45rem 0.95rem',
-                    borderRadius: '8px',
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Restablecer Filtros
-                </button>
-              </div>
-            ) : (
-              filteredDoctorInsurances.map((hi) => {
-                const isAccepted = doctorAcceptedIds.includes(hi.id);
-                const isExpanded = expandedFichaId === hi.id;
-                const coverageType = getCoverageType(hi);
-                const agreement = insuranceAgreements.find(
-                  (a) => a.insuranceId === hi.id || a.insuranceName.toLowerCase().includes(hi.name.toLowerCase())
-                );
-
-                return (
-                  <div
-                    key={hi.id}
-                    style={{
-                      background: '#ffffff',
-                      border: isExpanded ? '1.5px solid #076ABC' : '1px solid #e2e8f0',
-                      borderRadius: '14px',
-                      overflow: 'hidden',
-                      boxShadow: isExpanded ? '0 6px 20px rgba(7, 106, 188, 0.09)' : '0 2px 6px rgba(0, 33, 130, 0.03)',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    {/* CABECERA DE LA FICHA CON LOGOS OFICIALES Y ESTILIZACIÓN PREMIUM */}
-                    <div
-                      onClick={() => toggleFicha(hi.id)}
-                      style={{
-                        padding: '1.1rem 1.35rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexWrap: 'wrap',
-                        gap: '1rem',
-                        cursor: 'pointer',
-                        background: isExpanded ? '#f8fafc' : '#ffffff',
-                        transition: 'background 0.15s ease'
-                      }}
-                    >
-                      {/* Bloque Izquierdo: Logo Oficial en Caja Blanca + Nombre + Categoría + Planes */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: '1 1 300px' }}>
-                        {/* Logo Oficial Caja Blanca */}
-                        {renderInsuranceLogo(hi, 50)}
-
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>
-                              {hi.name}
-                            </span>
-                            <span
-                              style={{
-                                fontSize: '0.68rem',
-                                fontWeight: 800,
-                                background: coverageType.bg,
-                                color: coverageType.color,
-                                border: `1px solid ${coverageType.border}`,
-                                padding: '0.12rem 0.5rem',
-                                borderRadius: '6px'
-                              }}
-                            >
-                              {coverageType.label}
-                            </span>
-                          </div>
-
-                          {/* Plan pills */}
-                          <div style={{ display: 'flex', gap: '0.35rem', marginTop: '5px', flexWrap: 'wrap' }}>
-                            {hi.plans && hi.plans.length > 0 ? (
-                              hi.plans.map((p, idx) => (
-                                <span
-                                  key={idx}
-                                  style={{
-                                    background: isAccepted ? '#eff6ff' : '#f8fafc',
-                                    color: isAccepted ? '#1e40af' : '#64748b',
-                                    border: isAccepted ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
-                                    padding: '0.12rem 0.45rem',
-                                    borderRadius: '5px',
-                                    fontSize: '0.72rem',
-                                    fontWeight: 700
-                                  }}
-                                >
-                                  {p}
-                                </span>
-                              ))
-                            ) : (
-                              <span style={{ fontSize: '0.74rem', color: '#64748b' }}>Todos los planes</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Bloque Central: Copago / Plus de Consulta */}
-                      <div style={{ display: 'flex', flexDirection: 'column', minWidth: '160px' }}>
-                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                          Copago en Consultorio
-                        </span>
-                        <div>
-                          {hi.copay > 0 ? (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                                background: '#FFFBEB',
-                                color: '#B45309',
-                                border: '1px solid #FDE68A',
-                                padding: '0.25rem 0.65rem',
-                                borderRadius: '8px',
-                                fontSize: '0.82rem',
-                                fontWeight: 800,
-                                marginTop: '3px'
-                              }}
-                            >
-                              Copago: ${hi.copay.toLocaleString()}
-                            </span>
-                          ) : (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                                background: '#ECFDF5',
-                                color: '#059669',
-                                border: '1px solid #A7F3D0',
-                                padding: '0.25rem 0.65rem',
-                                borderRadius: '8px',
-                                fontSize: '0.82rem',
-                                fontWeight: 800,
-                                marginTop: '3px',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '5px'
-                              }}
-                            >
-                              <Check size={13} color="#059669" /> Sin Copago (100% Cubierto)
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Bloque Derecho: Switch de Atención Directo + Botón Ficha */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        {/* Toggle Button */}
-                        <button
-                          type="button"
-                          onClick={(e) => handleToggleInsurance(hi.id, e)}
-                          title={isAccepted ? 'Haga clic para pausar la atención de esta cobertura' : 'Haga clic para aceptar esta cobertura'}
-                          style={{
-                            background: isAccepted ? '#ECFDF5' : '#F8FAFC',
-                            border: isAccepted ? '1px solid #A7F3D0' : '1px solid #CBD5E1',
-                            color: isAccepted ? '#065F46' : '#64748B',
-                            padding: '0.45rem 0.9rem',
-                            borderRadius: '20px',
-                            fontSize: '0.8rem',
-                            fontWeight: 800,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          <span
-                            style={{
-                              width: '8px',
-                              height: '8px',
-                              borderRadius: '50%',
-                              background: isAccepted ? '#10B981' : '#94A3B8',
-                              display: 'inline-block'
-                            }}
-                          />
-                          {isAccepted ? 'Atendida por mí' : 'No aceptada'}
-                        </button>
-
-                        {/* Expand Ficha Chevron */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleFicha(hi.id);
-                          }}
-                          title={isExpanded ? 'Ocultar ficha interna' : 'Ver ficha interna completa'}
-                          style={{
-                            background: isExpanded ? '#E2E8F0' : '#F8FAFC',
-                            border: '1px solid #CBD5E1',
-                            color: '#334155',
-                            padding: '0.45rem 0.75rem',
-                            borderRadius: '8px',
-                            fontSize: '0.8rem',
-                            fontWeight: 700,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          <span>Ficha</span>
-                          {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* FICHA INTERNA DESPLEGADA (CLARA, ESTRUCTURADA, CON LOGO) */}
-                    {isExpanded && (
-                      <div
-                        style={{
-                          borderTop: '1px solid #e2e8f0',
-                          background: '#f8fafc',
-                          padding: '1.25rem',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '1rem'
-                        }}
-                      >
-                        {/* Subheader Ficha con Logo Real */}
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            flexWrap: 'wrap',
-                            gap: '0.75rem',
-                            borderBottom: '1px solid #e2e8f0',
-                            paddingBottom: '0.75rem'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            {renderInsuranceLogo(hi, 36)}
-                            <div>
-                              <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0f172a' }}>
-                                Convenio Clínico: {hi.name}
-                              </div>
-                              <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-                                {coverageType.label} · Planes habilitados: {hi.plans?.join(', ') || 'General'}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                            Estado en consultorio:{' '}
-                            <strong style={{ color: isAccepted ? '#059669' : '#dc2626' }}>
-                              {isAccepted ? '● Habilitada para turnos' : '○ Pausada'}
-                            </strong>
-                          </div>
-                        </div>
-
-                        {/* Grid de 3 columnas limpias */}
-                        <div
-                          style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                            gap: '1rem'
-                          }}
-                        >
-                          {/* Columna 1: Condiciones de Atención */}
-                          <div
-                            style={{
-                              background: '#ffffff',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: '8px',
-                              padding: '0.95rem',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '0.5rem'
-                            }}
-                          >
-                            <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
-                              Condiciones de Recepción
-                            </span>
-                            <div style={{ fontSize: '0.84rem', color: '#1e293b' }}>
-                              <strong>Validación:</strong> Credencial Digital con Token / App
-                            </div>
-                            <div style={{ fontSize: '0.84rem', color: '#1e293b' }}>
-                              <strong>Copago / Plus:</strong>{' '}
-                              {hi.copay > 0 ? `$${hi.copay.toLocaleString()} (Cobro en recepción)` : 'Sin cobro adicional'}
-                            </div>
-                            <div style={{ fontSize: '0.84rem', color: '#1e293b' }}>
-                              <strong>Planes cubiertos:</strong>{' '}
-                              {hi.plans && hi.plans.length > 0 ? hi.plans.join(', ') : 'Padrón general'}
-                            </div>
-                          </div>
-
-                          {/* Columna 2: Aranceles Nomenclados Clave */}
-                          <div
-                            style={{
-                              background: '#ffffff',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: '8px',
-                              padding: '0.95rem',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '0.5rem'
-                            }}
-                          >
-                            <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
-                              Aranceles Traumatológicos Sugeridos
-                            </span>
-                            <div style={{ fontSize: '0.82rem', color: '#334155', display: 'flex', justifyContent: 'space-between' }}>
-                              <span>Consulta Traumatología (42.01.01):</span>
-                              <strong style={{ color: '#0f172a' }}>$25.000</strong>
-                            </div>
-                            <div style={{ fontSize: '0.82rem', color: '#334155', display: 'flex', justifyContent: 'space-between' }}>
-                              <span>Infiltración Articular (42.03.01):</span>
-                              <strong style={{ color: '#0f172a' }}>$32.000</strong>
-                            </div>
-                            <div style={{ fontSize: '0.82rem', color: '#334155', display: 'flex', justifyContent: 'space-between' }}>
-                              <span>Yeso / Inmovilización (42.04.01):</span>
-                              <strong style={{ color: '#0f172a' }}>$28.000</strong>
-                            </div>
-                          </div>
-
-                          {/* Columna 3: Control Rápido de Estado */}
-                          <div
-                            style={{
-                              background: '#ffffff',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: '8px',
-                              padding: '0.95rem',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              justifyContent: 'space-between',
-                              gap: '0.65rem'
-                            }}
-                          >
-                            <div>
-                              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
-                                Control de Agenda Médica
-                              </span>
-                              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '4px 0 0' }}>
-                                {isAccepted
-                                  ? 'Los pacientes con esta cobertura pueden reservar turnos para su consultorio.'
-                                  : 'Los turnos para esta obra social se encuentran pausados en su agenda.'}
-                              </p>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={(e) => handleToggleInsurance(hi.id, e)}
-                              style={{
-                                width: '100%',
-                                background: isAccepted ? '#fef2f2' : '#ecfdf5',
-                                border: isAccepted ? '1px solid #fecaca' : '1px solid #a7f3d0',
-                                color: isAccepted ? '#b91c1c' : '#047857',
-                                padding: '0.5rem',
-                                borderRadius: '6px',
-                                fontSize: '0.82rem',
-                                fontWeight: 800,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '6px',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              {isAccepted ? (
-                                <>
-                                  <Ban size={14} /> Pausar Atención para {hi.name}
-                                </>
-                              ) : (
-                                <>
-                                  <Check size={14} /> Habilitar Atención para {hi.name}
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        )}
-
-        {/* 5. TAB 2: NOMENCLADOR DE TRAUMATOLOGÍA (SIMPLE, LIMPIO, SIN RELLENO) */}
-        {activeTab === 'my-nomenclator' && (
-          <div
-            style={{
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-            }}
-          >
-            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #e2e8f0' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.2rem' }}>
-                Nomenclador de Prestaciones de Traumatología
-              </h3>
-              <p style={{ fontSize: '0.82rem', color: '#64748b', margin: 0 }}>
-                Códigos homologados del Nomenclador Nacional para consultas, prescripciones y procedimientos en consultorio.
-              </p>
-            </div>
-
-            <div style={{ width: '100%', overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead>
-                  <tr
-                    style={{
-                      background: '#f8fafc',
-                      borderBottom: '1px solid #e2e8f0',
-                      color: '#64748b',
-                      fontSize: '0.74rem',
-                      fontWeight: 800,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.04em'
-                    }}
-                  >
-                    <th style={{ padding: '0.85rem 1.25rem', width: '15%' }}>Código</th>
-                    <th style={{ padding: '0.85rem 1rem', width: '45%' }}>Práctica Médica</th>
-                    <th style={{ padding: '0.85rem 1rem', width: '20%' }}>Categoría</th>
-                    <th style={{ padding: '0.85rem 1.25rem', width: '20%', textAlign: 'right' }}>Arancel Convenio</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {doctorNomenclator.map((item) => (
-                    <tr key={item.code} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '0.85rem 1.25rem', verticalAlign: 'middle' }}>
-                        <span
-                          style={{
-                            background: '#eff6ff',
-                            color: '#1d4ed8',
-                            border: '1px solid #bfdbfe',
-                            padding: '0.15rem 0.5rem',
-                            borderRadius: '6px',
-                            fontSize: '0.78rem',
-                            fontWeight: 800,
-                            fontFamily: 'monospace'
-                          }}
-                        >
-                          {item.code}
-                        </span>
-                      </td>
-
-                      <td style={{ padding: '0.85rem 1rem', verticalAlign: 'middle' }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0f172a' }}>
-                          {item.name}
-                        </div>
-                      </td>
-
-                      <td style={{ padding: '0.85rem 1rem', verticalAlign: 'middle' }}>
-                        <span
-                          style={{
-                            background: '#f1f5f9',
-                            color: '#475569',
-                            padding: '0.15rem 0.5rem',
-                            borderRadius: '4px',
-                            fontSize: '0.74rem',
-                            fontWeight: 700
-                          }}
-                        >
-                          {item.category}
-                        </span>
-                      </td>
-
-                      <td style={{ padding: '0.85rem 1.25rem', verticalAlign: 'middle', textAlign: 'right' }}>
-                        <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#002182' }}>
-                          ${item.arancelBase?.toLocaleString()}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
       </div>
     );
   }
@@ -1335,6 +487,28 @@ export const InsurancesView = () => {
         <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
           <button
             type="button"
+            onClick={() => setActiveTab('doctor-insurances')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              padding: '0.55rem 0.95rem',
+              borderRadius: '10px',
+              border: activeTab === 'doctor-insurances' ? '1px solid #002182' : '1px solid #e2e8f0',
+              background: activeTab === 'doctor-insurances' ? '#002182' : '#ffffff',
+              color: activeTab === 'doctor-insurances' ? '#ffffff' : '#475569',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <UserCheck size={15} />
+            Asignación por Médico ({doctors.length})
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab('agreements')}
             style={{
               display: 'inline-flex',
@@ -1440,6 +614,738 @@ export const InsurancesView = () => {
           />
         </div>
       </div>
+
+      {/* Content for Administrative Tabs */}
+      {/* TAB 1: ASIGNACIÓN DE OBRAS SOCIALES POR MÉDICO (SECRETARÍA) */}
+      {activeTab === 'doctor-insurances' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {/* A. SELECTOR DE PROFESIONALES */}
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '16px',
+              border: '1px solid #e2e8f0',
+              padding: '1.25rem',
+              boxShadow: '0 2px 8px rgba(0, 33, 130, 0.03)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Users size={18} color="#002182" />
+                  Paso 1: Seleccionar Médico de CITRA
+                </h3>
+                <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                  Haga clic en un profesional para ver y personalizar qué obras sociales atiende en consultorio.
+                </p>
+              </div>
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  background: '#eff6ff',
+                  color: '#1d4ed8',
+                  padding: '0.25rem 0.65rem',
+                  borderRadius: '20px',
+                  border: '1px solid #bfdbfe'
+                }}
+              >
+                {doctors.length} Médicos en Nómina
+              </span>
+            </div>
+
+            {/* Doctors Grid / Cards Strip */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                gap: '0.85rem'
+              }}
+            >
+              {doctors.map((doc) => {
+                const isSelected = (selectedDoctor?.id || selectedDoctorId) === doc.id;
+                const acceptedCount = (doc.acceptedInsurances || []).length;
+                return (
+                  <div
+                    key={doc.id}
+                    onClick={() => setSelectedDoctorId(doc.id)}
+                    style={{
+                      background: isSelected ? 'linear-gradient(135deg, #F0F6FF 0%, #FFFFFF 100%)' : '#ffffff',
+                      border: isSelected ? '2px solid #002182' : '1px solid #e2e8f0',
+                      borderRadius: '12px',
+                      padding: '0.85rem 1rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      boxShadow: isSelected ? '0 4px 12px rgba(0, 33, 130, 0.08)' : 'none',
+                      position: 'relative'
+                    }}
+                  >
+                    {/* Avatar */}
+                    <div
+                      style={{
+                        width: '44px',
+                        height: '44px',
+                        borderRadius: '50%',
+                        overflow: 'hidden',
+                        flexShrink: 0,
+                        border: isSelected ? '2px solid #002182' : '1.5px solid #cbd5e1'
+                      }}
+                    >
+                      <img
+                        src={doc.photo || doc.avatar || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80'}
+                        alt={doc.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80';
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.88rem', color: isSelected ? '#002182' : '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {doc.name}
+                      </div>
+                      <div style={{ fontSize: '0.74rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {doc.specialty}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '3px' }}>
+                        <span
+                          style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            color: acceptedCount > 0 ? '#166534' : '#991b1b',
+                            background: acceptedCount > 0 ? '#dcfce7' : '#fee2e2',
+                            padding: '0.1rem 0.4rem',
+                            borderRadius: '4px'
+                          }}
+                        >
+                          {acceptedCount} {acceptedCount === 1 ? 'cobertura' : 'coberturas'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {isSelected && (
+                      <div
+                        style={{
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '50%',
+                          background: '#002182',
+                          color: '#ffffff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}
+                      >
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* B. FICHA DEL MÉDICO SELECCIONADO + CONTROLES DE SECRETARÍA */}
+          {selectedDoctor && (
+            <div
+              style={{
+                background: '#ffffff',
+                borderRadius: '16px',
+                border: '1px solid #e2e8f0',
+                padding: '1.25rem',
+                boxShadow: '0 2px 8px rgba(0, 33, 130, 0.03)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem'
+              }}
+            >
+              {/* Doctor Details Bar & Bulk Action Buttons */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '1rem',
+                  borderBottom: '1px solid #f1f5f9',
+                  paddingBottom: '1rem'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div
+                    style={{
+                      width: '54px',
+                      height: '54px',
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      flexShrink: 0,
+                      border: '2px solid #002182',
+                      boxShadow: '0 2px 8px rgba(0,33,130,0.1)'
+                    }}
+                  >
+                    <img
+                      src={selectedDoctor.photo || selectedDoctor.avatar || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80'}
+                      alt={selectedDoctor.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0f172a' }}>
+                        {selectedDoctor.name}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 800,
+                          background: '#EFF6FF',
+                          color: '#1D4ED8',
+                          border: '1px solid #BFDBFE',
+                          padding: '0.15rem 0.55rem',
+                          borderRadius: '6px'
+                        }}
+                      >
+                        {selectedDoctor.specialty}
+                      </span>
+                    </div>
+                    <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                      Consultorio: <strong style={{ color: '#0f172a' }}>{selectedDoctor.room || 'Consultorio 1 - PB'}</strong> · 
+                      Arancel Privado: <strong style={{ color: '#0f172a' }}>${(selectedDoctor.priceConsultation || 25000).toLocaleString('es-AR')}</strong> · 
+                      Honorarios: <strong style={{ color: '#0f172a' }}>{selectedDoctor.feePercentage || 75}%</strong>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Bulk Actions for this doctor */}
+                <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleAll(true)}
+                    style={{
+                      background: '#ECFDF5',
+                      border: '1px solid #A7F3D0',
+                      color: '#065F46',
+                      padding: '0.5rem 0.9rem',
+                      borderRadius: '8px',
+                      fontSize: '0.82rem',
+                      fontWeight: 800,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <CheckCircle2 size={16} color="#059669" />
+                    Habilitar Todas
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleToggleAll(false)}
+                    style={{
+                      background: '#F8FAFC',
+                      border: '1px solid #CBD5E1',
+                      color: '#475569',
+                      padding: '0.5rem 0.9rem',
+                      borderRadius: '8px',
+                      fontSize: '0.82rem',
+                      fontWeight: 800,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <Ban size={15} color="#64748b" />
+                    Solo Particular
+                  </button>
+                </div>
+              </div>
+
+              {/* Filters for this doctor's insurances */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '0.75rem'
+                }}
+              >
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => setFilterState('all')}
+                    style={{
+                      padding: '0.4rem 0.8rem',
+                      borderRadius: '20px',
+                      border: 'none',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      background: filterState === 'all' ? '#002182' : '#f1f5f9',
+                      color: filterState === 'all' ? '#ffffff' : '#475569'
+                    }}
+                  >
+                    Todas ({healthInsurances.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterState('accepted')}
+                    style={{
+                      padding: '0.4rem 0.8rem',
+                      borderRadius: '20px',
+                      border: 'none',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      background: filterState === 'accepted' ? '#002182' : '#f1f5f9',
+                      color: filterState === 'accepted' ? '#ffffff' : '#475569'
+                    }}
+                  >
+                    Habilitadas para {selectedDoctor.name.split(' ')[0]} ({doctorAcceptedIds.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterState('not-accepted')}
+                    style={{
+                      padding: '0.4rem 0.8rem',
+                      borderRadius: '20px',
+                      border: 'none',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      background: filterState === 'not-accepted' ? '#002182' : '#f1f5f9',
+                      color: filterState === 'not-accepted' ? '#ffffff' : '#475569'
+                    }}
+                  >
+                    No Habilitadas ({healthInsurances.length - doctorAcceptedIds.length})
+                  </button>
+                </div>
+
+                <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
+                  Personalizando nómina de: <strong style={{ color: '#002182' }}>{selectedDoctor.name}</strong>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* C. LISTA DE COBERTURAS CON SWITCH DE PERSONALIZACIÓN PARA SECRETARÍA */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            {filteredDoctorInsurances.length === 0 ? (
+              <div
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '14px',
+                  padding: '3rem 1.5rem',
+                  textAlign: 'center'
+                }}
+              >
+                <Shield size={38} style={{ color: '#cbd5e1', marginBottom: '0.75rem' }} />
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1e293b', margin: '0 0 0.25rem' }}>
+                  No se encontraron obras sociales
+                </h3>
+                <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 1rem' }}>
+                  No hay coberturas que coincidan con la búsqueda o el filtro aplicado para este médico.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setFilterState('all');
+                  }}
+                  style={{
+                    background: '#f1f5f9',
+                    color: '#334155',
+                    border: '1px solid #cbd5e1',
+                    padding: '0.45rem 0.95rem',
+                    borderRadius: '8px',
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Restablecer Filtros
+                </button>
+              </div>
+            ) : (
+              filteredDoctorInsurances.map((hi) => {
+                const isAccepted = doctorAcceptedIds.includes(hi.id);
+                const isExpanded = expandedFichaId === hi.id;
+                const coverageType = getCoverageType(hi);
+                const agreement = insuranceAgreements.find(
+                  (a) => a.insuranceId === hi.id || a.insuranceName.toLowerCase().includes(hi.name.toLowerCase())
+                );
+
+                return (
+                  <div
+                    key={hi.id}
+                    style={{
+                      background: '#ffffff',
+                      border: isExpanded ? '1.5px solid #076ABC' : isAccepted ? '1px solid #BFDBFE' : '1px solid #e2e8f0',
+                      borderRadius: '14px',
+                      overflow: 'hidden',
+                      boxShadow: isExpanded ? '0 6px 20px rgba(7, 106, 188, 0.09)' : '0 2px 6px rgba(0, 33, 130, 0.03)',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {/* CABECERA DE LA FICHA CON LOGOS OFICIALES Y ESTILIZACIÓN PREMIUM */}
+                    <div
+                      onClick={() => toggleFicha(hi.id)}
+                      style={{
+                        padding: '1.1rem 1.35rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '1rem',
+                        cursor: 'pointer',
+                        background: isExpanded ? '#f8fafc' : isAccepted ? '#FAFCFF' : '#ffffff',
+                        transition: 'background 0.15s ease'
+                      }}
+                    >
+                      {/* Bloque Izquierdo: Logo Oficial en Caja Blanca + Nombre + Categoría + Planes */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: '1 1 300px' }}>
+                        {renderInsuranceLogo(hi, 50)}
+
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>
+                              {hi.name}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: '0.68rem',
+                                fontWeight: 800,
+                                background: coverageType.bg,
+                                color: coverageType.color,
+                                border: `1px solid ${coverageType.border}`,
+                                padding: '0.12rem 0.5rem',
+                                borderRadius: '6px'
+                              }}
+                            >
+                              {coverageType.label}
+                            </span>
+                          </div>
+
+                          {/* Plan pills */}
+                          <div style={{ display: 'flex', gap: '0.35rem', marginTop: '5px', flexWrap: 'wrap' }}>
+                            {hi.plans && hi.plans.length > 0 ? (
+                              hi.plans.map((p, idx) => (
+                                <span
+                                  key={idx}
+                                  style={{
+                                    background: isAccepted ? '#eff6ff' : '#f8fafc',
+                                    color: isAccepted ? '#1e40af' : '#64748b',
+                                    border: isAccepted ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
+                                    padding: '0.12rem 0.45rem',
+                                    borderRadius: '5px',
+                                    fontSize: '0.72rem',
+                                    fontWeight: 700
+                                  }}
+                                >
+                                  {p}
+                                </span>
+                              ))
+                            ) : (
+                              <span style={{ fontSize: '0.74rem', color: '#64748b' }}>Todos los planes</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Bloque Central: Copago en Consultorio */}
+                      <div style={{ display: 'flex', flexDirection: 'column', minWidth: '160px' }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Copago en Consultorio
+                        </span>
+                        <div>
+                          {hi.copay > 0 ? (
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                background: '#FFFBEB',
+                                color: '#B45309',
+                                border: '1px solid #FDE68A',
+                                padding: '0.25rem 0.65rem',
+                                borderRadius: '8px',
+                                fontSize: '0.82rem',
+                                fontWeight: 800,
+                                marginTop: '3px'
+                              }}
+                            >
+                              Copago: ${hi.copay.toLocaleString()}
+                            </span>
+                          ) : (
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                background: '#ECFDF5',
+                                color: '#059669',
+                                border: '1px solid #A7F3D0',
+                                padding: '0.25rem 0.65rem',
+                                borderRadius: '8px',
+                                fontSize: '0.82rem',
+                                fontWeight: 800,
+                                marginTop: '3px'
+                              }}
+                            >
+                              <Check size={13} color="#059669" /> Sin Copago (100% Cubierto)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Bloque Derecho: Control de Asignación por Secretaría + Botón Ficha */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        {/* Toggle Button for Secretaria */}
+                        <button
+                          type="button"
+                          onClick={(e) => handleToggleInsurance(hi.id, e)}
+                          title={isAccepted ? `Clic para deshabilitar esta cobertura para ${selectedDoctor?.name}` : `Clic para habilitar esta cobertura para ${selectedDoctor?.name}`}
+                          style={{
+                            background: isAccepted ? '#ECFDF5' : '#F8FAFC',
+                            border: isAccepted ? '1.5px solid #10B981' : '1px solid #CBD5E1',
+                            color: isAccepted ? '#065F46' : '#64748B',
+                            padding: '0.45rem 0.95rem',
+                            borderRadius: '20px',
+                            fontSize: '0.8rem',
+                            fontWeight: 800,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                            boxShadow: isAccepted ? '0 2px 6px rgba(16, 185, 129, 0.15)' : 'none'
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: '8px',
+                              height: '8px',
+                              borderRadius: '50%',
+                              background: isAccepted ? '#10B981' : '#94A3B8',
+                              display: 'inline-block'
+                            }}
+                          />
+                          {isAccepted ? `Habilitada (${selectedDoctor?.name?.split(' ')[1] || selectedDoctor?.name || 'Médico'})` : 'No atiende (Clic para habilitar)'}
+                        </button>
+
+                        {/* Expand Ficha Chevron */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFicha(hi.id);
+                          }}
+                          title={isExpanded ? 'Ocultar ficha interna' : 'Ver ficha interna completa'}
+                          style={{
+                            background: isExpanded ? '#E2E8F0' : '#F8FAFC',
+                            border: '1px solid #CBD5E1',
+                            color: '#334155',
+                            padding: '0.45rem 0.75rem',
+                            borderRadius: '8px',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <span>Ficha</span>
+                          {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* FICHA INTERNA DESPLEGADA */}
+                    {isExpanded && (
+                      <div
+                        style={{
+                          borderTop: '1px solid #e2e8f0',
+                          background: '#f8fafc',
+                          padding: '1.25rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '1rem'
+                        }}
+                      >
+                        {/* Subheader Ficha con Logo Real */}
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
+                            gap: '0.75rem',
+                            borderBottom: '1px solid #e2e8f0',
+                            paddingBottom: '0.75rem'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {renderInsuranceLogo(hi, 36)}
+                            <div>
+                              <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#0f172a' }}>
+                                Ficha Técnica: {hi.name}
+                              </div>
+                              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                CUIT: {agreement?.cuit || '30-50001234-9'} · Validador: {agreement?.validator || 'Web / API Online Directa'}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span
+                              style={{
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                background: isAccepted ? '#ECFDF5' : '#F1F5F9',
+                                color: isAccepted ? '#047857' : '#64748B',
+                                border: isAccepted ? '1px solid #A7F3D0' : '1px solid #CBD5E1',
+                                padding: '0.25rem 0.65rem',
+                                borderRadius: '20px'
+                              }}
+                            >
+                              {isAccepted ? `● Habilitada para ${selectedDoctor?.name}` : '○ No Habilitada'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* 3 Column Information Grid */}
+                        <div
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                            gap: '0.85rem'
+                          }}
+                        >
+                          {/* Col 1 */}
+                          <div
+                            style={{
+                              background: '#ffffff',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '10px',
+                              padding: '0.85rem 1rem'
+                            }}
+                          >
+                            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>
+                              Copago y Modalidad
+                            </div>
+                            <div style={{ fontSize: '1.05rem', fontWeight: 900, color: hi.copay > 0 ? '#B45309' : '#059669' }}>
+                              {hi.copay > 0 ? `$${hi.copay.toLocaleString()} en consultorio` : 'Sin Copago (100% Cubierto)'}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
+                              Arancel privado de referencia: ${(selectedDoctor?.priceConsultation || 25000).toLocaleString('es-AR')}
+                            </div>
+                          </div>
+
+                          {/* Col 2 */}
+                          <div
+                            style={{
+                              background: '#ffffff',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '10px',
+                              padding: '0.85rem 1rem'
+                            }}
+                          >
+                            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>
+                              Requisitos de Atención en Secretaría
+                            </div>
+                            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a' }}>
+                              {hi.requirements || 'Credencial física o digital en app + Token / DNI'}
+                            </div>
+                            <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '4px' }}>
+                              Vigencia de bono o código de autorización: 30 días corridos.
+                            </div>
+                          </div>
+
+                          {/* Col 3 */}
+                          <div
+                            style={{
+                              background: '#ffffff',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '10px',
+                              padding: '0.85rem 1rem'
+                            }}
+                          >
+                            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>
+                              Validación Online en Mostrador
+                            </div>
+                            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a' }}>
+                              {agreement?.validator || 'Plataforma Web Autorizadora en vivo'}
+                            </div>
+                            <div style={{ fontSize: '0.74rem', color: '#16a34a', fontWeight: 700, marginTop: '4px' }}>
+                              ✓ Token en tiempo real habilitado
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Nomenclador y Prácticas Asociadas */}
+                        <div
+                          style={{
+                            background: '#ffffff',
+                            borderRadius: '10px',
+                            border: '1px solid #e2e8f0',
+                            padding: '0.85rem 1rem'
+                          }}
+                        >
+                          <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#002182', textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '0.65rem' }}>
+                            Prácticas Frecuentes y Aranceles ({selectedDoctor?.specialty || 'General'})
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.5rem' }}>
+                            {nomenclatorItems.slice(0, 4).map((item) => (
+                              <div
+                                key={item.id}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  background: '#f8fafc',
+                                  padding: '0.5rem 0.75rem',
+                                  borderRadius: '6px',
+                                  border: '1px solid #e2e8f0',
+                                  fontSize: '0.78rem'
+                                }}
+                              >
+                                <div>
+                                  <span style={{ fontWeight: 800, fontFamily: 'monospace', color: '#002182', marginRight: '6px' }}>
+                                    {item.code}
+                                  </span>
+                                  <span style={{ fontWeight: 600, color: '#334155' }}>
+                                    {item.name}
+                                  </span>
+                                </div>
+                                <span style={{ fontWeight: 800, color: '#0f172a' }}>
+                                  ${item.arancelBase?.toLocaleString()}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Content for Administrative Tabs */}
       {activeTab === 'agreements' && (

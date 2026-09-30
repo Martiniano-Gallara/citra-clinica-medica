@@ -234,7 +234,6 @@ export const AdminManagementHub = () => {
           title: 'MI GESTIÓN PROFESIONAL',
           items: [
             { id: 'schedules', label: 'Gestión y Horarios', icon: Clock, badge: null },
-            { id: 'insurances', label: 'Mis Obras Sociales', icon: Shield, badge: scopedHealthInsurances.length },
             { id: 'reports', label: 'Métricas & Rendimiento', icon: BarChart3, badge: null }
           ]
         },
@@ -292,7 +291,7 @@ export const AdminManagementHub = () => {
     });
 
     return adminSections;
-  }, [isDoctor, isSuperAdmin, doctorAppointments.length, doctorPatients.length, scopedConsultations.length, scopedElectronicPrescriptions.length, scopedImagingStudies.length, scopedHealthInsurances.length, appointments.length, patients.length, healthInsurances.length, availableRooms]);
+  }, [isDoctor, isSuperAdmin, doctorAppointments.length, doctorPatients.length, scopedConsultations.length, scopedElectronicPrescriptions.length, scopedImagingStudies.length, appointments.length, patients.length, healthInsurances.length, availableRooms]);
 
   // RBAC Guard Effect: automatically redirect to dashboard if tab not permitted for current role
   React.useEffect(() => {
@@ -921,7 +920,7 @@ export const AdminManagementHub = () => {
                     </button>
 
                     <button
-                      onClick={() => setActiveTab('insurances')}
+                      onClick={() => setActiveTab('patients')}
                       style={{
                         background: '#F5F8FE',
                         border: '1px solid #D2E3FC',
@@ -937,8 +936,8 @@ export const AdminManagementHub = () => {
                       }}
                     >
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <Shield size={17} color="#076ABC" />
-                        Obras Sociales que atiendo ({scopedHealthInsurances.length})
+                        <Users size={17} color="#076ABC" />
+                        Nómina de Pacientes ({doctorPatients.length})
                       </span>
                       <ChevronRight size={16} color="#7994B8" />
                     </button>
@@ -1800,8 +1799,8 @@ export const AdminManagementHub = () => {
           {/* TAB 8: CONSULTORIOS (Administración y Superadmin) */}
           {activeTab === 'rooms' && (!isDoctor || isSuperAdmin) && <RoomsManager />}
 
-          {/* TAB 9: OBRAS SOCIALES */}
-          {activeTab === 'insurances' && <InsurancesView />}
+          {/* TAB 9: OBRAS SOCIALES (Gestión Exclusiva de Secretaría y Administración) */}
+          {activeTab === 'insurances' && !isDoctor && <InsurancesView />}
 
           {/* TAB 10: ESTUDIOS & DOCUMENTACIÓN (Exclusivo Médico) */}
           {activeTab === 'imaging' && isDoctor && <ImagingView />}

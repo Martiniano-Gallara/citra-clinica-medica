@@ -29,6 +29,8 @@ export const Sidebar = () => {
     (a) => a.date === '2026-08-28' && (a.status === 'pendiente' || a.status === 'en_sala')
   ).length;
 
+  const isDoctor = currentUser?.role === 'doctor';
+
   const navSections = [
     {
       title: 'Atención Médica',
@@ -44,7 +46,7 @@ export const Sidebar = () => {
     {
       title: 'Gestión Integral',
       items: [
-        { id: 'insurances', label: 'Obras Sociales', icon: Shield, badge: null },
+        ...(!isDoctor ? [{ id: 'insurances', label: 'Obras Sociales', icon: Shield, badge: null }] : []),
         { id: 'billing', label: 'Facturación', icon: CreditCard, badge: null },
         { id: 'communications', label: 'Comunicación', icon: MessageSquare, badge: null },
         { id: 'doctors', label: 'Profesionales', icon: UserCheck, badge: null },
