@@ -1,6 +1,12 @@
 import { generateSHA256Hash } from '../utils/cryptoAudit';
 import { generateCUIR, calculatePrescriptionExpiration } from '../utils/renapdisEngine';
 import { generateCAE } from '../utils/arcaValidator';
+import {
+  DOCTOR_BLANCO_PATIENTS,
+  DOCTOR_BLANCO_SEPTEMBER_APPOINTMENTS,
+  DOCTOR_BLANCO_SEPTEMBER_CONSULTATIONS,
+  DOCTOR_BLANCO_SEPTEMBER_INVOICES
+} from './doctorBlancoClinicalRecords';
 
 export const INITIAL_CLINIC_INFO = {
   name: 'CITRA',
@@ -104,14 +110,14 @@ export const INITIAL_DOCTORS = [
     color: '#002182',
     avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=400&auto=format&fit=crop&q=80',
     photo: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=400&auto=format&fit=crop&q=80',
-    scheduleDisplay: 'Martes, miércoles y jueves por la tarde (por orden de llegada)',
-    workingDays: ['Martes', 'Miércoles', 'Jueves'],
-    scheduleStart: '14:00',
-    scheduleEnd: '19:00',
+    scheduleDisplay: 'Lunes y Miércoles 08:00 a 14:00, Viernes 08:00 a 13:00',
+    workingDays: ['Lunes', 'Miércoles', 'Viernes'],
+    scheduleStart: '08:00',
+    scheduleEnd: '14:00',
     slotDuration: 30,
     priceConsultation: 25000,
     feePercentage: 75,
-    acceptedInsurances: ['hi-1', 'hi-2', 'hi-3', 'hi-7'],
+    acceptedInsurances: ['hi-1', 'hi-2', 'hi-3', 'hi-4', 'hi-7'],
     blockedDates: ['2026-09-20', '2026-10-12'],
     active: true,
     experience: '15+ años de experiencia',
@@ -633,7 +639,8 @@ export const INITIAL_PATIENTS = [
     files: [
       { id: 'f-6', name: 'RX_Rodillas_Comparativas.pdf', type: 'Radiografía', size: '3.1 MB', date: '2026-07-22', hashSha256: '5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f' }
     ]
-  }
+  },
+  ...DOCTOR_BLANCO_PATIENTS
 ];
 
 const TODAY_STR = new Date().toISOString().split('T')[0];
@@ -1100,7 +1107,8 @@ export const INITIAL_APPOINTMENTS = [
     isPaid: true,
     paymentMethod: 'MercadoPago',
     notes: 'Excelente relajación muscular.'
-  }
+  },
+  ...DOCTOR_BLANCO_SEPTEMBER_APPOINTMENTS
 ];
 
 export const INITIAL_CONSULTATIONS = [
@@ -1246,7 +1254,8 @@ export const INITIAL_CONSULTATIONS = [
     signatureTimestamp: '2026-08-28 10:42:15',
     sha256Hash: '4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c',
     adendas: []
-  }
+  },
+  ...DOCTOR_BLANCO_SEPTEMBER_CONSULTATIONS
 ];
 
 export const INITIAL_ELECTRONIC_PRESCRIPTIONS = [
@@ -1412,7 +1421,8 @@ export const INITIAL_INVOICES = [
     status: 'Cobrado',
     receiptNumber: 'REC-00893',
     arcaValidated: true
-  }
+  },
+  ...DOCTOR_BLANCO_SEPTEMBER_INVOICES
 ];
 
 export const INITIAL_AUDIT_LOGS = [
@@ -2010,7 +2020,10 @@ export const INITIAL_IMAGING_STUDIES = [
 // 3. OBRAS SOCIALES, NOMENCLADOR & CONVENIOS
 // ==========================================
 export const INITIAL_NOMENCLATOR_ITEMS = [
-  { code: '42.01.01', name: 'Consulta Médica Especializada en Traumatología', category: 'Consultas', arancelBase: 25000, copaySuggested: 0 },
+  { code: '42.01.01', name: 'Consulta Traumatología / Evaluación', category: 'Consultas', arancelBase: 25000, copaySuggested: 0 },
+  { code: '42.03.01', name: 'Infiltración Articular Rodilla / Hombro', category: 'Procedimientos', arancelBase: 32000, copaySuggested: 3000 },
+  { code: '42.04.01', name: 'Inmovilización / Férula / Yeso', category: 'Ortopedia', arancelBase: 28000, copaySuggested: 2500 },
+  { code: '42.02.01', name: 'Control Postquirúrgico & Curación', category: 'Consultas', arancelBase: 25000, copaySuggested: 0 },
   { code: '42.01.02', name: 'Consulta Médica de Urgencia / Guardia Traumatológica', category: 'Consultas', arancelBase: 32000, copaySuggested: 2000 },
   { code: '25.01.01', name: 'Sesión de Fisiokinesioterapia Motora (por sesión)', category: 'Kinesiología', arancelBase: 18000, copaySuggested: 1500 },
   { code: '25.01.02', name: 'Reeducación Postural Global (RPG) / Sesión 1 hora', category: 'Kinesiología', arancelBase: 28000, copaySuggested: 3500 },

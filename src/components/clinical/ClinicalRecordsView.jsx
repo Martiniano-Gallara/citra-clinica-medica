@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { getTodayArgentina } from '../../utils/dateUtils';
 import {
   FileText,
   Search,
@@ -107,7 +108,8 @@ export const ClinicalRecordsView = () => {
     setExpandedConsultationId((prev) => (prev === consultationId ? null : consultationId));
   };
 
-  const todayConsultationsCount = effectiveConsultations.filter((c) => c.date === '2026-08-28').length;
+  const todayStr = getTodayArgentina();
+  const todayConsultationsCount = effectiveConsultations.filter((c) => c.date === todayStr).length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

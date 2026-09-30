@@ -441,6 +441,19 @@ export const ClinicProvider = ({ children }) => {
     return consentForms;
   }, [consentForms, isDoctor, currentDoctor, isSuperAdmin]);
 
+  const scopedInvoices = React.useMemo(() => {
+    if (isDoctor && currentDoctor) {
+      const docId = currentDoctor.id;
+      const docName = (currentDoctor.name || '').toLowerCase().trim();
+      return invoices.filter(
+        (inv) =>
+          (docId && inv.doctorId === docId) ||
+          (docName && inv.doctorName && inv.doctorName.toLowerCase().trim().includes(docName))
+      );
+    }
+    return invoices;
+  }, [invoices, isDoctor, currentDoctor]);
+
   // Sincronización bidireccional con URL Hash para navegación y enlaces directos (ej: #admin, #turnos, etc.)
   useEffect(() => {
     const handleHashChange = () => {
@@ -2156,6 +2169,7 @@ export const ClinicProvider = ({ children }) => {
         scopedImagingStudies,
         scopedHealthInsurances,
         scopedConsentForms,
+        scopedInvoices,
         updateDoctorSchedule,
         updateDoctorInsurances,
         updateDoctorProfile,

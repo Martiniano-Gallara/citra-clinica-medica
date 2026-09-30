@@ -88,16 +88,23 @@ export const DashboardView = () => {
     setIsOnlineAuthModalOpen,
     setActiveTab,
     addToast,
-    currentBranch
+    currentBranch,
+    isDoctor,
+    currentDoctor,
+    scopedAppointments,
+    scopedPatients
   } = useClinic();
 
   const [tableFilter, setTableFilter] = useState('all'); // 'all', 'en_sala', 'pendiente', 'atendido'
 
+  const baseAppointments = isDoctor ? scopedAppointments : appointments;
+  const basePatients = isDoctor ? scopedPatients : patients;
+
   // Filter appointments
-  const filteredAppointments = appointments.filter((app) => {
+  const filteredAppointments = baseAppointments.filter((app) => {
     const matchDate = filterDate ? app.date === filterDate : true;
-    const matchDoctor = filterDoctor === 'all' ? true : app.doctorId === filterDoctor;
-    const matchSpecialty = filterSpecialty === 'all' ? true : app.specialtyId === filterSpecialty;
+    const matchDoctor = isDoctor ? true : (filterDoctor === 'all' ? true : app.doctorId === filterDoctor);
+    const matchSpecialty = isDoctor ? true : (filterSpecialty === 'all' ? true : app.specialtyId === filterSpecialty);
     const matchTableTab =
       tableFilter === 'all'
         ? true
@@ -111,10 +118,10 @@ export const DashboardView = () => {
   });
 
   // Calculate KPIs
-  const totalAppointmentsToday = appointments.filter((a) => a.date === filterDate).length;
-  const attendedCount = appointments.filter((a) => a.date === filterDate && a.status === 'atendido').length;
-  const inWaitingRoomCount = appointments.filter((a) => a.date === filterDate && a.status === 'en_sala').length;
-  const pendingCount = appointments.filter((a) => a.date === filterDate && (a.status === 'pendiente' || a.status === 'confirmado')).length;
+  const totalAppointmentsToday = baseAppointments.filter((a) => a.date === filterDate).length;
+  const attendedCount = baseAppointments.filter((a) => a.date === filterDate && a.status === 'atendido').length;
+  const inWaitingRoomCount = baseAppointments.filter((a) => a.date === filterDate && a.status === 'en_sala').length;
+  const pendingCount = baseAppointments.filter((a) => a.date === filterDate && (a.status === 'pendiente' || a.status === 'confirmado')).length;
 
   const progressPercentage = totalAppointmentsToday > 0 ? Math.round((attendedCount / totalAppointmentsToday) * 100) : 0;
 
@@ -184,10 +191,10 @@ export const DashboardView = () => {
             </div>
 
             <h1 style={{ fontSize: '1.65rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff', margin: 0 }}>
-              Centro Integral de Traumatología & Rehabilitación
+              {isDoctor ? `Panel Médico — ${currentDoctor?.fullName || currentDoctor?.name || 'Dr. Alejandro Blanco'}` : 'Centro Integral de Traumatología & Rehabilitación'}
             </h1>
             <p style={{ fontSize: '0.86rem', color: '#D2E3FC', margin: 0, opacity: 0.95 }}>
-              Panel de control médico centralizado · Gestión de consultas, rehabilitación y flujo asistencial
+              {isDoctor ? 'Especialista en Traumatología y Ortopedia · Consultorio 101' : 'Panel de control médico centralizado · Gestión de consultas, rehabilitación y flujo asistencial'}
             </p>
           </div>
 
@@ -273,35 +280,46 @@ export const DashboardView = () => {
             />
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-muted)' }}>Especialidad:</span>
-            <select
-              className="form-select"
-              style={{ width: '180px', padding: '0.35rem 0.6rem', fontSize: '0.85rem' }}
-              value={filterSpecialty}
-              onChange={(e) => setFilterSpecialty(e.target.value)}
-            >
-              <option value="all">Todas las Especialidades</option>
-              {specialties.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          </div>
+          {isDoctor ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#eff6ff', padding: '0.35rem 0.75rem', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+              <Stethoscope size={15} color="#1d4ed8" />
+              <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1d4ed8' }}>
+                Agenda: {currentDoctor?.fullName || currentDoctor?.name || 'Dr. Alejandro Blanco'} (Traumatología)
+              </span>
+            </div>
+          ) : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-muted)' }}>Especialidad:</span>
+                <select
+                  className="form-select"
+                  style={{ width: '180px', padding: '0.35rem 0.6rem', fontSize: '0.85rem' }}
+                  value={filterSpecialty}
+                  onChange={(e) => setFilterSpecialty(e.target.value)}
+                >
+                  <option value="all">Todas las Especialidades</option>
+                  {specialties.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-muted)' }}>Profesional:</span>
-            <select
-              className="form-select"
-              style={{ width: '180px', padding: '0.35rem 0.6rem', fontSize: '0.85rem' }}
-              value={filterDoctor}
-              onChange={(e) => setFilterDoctor(e.target.value)}
-            >
-              <option value="all">Todos los Profesionales</option>
-              {doctors.map((d) => (
-                <option key={d.id} value={d.id}>{d.name}</option>
-              ))}
-            </select>
-          </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-muted)' }}>Profesional:</span>
+                <select
+                  className="form-select"
+                  style={{ width: '180px', padding: '0.35rem 0.6rem', fontSize: '0.85rem' }}
+                  value={filterDoctor}
+                  onChange={(e) => setFilterDoctor(e.target.value)}
+                >
+                  <option value="all">Todos los Profesionales</option>
+                  {doctors.map((d) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
         </div>
 
         <div style={{ display: 'flex', gap: '0.65rem' }}>
