@@ -184,6 +184,7 @@ export const AdminManagementHub = () => {
     // RBAC & Scoping
     currentDoctor,
     isDoctor,
+    isDoctorBlanco,
     isSuperAdmin,
     scopedAppointments,
     scopedPatients,
@@ -191,6 +192,7 @@ export const AdminManagementHub = () => {
     scopedElectronicPrescriptions,
     scopedImagingStudies,
     scopedHealthInsurances,
+    clinicalAccessRequests,
     users
   } = useClinic();
 
@@ -210,6 +212,9 @@ export const AdminManagementHub = () => {
   // Doctor Specific KPIs
   const doctorAppointments = scopedAppointments;
   const doctorPatients = scopedPatients;
+  const pendingUrgentRequests = (clinicalAccessRequests || []).filter(
+    (r) => r.targetDoctorId === currentDoctor?.id && r.status === 'pendiente'
+  ).length;
 
   // Sidebar Grouped Navigation Sections according to Role (Doctor vs Administrativo)
   const navSections = React.useMemo(() => {
@@ -226,7 +231,12 @@ export const AdminManagementHub = () => {
           items: [
             { id: 'appointments', label: 'Mis Turnos', icon: CalendarCheck, badge: doctorAppointments.length },
             { id: 'patients', label: 'Mis Pacientes', icon: Users, badge: doctorPatients.length },
-            { id: 'clinical', label: 'Historia Clínica', icon: FileText, badge: scopedConsultations.length },
+            {
+              id: 'clinical',
+              label: 'Historial Clínico',
+              icon: FileText,
+              badge: pendingUrgentRequests > 0 ? `${pendingUrgentRequests} Urgente` : scopedConsultations.length
+            },
             { id: 'prescriptions', label: 'Mis Recetas (CUIR)', icon: Pill, badge: scopedElectronicPrescriptions.length },
             { id: 'imaging', label: 'Estudios & Radiología', icon: Eye, badge: scopedImagingStudies.length }
           ]

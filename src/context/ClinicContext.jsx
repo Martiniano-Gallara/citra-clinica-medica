@@ -257,6 +257,44 @@ export const ClinicProvider = ({ children }) => {
   const [isPurchaseOrderModalOpen, setIsPurchaseOrderModalOpen] = useState(false);
   const [isOnlineAuthModalOpen, setIsOnlineAuthModalOpen] = useState(false);
 
+  // Solicitudes Urgentes de Acceso a Historias Clínicas entre Profesionales (Ley 26.529)
+  const INITIAL_ACCESS_REQUESTS = [
+    {
+      id: 'req-101',
+      consultationId: 'cons-103',
+      patientId: 'pat-3',
+      patientName: 'Carlos Alberto Fernández',
+      patientDni: '27.310.840',
+      consultationDate: '2026-09-30',
+      consultationReason: 'Evaluación de lumbociatalgia derecha de 3 semanas de evolución.',
+      requesterDoctorId: 'doc-2',
+      requesterDoctorName: 'Dr. Lagos',
+      requesterDoctorSpecialty: 'Traumatología',
+      targetDoctorId: 'doc-1',
+      targetDoctorName: 'Dr. Alejandro Blanco',
+      requestedSections: {
+        diagnosis: true,
+        evolution: true,
+        prescriptions: false,
+        studies: true,
+        indications: true,
+        vitals: true
+      },
+      justification: 'Paciente en interconsulta por recaída álgica y persistencia de radiculopatía derecha. Se solicita acceso urgente para cotejar la evolución y el reporte de resonancia magnética previo indicado por el Dr. Blanco.',
+      urgency: 'URGENTE',
+      status: 'pendiente',
+      createdAt: '2026-09-30 11:20 hs'
+    }
+  ];
+
+  const [clinicalAccessRequests, setClinicalAccessRequests] = useState(() =>
+    loadStorage('clinicalAccessRequests', INITIAL_ACCESS_REQUESTS)
+  );
+
+  useEffect(() => {
+    saveStorage('clinicalAccessRequests', clinicalAccessRequests);
+  }, [clinicalAccessRequests]);
+
   // Toasts
   const [toasts, setToasts] = useState([]);
 
@@ -337,6 +375,20 @@ export const ClinicProvider = ({ children }) => {
     return null;
   }, [authAdmin, doctors, isDoctor]);
 
+  // El Dr. Alejandro Blanco es el dueño y Director Médico de CITRA:
+  // Tiene acceso universal a todas las historias clínicas y atenciones de todos los pacientes.
+  const isDoctorBlanco = React.useMemo(() => {
+    if (!currentDoctor) return false;
+    const docNameLower = (currentDoctor.name || '').toLowerCase();
+    const docId = currentDoctor.id;
+    return (
+      docId === 'doc-1' ||
+      docNameLower.includes('blanco') ||
+      (authAdmin?.email && authAdmin.email.toLowerCase().includes('blanco')) ||
+      (authAdmin?.username && authAdmin.username.toLowerCase().includes('blanco'))
+    );
+  }, [currentDoctor, authAdmin]);
+
   // Scoped Data Collections
   const scopedAppointments = React.useMemo(() => {
     if (isDoctor && currentDoctor) {
@@ -351,6 +403,10 @@ export const ClinicProvider = ({ children }) => {
 
   const scopedPatients = React.useMemo(() => {
     if (isDoctor && currentDoctor) {
+      // Dr. Blanco es el dueño de CITRA: puede ver a absolutamente todos los pacientes
+      if (isDoctorBlanco || isSuperAdmin) {
+        return patients;
+      }
       const docId = currentDoctor.id;
       const docNameLower = (currentDoctor.name || '').toLowerCase().trim();
       return patients.filter((p) => {
@@ -403,10 +459,14 @@ export const ClinicProvider = ({ children }) => {
       });
     }
     return patients;
-  }, [patients, appointments, consultations, electronicPrescriptions, imagingStudies, isDoctor, currentDoctor]);
+  }, [patients, appointments, consultations, electronicPrescriptions, imagingStudies, isDoctor, currentDoctor, isDoctorBlanco, isSuperAdmin]);
 
   const scopedConsultations = React.useMemo(() => {
     if (isDoctor && currentDoctor) {
+      // Dr. Blanco es el dueño de CITRA: puede ver absolutamente todas las consultas de todos los pacientes
+      if (isDoctorBlanco || isSuperAdmin) {
+        return consultations;
+      }
       return consultations.filter(
         (c) =>
           c.doctorId === currentDoctor.id ||
@@ -416,7 +476,7 @@ export const ClinicProvider = ({ children }) => {
     if (isSuperAdmin) return consultations;
     // Administrativo: estricta reserva de confidencialidad médica
     return [];
-  }, [consultations, isDoctor, currentDoctor, isSuperAdmin]);
+  }, [consultations, isDoctor, currentDoctor, isDoctorBlanco, isSuperAdmin]);
 
   const scopedElectronicPrescriptions = React.useMemo(() => {
     if (isDoctor && currentDoctor) {
@@ -857,6 +917,147 @@ export const ClinicProvider = ({ children }) => {
 
     logAudit('UPDATE_ADENDA', 'Historia Clínica', '-', `Adenda médica agregada a consulta ${consultationId} por ${effectiveDoctorName}.`);
     addToast('Adenda Médica Registrada', 'La aclaración ha sido incorporada al expediente clínico.', 'info');
+  };
+
+  // --- SOLICITUDES URGENTES DE ACCESO A HISTORIAL CLÍNICO ENTRE PROFESIONALES ---
+  const requestClinicalAccess = ({
+    consultationId,
+    patientId,
+    patientName,
+    patientDni,
+    consultationDate,
+    consultationReason,
+    targetDoctorId,
+    targetDoctorName,
+    requestedSections,
+    justification
+  }) => {
+    const effectiveRequesterId = currentDoctor?.id || 'doc-2';
+    const effectiveRequesterName = currentDoctor?.name || 'Dr. Solicitante';
+    const effectiveRequesterSpecialty = currentDoctor?.specialty || 'Especialista';
+
+    const newReq = {
+      id: `req-${Date.now()}`,
+      consultationId,
+      patientId,
+      patientName,
+      patientDni,
+      consultationDate: consultationDate || getTodayArgentina(),
+      consultationReason: consultationReason || 'Consulta Médica Programada',
+      requesterDoctorId: effectiveRequesterId,
+      requesterDoctorName: effectiveRequesterName,
+      requesterDoctorSpecialty: effectiveRequesterSpecialty,
+      targetDoctorId: targetDoctorId || 'doc-1',
+      targetDoctorName: targetDoctorName || 'Dr. Alejandro Blanco',
+      requestedSections: requestedSections || {
+        diagnosis: true,
+        evolution: true,
+        prescriptions: true,
+        studies: true,
+        indications: true,
+        vitals: true
+      },
+      justification: (justification || '').trim(),
+      urgency: 'URGENTE',
+      status: 'pendiente',
+      createdAt: `${getTodayArgentina()} ${getNowArgentinaTime()} hs`
+    };
+
+    setClinicalAccessRequests((prev) => [newReq, ...prev]);
+    logAudit(
+      'ACCESS_REQUEST',
+      'Historial Clínico',
+      patientDni,
+      `Solicitud urgente de acceso a consulta ${consultationId} enviada por ${effectiveRequesterName} a ${newReq.targetDoctorName}.`
+    );
+    addToast('Solicitud Urgente Enviada', `Se notificó con carácter prioritario a ${newReq.targetDoctorName}.`, 'success');
+    return newReq;
+  };
+
+  const resolveClinicalAccessRequest = (requestId, decision) => {
+    const newStatus = decision === 'approve' ? 'aprobada' : 'rechazada';
+    setClinicalAccessRequests((prev) =>
+      prev.map((r) => {
+        if (r.id === requestId) {
+          logAudit(
+            decision === 'approve' ? 'ACCESS_GRANTED' : 'ACCESS_DENIED',
+            'Historial Clínico',
+            r.patientDni,
+            `Solicitud de acceso ${r.id} ${newStatus === 'aprobada' ? 'AUTORIZADA' : 'DENEGADA'} por ${currentDoctor?.name || 'Director Médico'}.`
+          );
+          return {
+            ...r,
+            status: newStatus,
+            resolvedAt: `${getTodayArgentina()} ${getNowArgentinaTime()} hs`,
+            resolvedBy: currentDoctor?.name || 'Dr. Alejandro Blanco'
+          };
+        }
+        return r;
+      })
+    );
+
+    if (decision === 'approve') {
+      addToast('Acceso Autorizado', 'Se concedió acceso oficial a la historia clínica bajo auditoría de Ley 26.529.', 'success');
+    } else {
+      addToast('Solicitud Denegada', 'Se rechazó la solicitud de acceso a la historia clínica.', 'info');
+    }
+  };
+
+  const canDoctorViewConsultation = (consultation, doctorId) => {
+    if (!consultation) return { allowed: false, reason: 'not_found' };
+    // Dr. Blanco es el dueño de CITRA: puede ver TODO
+    if (isDoctorBlanco) {
+      return { allowed: true, reason: 'owner_blanco' };
+    }
+    const docId = doctorId || currentDoctor?.id;
+    const docName = (currentDoctor?.name || '').toLowerCase();
+    // Es el autor de la consulta
+    if (
+      (docId && consultation.doctorId === docId) ||
+      (docName && consultation.doctorName && consultation.doctorName.toLowerCase().includes(docName))
+    ) {
+      return { allowed: true, reason: 'author' };
+    }
+    // Verificar si hay una solicitud aprobada
+    const approved = clinicalAccessRequests.find(
+      (r) =>
+        r.consultationId === consultation.id &&
+        r.requesterDoctorId === docId &&
+        r.status === 'aprobada'
+    );
+    if (approved) {
+      return { allowed: true, reason: 'approved_request', request: approved };
+    }
+    // Verificar si hay una solicitud pendiente
+    const pending = clinicalAccessRequests.find(
+      (r) =>
+        r.consultationId === consultation.id &&
+        r.requesterDoctorId === docId &&
+        r.status === 'pendiente'
+    );
+    if (pending) {
+      return { allowed: false, reason: 'pending_request', request: pending };
+    }
+    return { allowed: false, reason: 'restricted' };
+  };
+
+  const switchDoctorView = (doctorId) => {
+    const targetDoc = doctors.find((d) => d.id === doctorId);
+    if (!targetDoc) return;
+    const targetUser = users.find((u) => u.doctorId === doctorId) || {
+      id: `usr-${targetDoc.id}`,
+      name: targetDoc.name,
+      fullName: targetDoc.fullName || targetDoc.name,
+      email: targetDoc.email,
+      role: targetDoc.specialty,
+      adminType: 'doctor',
+      doctorId: targetDoc.id,
+      specialty: targetDoc.specialty
+    };
+    setAuthRole('admin');
+    setAuthAdmin(targetUser);
+    setCurrentUser(targetUser);
+    addToast('Sesión Médica Cambiada', `Visualizando sistema como ${targetDoc.name} (${targetDoc.specialty}).`, 'info');
   };
 
   // --- RECETA ELECTRÓNICA ReNaPDiS (Ley 27.553) ---
@@ -2252,6 +2453,7 @@ export const ClinicProvider = ({ children }) => {
         // RBAC & Scoped Data exports
         currentDoctor,
         isDoctor,
+        isDoctorBlanco,
         isAdministrative,
         isSuperAdmin,
         scopedAppointments,
@@ -2266,9 +2468,16 @@ export const ClinicProvider = ({ children }) => {
         updateDoctorInsurances,
         updateDoctorProfile,
         switchAdminUser,
+        switchDoctorView,
         updateUser,
         addUser,
-        deleteUser
+        deleteUser,
+        // Clinical Access Requests (Historial Clínico)
+        clinicalAccessRequests,
+        setClinicalAccessRequests,
+        requestClinicalAccess,
+        resolveClinicalAccessRequest,
+        canDoctorViewConsultation
       }}
     >
       {children}

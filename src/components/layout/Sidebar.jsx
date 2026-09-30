@@ -38,7 +38,7 @@ export const Sidebar = () => {
         { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard, badge: null },
         { id: 'agenda', label: 'Turnos', icon: Calendar, badge: pendingAppointmentsCount > 0 ? pendingAppointmentsCount : null },
         { id: 'patients', label: 'Pacientes', icon: Users, badge: null },
-        { id: 'clinical', label: 'Historia Clínica', icon: FileText, badge: null },
+        { id: 'clinical', label: 'Historial Clínico', icon: FileText, badge: null },
         { id: 'kinesio', label: 'Kinesiología & Rehab', icon: Activity, badge: null },
         { id: 'imaging', label: 'Estudios', icon: Eye, badge: null }
       ]
