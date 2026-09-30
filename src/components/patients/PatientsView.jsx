@@ -102,6 +102,36 @@ export const PatientsView = () => {
 
   const patientsWithAllergiesCount = effectivePatients.filter((p) => p.allergies && p.allergies.length > 0).length;
 
+  const getAssignedDoctors = (pat) => {
+    if (!pat) return [];
+    const assignedIds = Array.isArray(pat.assignedDoctorIds)
+      ? pat.assignedDoctorIds
+      : pat.assignedDoctorId
+      ? [pat.assignedDoctorId]
+      : [];
+    const directMatches = (doctors || []).filter((d) => assignedIds.includes(d.id));
+    if (directMatches.length > 0) return directMatches;
+
+    if (pat.assignedDoctorNames) {
+      const names = Array.isArray(pat.assignedDoctorNames)
+        ? pat.assignedDoctorNames
+        : [pat.assignedDoctorNames];
+      const nameMatches = (doctors || []).filter((d) =>
+        names.some((n) => n && d.name && d.name.toLowerCase().trim() === n.toLowerCase().trim())
+      );
+      if (nameMatches.length > 0) return nameMatches;
+    }
+
+    if (pat.primaryDoctor) {
+      const primaryMatch = (doctors || []).filter(
+        (d) => d.name && d.name.toLowerCase().trim() === pat.primaryDoctor.toLowerCase().trim()
+      );
+      if (primaryMatch.length > 0) return primaryMatch;
+    }
+
+    return [];
+  };
+
   const exportPatientsCSV = () => {
     const headers = 'ID,Nombre,DNI,FechaNacimiento,Edad,Genero,GrupoSanguineo,Telefono,Email,ObraSocial,Plan,NumeroAfiliado,Alergias\n';
     const rows = filteredPatients.map((p) => [
@@ -207,30 +237,32 @@ export const PatientsView = () => {
             <span>Exportar CSV</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              setPatientFormModalData(null);
-              setIsPatientFormModalOpen(true);
-            }}
-            style={{
-              background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
-              color: '#ffffff',
-              border: 'none',
-              padding: '0.65rem 1.15rem',
-              borderRadius: '10px',
-              fontSize: '0.88rem',
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)'
-            }}
-          >
-            <Plus size={18} />
-            <span>Nuevo Paciente</span>
-          </button>
+          {!isDoctor && (
+            <button
+              type="button"
+              onClick={() => {
+                setPatientFormModalData(null);
+                setIsPatientFormModalOpen(true);
+              }}
+              style={{
+                background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                color: '#ffffff',
+                border: 'none',
+                padding: '0.65rem 1.15rem',
+                borderRadius: '10px',
+                fontSize: '0.88rem',
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)'
+              }}
+            >
+              <Plus size={18} />
+              <span>Nuevo Paciente</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -476,8 +508,8 @@ export const PatientsView = () => {
                 <th style={{ padding: '0.85rem 1.25rem', width: '130px' }}>DNI</th>
                 <th style={{ padding: '0.85rem 1.25rem' }}>Obra Social & Plan</th>
                 <th style={{ padding: '0.85rem 1.25rem' }}>Contacto Directo</th>
-                <th style={{ padding: '0.85rem 1.25rem', width: '160px' }}>
-                  {isDoctor ? 'Alertas Clínicas' : 'Domicilio / Ciudad'}
+                <th style={{ padding: '0.85rem 1.25rem', minWidth: '180px' }}>
+                  {isDoctor ? 'Alertas Clínicas' : 'Médicos Asignados'}
                 </th>
                 <th style={{ padding: '0.85rem 1.25rem', textAlign: 'right', width: '140px' }}>Ficha</th>
               </tr>
@@ -583,7 +615,7 @@ export const PatientsView = () => {
                           </div>
                         </td>
 
-                        {/* Alertas Médicas (Médico) o Domicilio (Recepción) */}
+                        {/* Alertas Médicas (Médico) o Médicos Asignados (Recepción/Secretaría) */}
                         <td style={{ padding: '0.9rem 1.25rem' }}>
                           {isDoctor ? (
                             hasAllergies ? (
@@ -608,9 +640,37 @@ export const PatientsView = () => {
                               <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Sin alergias</span>
                             )
                           ) : (
-                            <span style={{ fontSize: '0.82rem', color: '#475569', fontWeight: 500 }}>
-                              {pat.address || 'Arroyito, Cba.'}
-                            </span>
+                            <div>
+                              {getAssignedDoctors(pat).length > 0 ? (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                  {getAssignedDoctors(pat).map((d) => (
+                                    <span
+                                      key={d.id}
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '3px',
+                                        background: '#f0f7ff',
+                                        color: '#076ABC',
+                                        border: '1px solid #bae0fd',
+                                        padding: '2px 6px',
+                                        borderRadius: '6px',
+                                        fontSize: '0.72rem',
+                                        fontWeight: 700
+                                      }}
+                                      title={`${d.name} (${d.specialtyName})`}
+                                    >
+                                      <Stethoscope size={10} color="#076ABC" />
+                                      <span>{d.name.replace('Dr. ', '').replace('Dra. ', '')}</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                                  Sin médico asignado
+                                </span>
+                              )}
+                            </div>
                           )}
                         </td>
 
@@ -764,12 +824,61 @@ export const PatientsView = () => {
                               ) : (
                                 <div>
                                   <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                    <CalendarPlus size={14} /> Recepción & Asignación
+                                    <Stethoscope size={14} /> Profesionales Médicos Asignados
+                                  </div>
+                                  <div style={{ marginBottom: '0.85rem' }}>
+                                    {getAssignedDoctors(pat).length > 0 ? (
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                        {getAssignedDoctors(pat).map((d) => (
+                                          <div
+                                            key={d.id}
+                                            style={{
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              gap: '8px',
+                                              background: '#f8fafc',
+                                              border: '1px solid #cbd5e1',
+                                              borderRadius: '8px',
+                                              padding: '5px 10px',
+                                              fontSize: '0.8rem'
+                                            }}
+                                          >
+                                            <div
+                                              style={{
+                                                width: '22px',
+                                                height: '22px',
+                                                borderRadius: '50%',
+                                                background: '#076ABC',
+                                                color: '#ffffff',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontSize: '0.68rem',
+                                                fontWeight: 800
+                                              }}
+                                            >
+                                              {d.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                                            </div>
+                                            <div>
+                                              <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: '1.2' }}>{d.name}</div>
+                                              <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{d.specialtyName}</div>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div style={{ fontSize: '0.8rem', color: '#64748b', fontStyle: 'italic' }}>
+                                        No tiene médicos asignados. Puede asignarle uno o más con el botón de abajo.
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+                                    Datos de Recepción
                                   </div>
                                   <div style={{ fontSize: '0.82rem', color: '#334155', marginBottom: '0.85rem', lineHeight: '1.4' }}>
                                     <div><strong>Domicilio:</strong> {pat.address || 'Arroyito, Córdoba'}</div>
-                                    <div><strong>Ciudad / Localidad:</strong> {pat.city || 'Arroyito (Cba.)'}</div>
-                                    <div><strong>Estado Administrativo:</strong> <span style={{ color: '#16a34a', fontWeight: 700 }}>Habilitado</span></div>
+                                    <div><strong>Ciudad:</strong> {pat.city || 'Arroyito (Cba.)'}</div>
                                   </div>
 
                                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -813,7 +922,7 @@ export const PatientsView = () => {
                                         gap: '4px'
                                       }}
                                     >
-                                      <Edit2 size={13} /> Editar Datos
+                                      <Edit2 size={13} /> Editar / Asignar Médicos
                                     </button>
 
                                     <button

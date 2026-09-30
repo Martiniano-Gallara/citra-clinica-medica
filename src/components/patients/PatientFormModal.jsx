@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { Modal } from '../common/Modal';
-import { User, Phone, Mail, Shield, AlertTriangle, FileText } from 'lucide-react';
+import { User, Phone, Mail, Shield, AlertTriangle, FileText, Stethoscope, Check } from 'lucide-react';
 
 export const PatientFormModal = () => {
   const {
@@ -9,6 +9,7 @@ export const PatientFormModal = () => {
     setIsPatientFormModalOpen,
     patientFormModalData,
     healthInsurances,
+    doctors,
     addPatient,
     updatePatient,
     addToast
@@ -29,11 +30,24 @@ export const PatientFormModal = () => {
     insuranceNumber: '',
     allergies: '',
     antecedentes: '',
-    observations: ''
+    observations: '',
+    assignedDoctorIds: []
   });
 
   useEffect(() => {
     if (patientFormModalData) {
+      let initialDoctorIds = [];
+      if (Array.isArray(patientFormModalData.assignedDoctorIds)) {
+        initialDoctorIds = [...patientFormModalData.assignedDoctorIds];
+      } else if (patientFormModalData.assignedDoctorId) {
+        initialDoctorIds = [patientFormModalData.assignedDoctorId];
+      } else if (patientFormModalData.primaryDoctor) {
+        const doc = (doctors || []).find(
+          (d) => d.name && d.name.toLowerCase().trim() === patientFormModalData.primaryDoctor.toLowerCase().trim()
+        );
+        if (doc) initialDoctorIds = [doc.id];
+      }
+
       setFormData({
         ...patientFormModalData,
         birthDate: patientFormModalData.birthDate || '',
@@ -44,7 +58,8 @@ export const PatientFormModal = () => {
           : patientFormModalData.allergies || '',
         antecedentes: Array.isArray(patientFormModalData.antecedentes)
           ? patientFormModalData.antecedentes.join(', ')
-          : patientFormModalData.antecedentes || ''
+          : patientFormModalData.antecedentes || '',
+        assignedDoctorIds: initialDoctorIds
       });
     } else {
       setFormData({
@@ -62,10 +77,11 @@ export const PatientFormModal = () => {
         insuranceNumber: '',
         allergies: '',
         antecedentes: '',
-        observations: ''
+        observations: '',
+        assignedDoctorIds: []
       });
     }
-  }, [patientFormModalData, isPatientFormModalOpen, healthInsurances]);
+  }, [patientFormModalData, isPatientFormModalOpen, healthInsurances, doctors]);
 
   const handleInsuranceChange = (e) => {
     const id = e.target.value;
@@ -80,6 +96,29 @@ export const PatientFormModal = () => {
     }
   };
 
+  const toggleDoctor = (docId) => {
+    setFormData((prev) => {
+      const current = prev.assignedDoctorIds || [];
+      const exists = current.includes(docId);
+      const updated = exists ? current.filter((id) => id !== docId) : [...current, docId];
+      return { ...prev, assignedDoctorIds: updated };
+    });
+  };
+
+  const selectAllDoctors = () => {
+    setFormData((prev) => ({
+      ...prev,
+      assignedDoctorIds: (doctors || []).map((d) => d.id)
+    }));
+  };
+
+  const clearDoctors = () => {
+    setFormData((prev) => ({
+      ...prev,
+      assignedDoctorIds: []
+    }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name || !formData.dni) {
@@ -87,8 +126,15 @@ export const PatientFormModal = () => {
       return;
     }
 
+    const selectedDocs = (doctors || []).filter((d) => (formData.assignedDoctorIds || []).includes(d.id));
+    const assignedNames = selectedDocs.map((d) => d.name);
+    const primaryDoctor = selectedDocs.length > 0 ? selectedDocs[0].name : '';
+
     const payload = {
       ...formData,
+      assignedDoctorIds: formData.assignedDoctorIds || [],
+      assignedDoctorNames: assignedNames,
+      primaryDoctor: primaryDoctor,
       allergies: formData.allergies
         ? formData.allergies.split(',').map((s) => s.trim()).filter(Boolean)
         : [],
@@ -290,9 +336,169 @@ export const PatientFormModal = () => {
           </div>
         </div>
 
+        {/* 4. Asignación a Profesionales Médicos (Secretaría) */}
+        <div style={{ margin: '1.5rem 0 0.85rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.4rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#2563eb' }}>
+                4. Asignación a Profesionales Médicos
+              </span>
+              <span
+                style={{
+                  background: (formData.assignedDoctorIds || []).length > 0 ? '#eff6ff' : '#f1f5f9',
+                  color: (formData.assignedDoctorIds || []).length > 0 ? '#076ABC' : '#64748b',
+                  fontSize: '0.74rem',
+                  fontWeight: 800,
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  border: '1px solid #bfdbfe'
+                }}
+              >
+                {(formData.assignedDoctorIds || []).length} profesional{(formData.assignedDoctorIds || []).length === 1 ? '' : 'es'} asignado{(formData.assignedDoctorIds || []).length === 1 ? '' : 's'}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={selectAllDoctors}
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  padding: '3px 8px',
+                  fontSize: '0.74rem',
+                  fontWeight: 600,
+                  color: '#334155',
+                  cursor: 'pointer'
+                }}
+              >
+                Seleccionar todos
+              </button>
+              <button
+                type="button"
+                onClick={clearDoctors}
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  padding: '3px 8px',
+                  fontSize: '0.74rem',
+                  fontWeight: 600,
+                  color: '#64748b',
+                  cursor: 'pointer'
+                }}
+              >
+                Limpiar
+              </button>
+            </div>
+          </div>
+
+          <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '0 0 0.75rem 0' }}>
+            Los pacientes registrados en Secretaría pueden ser asignados a uno o varios médicos. El paciente figurará automáticamente en sus paneles médicos de <strong>Mis Pacientes</strong>.
+          </p>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
+              gap: '0.6rem',
+              maxHeight: '220px',
+              overflowY: 'auto',
+              padding: '4px',
+              border: '1px solid #e2e8f0',
+              borderRadius: '10px',
+              background: '#fafafa'
+            }}
+          >
+            {(doctors || []).map((doc) => {
+              const isSelected = (formData.assignedDoctorIds || []).includes(doc.id);
+              return (
+                <div
+                  key={doc.id}
+                  onClick={() => toggleDoctor(doc.id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.65rem',
+                    padding: '0.6rem 0.75rem',
+                    borderRadius: '8px',
+                    border: isSelected ? '1.5px solid #076ABC' : '1px solid #e2e8f0',
+                    background: isSelected ? '#eff6ff' : '#ffffff',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    boxShadow: isSelected ? '0 2px 6px rgba(7, 106, 188, 0.15)' : 'none'
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      borderRadius: '4px',
+                      border: isSelected ? 'none' : '1.5px solid #94a3b8',
+                      background: isSelected ? '#076ABC' : '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#ffffff',
+                      flexShrink: 0
+                    }}
+                  >
+                    {isSelected && <Check size={13} strokeWidth={3} />}
+                  </div>
+
+                  <div
+                    style={{
+                      width: '30px',
+                      height: '30px',
+                      borderRadius: '50%',
+                      background: doc.color || '#002182',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      flexShrink: 0
+                    }}
+                  >
+                    {doc.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                  </div>
+
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div
+                      style={{
+                        fontWeight: 700,
+                        fontSize: '0.82rem',
+                        color: isSelected ? '#002182' : '#0f172a',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}
+                    >
+                      {doc.name}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '0.72rem',
+                        color: '#64748b',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}
+                    >
+                      {doc.specialtyName}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Clinical alerts & background */}
         <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#2563eb', margin: '1.25rem 0 0.75rem' }}>
-          4. Alergias, Antecedentes & Observaciones Clínicas
+          5. Alergias, Antecedentes & Observaciones Clínicas
         </div>
         <div className="form-group">
           <label className="form-label" style={{ color: '#dc2626' }}>

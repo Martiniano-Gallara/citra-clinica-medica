@@ -133,6 +133,7 @@ CREATE TABLE IF NOT EXISTS patients (
     insurance_name VARCHAR(150) DEFAULT 'Particular',
     insurance_plan VARCHAR(100) DEFAULT 'Plan Estándar',
     insurance_number VARCHAR(100),
+    assigned_doctor_ids TEXT[] DEFAULT ARRAY[]::TEXT[],
     registered_at DATE DEFAULT CURRENT_DATE,
     avatar_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),

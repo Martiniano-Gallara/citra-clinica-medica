@@ -37,7 +37,8 @@ export const Topbar = () => {
     setIsPatientPortalMode,
     isPatientPortalMode,
     tasks,
-    toggleTaskStatus
+    toggleTaskStatus,
+    isDoctor
   } = useClinic();
 
   const [showQuickMenu, setShowQuickMenu] = useState(false);
@@ -314,26 +315,29 @@ export const Topbar = () => {
                 <span>Consentimiento Informado</span>
               </div>
 
-              <div
-                style={{
-                  padding: '0.65rem 0.85rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.65rem',
-                  cursor: 'pointer',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: '0.9rem',
-                  fontWeight: 600
-                }}
-                className="dropdown-item"
-                onClick={() => {
-                  setIsPatientFormModalOpen(true);
-                  setShowQuickMenu(false);
-                }}
-              >
-                <UserPlus size={18} color="#076ABC" />
-                <span>Alta Nuevo Paciente</span>
-              </div>
+              {!isDoctor && (
+                <div
+                  style={{
+                    padding: '0.65rem 0.85rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.65rem',
+                    cursor: 'pointer',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.9rem',
+                    fontWeight: 600
+                  }}
+                  className="dropdown-item"
+                  onClick={() => {
+                    setPatientFormModalData(null);
+                    setIsPatientFormModalOpen(true);
+                    setShowQuickMenu(false);
+                  }}
+                >
+                  <UserPlus size={18} color="#076ABC" />
+                  <span>Alta Nuevo Paciente</span>
+                </div>
+              )}
             </div>
           )}
         </div>

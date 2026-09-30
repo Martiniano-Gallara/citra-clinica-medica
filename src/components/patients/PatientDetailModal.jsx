@@ -43,13 +43,44 @@ export const PatientDetailModal = () => {
     setSelectedConsultationForPrint,
     addPatientFile,
     deletePatient,
-    addToast
+    addToast,
+    doctors
   } = useClinic();
 
   const [activeTab, setActiveTab] = useState('general'); // 'general', 'hce', 'rehab', 'appointments', 'files', 'antecedentes'
   const [newFileName, setNewFileName] = useState('');
   const [newFileType, setNewFileType] = useState('Resonancia Magnética (RMN)');
   const [isLegalHceModalOpen, setIsLegalHceModalOpen] = useState(false);
+
+  const assignedDoctors = useMemo(() => {
+    if (!patient) return [];
+    const assignedIds = Array.isArray(patient.assignedDoctorIds)
+      ? patient.assignedDoctorIds
+      : patient.assignedDoctorId
+      ? [patient.assignedDoctorId]
+      : [];
+    const directMatches = (doctors || []).filter((d) => assignedIds.includes(d.id));
+    if (directMatches.length > 0) return directMatches;
+
+    if (patient.assignedDoctorNames) {
+      const names = Array.isArray(patient.assignedDoctorNames)
+        ? patient.assignedDoctorNames
+        : [patient.assignedDoctorNames];
+      const nameMatches = (doctors || []).filter((d) =>
+        names.some((n) => n && d.name && d.name.toLowerCase().trim() === n.toLowerCase().trim())
+      );
+      if (nameMatches.length > 0) return nameMatches;
+    }
+
+    if (patient.primaryDoctor) {
+      const primaryMatch = (doctors || []).filter(
+        (d) => d.name && d.name.toLowerCase().trim() === patient.primaryDoctor.toLowerCase().trim()
+      );
+      if (primaryMatch.length > 0) return primaryMatch;
+    }
+
+    return [];
+  }, [patient, doctors]);
 
   useEffect(() => {
     if (!isDoctor && activeTab !== 'general' && activeTab !== 'appointments') {
@@ -292,29 +323,31 @@ export const PatientDetailModal = () => {
               </button>
             )}
 
-            <button
-              type="button"
-              style={{
-                background: 'rgba(255, 255, 255, 0.15)',
-                color: '#ffffff',
-                fontWeight: 700,
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                borderRadius: '8px',
-                padding: '0.45rem 0.85rem',
-                fontSize: '0.84rem',
-                cursor: 'pointer'
-              }}
-              onClick={() => {
-                setPatientFormModalData(patient);
-                setIsPatientFormModalOpen(true);
-              }}
-            >
-              <Edit2 size={14} />
-              <span>Editar</span>
-            </button>
+            {!isDoctor && (
+              <button
+                type="button"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  borderRadius: '8px',
+                  padding: '0.45rem 0.85rem',
+                  fontSize: '0.84rem',
+                  cursor: 'pointer'
+                }}
+                onClick={() => {
+                  setPatientFormModalData(patient);
+                  setIsPatientFormModalOpen(true);
+                }}
+              >
+                <Edit2 size={14} />
+                <span>Editar</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -493,6 +526,96 @@ export const PatientDetailModal = () => {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Tarjeta de Profesionales Asignados */}
+            <div className="card" style={{ padding: '1.5rem', border: '1.5px solid #D2E3FC', borderRadius: '16px', boxShadow: '0 4px 14px rgba(0, 33, 130, 0.03)', gridColumn: 'span 2' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.15rem', paddingBottom: '0.65rem', borderBottom: '1.5px solid #EDF3FD' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Stethoscope size={18} color="#076ABC" />
+                  <h4 style={{ fontWeight: 800, fontSize: '0.98rem', color: '#002182', margin: 0 }}>
+                    Profesionales Médicos Asignados (Secretaría)
+                  </h4>
+                </div>
+                {!isDoctor && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPatientFormModalData(patient);
+                      setIsPatientFormModalOpen(true);
+                    }}
+                    style={{
+                      background: '#eff6ff',
+                      color: '#076ABC',
+                      border: '1px solid #bfdbfe',
+                      borderRadius: '6px',
+                      padding: '4px 10px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <Edit2 size={12} /> Modificar Asignación
+                  </button>
+                )}
+              </div>
+
+              {assignedDoctors.length > 0 ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.75rem' }}>
+                  {assignedDoctors.map((doc) => (
+                    <div
+                      key={doc.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        padding: '0.75rem',
+                        borderRadius: '10px',
+                        border: '1px solid #e2e8f0',
+                        background: '#f8fafc'
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '50%',
+                          background: doc.color || '#002182',
+                          color: '#ffffff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 800,
+                          fontSize: '0.82rem',
+                          flexShrink: 0
+                        }}
+                      >
+                        {doc.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0f172a' }}>
+                          {doc.name}
+                        </div>
+                        <div style={{ fontSize: '0.76rem', color: '#076ABC', fontWeight: 600 }}>
+                          {doc.specialtyName}
+                        </div>
+                        {doc.roomName && (
+                          <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                            {doc.roomName}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ padding: '1rem', background: '#f8fafc', borderRadius: '8px', color: '#64748b', fontSize: '0.84rem', fontStyle: 'italic' }}>
+                  Este paciente no tiene profesionales médicos asignados de manera fija. {!isDoctor && 'Haga clic en "Modificar Asignación" para vincularlo a uno o más doctores.'}
+                </div>
+              )}
             </div>
           </div>
         )}

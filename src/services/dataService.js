@@ -377,6 +377,20 @@ export const dataService = {
         registered_at: patientData.registeredAt || getTodayArgentina(),
         avatar_url: patientData.avatarUrl || patientData.avatar || null
       };
+
+      if (Array.isArray(patientData.assignedDoctorIds) && patientData.assignedDoctorIds.length > 0) {
+        try {
+          const { data, error } = await supabase
+            .from('patients')
+            .insert([{ ...payload, assigned_doctor_ids: patientData.assignedDoctorIds }])
+            .select()
+            .single();
+          if (!error && data) return toCamelCase(data);
+        } catch {
+          // Fallback a inserción estándar si la columna aún no fue migrada en la instancia Supabase
+        }
+      }
+
       const { data, error } = await supabase
         .from('patients')
         .insert([payload])
@@ -408,6 +422,17 @@ export const dataService = {
       if (updates.insuranceNumber !== undefined) payload.insurance_number = updates.insuranceNumber;
       if (updates.avatar !== undefined || updates.avatarUrl !== undefined) payload.avatar_url = updates.avatarUrl || updates.avatar;
       if (updates.active !== undefined || updates.isActive !== undefined) payload.is_active = (updates.isActive ?? updates.active);
+
+      if (Array.isArray(updates.assignedDoctorIds)) {
+        try {
+          await supabase
+            .from('patients')
+            .update({ assigned_doctor_ids: updates.assignedDoctorIds })
+            .eq('id', id);
+        } catch {
+          // Ignorar error si la columna no existe en la base de datos remota
+        }
+      }
 
       const { data, error } = await supabase
         .from('patients')

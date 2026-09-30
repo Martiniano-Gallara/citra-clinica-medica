@@ -351,26 +351,51 @@ export const ClinicProvider = ({ children }) => {
 
   const scopedPatients = React.useMemo(() => {
     if (isDoctor && currentDoctor) {
+      const docId = currentDoctor.id;
       const docNameLower = (currentDoctor.name || '').toLowerCase().trim();
       return patients.filter((p) => {
+        // 1. Asignación directa por Secretaría (a uno o más profesionales)
+        if (Array.isArray(p.assignedDoctorIds) && p.assignedDoctorIds.includes(docId)) {
+          return true;
+        }
+        if (p.assignedDoctorId === docId) {
+          return true;
+        }
+        if (
+          Array.isArray(p.assignedDoctorNames) &&
+          p.assignedDoctorNames.some((n) => (n || '').toLowerCase().trim() === docNameLower)
+        ) {
+          return true;
+        }
+        if (
+          typeof p.assignedDoctorNames === 'string' &&
+          p.assignedDoctorNames.toLowerCase().includes(docNameLower)
+        ) {
+          return true;
+        }
+        if (p.primaryDoctor && p.primaryDoctor.toLowerCase().includes(docNameLower)) {
+          return true;
+        }
+
+        // 2. Historial de turnos, consultas, recetas o imágenes asociadas
         const hasApp = appointments.some(
           (a) =>
-            (a.doctorId === currentDoctor.id || (a.doctorName && a.doctorName.toLowerCase().trim() === docNameLower)) &&
+            (a.doctorId === docId || (a.doctorName && a.doctorName.toLowerCase().trim() === docNameLower)) &&
             (a.patientId === p.id || a.patientDni === p.dni)
         );
         const hasCons = consultations.some(
           (c) =>
-            (c.doctorId === currentDoctor.id || (c.doctorName && c.doctorName.toLowerCase().trim() === docNameLower)) &&
+            (c.doctorId === docId || (c.doctorName && c.doctorName.toLowerCase().trim() === docNameLower)) &&
             (c.patientId === p.id || c.patientDni === p.dni)
         );
         const hasRx = electronicPrescriptions.some(
           (rx) =>
-            (rx.doctorId === currentDoctor.id || (rx.doctorName && rx.doctorName.toLowerCase().trim() === docNameLower)) &&
+            (rx.doctorId === docId || (rx.doctorName && rx.doctorName.toLowerCase().trim() === docNameLower)) &&
             (rx.patientId === p.id || rx.patientDni === p.dni)
         );
         const hasImg = imagingStudies.some(
           (s) =>
-            (s.doctorId === currentDoctor.id ||
+            (s.doctorId === docId ||
              (s.referringDoctor && s.referringDoctor.toLowerCase().trim() === docNameLower)) &&
             (s.patientId === p.id || s.patientDni === p.dni)
         );
