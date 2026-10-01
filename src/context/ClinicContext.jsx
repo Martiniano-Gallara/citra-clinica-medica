@@ -1991,10 +1991,10 @@ export const ClinicProvider = ({ children }) => {
           return { success: false, message: 'Fallo de autenticación GoTrue' };
         }
       } catch (err) {
-        console.warn('Fallo GoTrue Supabase:', err);
         const expectedPassword = adminUser.password || 'citra2026';
         if (password !== expectedPassword && password !== 'citra2026') {
-          addToast('Acceso Denegado', 'Credenciales no autorizadas por el servidor central.', 'error');
+          console.warn('Acceso administrativo denegado:', err?.message || 'Credenciales inválidas');
+          addToast('Acceso Denegado', 'Credenciales no autorizadas.', 'error');
           return { success: false, message: 'Credenciales inválidas' };
         }
       }
