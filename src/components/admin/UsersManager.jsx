@@ -368,17 +368,23 @@ export const UsersManager = () => {
                               <Stethoscope size={18} />
                             </div>
                           ) : (
-                            <img
-                              src={u.avatar || 'https://images.unsplash.com/photo-1622253692010?w=100'}
-                              alt={u.name}
+                            <div
                               style={{
                                 width: '38px',
                                 height: '38px',
-                                borderRadius: '50%',
-                                objectFit: 'cover',
-                                border: isCurrentLogged ? '2px solid #002182' : '1px solid #D2E3FC'
+                                borderRadius: '10px',
+                                background: 'rgba(7, 106, 188, 0.1)',
+                                border: isCurrentLogged ? '2px solid #002182' : '1px solid #BFDBFE',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#002182',
+                                flexShrink: 0
                               }}
-                            />
+                              title="Secretaría"
+                            >
+                              <UserCheck size={18} />
+                            </div>
                           )}
                           <div>
                             <div style={{ fontWeight: 800, color: '#002182', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>

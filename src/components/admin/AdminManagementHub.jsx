@@ -268,8 +268,7 @@ export const AdminManagementHub = () => {
         title: 'GESTIÓN DE ATENCIÓN',
         items: [
           { id: 'appointments', label: 'Gestión de Turnos', icon: CalendarCheck, badge: appointments.length },
-          { id: 'patients', label: 'Pacientes', icon: Users, badge: patients.length },
-          { id: 'rooms', label: 'Consultorios en Vivo', icon: DoorClosed, badge: availableRooms }
+          { id: 'patients', label: 'Pacientes', icon: Users, badge: patients.length }
         ]
       },
       {
@@ -287,7 +286,6 @@ export const AdminManagementHub = () => {
         title: 'GESTIÓN Y AUDITORÍA',
         items: [
           { id: 'staff', label: 'Usuarios y Permisos', icon: UserCheck, badge: null },
-          { id: 'communications', label: 'Comunicaciones', icon: MessageSquare, badge: null },
           { id: 'audit', label: 'Auditoría', icon: ShieldAlert, badge: null }
         ]
       },
@@ -612,17 +610,24 @@ export const AdminManagementHub = () => {
                   <Stethoscope size={18} />
                 </div>
               ) : (
-                <img
-                  src={authAdmin?.avatar || 'https://images.unsplash.com/photo-1622253692010?w=100'}
-                  alt={doctorAdminName}
+                <div
                   style={{
                     width: '38px',
                     height: '38px',
                     borderRadius: '11px',
-                    objectFit: 'cover',
-                    border: '1.5px solid rgba(147, 197, 253, 0.4)'
+                    background: 'linear-gradient(135deg, rgba(9, 105, 218, 0.25) 0%, rgba(37, 99, 235, 0.35) 100%)',
+                    border: '1.5px solid rgba(147, 197, 253, 0.4)',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#93c5fd',
+                    flexShrink: 0
                   }}
-                />
+                  title="Secretaría CITRA"
+                >
+                  <UserCheck size={18} />
+                </div>
               )}
               <div style={{ lineHeight: 1.25 }}>
                 <div style={{ fontSize: '0.83rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.01em' }}>
@@ -1234,44 +1239,6 @@ export const AdminManagementHub = () => {
                     En {specialties.length} especialidades
                   </div>
                 </div>
-
-                {/* Card 5: Consultorios Físicos */}
-                <div
-                  onClick={() => setActiveTab('rooms')}
-                  title="Click para ver y gestionar consultorios físicos"
-                  style={{
-                    background: '#ffffff',
-                    borderRadius: '18px',
-                    border: '1.5px solid #D2E3FC',
-                    padding: '1.5rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#076ABC';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#D2E3FC';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase' }}>
-                      CONSULTORIOS ACTIVOS
-                    </div>
-                    <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#EBF3FD', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#076ABC' }}>
-                      <DoorClosed size={20} />
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
-                    {availableRooms} / {rooms ? rooms.length : 8}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#076ABC', fontWeight: 700, marginTop: '0.5rem' }}>
-                    Disponibles en Arroyito
-                  </div>
-                </div>
               </div>
 
               {/* Quick Actions & Recent Turnos */}
@@ -1693,9 +1660,6 @@ export const AdminManagementHub = () => {
           {/* TAB 7: HORARIOS & DISPONIBILIDAD (Secretaría) */}
           {activeTab === 'schedules' && !isDoctor && <SchedulesManager />}
 
-          {/* TAB 8: CONSULTORIOS (Secretaría) */}
-          {activeTab === 'rooms' && !isDoctor && <RoomsManager />}
-
           {/* TAB 9: OBRAS SOCIALES (Secretaría) */}
           {activeTab === 'insurances' && !isDoctor && <InsurancesView />}
 
@@ -1710,9 +1674,6 @@ export const AdminManagementHub = () => {
 
           {/* TAB 13: REPORTES & ESTADÍSTICAS */}
           {activeTab === 'reports' && <ReportsView />}
-
-          {/* TAB 14: NOTIFICACIONES & COMUNICACIONES (Secretaría) */}
-          {activeTab === 'communications' && !isDoctor && <CommunicationsView />}
 
           {/* TAB 15: USUARIOS Y PERMISOS (Secretaría) */}
           {activeTab === 'staff' && !isDoctor && <UsersManager />}

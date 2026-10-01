@@ -1718,7 +1718,7 @@ export const INITIAL_USERS = [
     mfaEnabled: true,
     status: 'Activo',
     lastAccess: 'En línea',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80'
+    avatar: null
   },
   {
     id: 'usr-3',
@@ -1732,7 +1732,7 @@ export const INITIAL_USERS = [
     mfaEnabled: true,
     status: 'Activo',
     lastAccess: 'En línea',
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'
+    avatar: null
   }
 ];
 
