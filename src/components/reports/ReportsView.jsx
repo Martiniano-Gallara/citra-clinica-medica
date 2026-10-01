@@ -56,6 +56,7 @@ export const ReportsView = () => {
     specialties,
     healthInsurances,
     isDoctor,
+    isDoctorBlanco,
     currentDoctor,
     scopedAppointments,
     scopedPatients,
@@ -64,7 +65,16 @@ export const ReportsView = () => {
   } = useClinic();
 
   const [period, setPeriod] = useState('month'); // 'week', 'month', 'year'
+  const [viewScope, setViewScope] = useState('individual'); // 'individual' | 'general'
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+
+  // El selector de métricas globales de la clínica solo está habilitado para el Dr. Blanco
+  const isDoctorBlancoUser = isDoctor && (
+    isDoctorBlanco ||
+    currentDoctor?.id === 'doc-1' ||
+    (currentDoctor?.name || '').toLowerCase().includes('blanco') ||
+    (currentDoctor?.fullName || '').toLowerCase().includes('blanco')
+  );
 
   const handleExportPDF = () => {
     setIsPrintModalOpen(true);
@@ -424,8 +434,12 @@ export const ReportsView = () => {
 
   // ==============================================================
   // RENDER: DOCTOR VIEW (ESTADÍSTICAS REALES, ÚTILES Y CLÍNICAS)
+  // El Dr. Blanco puede alternar entre su vista individual y la general de la clínica
+  // Los demás profesionales solo acceden a su rendimiento individual
   // ==============================================================
-  if (isDoctor) {
+  const shouldRenderDoctorIndividual = isDoctor && (!isDoctorBlancoUser || viewScope === 'individual');
+
+  if (shouldRenderDoctorIndividual) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%' }}>
         {/* 1. TOP HEADER: SIN TEXTO INÚTIL, PROFESIONAL Y DIRECTO */}
@@ -459,8 +473,55 @@ export const ReportsView = () => {
             </p>
           </div>
 
-          {/* Controls: Period Switcher + Export PDF Button */}
+          {/* Controls: Selector Individual / General (Solo Blanco) + Switcher Período + Export PDF */}
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Botón selector individual / general de la clínica (Exclusivo Dr. Blanco) */}
+            {isDoctorBlancoUser && (
+              <div
+                style={{
+                  display: 'flex',
+                  background: '#f1f5f9',
+                  padding: '3px',
+                  borderRadius: '10px',
+                  border: '1px solid #e2e8f0'
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setViewScope('individual')}
+                  style={{
+                    padding: '0.45rem 0.95rem',
+                    borderRadius: '8px',
+                    fontSize: '0.82rem',
+                    fontWeight: viewScope === 'individual' ? 800 : 600,
+                    background: viewScope === 'individual' ? '#002182' : 'transparent',
+                    color: viewScope === 'individual' ? '#ffffff' : '#64748b',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  Individual
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewScope('general')}
+                  style={{
+                    padding: '0.45rem 0.95rem',
+                    borderRadius: '8px',
+                    fontSize: '0.82rem',
+                    fontWeight: viewScope === 'general' ? 800 : 600,
+                    background: viewScope === 'general' ? '#002182' : 'transparent',
+                    color: viewScope === 'general' ? '#ffffff' : '#64748b',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  General de la Clínica
+                </button>
+              </div>
+            )}
             <div
               style={{
                 display: 'flex',
@@ -1183,51 +1244,149 @@ export const ReportsView = () => {
   }
 
   // ==============================================================
-  // RENDER: ADMINISTRATIVE / SUPERADMIN GLOBAL REPORT
+  // RENDER: ADMINISTRATIVE / SUPERADMIN GLOBAL REPORT / VISTA GENERAL DR. BLANCO
   // ==============================================================
   return (
-    <div className="reports-container">
+    <div className="reports-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%' }}>
       {/* Header */}
-      <div className="page-header">
-        <div className="page-title-group">
-          <h1>
-            <BarChart3 size={32} color="#076ABC" />
-            <span>Estadísticas & Reportes Ejecutivos Institucionales</span>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem'
+        }}
+      >
+        <div>
+          <h1
+            style={{
+              fontSize: '1.65rem',
+              fontWeight: 900,
+              color: '#0f172a',
+              margin: '0 0 0.25rem',
+              letterSpacing: '-0.02em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}
+          >
+            <BarChart3 size={28} color="#002182" />
+            <span>{isDoctor ? 'Métricas Globales de la Clínica (CITRA)' : 'Estadísticas & Reportes Ejecutivos Institucionales'}</span>
           </h1>
-          <p>Métricas globales de la clínica: productividad, volumen de pacientes, ingresos por especialidad y retención</p>
+          <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
+            {isDoctor
+              ? 'Vista general de toda la clínica: productividad, volumen de pacientes, ingresos por especialidad y retención.'
+              : 'Métricas globales de la clínica: productividad, volumen de pacientes, ingresos por especialidad y retención.'}
+          </p>
         </div>
 
-        <div className="page-actions-group">
-          <div style={{ display: 'flex', background: '#f1f5f9', padding: '3px', borderRadius: '8px' }}>
-            <button
-              type="button"
-              className={`btn btn-sm ${period === 'week' ? 'btn-primary' : 'btn-outline'}`}
-              style={{ border: 'none' }}
-              onClick={() => setPeriod('week')}
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Botón selector individual / general de la clínica (Exclusivo Dr. Blanco) */}
+          {isDoctorBlancoUser && (
+            <div
+              style={{
+                display: 'flex',
+                background: '#f1f5f9',
+                padding: '3px',
+                borderRadius: '10px',
+                border: '1px solid #e2e8f0'
+              }}
             >
-              Semanal
-            </button>
-            <button
-              type="button"
-              className={`btn btn-sm ${period === 'month' ? 'btn-primary' : 'btn-outline'}`}
-              style={{ border: 'none' }}
-              onClick={() => setPeriod('month')}
-            >
-              Mensual
-            </button>
-            <button
-              type="button"
-              className={`btn btn-sm ${period === 'year' ? 'btn-primary' : 'btn-outline'}`}
-              style={{ border: 'none' }}
-              onClick={() => setPeriod('year')}
-            >
-              Anual
-            </button>
+              <button
+                type="button"
+                onClick={() => setViewScope('individual')}
+                style={{
+                  padding: '0.45rem 0.95rem',
+                  borderRadius: '8px',
+                  fontSize: '0.82rem',
+                  fontWeight: viewScope === 'individual' ? 800 : 600,
+                  background: viewScope === 'individual' ? '#002182' : 'transparent',
+                  color: viewScope === 'individual' ? '#ffffff' : '#64748b',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                Individual
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewScope('general')}
+                style={{
+                  padding: '0.45rem 0.95rem',
+                  borderRadius: '8px',
+                  fontSize: '0.82rem',
+                  fontWeight: viewScope === 'general' ? 800 : 600,
+                  background: viewScope === 'general' ? '#002182' : 'transparent',
+                  color: viewScope === 'general' ? '#ffffff' : '#64748b',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                General de la Clínica
+              </button>
+            </div>
+          )}
+
+          {/* Switcher de Período Semanal | Mensual | Anual */}
+          <div
+            style={{
+              display: 'flex',
+              background: '#f1f5f9',
+              padding: '3px',
+              borderRadius: '10px',
+              border: '1px solid #e2e8f0'
+            }}
+          >
+            {[
+              { key: 'week', label: 'Semanal' },
+              { key: 'month', label: 'Mensual' },
+              { key: 'year', label: 'Anual' }
+            ].map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setPeriod(t.key)}
+                style={{
+                  padding: '0.45rem 0.95rem',
+                  borderRadius: '8px',
+                  fontSize: '0.82rem',
+                  fontWeight: period === t.key ? 800 : 600,
+                  background: period === t.key ? '#002182' : 'transparent',
+                  color: period === t.key ? '#ffffff' : '#64748b',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
 
-          <button type="button" className="btn btn-primary" onClick={handleExportPDF}>
-            <Printer size={16} />
-            <span>Descargar / Imprimir Reporte PDF</span>
+          <button
+            type="button"
+            onClick={handleExportPDF}
+            style={{
+              background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+              border: 'none',
+              color: '#ffffff',
+              padding: '0.5rem 1rem',
+              borderRadius: '8px',
+              fontSize: '0.82rem',
+              fontWeight: 800,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(5, 150, 105, 0.25)',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Printer size={15} />
+            <span>Descargar / Imprimir PDF</span>
           </button>
         </div>
       </div>
@@ -1236,27 +1395,27 @@ export const ReportsView = () => {
       <div className="kpi-grid">
         <div className="kpi-card">
           <div className="kpi-top">
-            <span className="kpi-label">Consultas Totales (Mes)</span>
+            <span className="kpi-label">Consultas Totales ({period === 'year' ? 'Año 2026' : period === 'week' ? 'Semanal' : 'Mensual'})</span>
             <div className="kpi-icon-box" style={{ background: '#eff6ff', color: '#2563eb' }}>
               <Activity size={22} />
             </div>
           </div>
-          <div className="kpi-value">1,482</div>
+          <div className="kpi-value">{period === 'year' ? '17.780' : period === 'week' ? '370' : '1.482'}</div>
           <div className="kpi-trend positive">
             <TrendingUp size={15} />
-            <span>+18.4% vs mes anterior</span>
+            <span>{period === 'year' ? '+24.5% interanual' : period === 'week' ? '+5.2% vs semana ant.' : '+18.4% vs mes anterior'}</span>
           </div>
         </div>
 
         <div className="kpi-card">
           <div className="kpi-top">
-            <span className="kpi-label">Facturación Mensual</span>
+            <span className="kpi-label">Facturación {period === 'year' ? 'Anual' : period === 'week' ? 'Semanal' : 'Mensual'}</span>
             <div className="kpi-icon-box" style={{ background: '#f0fdf4', color: '#16a34a' }}>
               <DollarSign size={22} />
             </div>
           </div>
           <div className="kpi-value" style={{ color: '#16a34a' }}>
-            $2.890.000
+            {period === 'year' ? '$34.680.000' : period === 'week' ? '$720.000' : '$2.890.000'}
           </div>
           <div className="kpi-trend positive">
             <TrendingUp size={15} />
@@ -1271,7 +1430,7 @@ export const ReportsView = () => {
               <Users size={22} />
             </div>
           </div>
-          <div className="kpi-value">184</div>
+          <div className="kpi-value">{period === 'year' ? '2.200' : period === 'week' ? '46' : '184'}</div>
           <div className="kpi-trend positive">
             <span>24% del volumen total</span>
           </div>

@@ -19,6 +19,7 @@ import {
   Printer,
   ShieldCheck,
   Ruler,
+  Filter,
   ChevronDown,
   ChevronUp,
   X,
@@ -54,6 +55,9 @@ export const ImagingView = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [modalityFilter, setModalityFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const activeFiltersCount = (modalityFilter !== 'all' ? 1 : 0) + (statusFilter !== 'all' ? 1 : 0);
 
   // Interactive Table Accordion State (which row is expanded)
   const [expandedStudyId, setExpandedStudyId] = useState(effectiveStudies[0]?.id || null);
@@ -506,74 +510,280 @@ export const ImagingView = () => {
           />
         </div>
 
-        {/* Modality filter pills */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginRight: '4px' }}>
-            Modalidad:
-          </span>
-          {[
-            { key: 'all', label: 'Todos' },
-            { key: 'resonancia', label: 'RMN' },
-            { key: 'radiografía', label: 'RX' },
-            { key: 'tomografía', label: 'TAC' },
-            { key: 'ecografía', label: 'Ecografía' }
-          ].map((pill) => {
-            const isActive = modalityFilter === pill.key;
-            return (
-              <button
-                key={pill.key}
-                type="button"
-                onClick={() => setModalityFilter(pill.key)}
+        {/* Active filter badges indicator (quick clear) */}
+        {activeFiltersCount > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+            {modalityFilter !== 'all' && (
+              <span
                 style={{
-                  padding: '0.35rem 0.75rem',
-                  borderRadius: '20px',
-                  fontSize: '0.76rem',
-                  fontWeight: isActive ? 800 : 600,
-                  border: isActive ? '1px solid #076ABC' : '1px solid #e2e8f0',
-                  background: isActive ? '#076ABC' : '#f8fafc',
-                  color: isActive ? '#ffffff' : '#475569',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  background: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  color: '#1e40af',
+                  padding: '3px 8px',
+                  borderRadius: '100px',
+                  fontSize: '0.74rem',
+                  fontWeight: 700
                 }}
               >
-                {pill.label}
-              </button>
-            );
-          })}
-        </div>
+                Modalidad: {modalityFilter === 'resonancia' ? 'RMN' : modalityFilter === 'radiografía' ? 'RX' : modalityFilter === 'tomografía' ? 'TAC' : modalityFilter === 'ecografía' ? 'Ecografía' : modalityFilter}
+                <X
+                  size={12}
+                  style={{ cursor: 'pointer', marginLeft: '2px' }}
+                  onClick={() => setModalityFilter('all')}
+                  title="Quitar filtro de modalidad"
+                />
+              </span>
+            )}
+            {statusFilter !== 'all' && (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  background: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  color: '#1e40af',
+                  padding: '3px 8px',
+                  borderRadius: '100px',
+                  fontSize: '0.74rem',
+                  fontWeight: 700
+                }}
+              >
+                Estado: {statusFilter === 'informados' ? 'Informados' : 'Pendientes'}
+                <X
+                  size={12}
+                  style={{ cursor: 'pointer', marginLeft: '2px' }}
+                  onClick={() => setStatusFilter('all')}
+                  title="Quitar filtro de estado"
+                />
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setModalityFilter('all');
+                setStatusFilter('all');
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#dc2626',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                padding: '2px 4px'
+              }}
+            >
+              Borrar filtros
+            </button>
+          </div>
+        )}
 
-        {/* Status filter pills */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginRight: '4px' }}>
-            Estado:
-          </span>
-          {[
-            { key: 'all', label: 'Todos' },
-            { key: 'informados', label: 'Informados' },
-            { key: 'pendientes', label: 'Pendientes' }
-          ].map((statusPill) => {
-            const isActive = statusFilter === statusPill.key;
-            return (
-              <button
-                key={statusPill.key}
-                type="button"
-                onClick={() => setStatusFilter(statusPill.key)}
+        {/* Action: Botón de Filtros con Popover Dropdown */}
+        <div style={{ position: 'relative' }}>
+          <button
+            type="button"
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.52rem 0.95rem',
+              borderRadius: '8px',
+              fontSize: '0.84rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              border: activeFiltersCount > 0 || isFilterOpen ? '1.5px solid #002182' : '1px solid #cbd5e1',
+              background: activeFiltersCount > 0 ? '#eff6ff' : isFilterOpen ? '#f1f5f9' : '#ffffff',
+              color: activeFiltersCount > 0 ? '#002182' : '#334155',
+              transition: 'all 0.15s ease',
+              boxShadow: activeFiltersCount > 0 ? '0 2px 8px rgba(0, 33, 130, 0.12)' : 'none'
+            }}
+          >
+            <Filter size={15} color={activeFiltersCount > 0 ? '#002182' : '#64748b'} />
+            <span>Filtros</span>
+            {activeFiltersCount > 0 && (
+              <span
                 style={{
-                  padding: '0.35rem 0.7rem',
-                  borderRadius: '20px',
-                  fontSize: '0.76rem',
-                  fontWeight: isActive ? 800 : 600,
-                  border: isActive ? '1px solid #002182' : '1px solid #e2e8f0',
-                  background: isActive ? '#002182' : '#f8fafc',
-                  color: isActive ? '#ffffff' : '#475569',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
+                  background: '#002182',
+                  color: '#ffffff',
+                  fontSize: '0.68rem',
+                  fontWeight: 900,
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >
-                {statusPill.label}
-              </button>
-            );
-          })}
+                {activeFiltersCount}
+              </span>
+            )}
+            <ChevronDown
+              size={14}
+              style={{
+                transform: isFilterOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s ease',
+                color: activeFiltersCount > 0 ? '#002182' : '#94a3b8'
+              }}
+            />
+          </button>
+
+          {/* POPOVER / DROPDOWN PANEL DE FILTROS */}
+          {isFilterOpen && (
+            <>
+              {/* Backdrop invisible para cerrar al hacer clic afuera */}
+              <div
+                style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+                onClick={() => setIsFilterOpen(false)}
+              />
+
+              <div
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 'calc(100% + 8px)',
+                  zIndex: 100,
+                  background: '#ffffff',
+                  border: '1.5px solid #D2E3FC',
+                  borderRadius: '14px',
+                  padding: '1.15rem',
+                  boxShadow: '0 12px 32px rgba(0, 33, 130, 0.15)',
+                  width: '320px',
+                  maxWidth: '90vw',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem'
+                }}
+              >
+                {/* Encabezado del Popover */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Filter size={15} color="#002182" />
+                    <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#002182' }}>Filtros de Estudios</span>
+                  </div>
+                  {activeFiltersCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModalityFilter('all');
+                        setStatusFilter('all');
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#dc2626',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        padding: '2px 4px'
+                      }}
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+
+                {/* Filtro por Modalidad */}
+                <div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', marginBottom: '0.45rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Modalidad
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                    {[
+                      { key: 'all', label: 'Todos' },
+                      { key: 'resonancia', label: 'RMN' },
+                      { key: 'radiografía', label: 'RX' },
+                      { key: 'tomografía', label: 'TAC' },
+                      { key: 'ecografía', label: 'Ecografía' }
+                    ].map((pill) => {
+                      const isActive = modalityFilter === pill.key;
+                      return (
+                        <button
+                          key={pill.key}
+                          type="button"
+                          onClick={() => setModalityFilter(pill.key)}
+                          style={{
+                            padding: '0.35rem 0.75rem',
+                            borderRadius: '20px',
+                            fontSize: '0.76rem',
+                            fontWeight: isActive ? 800 : 600,
+                            border: isActive ? '1px solid #076ABC' : '1px solid #e2e8f0',
+                            background: isActive ? '#076ABC' : '#f8fafc',
+                            color: isActive ? '#ffffff' : '#475569',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          {pill.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Filtro por Estado */}
+                <div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', marginBottom: '0.45rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Estado del Informe
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                    {[
+                      { key: 'all', label: 'Todos' },
+                      { key: 'informados', label: 'Informados' },
+                      { key: 'pendientes', label: 'Pendientes' }
+                    ].map((statusPill) => {
+                      const isActive = statusFilter === statusPill.key;
+                      return (
+                        <button
+                          key={statusPill.key}
+                          type="button"
+                          onClick={() => setStatusFilter(statusPill.key)}
+                          style={{
+                            padding: '0.35rem 0.75rem',
+                            borderRadius: '20px',
+                            fontSize: '0.76rem',
+                            fontWeight: isActive ? 800 : 600,
+                            border: isActive ? '1px solid #002182' : '1px solid #e2e8f0',
+                            background: isActive ? '#002182' : '#f8fafc',
+                            color: isActive ? '#ffffff' : '#475569',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          {statusPill.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Pie del Popover: Botón Aplicar / Cerrar */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '0.5rem', borderTop: '1px solid #f1f5f9' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsFilterOpen(false)}
+                    style={{
+                      background: '#002182',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '0.4rem 0.95rem',
+                      borderRadius: '8px',
+                      fontSize: '0.78rem',
+                      fontWeight: 800,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

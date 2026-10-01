@@ -237,7 +237,7 @@ export const AdminManagementHub = () => {
               icon: FileText,
               badge: pendingUrgentRequests > 0 ? `${pendingUrgentRequests} Urgente` : scopedConsultations.length
             },
-            { id: 'prescriptions', label: 'Mis Recetas (CUIR)', icon: Pill, badge: scopedElectronicPrescriptions.length },
+            // { id: 'prescriptions', label: 'Mis Recetas (CUIR)', icon: Pill, badge: scopedElectronicPrescriptions.length },
             { id: 'imaging', label: 'Estudios & Radiología', icon: Eye, badge: scopedImagingStudies.length }
           ]
         },
@@ -784,7 +784,7 @@ export const AdminManagementHub = () => {
 
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                   <button
-                    onClick={() => setActiveTab('prescriptions')}
+                    onClick={() => setActiveTab('clinical')}
                     style={{
                       background: 'rgba(255, 255, 255, 0.18)',
                       border: '1px solid rgba(255, 255, 255, 0.4)',
@@ -799,8 +799,8 @@ export const AdminManagementHub = () => {
                       gap: '0.5rem'
                     }}
                   >
-                    <Pill size={16} color="#93C5FD" />
-                    <span>Emitir Receta</span>
+                    <FileText size={16} color="#93C5FD" />
+                    <span>Ver Historial Clínico</span>
                   </button>
                 </div>
               </div>
@@ -1593,8 +1593,8 @@ export const AdminManagementHub = () => {
           {/* TAB 10: ESTUDIOS & DOCUMENTACIÓN (Exclusivo Médico) */}
           {activeTab === 'imaging' && isDoctor && <ImagingView />}
 
-          {/* TAB 11: RECETAS ELECTRÓNICAS (Exclusivo Médico) */}
-          {activeTab === 'prescriptions' && isDoctor && <PrescriptionsManager />}
+          {/* TAB 11: RECETAS ELECTRÓNICAS (Exclusivo Médico - Oculto temporalmente) */}
+          {/* {activeTab === 'prescriptions' && isDoctor && <PrescriptionsManager />} */}
 
           {/* TAB 12: FACTURACIÓN / PAGOS / CAJA (Administración & Superadmin) */}
           {activeTab === 'billing' && !isDoctor && <BillingView />}

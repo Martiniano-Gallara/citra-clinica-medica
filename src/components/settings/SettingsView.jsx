@@ -267,15 +267,15 @@ export const SettingsView = () => {
   // ==============================================================
   if (isDoctor) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', maxWidth: '540px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', maxWidth: '650px', margin: '0 auto' }}>
         {/* HEADER */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Lock size={28} color="#002182" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Lock size={28} color="#002182" style={{ flexShrink: 0 }} />
           <div>
             <h1 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
               Mi Configuración
             </h1>
-            <p style={{ fontSize: '0.82rem', color: '#64748b', margin: 0 }}>
+            <p style={{ fontSize: '0.82rem', color: '#64748b', margin: 0, whiteSpace: 'nowrap' }}>
               Seguridad y acceso al panel médico. Los datos de perfil profesional los gestiona la secretaría.
             </p>
           </div>
@@ -283,15 +283,15 @@ export const SettingsView = () => {
 
         {/* DATOS DE SOLO LECTURA */}
         <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem', flexWrap: 'wrap' }}>
             <Stethoscope size={16} color="#002182" />
             <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a' }}>Mis Datos Profesionales</span>
-            <span style={{ fontSize: '0.74rem', color: '#94a3b8', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '1px 8px', fontWeight: 700 }}>Solo lectura · Editar en Secretaría</span>
+            <span style={{ fontSize: '0.74rem', color: '#94a3b8', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '1px 8px', fontWeight: 700, whiteSpace: 'nowrap' }}>Solo lectura · Editar en Secretaría</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', fontSize: '0.84rem' }}>
             <div><span style={{ color: '#64748b', fontWeight: 700 }}>Nombre: </span><span style={{ color: '#0f172a', fontWeight: 800 }}>{doctorDisplayName}</span></div>
             <div><span style={{ color: '#64748b', fontWeight: 700 }}>Especialidad: </span><span style={{ color: '#0f172a', fontWeight: 800 }}>{(currentDoctor?.specialty || authAdmin?.specialty)?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : (currentDoctor?.specialty || authAdmin?.specialty || '—')}</span></div>
-            <div><span style={{ color: '#64748b', fontWeight: 700 }}>Matrícula: </span><span style={{ color: '#0f172a' }}>{currentDoctor?.license || '—'}</span></div>
+            <div><span style={{ color: '#64748b', fontWeight: 700 }}>Teléfono: </span><span style={{ color: '#0f172a' }}>{currentDoctor?.phone || authAdmin?.phone || '3576 450214'}</span></div>
             <div><span style={{ color: '#64748b', fontWeight: 700 }}>Email: </span><span style={{ color: '#0f172a' }}>{currentDoctor?.email || authAdmin?.email || '—'}</span></div>
           </div>
         </div>
@@ -884,7 +884,7 @@ export const SettingsView = () => {
                           <td colSpan={5} style={{ background: '#fafafa', padding: '1rem 1.5rem', borderTop: '1px solid #e2e8f0' }}>
                             <form onSubmit={handleSecretaryResetPassword} style={{ display: 'flex', alignItems: 'flex-end', gap: '0.75rem', flexWrap: 'wrap' }}>
                               <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a', marginRight: '0.25rem', alignSelf: 'center' }}>
-                                🔑 Nueva contraseña para <strong>{u.name}</strong>:
+                                Nueva contraseña para <strong>{u.name}</strong>:
                               </div>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                                 <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b' }}>Nueva contraseña</label>

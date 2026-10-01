@@ -1,6 +1,5 @@
 import React from 'react';
 import { useClinic } from '../../context/ClinicContext';
-import { WhatsAppIcon } from '../common/WhatsAppIcon';
 import {
   Printer,
   FileText,
@@ -30,13 +29,6 @@ export const ConsultationPrintView = () => {
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const handleShareWhatsApp = () => {
-    const text = encodeURIComponent(
-      `Estimado/a ${pat.name}: Le compartimos el informe médico de su atención del ${cons.date} en CITRA Clínica Médica.`
-    );
-    window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
   const hashDisplay = cons.integrityHash || cons.sha256Hash || '4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c';
@@ -197,27 +189,6 @@ export const ConsultationPrintView = () => {
           </div>
 
           <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center' }}>
-            <button
-              type="button"
-              onClick={handleShareWhatsApp}
-              style={{
-                background: '#ffffff',
-                border: '1px solid #cbd5e1',
-                color: '#0f172a',
-                padding: '0.45rem 0.85rem',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              <WhatsAppIcon size={15} color="#25D366" />
-              <span>WhatsApp</span>
-            </button>
-
             <button
               type="button"
               onClick={handlePrint}

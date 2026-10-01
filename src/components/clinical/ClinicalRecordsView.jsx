@@ -279,42 +279,6 @@ export const ClinicalRecordsView = () => {
             <h1 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.2rem', letterSpacing: '-0.02em' }}>
               Historial Clínico
             </h1>
-            {isDoctorBlanco ? (
-              <span
-                style={{
-                  background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                  color: '#92400e',
-                  border: '1.5px solid #f59e0b',
-                  padding: '0.2rem 0.65rem',
-                  borderRadius: '100px',
-                  fontSize: '0.74rem',
-                  fontWeight: 900,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  boxShadow: '0 2px 8px rgba(245, 158, 11, 0.2)'
-                }}
-              >
-                👑 Director Médico & Propietario CITRA · Acceso Pleno a Todas las Historias Clínicas
-              </span>
-            ) : (
-              <span
-                style={{
-                  background: '#f1f5f9',
-                  color: '#334155',
-                  border: '1px solid #cbd5e1',
-                  padding: '0.2rem 0.65rem',
-                  borderRadius: '100px',
-                  fontSize: '0.74rem',
-                  fontWeight: 800,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                🔒 {currentDoctor?.name || 'Médico'} · Custodia y Secreto Profesional (Ley 26.529)
-              </span>
-            )}
           </div>
           <p style={{ fontSize: '0.86rem', color: '#64748b', margin: 0 }}>
             Expediente único de pacientes y registro integral de todas las atenciones médicas en CITRA.
@@ -339,9 +303,9 @@ export const ClinicalRecordsView = () => {
                 fontWeight: 800,
                 cursor: 'pointer'
               }}
-              title="Dr. Alejandro Blanco (Dueño de CITRA)"
+              title="Dr. Alejandro Blanco"
             >
-              Dr. Blanco (Dueño)
+              Dr. Blanco
             </button>
             <button
               type="button"
@@ -356,9 +320,9 @@ export const ClinicalRecordsView = () => {
                 fontWeight: 800,
                 cursor: 'pointer'
               }}
-              title="Dr. Lagos (Traumatología)"
+              title="Dr. Lagos"
             >
-              Dr. Lagos (Médico)
+              Dr. Lagos
             </button>
           </div>
         </div>
@@ -398,7 +362,7 @@ export const ClinicalRecordsView = () => {
             </div>
             <div>
               <div style={{ fontWeight: 900, color: '#991b1b', fontSize: '0.98rem' }}>
-                🚨 SOLICITUD URGENTE DE ACCESO A HISTORIA CLÍNICA ({pendingRequestsForMe.length} PENDIENTE{pendingRequestsForMe.length > 1 ? 'S' : ''})
+                SOLICITUD URGENTE DE ACCESO A HISTORIA CLÍNICA ({pendingRequestsForMe.length} PENDIENTE{pendingRequestsForMe.length > 1 ? 'S' : ''})
               </div>
               <div style={{ fontSize: '0.82rem', color: '#7f1d1d', marginTop: '2px' }}>
                 Un colega ha requerido acceso prioritario y fundamentado a una historia clínica bajo su custodia.
@@ -907,16 +871,16 @@ export const ClinicalRecordsView = () => {
                                     {isDoctorBlanco ? (
                                       <span
                                         style={{
-                                          background: '#fef3c7',
-                                          color: '#92400e',
-                                          border: '1px solid #fde68a',
+                                          background: '#eff6ff',
+                                          color: '#1e40af',
+                                          border: '1px solid #bfdbfe',
                                           padding: '2px 7px',
                                           borderRadius: '6px',
                                           fontSize: '0.7rem',
                                           fontWeight: 800
                                         }}
                                       >
-                                        👑 Acceso Total Propietario CITRA
+                                        Acceso Total
                                       </span>
                                     ) : permission.reason === 'author' ? (
                                       <span
@@ -930,7 +894,7 @@ export const ClinicalRecordsView = () => {
                                           fontWeight: 800
                                         }}
                                       >
-                                        🩺 Atención Propia
+                                        Atención Propia
                                       </span>
                                     ) : permission.allowed && permission.reason === 'approved_request' ? (
                                       <span
@@ -944,7 +908,7 @@ export const ClinicalRecordsView = () => {
                                           fontWeight: 800
                                         }}
                                       >
-                                        ✅ Acceso Autorizado por {cons.doctorName}
+                                        Acceso Autorizado por {cons.doctorName}
                                       </span>
                                     ) : permission.reason === 'pending_request' ? (
                                       <span
@@ -958,7 +922,7 @@ export const ClinicalRecordsView = () => {
                                           fontWeight: 800
                                         }}
                                       >
-                                        ⏳ Solicitud Urgente Enviada · Esperando Autorización
+                                        Solicitud Pendiente de Autorización
                                       </span>
                                     ) : (
                                       <span
@@ -972,7 +936,7 @@ export const ClinicalRecordsView = () => {
                                           fontWeight: 800
                                         }}
                                       >
-                                        🔒 Consulta de Otro Profesional · Acceso Restringido
+                                        Consulta de Otro Profesional · Acceso Restringido
                                       </span>
                                     )}
                                   </div>
@@ -1201,7 +1165,7 @@ export const ClinicalRecordsView = () => {
                                             Registro Clínico Reservado · Titular: {cons.doctorName}
                                           </div>
                                           <div style={{ fontSize: '0.78rem', color: '#78350f', marginTop: '2px' }}>
-                                            Conforme a las normas de secreto médico y Ley 26.529, para visualizar este registro debe solicitar autorización a su profesional dueño mediante justificación médica.
+                                            Conforme a las normas de secreto médico y Ley 26.529, para visualizar este registro debe solicitar autorización a su profesional tratante mediante justificación médica.
                                           </div>
                                         </div>
                                       </div>
@@ -1482,7 +1446,7 @@ export const ClinicalRecordsView = () => {
                           {req.requesterDoctorSpecialty || 'Médico'}
                         </span>
                         <span style={{ fontSize: '0.74rem', color: '#dc2626', fontWeight: 900 }}>
-                          🚨 URGENTE
+                          URGENTE
                         </span>
                       </div>
 
@@ -1572,15 +1536,15 @@ export const ClinicalRecordsView = () => {
                     <div>
                       {req.status === 'aprobada' ? (
                         <span style={{ background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0', padding: '4px 10px', borderRadius: '100px', fontSize: '0.78rem', fontWeight: 900 }}>
-                          ✅ AUTORIZADA
+                          AUTORIZADA
                         </span>
                       ) : req.status === 'rechazada' ? (
                         <span style={{ background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca', padding: '4px 10px', borderRadius: '100px', fontSize: '0.78rem', fontWeight: 900 }}>
-                          ❌ DENEGADA
+                          DENEGADA
                         </span>
                       ) : (
                         <span style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '4px 10px', borderRadius: '100px', fontSize: '0.78rem', fontWeight: 900 }}>
-                          ⏳ PENDIENTE DE REVISIÓN
+                          PENDIENTE DE REVISIÓN
                         </span>
                       )}
                     </div>
@@ -1810,7 +1774,7 @@ export const ClinicalRecordsView = () => {
             style={{
               background: '#ffffff',
               borderRadius: '20px',
-              maxWidth: '580px',
+              maxWidth: '640px',
               width: '100%',
               boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
               overflow: 'hidden'
@@ -1897,7 +1861,7 @@ export const ClinicalRecordsView = () => {
               {/* Step 0: Initial Decision Buttons */}
               {confirmationStep === null && (
                 <div>
-                  <div style={{ fontSize: '0.82rem', color: '#475569', marginBottom: '1rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#475569', marginBottom: '1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
                     Seleccione la resolución para esta solicitud. Se requerirá doble confirmación según protocolo legal.
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
