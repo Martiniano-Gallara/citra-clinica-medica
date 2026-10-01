@@ -287,7 +287,7 @@ export const ImagingView = () => {
           onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
         >
           <Plus size={18} />
-          Solicitar / Cargar Estudio
+          Cargar Estudio
         </button>
       </div>
 
@@ -1442,7 +1442,7 @@ export const ImagingView = () => {
                     letterSpacing: '0.04em'
                   }}
                 >
-                  PACS CITRA
+                  Visor de Imágenes
                 </span>
                 <div>
                   <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#ffffff' }}>

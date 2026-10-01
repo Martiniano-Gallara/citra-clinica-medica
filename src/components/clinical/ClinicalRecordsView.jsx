@@ -481,7 +481,11 @@ export const ClinicalRecordsView = () => {
             {pendingRequestsForMe.length}
           </div>
           <div style={{ fontSize: '0.76rem', color: pendingRequestsForMe.length > 0 ? '#be123c' : '#64748b', fontWeight: 700 }}>
-            {pendingRequestsForMe.length > 0 ? 'Requieren doble autorización urgente' : `${requestsSentByMe.length} solicitud(es) enviada(s)`}
+            {pendingRequestsForMe.length > 0
+              ? 'Requieren doble autorización urgente'
+              : isDoctorBlanco
+              ? 'Sin solicitudes pendientes de colegas'
+              : `${requestsSentByMe.length} solicitud(es) enviada(s)`}
           </div>
         </div>
       </div>
@@ -1486,73 +1490,75 @@ export const ClinicalRecordsView = () => {
             )}
           </div>
 
-          {/* Section: Solicitudes Enviadas por mí */}
-          <div
-            style={{
-              background: '#ffffff',
-              borderRadius: '16px',
-              border: '1px solid #e2e8f0',
-              padding: '1.5rem',
-              boxShadow: '0 4px 14px rgba(0, 33, 130, 0.03)'
-            }}
-          >
-            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
-              Mis Solicitudes Enviadas a Otros Colegas
-            </h3>
-            <p style={{ margin: '0 0 1rem', fontSize: '0.82rem', color: '#64748b' }}>
-              Seguimiento del estado de las solicitudes de interconsulta tramitadas a otros especialistas.
-            </p>
+          {/* Section: Solicitudes Enviadas por mí (Oculto para el Dr. Blanco, ya que posee acceso universal a todas las historias) */}
+          {!isDoctorBlanco && (
+            <div
+              style={{
+                background: '#ffffff',
+                borderRadius: '16px',
+                border: '1px solid #e2e8f0',
+                padding: '1.5rem',
+                boxShadow: '0 4px 14px rgba(0, 33, 130, 0.03)'
+              }}
+            >
+              <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
+                Mis Solicitudes Enviadas a Otros Colegas
+              </h3>
+              <p style={{ margin: '0 0 1rem', fontSize: '0.82rem', color: '#64748b' }}>
+                Seguimiento del estado de las solicitudes de interconsulta tramitadas a otros especialistas.
+              </p>
 
-            {requestsSentByMe.length === 0 ? (
-              <div style={{ padding: '1.5rem', textAlign: 'center', color: '#64748b', background: '#f8fafc', borderRadius: '10px' }}>
-                <span style={{ fontSize: '0.84rem' }}>No ha realizado solicitudes de acceso a historias clínicas de otros colegas aún.</span>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                {requestsSentByMe.map((req) => (
-                  <div
-                    key={req.id}
-                    style={{
-                      background: '#f8fafc',
-                      borderRadius: '10px',
-                      padding: '0.85rem 1rem',
-                      border: '1px solid #e2e8f0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: '0.75rem'
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.9rem' }}>
-                        Paciente: {req.patientName} (DNI {req.patientDni})
+              {requestsSentByMe.length === 0 ? (
+                <div style={{ padding: '1.5rem', textAlign: 'center', color: '#64748b', background: '#f8fafc', borderRadius: '10px' }}>
+                  <span style={{ fontSize: '0.84rem' }}>No ha realizado solicitudes de acceso a historias clínicas de otros colegas aún.</span>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                  {requestsSentByMe.map((req) => (
+                    <div
+                      key={req.id}
+                      style={{
+                        background: '#f8fafc',
+                        borderRadius: '10px',
+                        padding: '0.85rem 1rem',
+                        border: '1px solid #e2e8f0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '0.75rem'
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.9rem' }}>
+                          Paciente: {req.patientName} (DNI {req.patientDni})
+                        </div>
+                        <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '2px' }}>
+                          Destinatario: <strong>{req.targetDoctorName}</strong> · Solicitado el {req.createdAt}
+                        </div>
                       </div>
-                      <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '2px' }}>
-                        Destinatario: <strong>{req.targetDoctorName}</strong> · Solicitado el {req.createdAt}
+
+                      <div>
+                        {req.status === 'aprobada' ? (
+                          <span style={{ background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0', padding: '4px 10px', borderRadius: '100px', fontSize: '0.78rem', fontWeight: 900 }}>
+                            AUTORIZADA
+                          </span>
+                        ) : req.status === 'rechazada' ? (
+                          <span style={{ background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca', padding: '4px 10px', borderRadius: '100px', fontSize: '0.78rem', fontWeight: 900 }}>
+                            DENEGADA
+                          </span>
+                        ) : (
+                          <span style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '4px 10px', borderRadius: '100px', fontSize: '0.78rem', fontWeight: 900 }}>
+                            PENDIENTE DE REVISIÓN
+                          </span>
+                        )}
                       </div>
                     </div>
-
-                    <div>
-                      {req.status === 'aprobada' ? (
-                        <span style={{ background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0', padding: '4px 10px', borderRadius: '100px', fontSize: '0.78rem', fontWeight: 900 }}>
-                          AUTORIZADA
-                        </span>
-                      ) : req.status === 'rechazada' ? (
-                        <span style={{ background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca', padding: '4px 10px', borderRadius: '100px', fontSize: '0.78rem', fontWeight: 900 }}>
-                          DENEGADA
-                        </span>
-                      ) : (
-                        <span style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '4px 10px', borderRadius: '100px', fontSize: '0.78rem', fontWeight: 900 }}>
-                          PENDIENTE DE REVISIÓN
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

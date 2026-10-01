@@ -413,7 +413,7 @@ export const AdminManagementHub = () => {
   })();
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#F5F8FE', width: '100%' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', backgroundImage: 'radial-gradient(at 0% 0%, rgba(224, 231, 255, 0.45) 0px, transparent 45%), radial-gradient(at 100% 0%, rgba(219, 234, 254, 0.35) 0px, transparent 40%)', width: '100%' }}>
       {/* 0. BACKDROP OVERLAY PARA SIDEBAR MÓVIL */}
       {isMobileSidebarOpen && (
         <div
@@ -430,12 +430,13 @@ export const AdminManagementHub = () => {
           width: '310px',
           minWidth: '310px',
           flexShrink: 0,
-          background: '#001556',
+          background: 'linear-gradient(180deg, #020c24 0%, #06173d 50%, #030e28 100%)',
           color: '#ffffff',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          borderRight: '1.5px solid #076ABC',
+          borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '4px 0 24px rgba(2, 12, 36, 0.12)',
           position: 'sticky',
           top: 0,
           height: '100vh',
@@ -445,16 +446,16 @@ export const AdminManagementHub = () => {
         className={`admin-sidebar ${isMobileSidebarOpen ? 'sidebar-mobile-open' : ''}`}
       >
         {/* Top: Logo */}
-        <div style={{ padding: '1.25rem 1.25rem 1rem', borderBottom: '1px solid rgba(210, 227, 252, 0.12)' }}>
+        <div style={{ padding: '1.25rem 1.25rem 1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <div
               style={{
                 background: '#ffffff',
-                padding: '0.45rem 0.85rem',
+                padding: '0.5rem 0.9rem',
                 borderRadius: '12px',
                 display: 'inline-flex',
                 alignItems: 'center',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.15)'
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
               }}
             >
               <img
@@ -499,11 +500,11 @@ export const AdminManagementHub = () => {
             <div key={sIdx}>
               <div
                 style={{
-                  fontSize: '0.68rem',
+                  fontSize: '0.67rem',
                   fontWeight: 800,
-                  color: '#7994B8',
-                  letterSpacing: '0.06em',
-                  padding: '0 0.5rem 0.4rem',
+                  color: '#7e99c4',
+                  letterSpacing: '0.08em',
+                  padding: '0 0.5rem 0.45rem',
                   textTransform: 'uppercase'
                 }}
               >
@@ -526,45 +527,48 @@ export const AdminManagementHub = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        padding: '0.6rem 0.75rem',
-                        borderRadius: '10px',
-                        background: isActive ? 'linear-gradient(135deg, #076ABC 0%, #257CE6 100%)' : 'transparent',
-                        color: isActive ? '#ffffff' : '#D2E3FC',
+                        padding: '0.62rem 0.8rem',
+                        borderRadius: '11px',
+                        background: isActive ? 'linear-gradient(135deg, #0969da 0%, #1a7fef 100%)' : 'transparent',
+                        color: isActive ? '#ffffff' : 'rgba(210, 227, 252, 0.82)',
                         border: 'none',
                         cursor: 'pointer',
                         textAlign: 'left',
                         fontWeight: isActive ? 800 : 600,
                         fontSize: '0.84rem',
-                        transition: 'all 0.15s ease',
-                        boxShadow: isActive ? '0 4px 12px rgba(7, 106, 188, 0.35)' : 'none'
+                        transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
+                        boxShadow: isActive ? '0 4px 14px rgba(9, 105, 218, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.25)' : 'none'
                       }}
                       onMouseEnter={(e) => {
                         if (!isActive) {
-                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)';
                           e.currentTarget.style.color = '#ffffff';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (!isActive) {
                           e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = '#D2E3FC';
+                          e.currentTarget.style.color = 'rgba(210, 227, 252, 0.82)';
                         }
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                        <Icon size={16} strokeWidth={isActive ? 2.5 : 2} color={isActive ? '#ffffff' : '#8EBEF5'} />
+                        <Icon size={16} strokeWidth={isActive ? 2.5 : 2} color={isActive ? '#ffffff' : '#8cbaf5'} />
                         <span>{item.label}</span>
                       </div>
 
                       {item.badge !== null && item.badge !== undefined && (
                         <span
                           style={{
-                            background: isActive ? 'rgba(255, 255, 255, 0.25)' : 'rgba(210, 227, 252, 0.15)',
-                            color: isActive ? '#ffffff' : '#D2E3FC',
-                            padding: '0.1rem 0.45rem',
+                            background: isActive ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.08)',
+                            color: isActive ? '#ffffff' : '#cbd5e1',
+                            border: isActive ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid rgba(255, 255, 255, 0.06)',
+                            padding: '0.12rem 0.5rem',
                             borderRadius: '100px',
                             fontSize: '0.68rem',
-                            fontWeight: 800
+                            fontWeight: 700,
+                            letterSpacing: '-0.01em',
+                            boxShadow: isActive ? '0 2px 6px rgba(0,0,0,0.1)' : 'none'
                           }}
                         >
                           {item.badge}
@@ -581,21 +585,23 @@ export const AdminManagementHub = () => {
         {/* Bottom: Doctor Profile Chip (Médico Administrador) & Logout */}
         <div
           style={{
-            padding: '1rem',
-            borderTop: '1px solid rgba(210, 227, 252, 0.12)',
-            background: 'rgba(0, 19, 72, 0.6)'
+            padding: '1rem 1.15rem',
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'linear-gradient(180deg, rgba(2, 12, 36, 0.4) 0%, rgba(3, 14, 40, 0.95) 100%)',
+            backdropFilter: 'blur(10px)'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
               {isDoctor ? (
                 <div
                   style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    background: 'rgba(37, 124, 230, 0.25)',
-                    border: '1.5px solid #257CE6',
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '11px',
+                    background: 'linear-gradient(135deg, rgba(9, 105, 218, 0.25) 0%, rgba(37, 99, 235, 0.35) 100%)',
+                    border: '1.5px solid rgba(147, 197, 253, 0.4)',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -611,19 +617,19 @@ export const AdminManagementHub = () => {
                   src={authAdmin?.avatar || 'https://images.unsplash.com/photo-1622253692010?w=100'}
                   alt={doctorAdminName}
                   style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '11px',
                     objectFit: 'cover',
-                    border: '1.5px solid #257CE6'
+                    border: '1.5px solid rgba(147, 197, 253, 0.4)'
                   }}
                 />
               )}
-              <div style={{ lineHeight: 1.2 }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ffffff' }}>
+              <div style={{ lineHeight: 1.25 }}>
+                <div style={{ fontSize: '0.83rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.01em' }}>
                   {doctorAdminName}
                 </div>
-                <div style={{ fontSize: '0.68rem', color: isDoctor ? '#86efac' : '#93c5fd', fontWeight: 700, marginTop: '2px' }}>
+                <div style={{ fontSize: '0.7rem', color: isDoctor ? '#86efac' : '#93c5fd', fontWeight: 700, marginTop: '2px' }}>
                   {doctorSpecialtyLabel}
                 </div>
               </div>
@@ -633,15 +639,25 @@ export const AdminManagementHub = () => {
               onClick={logoutAdmin}
               title="Cerrar Sesión Administrativa"
               style={{
-                background: 'rgba(239, 68, 68, 0.2)',
-                border: '1px solid rgba(239, 68, 68, 0.35)',
+                background: 'rgba(239, 68, 68, 0.14)',
+                border: '1px solid rgba(239, 68, 68, 0.28)',
                 color: '#fca5a5',
                 padding: '0.45rem',
-                borderRadius: '8px',
+                borderRadius: '9px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)';
+                e.currentTarget.style.color = '#ffffff';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.14)';
+                e.currentTarget.style.color = '#fca5a5';
               }}
             >
               <LogOut size={15} />
@@ -656,9 +672,12 @@ export const AdminManagementHub = () => {
         <header
           className="admin-topbar"
           style={{
-            height: '64px',
-            background: '#ffffff',
-            borderBottom: '1.5px solid #D2E3FC',
+            height: '66px',
+            background: 'rgba(255, 255, 255, 0.88)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            borderBottom: '1px solid rgba(226, 232, 240, 0.85)',
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
             padding: '0 2.25rem',
             display: 'flex',
             alignItems: 'center',
@@ -678,7 +697,7 @@ export const AdminManagementHub = () => {
                 display: 'none',
                 background: 'none',
                 border: 'none',
-                color: '#002182',
+                color: '#0f172a',
                 cursor: 'pointer',
                 padding: '4px'
               }}
@@ -686,7 +705,7 @@ export const AdminManagementHub = () => {
               <Menu size={22} />
             </button>
 
-            <h1 className="admin-topbar-title" style={{ margin: 0, fontSize: '1.35rem', fontWeight: 900, color: '#002182', letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <h1 className="admin-topbar-title" style={{ margin: 0, fontSize: '1.4rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.025em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {currentTabLabel}
             </h1>
           </div>
@@ -699,11 +718,12 @@ export const AdminManagementHub = () => {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.55rem',
-                background: '#F5F8FE',
-                border: '1px solid #D2E3FC',
+                gap: '0.6rem',
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
                 borderRadius: '100px',
-                padding: '0.35rem 0.85rem'
+                padding: '0.38rem 0.95rem'
               }}
             >
               <span
@@ -712,13 +732,14 @@ export const AdminManagementHub = () => {
                   height: '8px',
                   borderRadius: '50%',
                   background: isDoctor ? '#10b981' : '#2563eb',
+                  boxShadow: isDoctor ? '0 0 0 3px rgba(16, 185, 129, 0.2)' : '0 0 0 3px rgba(37, 99, 235, 0.2)',
                   flexShrink: 0
                 }}
               />
-              <span className="admin-user-name" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#002182' }}>
+              <span className="admin-user-name" style={{ fontSize: '0.83rem', fontWeight: 800, color: '#0f172a' }}>
                 {doctorAdminName}
               </span>
-              <span className="admin-user-role" style={{ fontSize: '0.74rem', color: isDoctor ? '#076ABC' : '#64748b', fontWeight: 700 }}>
+              <span className="admin-user-role" style={{ fontSize: '0.76rem', color: isDoctor ? '#0284c7' : '#64748b', fontWeight: 700 }}>
                 · {doctorSpecialtyLabel}
               </span>
             </div>
@@ -729,16 +750,25 @@ export const AdminManagementHub = () => {
               className="admin-logout-btn"
               title="Cerrar Sesión"
               style={{
-                background: '#FEE2E2',
-                border: '1px solid #FCA5A5',
-                color: '#991B1B',
+                background: '#fff1f2',
+                border: '1px solid #fecdd3',
+                color: '#e11d48',
                 padding: '0.45rem 0.65rem',
                 borderRadius: '10px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                boxShadow: '0 1px 2px rgba(225, 29, 72, 0.06)',
                 transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#ffe4e6';
+                e.currentTarget.style.borderColor = '#fda4af';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#fff1f2';
+                e.currentTarget.style.borderColor = '#fecdd3';
               }}
             >
               <LogOut size={15} />
@@ -756,28 +786,30 @@ export const AdminManagementHub = () => {
               <div
                 className="admin-hero-banner"
                 style={{
-                  background: 'linear-gradient(135deg, #002182 0%, #076ABC 100%)',
-                  borderRadius: '20px',
-                  padding: '1.75rem 2rem',
+                  backgroundImage: 'radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.18) 0%, transparent 45%), linear-gradient(135deg, #031440 0%, #0a2e73 40%, #0957b8 80%, #0284c7 100%)',
+                  borderRadius: '22px',
+                  padding: '2rem 2.25rem',
                   color: '#ffffff',
                   marginBottom: '2rem',
-                  boxShadow: '0 10px 25px rgba(0, 33, 130, 0.15)',
+                  boxShadow: '0 16px 36px -8px rgba(3, 20, 64, 0.28), 0 4px 12px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.22)',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   flexWrap: 'wrap',
-                  gap: '1.25rem'
+                  gap: '1.25rem',
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}
               >
                 <div>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255, 255, 255, 0.15)', padding: '0.35rem 0.85rem', borderRadius: '100px', fontSize: '0.78rem', fontWeight: 800, marginBottom: '0.6rem' }}>
-                    <Stethoscope size={15} color="#93C5FD" />
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.55rem', background: 'rgba(255, 255, 255, 0.14)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255, 255, 255, 0.24)', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', padding: '0.38rem 0.95rem', borderRadius: '100px', fontSize: '0.78rem', fontWeight: 700, color: '#e0f2fe', marginBottom: '0.75rem' }}>
+                    <Stethoscope size={15} color="#7dd3fc" />
                     <span>Panel Profesional Médico Exclusivo · {currentDoctor?.specialty || 'Traumatología y Ortopedia'}</span>
                   </div>
-                  <h2 style={{ margin: '0 0 0.4rem', fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em' }}>
+                  <h2 style={{ margin: '0 0 0.45rem', fontSize: '1.85rem', fontWeight: 900, letterSpacing: '-0.025em', color: '#ffffff' }}>
                     Bienvenido, {doctorAdminName}
                   </h2>
-                  <p style={{ margin: 0, fontSize: '0.88rem', color: '#D2E3FC', maxWidth: '650px', lineHeight: 1.5 }}>
+                  <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(224, 242, 254, 0.92)', maxWidth: '680px', lineHeight: 1.55 }}>
                     Tu panel muestra exclusivamente tus citas, tus pacientes, tus evoluciones médicas y la atención clínica integral.
                   </p>
                 </div>
@@ -786,20 +818,33 @@ export const AdminManagementHub = () => {
                   <button
                     onClick={() => setActiveTab('clinical')}
                     style={{
-                      background: 'rgba(255, 255, 255, 0.18)',
-                      border: '1px solid rgba(255, 255, 255, 0.4)',
+                      background: 'rgba(255, 255, 255, 0.16)',
+                      backdropFilter: 'blur(10px)',
+                      border: '1px solid rgba(255, 255, 255, 0.35)',
+                      boxShadow: '0 4px 14px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
                       color: '#ffffff',
-                      padding: '0.75rem 1.15rem',
+                      padding: '0.75rem 1.25rem',
                       borderRadius: '12px',
-                      fontSize: '0.84rem',
+                      fontSize: '0.85rem',
                       fontWeight: 800,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.5rem'
+                      gap: '0.55rem',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.26)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.55)';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.16)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.35)';
+                      e.currentTarget.style.transform = 'translateY(0)';
                     }}
                   >
-                    <FileText size={16} color="#93C5FD" />
+                    <FileText size={16} color="#7dd3fc" />
                     <span>Ver Historial Clínico</span>
                   </button>
                 </div>
@@ -811,19 +856,31 @@ export const AdminManagementHub = () => {
                 <div
                   style={{
                     background: '#ffffff',
-                    borderRadius: '18px',
-                    border: '1.5px solid #D2E3FC',
-                    padding: '1.75rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+                    borderRadius: '20px',
+                    border: '1px solid #e2e8f0',
+                    padding: '1.85rem',
+                    boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02)'
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#002182' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.18rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.015em' }}>
                       Mis Próximos Turnos
                     </h3>
                     <button
                       onClick={() => setActiveTab('appointments')}
-                      style={{ background: 'none', border: 'none', color: '#076ABC', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#0284c7',
+                        fontWeight: 700,
+                        fontSize: '0.82rem',
+                        cursor: 'pointer',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        transition: 'color 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = '#0369a1'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = '#0284c7'; }}
                     >
                       Ver mi agenda completa
                     </button>
@@ -831,7 +888,7 @@ export const AdminManagementHub = () => {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                     {doctorAppointments.length === 0 ? (
-                      <div style={{ padding: '2rem', textAlign: 'center', color: '#7994B8', fontSize: '0.88rem' }}>
+                      <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b', fontSize: '0.88rem' }}>
                         No tienes turnos programados en este momento.
                       </div>
                     ) : (
@@ -842,39 +899,54 @@ export const AdminManagementHub = () => {
                           <div
                             key={a.id}
                             style={{
-                              background: '#F5F8FE',
-                              padding: '0.85rem 1.1rem',
-                              borderRadius: '12px',
+                              background: '#f8fafc',
+                              padding: '0.95rem 1.15rem',
+                              borderRadius: '14px',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'space-between',
-                              border: '1px solid #EDF3FD',
-                              transition: 'all 0.15s ease'
+                              border: '1px solid #edf2f7',
+                              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                              boxShadow: '0 1px 2px rgba(15, 23, 42, 0.02)'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = '#f1f5f9';
+                              e.currentTarget.style.borderColor = '#cbd5e1';
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.05)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = '#f8fafc';
+                              e.currentTarget.style.borderColor = '#edf2f7';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = '0 1px 2px rgba(15, 23, 42, 0.02)';
                             }}
                           >
                             <div>
-                              <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.92rem' }}>
+                              <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.92rem' }}>
                                 {a.patientName}
                               </div>
-                              <div style={{ fontSize: '0.76rem', color: '#496386', marginTop: '2px' }}>
+                              <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '3px' }}>
                                 {a.reason || 'Consulta médica'} · {a.patientInsurance || 'Particular'}
                               </div>
                             </div>
 
                             <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.84rem' }}>
+                              <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '0.85rem', fontVariantNumeric: 'tabular-nums' }}>
                                 {a.date} - {a.time} hs
                               </div>
                               <span
                                 style={{
                                   display: 'inline-block',
-                                  marginTop: '3px',
-                                  padding: '0.15rem 0.6rem',
+                                  marginTop: '4px',
+                                  padding: '0.2rem 0.65rem',
                                   borderRadius: '100px',
                                   fontSize: '0.72rem',
                                   fontWeight: 800,
-                                  background: isAtendido ? '#d1fae5' : '#fef3c7',
-                                  color: isAtendido ? '#065f46' : '#92400e'
+                                  background: isAtendido ? '#ecfdf5' : '#fffbeb',
+                                  color: isAtendido ? '#047857' : '#b45309',
+                                  border: isAtendido ? '1px solid #a7f3d0' : '1px solid #fde68a',
+                                  boxShadow: isAtendido ? '0 1px 2px rgba(16, 185, 129, 0.08)' : '0 1px 2px rgba(245, 158, 11, 0.08)'
                                 }}
                               >
                                 {isAtendido ? 'Atendido' : 'Por Atender'}
@@ -891,19 +963,31 @@ export const AdminManagementHub = () => {
                 <div
                   style={{
                     background: '#ffffff',
-                    borderRadius: '18px',
-                    border: '1.5px solid #D2E3FC',
-                    padding: '1.75rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+                    borderRadius: '20px',
+                    border: '1px solid #e2e8f0',
+                    padding: '1.85rem',
+                    boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02)'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#002182' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.18rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.015em' }}>
                       Mis Pacientes en Seguimiento
                     </h3>
                     <button
                       onClick={() => setActiveTab('patients')}
-                      style={{ background: 'none', border: 'none', color: '#076ABC', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#0284c7',
+                        fontWeight: 700,
+                        fontSize: '0.82rem',
+                        cursor: 'pointer',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        transition: 'color 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = '#0369a1'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = '#0284c7'; }}
                     >
                       Ver todos
                     </button>
@@ -911,7 +995,7 @@ export const AdminManagementHub = () => {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                     {doctorPatients.length === 0 ? (
-                      <div style={{ padding: '2rem', textAlign: 'center', color: '#7994B8', fontSize: '0.88rem' }}>
+                      <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b', fontSize: '0.88rem' }}>
                         No hay pacientes registrados en tu historial.
                       </div>
                     ) : (
@@ -919,18 +1003,32 @@ export const AdminManagementHub = () => {
                         <div
                           key={p.id}
                           style={{
-                            background: '#F5F8FE',
-                            padding: '0.8rem 1rem',
-                            borderRadius: '12px',
+                            background: '#f8fafc',
+                            padding: '0.9rem 1.15rem',
+                            borderRadius: '14px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            border: '1px solid #EDF3FD'
+                            border: '1px solid #edf2f7',
+                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.02)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#f1f5f9';
+                            e.currentTarget.style.borderColor = '#cbd5e1';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.05)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#f8fafc';
+                            e.currentTarget.style.borderColor = '#edf2f7';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 1px 2px rgba(15, 23, 42, 0.02)';
                           }}
                         >
                           <div>
-                            <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.88rem' }}>{p.name}</div>
-                            <div style={{ fontSize: '0.75rem', color: '#496386' }}>
+                            <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.9rem' }}>{p.name}</div>
+                            <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '3px' }}>
                               DNI {p.dni} • {p.insuranceName || p.insurance || 'Particular'}
                             </div>
                           </div>
@@ -941,13 +1039,25 @@ export const AdminManagementHub = () => {
                             }}
                             style={{
                               background: '#ffffff',
-                              border: '1px solid #D2E3FC',
-                              color: '#076ABC',
-                              padding: '0.35rem 0.75rem',
-                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              color: '#0369a1',
+                              padding: '0.42rem 0.85rem',
+                              borderRadius: '9px',
                               fontSize: '0.78rem',
                               fontWeight: 700,
-                              cursor: 'pointer'
+                              cursor: 'pointer',
+                              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                              transition: 'all 0.15s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = '#eff6ff';
+                              e.currentTarget.style.borderColor = '#93c5fd';
+                              e.currentTarget.style.color = '#0284c7';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = '#ffffff';
+                              e.currentTarget.style.borderColor = '#cbd5e1';
+                              e.currentTarget.style.color = '#0369a1';
                             }}
                           >
                             Ver Ficha
@@ -1629,6 +1739,21 @@ export const AdminManagementHub = () => {
 
       {/* Responsive Styles for Mobile Audit (Doctor & Administrative) */}
       <style>{`
+        /* Custom Dark Scrollbar for Sidebar */
+        .admin-sidebar > div::-webkit-scrollbar {
+          width: 5px;
+        }
+        .admin-sidebar > div::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .admin-sidebar > div::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.12);
+          border-radius: 10px;
+        }
+        .admin-sidebar > div::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.25);
+        }
+
         /* 0. Mobile Drawer Backdrop */
         .admin-sidebar-backdrop {
           display: none;

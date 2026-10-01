@@ -1,17 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { getTodayArgentina } from '../../utils/dateUtils';
 import { generateSHA256Hash } from '../../utils/cryptoAudit';
 import {
   Eye,
   X,
-  Upload,
   CheckCircle2,
-  ShieldCheck,
   Sparkles,
-  FileCheck2,
   Stethoscope,
-  Building,
   Activity
 } from 'lucide-react';
 
@@ -28,7 +24,8 @@ export const NewImagingStudyModal = () => {
     addToast
   } = useClinic();
 
-  const activeDoctorName = isDoctor && currentDoctor ? currentDoctor.name : (doctors[0]?.name || '');
+  // El médico solicitante es estrictamente el que está en la sesión activa y no debe cambiar
+  const activeDoctorName = isDoctor && currentDoctor ? currentDoctor.name : (doctors[0]?.name || 'Dr. Alejandro Blanco');
 
   const imagingPresets = [
     {
@@ -44,7 +41,7 @@ export const NewImagingStudyModal = () => {
       label: 'Rx Columna Lumbar (F y P)',
       modality: 'Radiografía Digital (RX)',
       bodyPart: 'Columna Lumbo-Sacra (Frente y Perfil)',
-      center: 'Servicio Radiología CITRA Sede Central',
+      center: 'Instituto Radiológico San Justo',
       radiologist: 'Dr. Gonzalo Méndez (MP 33.109 CMPC)',
       findings: 'Alineación lordótica lumbar conservada. Espacios intersomáticos L1-L4 respetados. Leve pinzamiento discal posterior L5-S1 sin lisis ni espondilolistesis.',
       conclusion: 'Signos de discopatía degenerativa incipiente L5-S1. Sin lesiones traumáticas óseas agudas.'
@@ -62,7 +59,7 @@ export const NewImagingStudyModal = () => {
       label: 'Rx Tobillo (F, P y Mortaja)',
       modality: 'Radiografía Digital (RX)',
       bodyPart: 'Tobillo Derecho (Frente, Perfil y Proyección de Mortaja)',
-      center: 'Servicio Radiología CITRA Sede Central',
+      center: 'Instituto Radiológico San Justo',
       radiologist: 'Dr. Gonzalo Méndez (MP 33.109 CMPC)',
       findings: 'Mortaja articular conservada, espacio medial normal (< 4 mm). Sin trazos de fractura ósea ni arrancamientos maleolares. Tumefacción de partes blandas perimaleolar externa.',
       conclusion: 'Estudio radiográfico negativo para lesión ósea. Criterios de Ottawa negativos. Compatible con esguince de tobillo.'
@@ -72,8 +69,8 @@ export const NewImagingStudyModal = () => {
   const [selectedPatientId, setSelectedPatientId] = useState('');
   const [modality, setModality] = useState('Radiografía Digital (RX)');
   const [bodyPart, setBodyPart] = useState('');
-  const [center, setCenter] = useState('Servicio Radiología CITRA Sede Central');
-  const [referringDoctor, setReferringDoctor] = useState(activeDoctorName);
+  const [studyDate, setStudyDate] = useState(getTodayArgentina());
+  const [center, setCenter] = useState('');
   const [radiologist, setRadiologist] = useState('');
   const [findings, setFindings] = useState('');
   const [conclusion, setConclusion] = useState('');
@@ -99,20 +96,21 @@ export const NewImagingStudyModal = () => {
       addToast('Paciente Requerido', 'Debe seleccionar un paciente de la lista.', 'warning');
       return;
     }
-    const todayStr = getTodayArgentina();
-    const hasReport = Boolean(conclusion && conclusion.trim());
+    const todayStr = studyDate || getTodayArgentina();
+    const hasReport = Boolean((conclusion && conclusion.trim()) || (findings && findings.trim()));
+
     addImagingStudy({
       patientId: selectedPatient.id,
       patientName: selectedPatient.name,
       patientDni: selectedPatient.dni,
       doctorId: isDoctor && currentDoctor ? currentDoctor.id : undefined,
       modality,
-      bodyPart: bodyPart.trim() || 'Región anatómica a determinar',
-      center,
-      referringDoctor,
-      radiologist: radiologist.trim() || (isDoctor && currentDoctor ? currentDoctor.name : 'Médico Radiólogo'),
-      findings,
-      conclusion,
+      bodyPart: bodyPart.trim() || 'Región anatómica no especificada',
+      center: center.trim() || 'Centro de Diagnóstico Externo',
+      referringDoctor: activeDoctorName,
+      radiologist: radiologist.trim() || 'Médico Radiólogo',
+      findings: findings.trim(),
+      conclusion: conclusion.trim(),
       date: todayStr,
       status: hasReport ? 'Informado' : 'Realizado',
       seriesCount: modality.includes('RMN') ? 4 : modality.includes('TAC') ? 3 : 2,
@@ -120,6 +118,7 @@ export const NewImagingStudyModal = () => {
       hashSha256: generateSHA256Hash(`${selectedPatient.dni}|${modality}|${bodyPart}|${todayStr}|${Date.now()}`),
       thumbnailUrl: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=600&auto=format&fit=crop&q=80'
     });
+
     setIsImagingStudyModalOpen(false);
     addToast('Estudio Registrado', 'El estudio diagnóstico ha sido incorporado a la historia clínica del paciente.', 'success');
   };
@@ -145,9 +144,9 @@ export const NewImagingStudyModal = () => {
         className="modal-content"
         style={{
           width: '100%',
-          maxWidth: '740px',
+          maxWidth: '720px',
           background: '#ffffff',
-          borderRadius: '24px',
+          borderRadius: '22px',
           boxShadow: '0 30px 60px -15px rgba(0, 21, 86, 0.45), 0 0 0 1px rgba(7, 106, 188, 0.25)',
           overflow: 'hidden',
           display: 'flex',
@@ -171,8 +170,8 @@ export const NewImagingStudyModal = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
             <div
               style={{
-                width: '44px',
-                height: '44px',
+                width: '42px',
+                height: '42px',
                 borderRadius: '12px',
                 background: 'rgba(255, 255, 255, 0.1)',
                 border: '1.5px solid rgba(255, 255, 255, 0.25)',
@@ -182,14 +181,14 @@ export const NewImagingStudyModal = () => {
                 color: '#93C5FD'
               }}
             >
-              <Eye size={24} />
+              <Eye size={22} />
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900 }}>
                 Cargar Estudio de Diagnóstico por Imágenes
               </h3>
               <div style={{ fontSize: '0.78rem', color: '#D2E3FC', marginTop: '2px' }}>
-                Registro de RMN, Radiografía Digital, TAC y Ecografía en Sistema PACS CITRA
+                Registro y archivo de estudios radiológicos (RMN, RX, TAC, Ecografía)
               </div>
             </div>
           </div>
@@ -215,11 +214,11 @@ export const NewImagingStudyModal = () => {
         </div>
 
         {/* FORM BODY */}
-        <form onSubmit={handleSubmit} style={{ padding: '1.5rem 1.75rem', overflowY: 'auto', maxHeight: '75vh' }}>
-          {/* QUICK PRESETS */}
-          <div style={{ marginBottom: '1.25rem' }}>
-            <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#002182', textTransform: 'uppercase', marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <Sparkles size={14} color="#076ABC" /> Protocolos Traumatológicos Frecuentes (1-Click)
+        <form onSubmit={handleSubmit} style={{ padding: '1.5rem 1.75rem', overflowY: 'auto', maxHeight: '78vh' }}>
+          {/* PLANTILLAS RÁPIDAS */}
+          <div style={{ marginBottom: '1.25rem', background: '#F8FAFC', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+            <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#002182', textTransform: 'uppercase', marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <Sparkles size={14} color="#076ABC" /> Plantillas frecuentes de traumatología (autocompletar)
             </div>
             <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
               {imagingPresets.map((preset, idx) => (
@@ -228,20 +227,28 @@ export const NewImagingStudyModal = () => {
                   type="button"
                   onClick={() => handleApplyPreset(preset)}
                   style={{
-                    background: '#F5F8FE',
-                    border: '1.5px solid #BFDBFE',
+                    background: '#ffffff',
+                    border: '1px solid #CBD5E1',
                     borderRadius: '8px',
-                    padding: '0.35rem 0.75rem',
-                    fontSize: '0.78rem',
-                    fontWeight: 800,
-                    color: '#002182',
+                    padding: '0.35rem 0.65rem',
+                    fontSize: '0.76rem',
+                    fontWeight: 700,
+                    color: '#334155',
                     cursor: 'pointer',
-                    transition: 'all 0.15s'
+                    transition: 'all 0.15s ease'
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#002182')}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#BFDBFE')}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#002182';
+                    e.currentTarget.style.color = '#002182';
+                    e.currentTarget.style.background = '#EFF6FF';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#CBD5E1';
+                    e.currentTarget.style.color = '#334155';
+                    e.currentTarget.style.background = '#ffffff';
+                  }}
                 >
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                     <Activity size={12} color="#076ABC" />
                     {preset.label}
                   </span>
@@ -250,39 +257,80 @@ export const NewImagingStudyModal = () => {
             </div>
           </div>
 
-          {/* PATIENT SELECTION */}
-          <div style={{ marginBottom: '1.25rem' }}>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#002182', marginBottom: '0.35rem' }}>
-              Paciente Titular *
-            </label>
-            <select
-              value={selectedPatientId}
-              onChange={(e) => setSelectedPatientId(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.65rem 0.85rem',
-                borderRadius: '10px',
-                border: '1.5px solid #cbd5e1',
-                fontSize: '0.88rem',
-                fontWeight: 700,
-                background: '#ffffff',
-                outline: 'none'
-              }}
-              required
-            >
-              <option value="">-- Seleccionar Paciente --</option>
-              {availablePatients.map((pat) => (
-                <option key={pat.id} value={pat.id}>
-                  {pat.name} — DNI {pat.dni} ({pat.insuranceName || 'Particular'})
-                </option>
-              ))}
-            </select>
+          {/* SECCIÓN 1: PACIENTE Y PROFESIONAL EN SESIÓN */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem', marginBottom: '1.2rem' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#002182', marginBottom: '0.35rem' }}>
+                Paciente Titular *
+              </label>
+              <select
+                value={selectedPatientId}
+                onChange={(e) => setSelectedPatientId(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.62rem 0.85rem',
+                  borderRadius: '10px',
+                  border: '1.5px solid #cbd5e1',
+                  fontSize: '0.86rem',
+                  fontWeight: 600,
+                  background: '#ffffff',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+                required
+              >
+                <option value="">-- Seleccionar Paciente --</option>
+                {availablePatients.map((pat) => (
+                  <option key={pat.id} value={pat.id}>
+                    {pat.name} — DNI {pat.dni} ({pat.insuranceName || 'Particular'})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#002182', marginBottom: '0.35rem' }}>
+                Médico Solicitante
+              </label>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.62rem 0.85rem',
+                  borderRadius: '10px',
+                  border: '1.5px solid #E2E8F0',
+                  background: '#F8FAFC',
+                  boxSizing: 'border-box'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Stethoscope size={16} color="#076ABC" />
+                  <span style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a' }}>
+                    {activeDoctorName}
+                  </span>
+                </div>
+                <span
+                  style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    color: '#047857',
+                    background: '#ECFDF5',
+                    border: '1px solid #A7F3D0',
+                    padding: '2px 7px',
+                    borderRadius: '6px'
+                  }}
+                >
+                  Sesión activa
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* MODALITY AND BODY PART */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+          {/* SECCIÓN 2: DATOS DEL ESTUDIO */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.2rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#002182', marginBottom: '0.35rem' }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#002182', marginBottom: '0.35rem' }}>
                 Modalidad del Estudio *
               </label>
               <select
@@ -290,13 +338,14 @@ export const NewImagingStudyModal = () => {
                 onChange={(e) => setModality(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.65rem 0.85rem',
+                  padding: '0.62rem 0.85rem',
                   borderRadius: '10px',
                   border: '1.5px solid #cbd5e1',
-                  fontSize: '0.88rem',
+                  fontSize: '0.86rem',
                   fontWeight: 600,
                   background: '#ffffff',
-                  outline: 'none'
+                  outline: 'none',
+                  boxSizing: 'border-box'
                 }}
                 required
               >
@@ -308,20 +357,20 @@ export const NewImagingStudyModal = () => {
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#002182', marginBottom: '0.35rem' }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#002182', marginBottom: '0.35rem' }}>
                 Región Anatómica *
               </label>
               <input
                 type="text"
                 value={bodyPart}
                 onChange={(e) => setBodyPart(e.target.value)}
-                placeholder="Ej: Rodilla Derecha, Hombro Izq..."
+                placeholder="Ej: Rodilla Derecha, Hombro Izquierdo..."
                 style={{
                   width: '100%',
-                  padding: '0.65rem 0.85rem',
+                  padding: '0.62rem 0.85rem',
                   borderRadius: '10px',
                   border: '1.5px solid #cbd5e1',
-                  fontSize: '0.88rem',
+                  fontSize: '0.86rem',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
@@ -330,122 +379,128 @@ export const NewImagingStudyModal = () => {
             </div>
           </div>
 
-          {/* DOCTOR AND RADIOLOGIST */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.2rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#002182', marginBottom: '0.35rem' }}>
-                Médico Traumatólogo Solicitante
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#002182', marginBottom: '0.35rem' }}>
+                Fecha de Realización del Estudio
               </label>
               <input
-                type="text"
-                value={referringDoctor}
-                onChange={(e) => setReferringDoctor(e.target.value)}
+                type="date"
+                value={studyDate}
+                onChange={(e) => setStudyDate(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.65rem 0.85rem',
+                  padding: '0.62rem 0.85rem',
                   borderRadius: '10px',
                   border: '1.5px solid #cbd5e1',
-                  fontSize: '0.88rem',
+                  fontSize: '0.86rem',
                   outline: 'none',
-                  background: '#f8fafc',
-                  fontWeight: 700,
+                  background: '#ffffff',
                   boxSizing: 'border-box'
                 }}
-                required
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#002182', marginBottom: '0.35rem' }}>
-                Médico Radiólogo Informante
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#002182', marginBottom: '0.35rem' }}>
+                Centro Emisor / Institución Externa <span style={{ color: '#64748b', fontWeight: 600 }}>(Opcional)</span>
+              </label>
+              <input
+                type="text"
+                value={center}
+                onChange={(e) => setCenter(e.target.value)}
+                placeholder="Ej: Instituto Oulton, Sanatorio Privado..."
+                style={{
+                  width: '100%',
+                  padding: '0.62rem 0.85rem',
+                  borderRadius: '10px',
+                  border: '1.5px solid #cbd5e1',
+                  fontSize: '0.86rem',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+          </div>
+
+          {/* SECCIÓN 3: INFORME RADIOLÓGICO (OPCIONAL) */}
+          <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1rem', marginBottom: '1.2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#002182', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Informe Radiológico Adjunto
+              </span>
+              <span style={{ fontSize: '0.74rem', color: '#64748b', background: '#F1F5F9', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                Opcional
+              </span>
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
+                Médico Radiólogo Informante <span style={{ color: '#64748b', fontWeight: 600 }}>(Opcional)</span>
               </label>
               <input
                 type="text"
                 value={radiologist}
                 onChange={(e) => setRadiologist(e.target.value)}
+                placeholder="Ej: Dr. Gonzalo Méndez (Radiólogo)..."
                 style={{
                   width: '100%',
-                  padding: '0.65rem 0.85rem',
+                  padding: '0.62rem 0.85rem',
                   borderRadius: '10px',
                   border: '1.5px solid #cbd5e1',
-                  fontSize: '0.88rem',
+                  fontSize: '0.86rem',
                   outline: 'none',
                   boxSizing: 'border-box'
                 }}
-                required
               />
             </div>
-          </div>
 
-          {/* CENTER */}
-          <div style={{ marginBottom: '1.25rem' }}>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#002182', marginBottom: '0.35rem' }}>
-              Centro Radiológico / Institución
-            </label>
-            <input
-              type="text"
-              value={center}
-              onChange={(e) => setCenter(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.65rem 0.85rem',
-                borderRadius: '10px',
-                border: '1.5px solid #cbd5e1',
-                fontSize: '0.88rem',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
-              required
-            />
-          </div>
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
+                Hallazgos Radiológicos / Descripción Técnica <span style={{ color: '#64748b', fontWeight: 600 }}>(Opcional)</span>
+              </label>
+              <textarea
+                rows={3}
+                value={findings}
+                onChange={(e) => setFindings(e.target.value)}
+                placeholder="Descripción de cortes, secuencias o hallazgos anatómicos (opcional)..."
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '10px',
+                  border: '1.5px solid #cbd5e1',
+                  fontSize: '0.86rem',
+                  lineHeight: 1.5,
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
 
-          {/* FINDINGS */}
-          <div style={{ marginBottom: '1.25rem' }}>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#002182', marginBottom: '0.35rem' }}>
-              Hallazgos Radiológicos / Descripción Técnica *
-            </label>
-            <textarea
-              rows={3}
-              value={findings}
-              onChange={(e) => setFindings(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                borderRadius: '10px',
-                border: '1.5px solid #cbd5e1',
-                fontSize: '0.86rem',
-                lineHeight: 1.5,
-                outline: 'none',
-                boxSizing: 'border-box',
-                fontFamily: 'inherit'
-              }}
-              required
-            />
-          </div>
-
-          {/* CONCLUSION */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#002182', marginBottom: '0.35rem' }}>
-              Conclusión Diagnóstica *
-            </label>
-            <textarea
-              rows={2}
-              value={conclusion}
-              onChange={(e) => setConclusion(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                borderRadius: '10px',
-                border: '1.5px solid #cbd5e1',
-                fontSize: '0.86rem',
-                lineHeight: 1.5,
-                outline: 'none',
-                boxSizing: 'border-box',
-                fontFamily: 'inherit',
-                fontWeight: 600
-              }}
-              required
-            />
+            <div>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
+                Conclusión Diagnóstica <span style={{ color: '#64748b', fontWeight: 600 }}>(Opcional)</span>
+              </label>
+              <textarea
+                rows={2}
+                value={conclusion}
+                onChange={(e) => setConclusion(e.target.value)}
+                placeholder="Conclusión diagnóstica del estudio (opcional)..."
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '10px',
+                  border: '1.5px solid #cbd5e1',
+                  fontSize: '0.86rem',
+                  lineHeight: 1.5,
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  fontFamily: 'inherit',
+                  fontWeight: 600
+                }}
+              />
+            </div>
           </div>
 
           {/* ACTIONS */}
@@ -474,7 +529,7 @@ export const NewImagingStudyModal = () => {
                 boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)'
               }}
             >
-              <CheckCircle2 size={16} /> Guardar Estudio en PACS
+              <CheckCircle2 size={16} /> Guardar Estudio
             </button>
           </div>
         </form>
