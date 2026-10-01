@@ -47,6 +47,8 @@ export const PatientDetailModal = () => {
     doctors
   } = useClinic();
 
+  const patient = selectedPatientForDetail;
+
   const [activeTab, setActiveTab] = useState('general'); // 'general', 'hce', 'rehab', 'appointments', 'files', 'antecedentes'
   const [newFileName, setNewFileName] = useState('');
   const [newFileType, setNewFileType] = useState('Resonancia Magnética (RMN)');
@@ -88,9 +90,7 @@ export const PatientDetailModal = () => {
     }
   }, [isDoctor, activeTab]);
 
-  if (!selectedPatientForDetail) return null;
-
-  const patient = selectedPatientForDetail;
+  if (!patient) return null;
 
   // Calculate age
   const calculateAge = (bDate) => {
