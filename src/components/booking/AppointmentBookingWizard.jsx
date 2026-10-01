@@ -748,25 +748,29 @@ export const AppointmentBookingWizard = () => {
                           boxShadow: isSelected ? '0 6px 18px rgba(7, 106, 188, 0.15)' : '0 2px 6px rgba(0, 33, 130, 0.02)'
                         }}
                       >
-                        <img
-                          src={doc.avatar || DEFAULT_DOCTOR_AVATAR}
-                          alt={doc.name}
-                          onError={(e) => { e.currentTarget.src = DEFAULT_DOCTOR_AVATAR; }}
+                        <div
                           style={{
-                            width: '54px',
-                            height: '54px',
-                            borderRadius: '14px',
-                            objectFit: 'cover',
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: '12px',
+                            background: isSelected ? '#002182' : 'rgba(7, 106, 188, 0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: isSelected ? '#ffffff' : '#002182',
                             flexShrink: 0,
-                            border: '1.5px solid #D2E3FC'
+                            border: isSelected ? '1.5px solid #002182' : '1.5px solid #BFDBFE'
                           }}
-                        />
+                          title="Médico"
+                        >
+                          <Stethoscope size={22} />
+                        </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <h4 style={{ margin: '0 0 0.2rem', fontSize: '0.94rem', fontWeight: 900, color: '#002182', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {doc.name}
                           </h4>
                           <div style={{ fontSize: '0.74rem', color: '#076ABC', fontWeight: 700 }}>
-                            {doc.specialty}
+                            {doc.specialty?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : doc.specialty}
                           </div>
                           <div style={{ fontSize: '0.7rem', color: '#002182', fontWeight: 700, marginTop: '2px', lineHeight: 1.25 }}>
                             {doc.scheduleDisplay || (doc.workingDays ? doc.workingDays.join(', ') : 'Consultar en secretaría')}

@@ -12,14 +12,32 @@ import {
   CheckCircle2,
   X,
   User,
-  DollarSign
+  DollarSign,
+  KeyRound,
+  Lock
 } from 'lucide-react';
 
 export const DoctorsManager = () => {
-  const { doctors, addDoctor, updateDoctor, deleteDoctor, specialties } = useClinic();
+  const {
+    doctors,
+    addDoctor,
+    updateDoctor,
+    deleteDoctor,
+    specialties,
+    users = [],
+    setUsers,
+    updateUser,
+    addToast,
+    logAudit
+  } = useClinic();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState(null);
+
+  // Password reset modal states (Secretaría puede cambiar contraseñas si alguno se olvida)
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordDoctor, setPasswordDoctor] = useState(null);
+  const [newPasswordValue, setNewPasswordValue] = useState('citra2026');
 
   // Form states
   const [name, setName] = useState('');
@@ -41,6 +59,46 @@ export const DoctorsManager = () => {
     } else {
       setSelectedDays([...selectedDays, day]);
     }
+  };
+
+  const handleChangeDoctorPassword = (e) => {
+    e.preventDefault();
+    if (!passwordDoctor) return;
+    const newPwd = newPasswordValue.trim() || 'citra2026';
+
+    const matchedUser = users.find(
+      (u) =>
+        u.doctorId === passwordDoctor.id ||
+        (u.email && passwordDoctor.email && u.email.toLowerCase() === passwordDoctor.email.toLowerCase()) ||
+        (u.name && passwordDoctor.name && u.name.toLowerCase() === passwordDoctor.name.toLowerCase())
+    );
+
+    if (matchedUser && typeof updateUser === 'function') {
+      updateUser(matchedUser.id, { password: newPwd });
+    } else if (setUsers) {
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.doctorId === passwordDoctor.id || (u.name && u.name.includes(passwordDoctor.name))
+            ? { ...u, password: newPwd }
+            : u
+        )
+      );
+    }
+
+    if (updateDoctor) {
+      updateDoctor(passwordDoctor.id, { password: newPwd });
+    }
+
+    if (addToast) {
+      addToast('Contraseña Actualizada', `Nueva clave asignada al ${passwordDoctor.name}.`, 'success');
+    }
+    if (logAudit) {
+      logAudit('UPDATE_PASSWORD', 'Cuerpo Médico', passwordDoctor.email || passwordDoctor.name, `Secretaría actualizó la contraseña de acceso para ${passwordDoctor.name}.`);
+    }
+
+    setIsPasswordModalOpen(false);
+    setPasswordDoctor(null);
+    setNewPasswordValue('citra2026');
   };
 
   const handleOpenAdd = () => {
@@ -172,18 +230,47 @@ export const DoctorsManager = () => {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                  <img
-                    src={doc.avatar || 'https://images.unsplash.com/photo-1622253692010?w=120'}
-                    alt={doc.name}
-                    style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover' }}
-                  />
+                  <div
+                    style={{
+                      width: '46px',
+                      height: '46px',
+                      borderRadius: '12px',
+                      background: 'rgba(7, 106, 188, 0.1)',
+                      border: '1.5px solid #BFDBFE',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#002182',
+                      flexShrink: 0
+                    }}
+                    title="Profesional Médico CITRA"
+                  >
+                    <Stethoscope size={22} />
+                  </div>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#002182' }}>
-                      {doc.name}
-                    </h3>
-                    <div style={{ fontSize: '0.78rem', color: '#076ABC', fontWeight: 700 }}>
-                      {doc.specialty}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#002182' }}>
+                        {doc.name}
+                      </h3>
+                      <span
+                        style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 800,
+                          background: '#EFF6FF',
+                          color: '#076ABC',
+                          border: '1px solid #BFDBFE',
+                          padding: '0.12rem 0.55rem',
+                          borderRadius: '6px'
+                        }}
+                      >
+                        {doc.specialty?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : (doc.specialty || 'Especialista')}
+                      </span>
                     </div>
+                    {doc.license && (
+                      <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '2px' }}>
+                        {doc.license}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -228,7 +315,7 @@ export const DoctorsManager = () => {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.6rem', borderTop: '1px solid #EDF3FD', paddingTop: '1rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', borderTop: '1px solid #EDF3FD', paddingTop: '1rem' }}>
               <button
                 onClick={() => handleOpenEdit(doc)}
                 style={{
@@ -249,6 +336,32 @@ export const DoctorsManager = () => {
               >
                 <Edit2 size={14} />
                 Editar
+              </button>
+
+              <button
+                onClick={() => {
+                  setPasswordDoctor(doc);
+                  setNewPasswordValue('citra2026');
+                  setIsPasswordModalOpen(true);
+                }}
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  color: '#334155',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '8px',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.35rem',
+                  cursor: 'pointer'
+                }}
+                title="Cambiar o blanquear contraseña del médico"
+              >
+                <KeyRound size={14} />
+                Clave
               </button>
 
               <button
@@ -473,6 +586,162 @@ export const DoctorsManager = () => {
               >
                 {editingDoctor ? 'Guardar Cambios' : 'Registrar Profesional'}
               </button>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Modal Cambio de Contraseña por Secretaría */}
+      {isPasswordModalOpen && passwordDoctor && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 33, 130, 0.65)',
+            backdropFilter: 'blur(5px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1050,
+            padding: '1rem'
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '20px',
+              maxWidth: '460px',
+              width: '100%',
+              padding: '2rem',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
+              position: 'relative'
+            }}
+          >
+            <button
+              onClick={() => {
+                setIsPasswordModalOpen(false);
+                setPasswordDoctor(null);
+              }}
+              style={{
+                position: 'absolute',
+                top: '1.25rem',
+                right: '1.25rem',
+                background: '#F1F5F9',
+                border: 'none',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#64748B'
+              }}
+            >
+              <X size={18} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <div
+                style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '10px',
+                  background: '#EFF6FF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#002182'
+                }}
+              >
+                <KeyRound size={22} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#002182' }}>
+                  Blanquear / Cambiar Clave
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748B' }}>
+                  {passwordDoctor.name} · {passwordDoctor.specialty}
+                </p>
+              </div>
+            </div>
+
+            <p style={{ fontSize: '0.83rem', color: '#475569', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+              Como secretaría podés resetear la contraseña del profesional si la olvidó. El médico podrá luego iniciar sesión y cambiarla desde su módulo de Configuración.
+            </p>
+
+            <form onSubmit={handleChangeDoctorPassword} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#1E293B', marginBottom: '0.35rem' }}>
+                  Nueva Contraseña para el Profesional
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Lock size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <input
+                    type="text"
+                    value={newPasswordValue}
+                    onChange={(e) => setNewPasswordValue(e.target.value)}
+                    required
+                    placeholder="ej: citra2026"
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.75rem 0.65rem 2.4rem',
+                      borderRadius: '8px',
+                      border: '1.5px solid #D2E3FC',
+                      fontSize: '0.88rem',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setNewPasswordValue('citra2026')}
+                    style={{ fontSize: '0.72rem', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 8px', cursor: 'pointer', color: '#475569' }}
+                  >
+                    Usar por defecto: citra2026
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPasswordModalOpen(false);
+                    setPasswordDoctor(null);
+                  }}
+                  style={{
+                    flex: 1,
+                    background: '#F1F5F9',
+                    border: '1px solid #CBD5E1',
+                    color: '#475569',
+                    padding: '0.75rem',
+                    borderRadius: '10px',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 2,
+                    background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '0.75rem',
+                    borderRadius: '10px',
+                    fontWeight: 800,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Guardar Contraseña
+                </button>
+              </div>
             </form>
           </div>
         </div>

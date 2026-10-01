@@ -405,6 +405,13 @@ export const AdminManagementHub = () => {
     return clean;
   })();
 
+  const doctorSpecialtyLabel = (() => {
+    if (!isDoctor) return authAdmin?.role || 'Recepción & Facturación';
+    const spec = currentDoctor?.specialty || authAdmin?.specialty || 'Traumatología';
+    if (spec.toLowerCase().includes('traumatolog')) return 'Traumatólogo';
+    return spec;
+  })();
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#F5F8FE', width: '100%' }}>
       {/* 0. BACKDROP OVERLAY PARA SIDEBAR MÓVIL */}
@@ -581,23 +588,43 @@ export const AdminManagementHub = () => {
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-              <img
-                src={authAdmin?.avatar || 'https://images.unsplash.com/photo-1622253692010?w=100'}
-                alt={doctorAdminName}
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  border: '1.5px solid #257CE6'
-                }}
-              />
+              {isDoctor ? (
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: 'rgba(37, 124, 230, 0.25)',
+                    border: '1.5px solid #257CE6',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#93c5fd',
+                    flexShrink: 0
+                  }}
+                  title="Profesional Médico CITRA"
+                >
+                  <Stethoscope size={18} />
+                </div>
+              ) : (
+                <img
+                  src={authAdmin?.avatar || 'https://images.unsplash.com/photo-1622253692010?w=100'}
+                  alt={doctorAdminName}
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '1.5px solid #257CE6'
+                  }}
+                />
+              )}
               <div style={{ lineHeight: 1.2 }}>
                 <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ffffff' }}>
                   {doctorAdminName}
                 </div>
                 <div style={{ fontSize: '0.68rem', color: isDoctor ? '#86efac' : '#93c5fd', fontWeight: 700, marginTop: '2px' }}>
-                  {isDoctor ? (currentDoctor?.specialty || 'Médico Especialista') : (authAdmin?.role || 'Recepción & Facturación')}
+                  {doctorSpecialtyLabel}
                 </div>
               </div>
             </div>
@@ -691,8 +718,8 @@ export const AdminManagementHub = () => {
               <span className="admin-user-name" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#002182' }}>
                 {doctorAdminName}
               </span>
-              <span className="admin-user-role" style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600 }}>
-                · {isDoctor ? (currentDoctor?.specialty || 'Médico') : (authAdmin?.role || 'Recepción & Facturación')}
+              <span className="admin-user-role" style={{ fontSize: '0.74rem', color: isDoctor ? '#076ABC' : '#64748b', fontWeight: 700 }}>
+                · {doctorSpecialtyLabel}
               </span>
             </div>
 

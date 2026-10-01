@@ -397,30 +397,28 @@ export const SchedulesManager = () => {
                     {/* Avatar */}
                     <div
                       style={{
-                        width: '44px',
-                        height: '44px',
-                        borderRadius: '50%',
-                        overflow: 'hidden',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '10px',
+                        background: 'rgba(7, 106, 188, 0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#002182',
                         flexShrink: 0,
-                        border: isSelected ? '2px solid #002182' : '1.5px solid #cbd5e1'
+                        border: isSelected ? '2px solid #002182' : '1px solid #BFDBFE'
                       }}
+                      title="Médico"
                     >
-                      <img
-                        src={doc.photo || doc.avatar || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80'}
-                        alt={doc.name}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80';
-                        }}
-                      />
+                      <Stethoscope size={18} />
                     </div>
 
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 800, fontSize: '0.88rem', color: isSelected ? '#002182' : '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {doc.name}
                       </div>
-                      <div style={{ fontSize: '0.74rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {doc.specialty}
+                      <div style={{ fontSize: '0.74rem', color: '#076ABC', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {doc.specialty?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : doc.specialty}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '3px' }}>
                         <span
@@ -482,20 +480,21 @@ export const SchedulesManager = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <div
                     style={{
-                      width: '50px',
-                      height: '50px',
-                      borderRadius: '50%',
-                      overflow: 'hidden',
+                      width: '46px',
+                      height: '46px',
+                      borderRadius: '12px',
+                      background: 'rgba(7, 106, 188, 0.1)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#002182',
                       flexShrink: 0,
                       border: '2px solid #002182',
                       boxShadow: '0 2px 8px rgba(0,33,130,0.1)'
                     }}
+                    title="Médico"
                   >
-                    <img
-                      src={selectedDocObj.photo || selectedDocObj.avatar || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80'}
-                      alt={selectedDocObj.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
+                    <Stethoscope size={22} />
                   </div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -513,7 +512,7 @@ export const SchedulesManager = () => {
                           borderRadius: '6px'
                         }}
                       >
-                        {selectedDocObj.specialty}
+                        {selectedDocObj.specialty?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : selectedDocObj.specialty}
                       </span>
                     </div>
                     <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>

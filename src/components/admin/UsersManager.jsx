@@ -376,20 +376,55 @@ export const UsersManager = () => {
                       {/* Name & Email */}
                       <td style={{ padding: '0.95rem 1.25rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <img
-                            src={u.avatar || 'https://images.unsplash.com/photo-1622253692010?w=100'}
-                            alt={u.name}
-                            style={{
-                              width: '38px',
-                              height: '38px',
-                              borderRadius: '50%',
-                              objectFit: 'cover',
-                              border: isCurrentLogged ? '2px solid #002182' : '1px solid #D2E3FC'
-                            }}
-                          />
+                          {isDoc ? (
+                            <div
+                              style={{
+                                width: '38px',
+                                height: '38px',
+                                borderRadius: '10px',
+                                background: 'rgba(7, 106, 188, 0.1)',
+                                border: isCurrentLogged ? '2px solid #002182' : '1px solid #BFDBFE',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#002182',
+                                flexShrink: 0
+                              }}
+                              title="Profesional Médico"
+                            >
+                              <Stethoscope size={18} />
+                            </div>
+                          ) : (
+                            <img
+                              src={u.avatar || 'https://images.unsplash.com/photo-1622253692010?w=100'}
+                              alt={u.name}
+                              style={{
+                                width: '38px',
+                                height: '38px',
+                                borderRadius: '50%',
+                                objectFit: 'cover',
+                                border: isCurrentLogged ? '2px solid #002182' : '1px solid #D2E3FC'
+                              }}
+                            />
+                          )}
                           <div>
-                            <div style={{ fontWeight: 800, color: '#002182', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                              {u.name}
+                            <div style={{ fontWeight: 800, color: '#002182', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                              <span>{u.name}</span>
+                              {isDoc && (
+                                <span
+                                  style={{
+                                    fontSize: '0.72rem',
+                                    fontWeight: 800,
+                                    background: '#EFF6FF',
+                                    color: '#076ABC',
+                                    border: '1px solid #BFDBFE',
+                                    padding: '0.12rem 0.5rem',
+                                    borderRadius: '6px'
+                                  }}
+                                >
+                                  {u.specialty?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : (u.specialty || 'Especialista')}
+                                </span>
+                              )}
                               {isCurrentLogged && (
                                 <span
                                   style={{

@@ -12,7 +12,8 @@ import {
   CalendarPlus,
   Activity,
   Phone,
-  Mail
+  Mail,
+  Stethoscope
 } from 'lucide-react';
 import { DoctorModal } from './DoctorModal';
 
@@ -122,11 +123,23 @@ export const DoctorsView = () => {
               <div>
                 {/* Doctor Top Box */}
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', marginBottom: '1rem' }}>
-                  <img
-                    src={doc.avatar}
-                    alt={doc.name}
-                    style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #e2e8f0' }}
-                  />
+                  <div
+                    style={{
+                      width: '50px',
+                      height: '50px',
+                      borderRadius: '12px',
+                      background: 'rgba(7, 106, 188, 0.1)',
+                      border: '1.5px solid #BFDBFE',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#002182',
+                      flexShrink: 0
+                    }}
+                    title="Médico"
+                  >
+                    <Stethoscope size={24} />
+                  </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>{doc.name}</h3>
@@ -145,7 +158,7 @@ export const DoctorsView = () => {
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '2px' }}>
                       <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#2563eb' }}>
-                        {doc.specialtyName}
+                        {(doc.specialtyName || doc.specialty)?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : (doc.specialtyName || doc.specialty)}
                       </span>
                     </div>
                     <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>

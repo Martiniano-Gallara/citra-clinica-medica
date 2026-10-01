@@ -18,7 +18,8 @@ import {
   QrCode,
   ShieldCheck,
   UserCheck,
-  Check
+  Check,
+  Stethoscope
 } from 'lucide-react';
 import { PaymentModal } from './PaymentModal';
 import { ArcaInvoiceModal } from './ArcaInvoiceModal';
@@ -396,14 +397,28 @@ export const BillingView = () => {
             return (
               <div key={doc.id} className="card" style={{ padding: '1.5rem', borderTop: `4px solid ${doc.color}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '1rem' }}>
-                  <img
-                    src={doc.avatar}
-                    alt={doc.name}
-                    style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover' }}
-                  />
+                  <div
+                    style={{
+                      width: '46px',
+                      height: '46px',
+                      borderRadius: '12px',
+                      background: 'rgba(7, 106, 188, 0.1)',
+                      border: '1.5px solid #BFDBFE',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#002182',
+                      flexShrink: 0
+                    }}
+                    title="Médico"
+                  >
+                    <Stethoscope size={22} />
+                  </div>
                   <div>
                     <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#002182' }}>{doc.name}</h3>
-                    <div style={{ fontSize: '0.78rem', color: '#496386' }}>{doc.specialtyName} · {doc.license}</div>
+                    <div style={{ fontSize: '0.78rem', color: '#076ABC', fontWeight: 700 }}>
+                      {(doc.specialtyName || doc.specialty)?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : (doc.specialtyName || doc.specialty)} · {doc.license}
+                    </div>
                   </div>
                 </div>
 

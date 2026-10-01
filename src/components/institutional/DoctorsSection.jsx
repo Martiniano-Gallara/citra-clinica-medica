@@ -6,7 +6,8 @@ import {
   Clock,
   MapPin,
   Award,
-  ChevronRight
+  ChevronRight,
+  Stethoscope
 } from 'lucide-react';
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
@@ -99,12 +100,24 @@ export const DoctorsSection = () => {
               }}
             >
               {/* Doctor Avatar Header */}
-              <div style={{ position: 'relative', height: '220px', background: '#EDF3FD', overflow: 'hidden' }}>
-                <img
-                  src={doc.avatar || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=300'}
-                  alt={doc.name}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
+              <div style={{ position: 'relative', height: '130px', background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    width: '58px',
+                    height: '58px',
+                    borderRadius: '16px',
+                    background: '#ffffff',
+                    border: '2px solid #BFDBFE',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#002182',
+                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.08)'
+                  }}
+                  title="Profesional Médico"
+                >
+                  <Stethoscope size={28} />
+                </div>
                 <div
                   style={{
                     position: 'absolute',
@@ -130,12 +143,24 @@ export const DoctorsSection = () => {
               {/* Doctor Details */}
               <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    {doc.specialty}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#002182' }}>
+                      {doc.name}
+                    </h3>
+                    <span
+                      style={{
+                        fontSize: '0.74rem',
+                        fontWeight: 800,
+                        background: '#EFF6FF',
+                        color: '#076ABC',
+                        border: '1px solid #BFDBFE',
+                        padding: '0.12rem 0.55rem',
+                        borderRadius: '6px'
+                      }}
+                    >
+                      {doc.specialty?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : doc.specialty}
+                    </span>
                   </div>
-                  <h3 style={{ margin: '0.3rem 0 0.5rem', fontSize: '1.2rem', fontWeight: 800, color: '#002182' }}>
-                    {doc.name}
-                  </h3>
                   <div style={{ fontSize: '0.8rem', color: '#7994B8', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                     <Award size={14} color="#076ABC" />
                     Matrícula: {doc.license || 'MN 114829 / MP 33490'}

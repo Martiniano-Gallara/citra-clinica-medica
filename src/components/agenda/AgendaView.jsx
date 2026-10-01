@@ -846,17 +846,29 @@ export const AgendaView = () => {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', overflow: 'hidden' }}>
-                      <img
-                        src={doc.avatar}
-                        alt={doc.name}
-                        style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #ffffff' }}
-                      />
+                      <div
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '10px',
+                          background: 'rgba(7, 106, 188, 0.1)',
+                          border: '1px solid #BFDBFE',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#002182',
+                          flexShrink: 0
+                        }}
+                        title="Médico"
+                      >
+                        <Stethoscope size={18} />
+                      </div>
                       <div style={{ overflow: 'hidden' }}>
                         <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
                           {doc.name}
                         </div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--c-primary)', fontWeight: 600 }}>
-                          {doc.specialtyName}
+                          {(doc.specialtyName || doc.specialty)?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : (doc.specialtyName || doc.specialty)}
                         </div>
                       </div>
                     </div>

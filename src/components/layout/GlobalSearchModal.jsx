@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useClinic } from '../../context/ClinicContext';
-import { Search, User, Calendar, UserCheck, Receipt, X, ArrowRight } from 'lucide-react';
+import { Search, User, Calendar, UserCheck, Receipt, X, ArrowRight, Stethoscope } from 'lucide-react';
 import { Badge } from '../common/Badge';
 
 export const GlobalSearchModal = () => {
@@ -241,17 +241,29 @@ export const GlobalSearchModal = () => {
                     className="hover-subtle"
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <img
-                        src={doc.avatar}
-                        alt={doc.name}
-                        style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
-                      />
+                      <div
+                        style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          background: '#EFF6FF',
+                          border: '1px solid #BFDBFE',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#002182',
+                          flexShrink: 0
+                        }}
+                        title="Médico"
+                      >
+                        <Stethoscope size={16} />
+                      </div>
                       <div>
                         <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#0f172a' }}>
                           {doc.name}
                         </div>
                         <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                          {doc.specialtyName} · {doc.license} · {doc.roomName}
+                          {(doc.specialtyName || doc.specialty)?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : (doc.specialtyName || doc.specialty)} · {doc.license} · {doc.roomName}
                         </div>
                       </div>
                     </div>

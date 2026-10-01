@@ -13,7 +13,8 @@ import {
   UserCheck,
   BarChart3,
   Settings,
-  UserSquare2
+  UserSquare2,
+  Stethoscope
 } from 'lucide-react';
 
 export const Sidebar = () => {
@@ -144,14 +145,37 @@ export const Sidebar = () => {
       {/* Footer User Info */}
       <div className="sidebar-footer">
         <div className="user-profile-widget" onClick={() => setActiveTab('settings')}>
-          <img
-            src={currentUser.avatar}
-            alt={currentUser.name}
-            className="user-avatar"
-          />
+          {isDoctor ? (
+            <div
+              style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '10px',
+                background: 'rgba(37, 124, 230, 0.25)',
+                border: '1.5px solid #257CE6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#93c5fd',
+                flexShrink: 0
+              }}
+            >
+              <Stethoscope size={18} />
+            </div>
+          ) : (
+            <img
+              src={currentUser.avatar}
+              alt={currentUser.name}
+              className="user-avatar"
+            />
+          )}
           <div className="user-info">
             <span className="user-name">{currentUser.name}</span>
-            <span className="user-role">{currentUser.role}</span>
+            <span className="user-role">
+              {isDoctor
+                ? (currentUser.specialty?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : (currentUser.specialty || 'Traumatólogo'))
+                : currentUser.role}
+            </span>
           </div>
         </div>
       </div>

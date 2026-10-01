@@ -14,16 +14,10 @@ import {
   KeyRound,
   Check,
   Stethoscope,
-  Award,
-  FileCheck,
   Lock,
-  Mail,
-  Phone,
   DollarSign,
   Percent,
   UserCheck,
-  MapPin,
-  Copy,
   Database,
   Globe,
   Loader2,
@@ -53,7 +47,6 @@ export const SettingsView = () => {
     addToast,
     isDoctor,
     currentDoctor,
-    updateDoctorProfile,
     authAdmin,
     setAuthAdmin,
     logAudit
@@ -81,6 +74,11 @@ export const SettingsView = () => {
   const [adminNewPassword, setAdminNewPassword] = useState('');
   const [adminConfirmPassword, setAdminConfirmPassword] = useState('');
 
+  // Secretary: reset password for any user
+  const [resetTargetUserId, setResetTargetUserId] = useState(null);
+  const [resetNewPwd, setResetNewPwd] = useState('');
+  const [resetConfirmPwd, setResetConfirmPwd] = useState('');
+
   useEffect(() => {
     if (authAdmin) {
       setAdminProfileForm({
@@ -91,50 +89,12 @@ export const SettingsView = () => {
     }
   }, [authAdmin]);
 
-  // Doctor personal profile form
-  const [doctorForm, setDoctorForm] = useState({
-    name: currentDoctor?.name || authAdmin?.name || '',
-    specialty: currentDoctor?.specialty || '',
-    license: currentDoctor?.license || '',
-    sisaRefeps: currentDoctor?.sisaRefeps || '',
-    phone: currentDoctor?.phone || '',
-    email: currentDoctor?.email || authAdmin?.email || '',
-    consultationPrice: currentDoctor?.consultationPrice || currentDoctor?.priceConsultation || 0,
-    feePercentage: currentDoctor?.feePercentage || 70,
-    bio: currentDoctor?.bio || '',
-    cuirCode: currentDoctor?.cuirCode || '',
-    pkiCertificateValidUntil: currentDoctor?.pkiCertificateValidUntil || '',
-    pkiSerial: 'PKI-ONTI-2024-X509-881290B'
-  });
-
   // Security password state
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  // Sync when currentDoctor updates
-  useEffect(() => {
-    if (currentDoctor) {
-      const cleanName = currentDoctor.name && currentDoctor.name.includes('Morales')
-        ? 'Dr. Alejandro Blanco'
-        : currentDoctor.name;
-      const cleanEmail = currentDoctor.email && currentDoctor.email.includes('morales')
-        ? 'dr.blanco@citra.com.ar'
-        : currentDoctor.email;
-      setDoctorForm((prev) => ({
-        ...prev,
-        name: cleanName || prev.name,
-        specialty: currentDoctor.specialty || prev.specialty,
-        license: currentDoctor.license || prev.license,
-        sisaRefeps: currentDoctor.sisaRefeps || prev.sisaRefeps,
-        phone: currentDoctor.phone || prev.phone,
-        email: cleanEmail || prev.email,
-        consultationPrice: currentDoctor.consultationPrice || prev.consultationPrice,
-        feePercentage: currentDoctor.feePercentage || prev.feePercentage,
-        bio: currentDoctor.bio || prev.bio
-      }));
-    }
-  }, [currentDoctor]);
+
 
   // New Specialty modal / inline state (Admin)
   const [newEspName, setNewEspName] = useState('');
@@ -144,24 +104,29 @@ export const SettingsView = () => {
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomFloor, setNewRoomFloor] = useState('Piso 1');
 
-  // Save Doctor Profile
-  const handleSaveDoctorProfile = (e) => {
+  // Secretary: reset password for any user
+  const handleSecretaryResetPassword = (e) => {
     e.preventDefault();
-    if (currentDoctor) {
-      updateDoctorProfile(currentDoctor.id, {
-        name: doctorForm.name,
-        specialty: doctorForm.specialty,
-        license: doctorForm.license,
-        sisaRefeps: doctorForm.sisaRefeps,
-        phone: doctorForm.phone,
-        email: doctorForm.email,
-        consultationPrice: Number(doctorForm.consultationPrice),
-        feePercentage: Number(doctorForm.feePercentage),
-        bio: doctorForm.bio
-      });
-    } else {
-      addToast('Configuración Guardada', 'Datos profesionales actualizados correctamente.', 'success');
+    if (!resetNewPwd || resetNewPwd.length < 6) {
+      addToast('Error', 'La nueva contraseña debe tener al menos 6 caracteres.', 'warning');
+      return;
     }
+    if (resetNewPwd !== resetConfirmPwd) {
+      addToast('Error', 'Las contraseñas no coinciden.', 'warning');
+      return;
+    }
+    const target = users.find((u) => u.id === resetTargetUserId);
+    if (!target) return;
+    setUsers((prev) =>
+      prev.map((u) => u.id === resetTargetUserId ? { ...u, password: resetNewPwd } : u)
+    );
+    if (logAudit) {
+      logAudit('RESET_PASSWORD', 'Seguridad & Credenciales', target.email || '-', `Secretaría restableció la contraseña del usuario: ${target.name}.`);
+    }
+    addToast('Contraseña Restablecida', `La contraseña de ${target.name} fue actualizada correctamente.`, 'success');
+    setResetTargetUserId(null);
+    setResetNewPwd('');
+    setResetConfirmPwd('');
   };
 
   const handleUpdateDoctorPassword = (e) => {
@@ -293,349 +258,98 @@ export const SettingsView = () => {
 
   // Doctor display name without duplicate prefix
   const doctorDisplayName = (() => {
-    const raw = doctorForm.name || currentDoctor?.name || 'Dr. Alejandro Blanco';
-    const clean = raw.includes('Morales') ? 'Dr. Alejandro Blanco' : raw;
-    return clean.startsWith('Dr.') ? clean : `Dr. ${clean}`;
+    const raw = currentDoctor?.name || authAdmin?.name || 'Dr. Alejandro Blanco';
+    return raw.includes('Morales') ? 'Dr. Alejandro Blanco' : raw;
   })();
 
   // ==============================================================
-  // DOCTOR VIEW: CONFIGURACIÓN EXCLUSIVA DE SUS DATOS
+  // DOCTOR VIEW: SOLO CAMBIO DE CONTRASEÑA
   // ==============================================================
   if (isDoctor) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%' }}>
-        {/* 1. TOP HEADER: LIMPIO Y PROFESIONAL (SIN ETIQUETA REDUNDANTE) */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '1rem'
-          }}
-        >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', maxWidth: '540px', margin: '0 auto' }}>
+        {/* HEADER */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Lock size={28} color="#002182" />
           <div>
-            <h1
-              style={{
-                fontSize: '1.65rem',
-                fontWeight: 900,
-                color: '#0f172a',
-                margin: '0 0 0.25rem',
-                letterSpacing: '-0.02em',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}
-            >
-              <Settings size={28} color="#002182" />
-              <span>Mi Perfil Profesional & Credenciales</span>
+            <h1 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
+              Mi Configuración
             </h1>
-            <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
-              Gestión de datos de matrícula, firma digital criptográfica, aranceles de consultorio y seguridad de cuenta.
+            <p style={{ fontSize: '0.82rem', color: '#64748b', margin: 0 }}>
+              Seguridad y acceso al panel médico. Los datos de perfil profesional los gestiona la secretaría.
             </p>
           </div>
         </div>
 
-        {/* 3. DOCTOR SETTINGS GRID */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
-          {/* Main Professional Data Form */}
-          <div
-            style={{
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '14px',
-              padding: '1.35rem',
-              boxShadow: '0 2px 8px rgba(0, 33, 130, 0.02)',
-              gridColumn: 'span 2'
-            }}
-          >
-            <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '0.85rem', marginBottom: '1.15rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Stethoscope size={18} color="#002182" />
-                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  Datos del Perfil Profesional
-                </h3>
-              </div>
-              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '3px 0 0' }}>
-                Información oficial del profesional para contacto, especialidad y atención.
-              </p>
+        {/* DATOS DE SOLO LECTURA */}
+        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
+            <Stethoscope size={16} color="#002182" />
+            <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a' }}>Mis Datos Profesionales</span>
+            <span style={{ fontSize: '0.74rem', color: '#94a3b8', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '1px 8px', fontWeight: 700 }}>Solo lectura · Editar en Secretaría</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', fontSize: '0.84rem' }}>
+            <div><span style={{ color: '#64748b', fontWeight: 700 }}>Nombre: </span><span style={{ color: '#0f172a', fontWeight: 800 }}>{doctorDisplayName}</span></div>
+            <div><span style={{ color: '#64748b', fontWeight: 700 }}>Especialidad: </span><span style={{ color: '#0f172a', fontWeight: 800 }}>{(currentDoctor?.specialty || authAdmin?.specialty)?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : (currentDoctor?.specialty || authAdmin?.specialty || '—')}</span></div>
+            <div><span style={{ color: '#64748b', fontWeight: 700 }}>Matrícula: </span><span style={{ color: '#0f172a' }}>{currentDoctor?.license || '—'}</span></div>
+            <div><span style={{ color: '#64748b', fontWeight: 700 }}>Email: </span><span style={{ color: '#0f172a' }}>{currentDoctor?.email || authAdmin?.email || '—'}</span></div>
+          </div>
+        </div>
+
+        {/* CAMBIO DE CONTRASEÑA */}
+        <div style={{ background: '#ffffff', border: '1.5px solid #BFDBFE', borderRadius: '14px', padding: '1.35rem', boxShadow: '0 2px 12px rgba(0, 33, 130, 0.06)' }}>
+          <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem', marginBottom: '1.15rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Lock size={18} color="#002182" />
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>Cambiar Contraseña</h3>
             </div>
-
-            <form onSubmit={handleSaveDoctorProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
-                {/* Nombre Completo */}
-                <div style={{ gridColumn: 'span 2' }}>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
-                    Nombre Completo del Profesional
-                  </label>
-                  <input
-                    type="text"
-                    value={doctorForm.name}
-                    onChange={(e) => setDoctorForm({ ...doctorForm, name: e.target.value })}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.85rem',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.86rem',
-                      outline: 'none',
-                      background: '#f8fafc',
-                      color: '#0f172a'
-                    }}
-                  />
-                </div>
-
-                {/* Especialidad */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
-                    Especialidad Principal
-                  </label>
-                  <select
-                    value={doctorForm.specialty}
-                    onChange={(e) => setDoctorForm({ ...doctorForm, specialty: e.target.value })}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.85rem',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.86rem',
-                      outline: 'none',
-                      background: '#f8fafc',
-                      color: '#0f172a',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <option value="">Seleccione una especialidad...</option>
-                    {doctorForm.specialty && !specialties.some((s) => s.name === doctorForm.specialty) && (
-                      <option value={doctorForm.specialty}>{doctorForm.specialty}</option>
-                    )}
-                    {specialties.map((s) => (
-                      <option key={s.id} value={s.name}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-
-                {/* Email */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
-                    Email Profesional Oficial
-                  </label>
-                  <input
-                    type="email"
-                    value={doctorForm.email}
-                    onChange={(e) => setDoctorForm({ ...doctorForm, email: e.target.value })}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.85rem',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.86rem',
-                      outline: 'none',
-                      background: '#f8fafc',
-                      color: '#0f172a'
-                    }}
-                  />
-                </div>
-
-                {/* WhatsApp / Teléfono */}
-                <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
-                    <WhatsAppIcon size={14} />
-                    WhatsApp / Teléfono de Contacto
-                  </label>
-                  <input
-                    type="text"
-                    value={doctorForm.phone}
-                    onChange={(e) => setDoctorForm({ ...doctorForm, phone: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.85rem',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.86rem',
-                      outline: 'none',
-                      background: '#f8fafc',
-                      color: '#0f172a'
-                    }}
-                  />
-                </div>
-
-              </div>
-
-              {/* Bio / Perfil Clínico */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem' }}>
-                  Resumen Profesional / Perfil Clínico
-                </label>
-                <textarea
-                  rows={3}
-                  value={doctorForm.bio}
-                  onChange={(e) => setDoctorForm({ ...doctorForm, bio: e.target.value })}
-                  placeholder="Descripción de trayectoria, subespecialidades y cirugías que realiza..."
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 0.85rem',
-                    borderRadius: '8px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '0.84rem',
-                    outline: 'none',
-                    background: '#f8fafc',
-                    color: '#0f172a',
-                    fontFamily: 'inherit',
-                    resize: 'vertical'
-                  }}
-                />
-              </div>
-
-              {/* Action Button */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-                <button
-                  type="submit"
-                  style={{
-                    background: '#002182',
-                    border: 'none',
-                    color: '#ffffff',
-                    padding: '0.6rem 1.4rem',
-                    borderRadius: '8px',
-                    fontSize: '0.85rem',
-                    fontWeight: 800,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 6px rgba(0, 33, 130, 0.2)',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <Save size={16} />
-                  <span>Guardar Cambios de Perfil</span>
-                </button>
-              </div>
-            </form>
+            <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '3px 0 0' }}>
+              Actualizá tu clave de acceso. Si olvidaste tu contraseña, contactá a secretaría.
+            </p>
           </div>
 
-          {/* Column 2: Account Security & Operational Scope */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            {/* Password change */}
-            <div
-              style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '14px',
-                padding: '1.35rem',
-                boxShadow: '0 2px 8px rgba(0, 33, 130, 0.02)'
-              }}
+          <form onSubmit={handleUpdateDoctorPassword} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: '#334155', marginBottom: '0.3rem' }}>Contraseña Actual</label>
+              <input
+                type="password"
+                placeholder="••••••••"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+                style={{ width: '100%', padding: '0.52rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.84rem', outline: 'none', background: '#f8fafc', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: '#334155', marginBottom: '0.3rem' }}>Nueva Contraseña</label>
+              <input
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+                style={{ width: '100%', padding: '0.52rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.84rem', outline: 'none', background: '#f8fafc', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: '#334155', marginBottom: '0.3rem' }}>Confirmar Nueva Contraseña</label>
+              <input
+                type="password"
+                placeholder="Repita nueva clave"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                style={{ width: '100%', padding: '0.52rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.84rem', outline: 'none', background: '#f8fafc', boxSizing: 'border-box' }}
+              />
+            </div>
+            <button
+              type="submit"
+              style={{ background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)', border: 'none', color: '#ffffff', padding: '0.62rem 1.4rem', borderRadius: '9px', fontSize: '0.88rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '7px', cursor: 'pointer', boxShadow: '0 3px 10px rgba(7, 106, 188, 0.25)', alignSelf: 'flex-start' }}
             >
-              <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Lock size={17} color="#002182" />
-                  <h3 style={{ fontSize: '0.98rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                    Seguridad de la Cuenta
-                  </h3>
-                </div>
-                <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '2px 0 0' }}>
-                  Actualice su clave de acceso al portal médico.
-                </p>
-              </div>
-
-              <form onSubmit={handleUpdateDoctorPassword} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: '#334155', marginBottom: '0.3rem' }}>
-                    Contraseña Actual
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.84rem',
-                      outline: 'none',
-                      background: '#f8fafc'
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: '#334155', marginBottom: '0.3rem' }}>
-                    Nueva Contraseña
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="Mínimo 6 caracteres"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.84rem',
-                      outline: 'none',
-                      background: '#f8fafc'
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 800, color: '#334155', marginBottom: '0.3rem' }}>
-                    Confirmar Contraseña
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="Repita nueva clave"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.84rem',
-                      outline: 'none',
-                      background: '#f8fafc'
-                    }}
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  style={{
-                    width: '100%',
-                    marginTop: '0.35rem',
-                    background: '#f8fafc',
-                    border: '1px solid #cbd5e1',
-                    color: '#334155',
-                    padding: '0.5rem',
-                    borderRadius: '8px',
-                    fontSize: '0.82rem',
-                    fontWeight: 800,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <KeyRound size={14} />
-                  <span>Actualizar Contraseña</span>
-                </button>
-              </form>
-            </div>
-          </div>
+              <KeyRound size={16} />
+              <span>Actualizar Contraseña</span>
+            </button>
+          </form>
         </div>
       </div>
     );
@@ -1106,56 +820,110 @@ export const SettingsView = () => {
         </div>
       )}
 
-      {/* TAB 3: USUARIOS & ROLES */}
+      {/* TAB 3: USUARIOS & ROLES + RESET PASSWORD */}
       {activeTab === 'users' && (
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div className="table-container" style={{ border: 'none' }}>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Usuario</th>
-                  <th>Email</th>
-                  <th>Tipo / Rol de Acceso</th>
-                  <th>Último Acceso</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u.id}>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <img
-                          src={u.avatar}
-                          alt={u.name}
-                          style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
-                        />
-                        <span style={{ fontWeight: 700, color: '#0f172a' }}>{u.name}</span>
-                      </div>
-                    </td>
-                    <td style={{ fontSize: '0.85rem', color: '#64748b' }}>{u.email}</td>
-                    <td>
-                      <span
-                        style={{
-                          background: u.adminType === 'doctor' ? '#ecfdf5' : '#eff6ff',
-                          color: u.adminType === 'doctor' ? '#065f46' : '#2563eb',
-                          padding: '0.2rem 0.6rem',
-                          borderRadius: '6px',
-                          fontWeight: 700,
-                          fontSize: '0.78rem'
-                        }}
-                      >
-                        {u.adminType === 'doctor' ? 'Médico (Privado)' : u.role}
-                      </span>
-                    </td>
-                    <td style={{ fontSize: '0.82rem', color: '#64748b' }}>{u.lastAccess}</td>
-                    <td>
-                      <span style={{ color: '#16a34a', fontWeight: 600, fontSize: '0.82rem' }}>● Activo</span>
-                    </td>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {/* Header aviso */}
+          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '0.85rem 1.1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <KeyRound size={18} color="#2563eb" />
+            <span style={{ fontSize: '0.84rem', color: '#1e40af', fontWeight: 700 }}>
+              Como secretaría, podés restablecer la contraseña de cualquier usuario del sistema si la olvidaron.
+            </span>
+          </div>
+
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="table-container" style={{ border: 'none' }}>
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Usuario</th>
+                    <th>Email</th>
+                    <th>Tipo / Rol de Acceso</th>
+                    <th>Estado</th>
+                    <th>Restablecer Contraseña</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {users.map((u) => (
+                    <React.Fragment key={u.id}>
+                      <tr>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: u.adminType === 'doctor' ? '#EBF3FD' : '#eff6ff', color: u.adminType === 'doctor' ? '#002182' : '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1rem', flexShrink: 0 }}>
+                              {(u.name || '?').charAt(0)}
+                            </div>
+                            <span style={{ fontWeight: 700, color: '#0f172a' }}>{u.name}</span>
+                          </div>
+                        </td>
+                        <td style={{ fontSize: '0.85rem', color: '#64748b' }}>{u.email}</td>
+                        <td>
+                          <span style={{ background: u.adminType === 'doctor' ? '#ecfdf5' : '#eff6ff', color: u.adminType === 'doctor' ? '#065f46' : '#2563eb', padding: '0.2rem 0.6rem', borderRadius: '6px', fontWeight: 700, fontSize: '0.78rem' }}>
+                            {u.adminType === 'doctor' ? `Médico · ${u.specialty || 'Especialista'}` : (u.role || 'Secretaría')}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ color: '#16a34a', fontWeight: 600, fontSize: '0.82rem' }}>● Activo</span>
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setResetTargetUserId(resetTargetUserId === u.id ? null : u.id);
+                              setResetNewPwd('');
+                              setResetConfirmPwd('');
+                            }}
+                            style={{ background: resetTargetUserId === u.id ? '#fee2e2' : '#f1f5f9', border: '1px solid ' + (resetTargetUserId === u.id ? '#fca5a5' : '#cbd5e1'), color: resetTargetUserId === u.id ? '#991b1b' : '#334155', padding: '0.35rem 0.75rem', borderRadius: '7px', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                          >
+                            <KeyRound size={13} />
+                            <span>{resetTargetUserId === u.id ? 'Cancelar' : 'Restablecer'}</span>
+                          </button>
+                        </td>
+                      </tr>
+                      {resetTargetUserId === u.id && (
+                        <tr>
+                          <td colSpan={5} style={{ background: '#fafafa', padding: '1rem 1.5rem', borderTop: '1px solid #e2e8f0' }}>
+                            <form onSubmit={handleSecretaryResetPassword} style={{ display: 'flex', alignItems: 'flex-end', gap: '0.75rem', flexWrap: 'wrap' }}>
+                              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a', marginRight: '0.25rem', alignSelf: 'center' }}>
+                                🔑 Nueva contraseña para <strong>{u.name}</strong>:
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b' }}>Nueva contraseña</label>
+                                <input
+                                  type="password"
+                                  placeholder="Mínimo 6 caracteres"
+                                  value={resetNewPwd}
+                                  onChange={(e) => setResetNewPwd(e.target.value)}
+                                  required
+                                  style={{ padding: '0.42rem 0.75rem', borderRadius: '7px', border: '1px solid #cbd5e1', fontSize: '0.82rem', outline: 'none', background: '#ffffff', width: '200px' }}
+                                />
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b' }}>Confirmar contraseña</label>
+                                <input
+                                  type="password"
+                                  placeholder="Repita la clave"
+                                  value={resetConfirmPwd}
+                                  onChange={(e) => setResetConfirmPwd(e.target.value)}
+                                  required
+                                  style={{ padding: '0.42rem 0.75rem', borderRadius: '7px', border: '1px solid #cbd5e1', fontSize: '0.82rem', outline: 'none', background: '#ffffff', width: '200px' }}
+                                />
+                              </div>
+                              <button
+                                type="submit"
+                                style={{ background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)', border: 'none', color: '#ffffff', padding: '0.5rem 1.1rem', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 8px rgba(7,106,188,0.2)', alignSelf: 'flex-end' }}
+                              >
+                                <Check size={15} />
+                                <span>Guardar Nueva Contraseña</span>
+                              </button>
+                            </form>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
