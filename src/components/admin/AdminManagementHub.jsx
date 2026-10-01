@@ -256,10 +256,10 @@ export const AdminManagementHub = () => {
       ];
     }
 
-    // Role: Administrativo (Recepción & Facturación de CITRA)
+    // Role: Secretaría (Administración, Recepción & Gestión Integral de CITRA)
     const adminSections = [
       {
-        title: 'RECEPCIÓN CITRA',
+        title: 'SECRETARÍA CITRA',
         items: [
           { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard, badge: null }
         ]
@@ -275,33 +275,32 @@ export const AdminManagementHub = () => {
       {
         title: 'ADMINISTRACIÓN Y FACTURACIÓN',
         items: [
+          { id: 'doctors', label: 'Cuerpo Médico', icon: Users, badge: activeDoctors },
+          { id: 'services', label: 'Especialidades & Servicios', icon: Stethoscope, badge: null },
           { id: 'schedules', label: 'Horarios de Profesionales', icon: Clock, badge: null },
           { id: 'insurances', label: 'Obras Sociales', icon: Shield, badge: healthInsurances.length },
           { id: 'billing', label: 'Facturación / Caja', icon: CreditCard, badge: null },
           { id: 'reports', label: 'Métricas Operativas', icon: BarChart3, badge: null }
         ]
+      },
+      {
+        title: 'GESTIÓN Y AUDITORÍA',
+        items: [
+          { id: 'staff', label: 'Usuarios y Permisos', icon: UserCheck, badge: null },
+          { id: 'communications', label: 'Comunicaciones', icon: MessageSquare, badge: null },
+          { id: 'audit', label: 'Auditoría', icon: ShieldAlert, badge: null }
+        ]
+      },
+      {
+        title: 'MI CUENTA',
+        items: [
+          { id: 'settings', label: 'Mi Configuración', icon: Settings, badge: null }
+        ]
       }
     ];
 
-    if (isSuperAdmin) {
-      adminSections.push({
-        title: 'DIRECCIÓN & AUDITORÍA',
-        items: [
-          { id: 'staff', label: 'Usuarios y Permisos', icon: UserCheck, badge: null },
-          { id: 'audit', label: 'Auditoría', icon: ShieldAlert, badge: null }
-        ]
-      });
-    }
-
-    adminSections.push({
-      title: 'MI CUENTA',
-      items: [
-        { id: 'settings', label: 'Mi Configuración', icon: Settings, badge: null }
-      ]
-    });
-
     return adminSections;
-  }, [isDoctor, isSuperAdmin, doctorAppointments.length, doctorPatients.length, scopedConsultations.length, scopedElectronicPrescriptions.length, scopedImagingStudies.length, appointments.length, patients.length, healthInsurances.length, availableRooms]);
+  }, [isDoctor, doctorAppointments.length, doctorPatients.length, scopedConsultations.length, scopedElectronicPrescriptions.length, scopedImagingStudies.length, appointments.length, patients.length, healthInsurances.length, availableRooms, activeDoctors]);
 
   // RBAC Guard Effect: automatically redirect to dashboard if tab not permitted for current role
   React.useEffect(() => {
@@ -399,14 +398,14 @@ export const AdminManagementHub = () => {
     navSections.flatMap((s) => s.items).find((i) => i.id === activeTab)?.label || 'Inicio';
 
   const doctorAdminName = (() => {
-    if (!isDoctor) return authAdmin?.name || 'Lic. Facundo Quiroga';
+    if (!isDoctor) return authAdmin?.name || 'Secretaría CITRA';
     const raw = currentDoctor?.name || authAdmin?.name || 'Dr. Alejandro Blanco';
     const clean = raw.includes('Morales') ? 'Dr. Alejandro Blanco' : raw;
     return clean;
   })();
 
   const doctorSpecialtyLabel = (() => {
-    if (!isDoctor) return authAdmin?.role || 'Recepción & Facturación';
+    if (!isDoctor) return 'Secretaría';
     const spec = currentDoctor?.specialty || authAdmin?.specialty || 'Traumatología';
     if (spec.toLowerCase().includes('traumatolog')) return 'Traumatólogo';
     return spec;
@@ -1685,19 +1684,19 @@ export const AdminManagementHub = () => {
           {/* TAB 4: HISTORIAL CLÍNICO (Exclusivo Médico) */}
           {activeTab === 'clinical' && isDoctor && <ClinicalRecordsView />}
 
-          {/* TAB 5: PROFESIONALES (Solo Superadmin) */}
-          {activeTab === 'doctors' && isSuperAdmin && <DoctorsManager />}
+          {/* TAB 5: PROFESIONALES (Secretaría) */}
+          {activeTab === 'doctors' && !isDoctor && <DoctorsManager />}
 
-          {/* TAB 6: ESPECIALIDADES (Solo Superadmin) */}
-          {activeTab === 'services' && isSuperAdmin && <ServicesManager />}
+          {/* TAB 6: ESPECIALIDADES (Secretaría) */}
+          {activeTab === 'services' && !isDoctor && <ServicesManager />}
 
-          {/* TAB 7: HORARIOS & DISPONIBILIDAD (Gestión Exclusiva de Secretaría y Administración) */}
+          {/* TAB 7: HORARIOS & DISPONIBILIDAD (Secretaría) */}
           {activeTab === 'schedules' && !isDoctor && <SchedulesManager />}
 
-          {/* TAB 8: CONSULTORIOS (Administración y Superadmin) */}
-          {activeTab === 'rooms' && (!isDoctor || isSuperAdmin) && <RoomsManager />}
+          {/* TAB 8: CONSULTORIOS (Secretaría) */}
+          {activeTab === 'rooms' && !isDoctor && <RoomsManager />}
 
-          {/* TAB 9: OBRAS SOCIALES (Gestión Exclusiva de Secretaría y Administración) */}
+          {/* TAB 9: OBRAS SOCIALES (Secretaría) */}
           {activeTab === 'insurances' && !isDoctor && <InsurancesView />}
 
           {/* TAB 10: ESTUDIOS & DOCUMENTACIÓN (Exclusivo Médico) */}
@@ -1706,23 +1705,23 @@ export const AdminManagementHub = () => {
           {/* TAB 11: RECETAS ELECTRÓNICAS (Exclusivo Médico - Oculto temporalmente) */}
           {/* {activeTab === 'prescriptions' && isDoctor && <PrescriptionsManager />} */}
 
-          {/* TAB 12: FACTURACIÓN / PAGOS / CAJA (Administración & Superadmin) */}
+          {/* TAB 12: FACTURACIÓN / PAGOS / CAJA (Secretaría) */}
           {activeTab === 'billing' && !isDoctor && <BillingView />}
 
           {/* TAB 13: REPORTES & ESTADÍSTICAS */}
           {activeTab === 'reports' && <ReportsView />}
 
-          {/* TAB 14: NOTIFICACIONES (Solo Superadmin) */}
-          {activeTab === 'communications' && isSuperAdmin && <CommunicationsView />}
+          {/* TAB 14: NOTIFICACIONES & COMUNICACIONES (Secretaría) */}
+          {activeTab === 'communications' && !isDoctor && <CommunicationsView />}
 
-          {/* TAB 15: USUARIOS Y PERMISOS (Solo Superadmin) */}
-          {activeTab === 'staff' && isSuperAdmin && <UsersManager />}
+          {/* TAB 15: USUARIOS Y PERMISOS (Secretaría) */}
+          {activeTab === 'staff' && !isDoctor && <UsersManager />}
 
           {/* TAB 16: CONFIGURACIÓN DE LA CLÍNICA / MI PERFIL */}
           {activeTab === 'settings' && <SettingsView />}
 
-          {/* TAB 17: AUDITORÍA Y SEGURIDAD (Solo Superadmin) */}
-          {activeTab === 'audit' && isSuperAdmin && <AuditLogsView />}
+          {/* TAB 17: AUDITORÍA Y SEGURIDAD (Secretaría) */}
+          {activeTab === 'audit' && !isDoctor && <AuditLogsView />}
           </AdminTabErrorBoundary>
         </main>
       </div>

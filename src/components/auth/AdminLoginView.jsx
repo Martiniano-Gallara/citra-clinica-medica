@@ -840,16 +840,16 @@ export const AdminLoginView = () => {
               <button
                 type="button"
                 onClick={() => {
-                  setEmail('admin@citra.com.ar');
+                  setEmail('secretaria@citra.com.ar');
                   setPassword('citra2026');
                   setErrorMsg('');
                 }}
                 style={{
-                  padding: '0.5rem 0.75rem',
+                  padding: '0.55rem 0.85rem',
                   background: '#f8fafc',
                   border: '1px solid #e2e8f0',
                   borderRadius: '8px',
-                  fontSize: '0.78rem',
+                  fontSize: '0.8rem',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
@@ -860,34 +860,8 @@ export const AdminLoginView = () => {
                 onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
                 onMouseLeave={(e) => e.currentTarget.style.background = '#f8fafc'}
               >
-                <span style={{ fontWeight: 700 }}>Superadmin (Dirección)</span>
-                <span style={{ color: '#076abc', fontSize: '0.72rem' }}>admin@citra.com.ar</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('recepcion@citra.com.ar');
-                  setPassword('citra2026');
-                  setErrorMsg('');
-                }}
-                style={{
-                  padding: '0.5rem 0.75rem',
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  fontSize: '0.78rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                  color: '#1e293b',
-                  transition: 'background 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
-                onMouseLeave={(e) => e.currentTarget.style.background = '#f8fafc'}
-              >
-                <span style={{ fontWeight: 700 }}>Recepción / Mesa de Entrada</span>
-                <span style={{ color: '#076abc', fontSize: '0.72rem' }}>recepcion@citra.com.ar</span>
+                <span style={{ fontWeight: 700 }}>Secretaría (Gestión y Administración)</span>
+                <span style={{ color: '#076abc', fontSize: '0.74rem' }}>secretaria@citra.com.ar</span>
               </button>
               <button
                 type="button"
@@ -897,11 +871,11 @@ export const AdminLoginView = () => {
                   setErrorMsg('');
                 }}
                 style={{
-                  padding: '0.5rem 0.75rem',
+                  padding: '0.55rem 0.85rem',
                   background: '#f8fafc',
                   border: '1px solid #e2e8f0',
                   borderRadius: '8px',
-                  fontSize: '0.78rem',
+                  fontSize: '0.8rem',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
@@ -912,8 +886,8 @@ export const AdminLoginView = () => {
                 onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
                 onMouseLeave={(e) => e.currentTarget.style.background = '#f8fafc'}
               >
-                <span style={{ fontWeight: 700 }}>Dr. Blanco (Traumatología)</span>
-                <span style={{ color: '#076abc', fontSize: '0.72rem' }}>dr.blanco@citra.com.ar</span>
+                <span style={{ fontWeight: 700 }}>Profesional (Dr. Alejandro Blanco)</span>
+                <span style={{ color: '#076abc', fontSize: '0.74rem' }}>dr.blanco@citra.com.ar</span>
               </button>
             </div>
             <div style={{ textAlign: 'center', marginTop: '0.45rem', fontSize: '0.7rem', color: '#94a3b8' }}>

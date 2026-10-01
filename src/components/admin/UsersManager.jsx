@@ -29,7 +29,7 @@ export const UsersManager = () => {
   } = useClinic();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all'); // 'all' | 'superadmin' | 'administrative' | 'doctor'
+  const [roleFilter, setRoleFilter] = useState('all'); // 'all' | 'administrative' | 'doctor'
 
   // Modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -65,8 +65,7 @@ export const UsersManager = () => {
       if (!matchesSearch) return false;
 
       if (roleFilter === 'all') return true;
-      if (roleFilter === 'superadmin') return u.adminType === 'superadmin';
-      if (roleFilter === 'administrative') return u.adminType === 'administrative';
+      if (roleFilter === 'administrative') return u.adminType === 'administrative' || u.adminType === 'superadmin';
       if (roleFilter === 'doctor') return u.adminType === 'doctor';
       return true;
     });
@@ -74,8 +73,7 @@ export const UsersManager = () => {
 
   // Metric counts
   const totalUsers = users.length;
-  const superadminCount = users.filter((u) => u.adminType === 'superadmin').length;
-  const adminCount = users.filter((u) => u.adminType === 'administrative').length;
+  const adminCount = users.filter((u) => u.adminType === 'administrative' || u.adminType === 'superadmin').length;
   const doctorCount = users.filter((u) => u.adminType === 'doctor').length;
 
   const handleOpenEdit = (user) => {
@@ -201,30 +199,6 @@ export const UsersManager = () => {
         </div>
 
         <div
-          onClick={() => setRoleFilter('superadmin')}
-          style={{
-            background: roleFilter === 'superadmin' ? '#002182' : '#ffffff',
-            color: roleFilter === 'superadmin' ? '#ffffff' : '#002182',
-            borderRadius: '14px',
-            padding: '1.15rem 1.25rem',
-            border: '1.5px solid #D2E3FC',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            boxShadow: '0 2px 8px rgba(0, 33, 130, 0.04)'
-          }}
-        >
-          <div style={{ fontSize: '0.74rem', fontWeight: 800, textTransform: 'uppercase', color: roleFilter === 'superadmin' ? '#fbcfe8' : '#9333ea' }}>
-            DIRECCIÓN & SUPERADMIN
-          </div>
-          <div style={{ fontSize: '1.85rem', fontWeight: 900, marginTop: '0.25rem' }}>
-            {superadminCount}
-          </div>
-          <div style={{ fontSize: '0.72rem', color: roleFilter === 'superadmin' ? '#fdf2f8' : '#7e22ce', fontWeight: 700, marginTop: '0.2rem' }}>
-            Acceso directivo y auditoría total
-          </div>
-        </div>
-
-        <div
           onClick={() => setRoleFilter('administrative')}
           style={{
             background: roleFilter === 'administrative' ? '#002182' : '#ffffff',
@@ -238,13 +212,13 @@ export const UsersManager = () => {
           }}
         >
           <div style={{ fontSize: '0.74rem', fontWeight: 800, textTransform: 'uppercase', color: roleFilter === 'administrative' ? '#bfdbfe' : '#076ABC' }}>
-            RECEPCIÓN & MESA DE ENTRADA
+            SECRETARÍA & ADMINISTRACIÓN
           </div>
           <div style={{ fontSize: '1.85rem', fontWeight: 900, marginTop: '0.25rem' }}>
             {adminCount}
           </div>
           <div style={{ fontSize: '0.72rem', color: roleFilter === 'administrative' ? '#eff6ff' : '#0284c7', fontWeight: 700, marginTop: '0.2rem' }}>
-            Gestión de turnos, pacientes y caja
+            Gestión de turnos, pacientes, caja y administración
           </div>
         </div>
 
@@ -262,13 +236,13 @@ export const UsersManager = () => {
           }}
         >
           <div style={{ fontSize: '0.74rem', fontWeight: 800, textTransform: 'uppercase', color: roleFilter === 'doctor' ? '#bbf7d0' : '#059669' }}>
-            CUERPO MÉDICO / ESPECIALISTAS
+            CUERPO MÉDICO / PROFESIONALES
           </div>
           <div style={{ fontSize: '1.85rem', fontWeight: 900, marginTop: '0.25rem' }}>
             {doctorCount}
           </div>
           <div style={{ fontSize: '0.72rem', color: roleFilter === 'doctor' ? '#f0fdf4' : '#10b981', fontWeight: 700, marginTop: '0.2rem' }}>
-            13 profesionales de la salud
+            Profesionales de la salud
           </div>
         </div>
       </div>
@@ -298,9 +272,8 @@ export const UsersManager = () => {
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
           {[
             { id: 'all', label: 'Todos' },
-            { id: 'superadmin', label: 'Superadmin' },
-            { id: 'administrative', label: 'Recepción' },
-            { id: 'doctor', label: 'Médicos (13)' }
+            { id: 'administrative', label: 'Secretaría' },
+            { id: 'doctor', label: 'Profesionales' }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -470,15 +443,13 @@ export const UsersManager = () => {
                             borderRadius: '100px',
                             fontSize: '0.74rem',
                             fontWeight: 800,
-                            background: isSuper ? '#f3e8ff' : isAdmin ? '#e0f2fe' : '#dcfce7',
-                            color: isSuper ? '#7e22ce' : isAdmin ? '#0284c7' : '#15803d',
-                            border: `1px solid ${isSuper ? '#d8b4fe' : isAdmin ? '#7dd3fc' : '#86efac'}`
+                            background: isSuper || isAdmin ? '#e0f2fe' : '#dcfce7',
+                            color: isSuper || isAdmin ? '#0284c7' : '#15803d',
+                            border: `1px solid ${isSuper || isAdmin ? '#7dd3fc' : '#86efac'}`
                           }}
                         >
-                          {isSuper && <ShieldCheck size={13} />}
-                          {isAdmin && <Users size={13} />}
-                          {isDoc && <Stethoscope size={13} />}
-                          {isSuper ? 'Superadmin / Dirección' : isAdmin ? 'Mesa de Entrada' : 'Profesional Médico'}
+                          {(isSuper || isAdmin) ? <Users size={13} /> : <Stethoscope size={13} />}
+                          {(isSuper || isAdmin) ? 'Secretaría' : 'Profesional Médico'}
                         </span>
                       </td>
 
@@ -668,9 +639,8 @@ export const UsersManager = () => {
                       cursor: 'pointer'
                     }}
                   >
+                    <option value="administrative">Secretaría</option>
                     <option value="doctor">Profesional Médico</option>
-                    <option value="administrative">Mesa de Entrada / Recepción</option>
-                    <option value="superadmin">Dirección / Superadmin</option>
                   </select>
                 </div>
 
@@ -860,9 +830,8 @@ export const UsersManager = () => {
                       cursor: 'pointer'
                     }}
                   >
+                    <option value="administrative">Secretaría</option>
                     <option value="doctor">Profesional Médico</option>
-                    <option value="administrative">Mesa de Entrada / Recepción</option>
-                    <option value="superadmin">Dirección / Superadmin</option>
                   </select>
                 </div>
 

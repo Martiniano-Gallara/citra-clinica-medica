@@ -351,12 +351,12 @@ export const ClinicProvider = ({ children }) => {
   const isAdministrative = Boolean(
     authAdmin &&
     (authAdmin.adminType === 'administrative' ||
-      (!isDoctor && authAdmin.adminType !== 'superadmin'))
+      authAdmin.adminType === 'superadmin' ||
+      (!isDoctor && authAdmin.adminType !== 'doctor'))
   );
 
-  const isSuperAdmin = Boolean(
-    authAdmin && (authAdmin.adminType === 'superadmin' || authAdmin.role?.toLowerCase().includes('director'))
-  );
+  // Unificación oficial: el rol superadmin se unifica en Secretaría (todo el personal administrativo tiene acceso administrativo integral)
+  const isSuperAdmin = isAdministrative;
 
   // Resolve current doctor ONLY if authenticated user is a physician
   const currentDoctor = React.useMemo(() => {
@@ -1969,7 +1969,8 @@ export const ClinicProvider = ({ children }) => {
 
   const loginAdmin = async (email, password) => {
     const cleanEmail = (email || '').trim().toLowerCase();
-    const adminUser = users.find((u) => u.email.toLowerCase() === cleanEmail);
+    const adminUser = users.find((u) => u.email.toLowerCase() === cleanEmail) ||
+      (cleanEmail === 'secretaria@citra.com.ar' ? users.find((u) => u.email.toLowerCase() === 'recepcion@citra.com.ar' || u.email.toLowerCase() === 'admin@citra.com.ar' || u.adminType === 'administrative') : null);
 
     if (!adminUser) {
       addToast('Acceso Denegado', 'Usuario no registrado en la nómina administrativa.', 'error');
