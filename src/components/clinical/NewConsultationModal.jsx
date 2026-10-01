@@ -31,6 +31,7 @@ export const NewConsultationModal = () => {
     consultations,
     setSelectedConsultationForPrint,
     addConsultation,
+    updateConsultation,
     addToast
   } = useClinic();
 
@@ -82,34 +83,66 @@ export const NewConsultationModal = () => {
   const [diagnosisQuery, setDiagnosisQuery] = useState('');
   const [showDiagnosisDropdown, setShowDiagnosisDropdown] = useState(false);
 
+  // Search state for patients (fast even with 1000+ patients)
+  const [patientSearchQuery, setPatientSearchQuery] = useState('');
+  const [isPatientSearchOpen, setIsPatientSearchOpen] = useState(false);
+  const [isChangingPatient, setIsChangingPatient] = useState(false);
+
+  // Fast filtered patients for combobox (capped at 15 for optimal performance)
+  const filteredPatients = useMemo(() => {
+    const list = isDoctor ? scopedPatients : patients;
+    if (!patientSearchQuery.trim()) {
+      return list.slice(0, 15);
+    }
+    const q = patientSearchQuery.toLowerCase().trim();
+    return list
+      .filter((p) =>
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.dni && p.dni.includes(q)) ||
+        (p.insuranceName && p.insuranceName.toLowerCase().includes(q))
+      )
+      .slice(0, 20);
+  }, [scopedPatients, patients, isDoctor, patientSearchQuery]);
+
   // Sync when modal opens or preload changes
   useEffect(() => {
-    if (!isNewConsultationModalOpen) return;
+    if (!isNewConsultationModalOpen) {
+      setIsChangingPatient(false);
+      setIsPatientSearchOpen(false);
+      setPatientSearchQuery('');
+      return;
+    }
 
     if (consultationPreloadData) {
       const targetPat = patients.find((p) => p.id === consultationPreloadData.patientId) || null;
+      const existingAppCons = consultationPreloadData.appointmentId
+        ? (consultations || []).find((c) => c.appointmentId === consultationPreloadData.appointmentId)
+        : null;
+
+      setIsChangingPatient(false);
       setFormData((prev) => ({
         ...prev,
         appointmentId: consultationPreloadData.appointmentId || '',
         patientId: targetPat?.id || consultationPreloadData.patientId || '',
         patientName: targetPat?.name || consultationPreloadData.patientName || '',
         patientDni: targetPat?.dni || consultationPreloadData.patientDni || '',
-        patientInsurance: targetPat?.insuranceName || '',
+        patientInsurance: targetPat?.insuranceName || consultationPreloadData.patientInsurance || '',
         doctorId: activeDoctor?.id || '',
         doctorName: activeDoctor?.name || '',
         doctorLicense: activeDoctor?.license || '',
         specialtyName: activeDoctor?.specialty || '',
-        reason: consultationPreloadData.reason || '',
-        symptoms: '',
-        evolution: consultationPreloadData.evolution || '',
-        diagnosis: consultationPreloadData.diagnosis || '',
-        secondaryDiagnosis: '',
-        vitals: consultationPreloadData.vitals || initialVitals,
-        prescriptions: consultationPreloadData.prescriptions || [],
-        indications: consultationPreloadData.indications || '',
-        studiesRequested: consultationPreloadData.studiesRequested || ''
+        reason: existingAppCons?.reason || consultationPreloadData.reason || '',
+        symptoms: existingAppCons?.symptoms || '',
+        evolution: existingAppCons?.evolution || consultationPreloadData.evolution || '',
+        diagnosis: existingAppCons?.diagnosis || consultationPreloadData.diagnosis || '',
+        secondaryDiagnosis: existingAppCons?.secondaryDiagnosis || '',
+        vitals: existingAppCons?.vitals || consultationPreloadData.vitals || initialVitals,
+        prescriptions: existingAppCons?.prescriptions || consultationPreloadData.prescriptions || [],
+        indications: existingAppCons?.indications || consultationPreloadData.indications || '',
+        studiesRequested: existingAppCons?.studiesRequested || consultationPreloadData.studiesRequested || ''
       }));
     } else {
+      setIsChangingPatient(true);
       setFormData((prev) => ({
         ...prev,
         appointmentId: '',
@@ -132,7 +165,7 @@ export const NewConsultationModal = () => {
         studiesRequested: ''
       }));
     }
-  }, [consultationPreloadData, isNewConsultationModalOpen, patients, activeDoctor]);
+  }, [consultationPreloadData, isNewConsultationModalOpen, patients, activeDoctor, consultations]);
 
   const currentPatient = patients.find((p) => p.id === formData.patientId) || null;
 
@@ -207,53 +240,36 @@ export const NewConsultationModal = () => {
 
     if (isSubmitting) return;
 
-    if (existingForAppointment) {
-      addToast(
-        'Turno Ya Atendido',
-        'Este turno ya cuenta con una consulta registrada en la Historia Clínica del paciente. No se pueden duplicar asientos clínicos para el mismo turno.',
-        'warning'
-      );
-      return;
-    }
-
     if (!formData.patientName || !formData.diagnosis || !formData.diagnosis.trim()) {
-      addToast('Datos Incompletos', 'Debe seleccionar un paciente y registrar el diagnóstico principal (CIE-10).', 'warning');
+      addToast('Datos Incompletos', 'Debe seleccionar un paciente e indicar el diagnóstico principal.', 'warning');
       return;
     }
 
-    if (formData.diagnosis.trim().length < 3) {
-      addToast('Diagnóstico Inválido', 'Debe ingresar un diagnóstico clínico con código CIE-10 válido.', 'warning');
+    if (formData.diagnosis.trim().length < 2) {
+      addToast('Diagnóstico Requerido', 'Ingrese un diagnóstico clínico válido.', 'warning');
       return;
     }
 
-    // Physiological bounds validation
-    const { bpSystolic, bpDiastolic, heartRate, temperature, respiratoryRate, weight, height } = formData.vitals;
-    if (bpSystolic && (Number(bpSystolic) < 50 || Number(bpSystolic) > 260)) {
-      addToast('Signo Vital Fuera de Rango', 'Presión arterial sistólica fuera de rango fisiológico (50-260 mmHg).', 'warning');
-      return;
-    }
-    if (bpDiastolic && (Number(bpDiastolic) < 30 || Number(bpDiastolic) > 160)) {
-      addToast('Signo Vital Fuera de Rango', 'Presión arterial diastólica fuera de rango fisiológico (30-160 mmHg).', 'warning');
-      return;
-    }
-    if (heartRate && (Number(heartRate) < 30 || Number(heartRate) > 240)) {
-      addToast('Signo Vital Fuera de Rango', 'Frecuencia cardíaca fuera de rango fisiológico (30-240 lpm).', 'warning');
-      return;
-    }
-    if (temperature && (Number(temperature) < 32 || Number(temperature) > 44)) {
-      addToast('Signo Vital Fuera de Rango', 'Temperatura fuera de rango fisiológico (32-44 °C).', 'warning');
-      return;
-    }
-    if (respiratoryRate && (Number(respiratoryRate) < 6 || Number(respiratoryRate) > 60)) {
-      addToast('Signo Vital Fuera de Rango', 'Frecuencia respiratoria fuera de rango fisiológico (6-60 rpm).', 'warning');
-      return;
-    }
-    if (weight && (Number(weight) < 1 || Number(weight) > 350)) {
-      addToast('Signo Vital Fuera de Rango', 'Peso corporal fuera de rango (1-350 kg).', 'warning');
-      return;
-    }
-    if (height && (Number(height) < 0.4 || Number(height) > 2.5)) {
-      addToast('Signo Vital Fuera de Rango', 'Altura en metros fuera de rango (0.40 - 2.50 m).', 'warning');
+    if (existingForAppointment) {
+      setIsSubmitting(true);
+      try {
+        updateConsultation(existingForAppointment.id, {
+          reason: formData.reason,
+          symptoms: formData.symptoms,
+          diagnosis: formData.diagnosis,
+          secondaryDiagnosis: formData.secondaryDiagnosis,
+          evolution: formData.evolution,
+          vitals: formData.vitals,
+          prescriptions: formData.prescriptions,
+          indications: formData.indications,
+          studiesRequested: formData.studiesRequested
+        });
+        setIsSubmitting(false);
+        setIsNewConsultationModalOpen(false);
+      } catch (err) {
+        setIsSubmitting(false);
+        addToast('Error al Guardar', 'No se pudieron actualizar los datos de la consulta.', 'error');
+      }
       return;
     }
 
@@ -374,25 +390,9 @@ export const NewConsultationModal = () => {
                 <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
                   Registrar Consulta Médica & Evolución
                 </h2>
-                <span
-                  style={{
-                    background: '#ecfdf5',
-                    color: '#047857',
-                    border: '1px solid #a7f3d0',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    padding: '3px 9px',
-                    borderRadius: '100px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                >
-                  <ShieldCheck size={13} /> Firma Digital X.509
-                </span>
               </div>
               <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: '#64748b' }}>
-                Historia Clínica Electrónica · Registro ambulatorio y prescripción oficial
+                Historia Clínica Electrónica · Registro ambulatorio y prescripción médica
               </p>
             </div>
           </div>
@@ -439,103 +439,23 @@ export const NewConsultationModal = () => {
               gap: '1.75rem'
             }}
           >
-            {/* ALERT: APPOINTMENT ALREADY HAS A REGISTERED CONSULTATION IN HC */}
+            {/* NOTICE: APPOINTMENT WITH PREVIOUS CONSULTATION */}
             {existingForAppointment && (
               <div
                 style={{
-                  background: '#fef2f2',
-                  border: '1.5px solid #fecaca',
-                  borderRadius: '12px',
-                  padding: '1rem 1.25rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '1rem'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                  <div
-                    style={{
-                      width: '38px',
-                      height: '38px',
-                      borderRadius: '10px',
-                      background: '#fee2e2',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#dc2626',
-                      flexShrink: 0
-                    }}
-                  >
-                    <AlertTriangle size={20} />
-                  </div>
-                  <div>
-                    <strong style={{ color: '#991b1b', fontSize: '0.88rem' }}>
-                      Este turno ya cuenta con consulta registrada en la Historia Clínica
-                    </strong>
-                    <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#7f1d1d' }}>
-                      El paciente ya fue atendido para este turno ({existingForAppointment.date} {existingForAppointment.time} hs). No se puede duplicar la atención para el mismo paciente.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsNewConsultationModalOpen(false);
-                    if (setSelectedConsultationForPrint) {
-                      setSelectedConsultationForPrint(existingForAppointment);
-                    }
-                  }}
-                  style={{
-                    background: '#002182',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '0.5rem 1rem',
-                    fontSize: '0.82rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    boxShadow: '0 2px 6px rgba(0, 33, 130, 0.2)'
-                  }}
-                >
-                  Ver Consulta Existente
-                </button>
-              </div>
-            )}
-
-            {/* NOTICE: PATIENT ALREADY HAS AN ACTIVE HISTORIA CLÍNICA */}
-            {!existingForAppointment && hasExistingHC && (
-              <div
-                style={{
-                  background: '#eff6ff',
-                  border: '1px solid #bfdbfe',
+                  background: '#f0f9ff',
+                  border: '1px solid #bae6fd',
                   borderRadius: '10px',
-                  padding: '0.7rem 1.15rem',
+                  padding: '0.75rem 1.15rem',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '0.75rem'
+                  gap: '10px',
+                  color: '#0369a1'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FileText size={16} color="#002182" />
-                  <span style={{ fontSize: '0.82rem', color: '#1e3a8a' }}>
-                    <strong>Historia Clínica Activa (HC-{currentPatient?.dni || formData.patientDni}):</strong> {formData.patientName} ya tiene {patientConsultations.length} {patientConsultations.length === 1 ? 'consulta previa registrada' : 'consultas previas registradas'}. Esta atención se guardará como una <strong>nueva evolución</strong> en su expediente único.
-                  </span>
-                </div>
-                <span
-                  style={{
-                    background: '#dbeafe',
-                    color: '#1d4ed8',
-                    padding: '2px 8px',
-                    borderRadius: '100px',
-                    fontSize: '0.72rem',
-                    fontWeight: 800,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  Expediente Único
+                <FileText size={18} color="#0284c7" style={{ flexShrink: 0 }} />
+                <span style={{ fontSize: '0.84rem', lineHeight: 1.4 }}>
+                  Este turno cuenta con una atención registrada ({existingForAppointment.date} {existingForAppointment.time} hs). Los datos fueron cargados para que pueda revisarlos, actualizarlos o complementar la evolución.
                 </span>
               </div>
             )}
@@ -568,39 +488,168 @@ export const NewConsultationModal = () => {
                   <User size={15} color="#002182" />
                   Paciente en Atención *
                 </label>
-                <select
-                  value={formData.patientId}
-                  onChange={(e) => {
-                    const p = patients.find((pat) => pat.id === e.target.value);
-                    setFormData((prev) => ({
-                      ...prev,
-                      patientId: e.target.value,
-                      patientName: p ? p.name : prev.patientName,
-                      patientDni: p ? p.dni : prev.patientDni,
-                      patientInsurance: p ? p.insuranceName : prev.patientInsurance
-                    }));
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '0.7rem 0.95rem',
-                    borderRadius: '10px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '0.92rem',
-                    fontWeight: 700,
-                    background: '#ffffff',
-                    outline: 'none',
-                    color: '#0f172a',
-                    cursor: 'pointer'
-                  }}
-                  required
-                >
-                  <option value="">-- Seleccionar Paciente --</option>
-                  {(isDoctor ? scopedPatients : patients).map((pat) => (
-                    <option key={pat.id} value={pat.id}>
-                      {pat.name} — DNI {pat.dni} ({pat.insuranceName || 'Particular'})
-                    </option>
-                  ))}
-                </select>
+
+                {formData.patientId && !isChangingPatient ? (
+                  /* Selected Patient Card */
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.65rem 0.95rem',
+                      borderRadius: '10px',
+                      border: '1.5px solid #bfdbfe',
+                      background: '#ffffff',
+                      boxShadow: '0 2px 6px rgba(0, 33, 130, 0.04)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                      <div
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '50%',
+                          background: '#002182',
+                          color: '#ffffff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 800,
+                          fontSize: '0.82rem',
+                          flexShrink: 0
+                        }}
+                      >
+                        {(formData.patientName || 'P').split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {formData.patientName}
+                        </div>
+                        <div style={{ fontSize: '0.76rem', color: '#64748b', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <span>DNI: <strong style={{ color: '#002182' }}>{formData.patientDni}</strong></span>
+                          <span>·</span>
+                          <span style={{ color: '#076ABC', fontWeight: 600 }}>{formData.patientInsurance || 'Particular'}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsChangingPatient(true);
+                        setPatientSearchQuery('');
+                        setIsPatientSearchOpen(true);
+                      }}
+                      style={{
+                        background: '#eff6ff',
+                        color: '#076ABC',
+                        border: '1px solid #bfdbfe',
+                        borderRadius: '6px',
+                        padding: '4px 10px',
+                        fontSize: '0.76rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        marginLeft: '8px'
+                      }}
+                    >
+                      Cambiar
+                    </button>
+                  </div>
+                ) : (
+                  /* High-Performance Search Combobox (Supports 1000+ patients) */
+                  <div style={{ position: 'relative' }}>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="text"
+                        value={patientSearchQuery}
+                        onChange={(e) => {
+                          setPatientSearchQuery(e.target.value);
+                          setIsPatientSearchOpen(true);
+                        }}
+                        onFocus={() => setIsPatientSearchOpen(true)}
+                        placeholder="Buscar paciente por nombre, DNI o cobertura médica..."
+                        style={{
+                          width: '100%',
+                          padding: '0.7rem 2.2rem 0.7rem 0.95rem',
+                          borderRadius: '10px',
+                          border: '1.5px solid #076ABC',
+                          fontSize: '0.88rem',
+                          fontWeight: 600,
+                          background: '#ffffff',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                          color: '#0f172a'
+                        }}
+                        autoFocus={isChangingPatient}
+                      />
+                      <Search size={16} color="#076ABC" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                    </div>
+
+                    {isPatientSearchOpen && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: 0,
+                          right: 0,
+                          background: '#ffffff',
+                          border: '1.5px solid #cbd5e1',
+                          borderRadius: '10px',
+                          boxShadow: '0 10px 25px rgba(0, 33, 130, 0.15)',
+                          zIndex: 100,
+                          maxHeight: '260px',
+                          overflowY: 'auto',
+                          marginTop: '4px'
+                        }}
+                      >
+                        {filteredPatients.length === 0 ? (
+                          <div style={{ padding: '0.85rem 1rem', fontSize: '0.84rem', color: '#64748b', textAlign: 'center' }}>
+                            No se encontraron pacientes para "{patientSearchQuery}"
+                          </div>
+                        ) : (
+                          filteredPatients.map((pat) => (
+                            <div
+                              key={pat.id}
+                              onClick={() => {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  patientId: pat.id,
+                                  patientName: pat.name,
+                                  patientDni: pat.dni,
+                                  patientInsurance: pat.insuranceName || 'Particular'
+                                }));
+                                setIsChangingPatient(false);
+                                setIsPatientSearchOpen(false);
+                                setPatientSearchQuery('');
+                              }}
+                              style={{
+                                padding: '0.65rem 1rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                borderBottom: '1px solid #f1f5f9',
+                                transition: 'background 0.12s ease'
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f9ff')}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+                            >
+                              <div>
+                                <strong style={{ color: '#0f172a', fontSize: '0.88rem' }}>{pat.name}</strong>
+                                <div style={{ fontSize: '0.76rem', color: '#64748b' }}>
+                                  DNI: <strong style={{ color: '#002182' }}>{pat.dni}</strong> · {pat.insuranceName || 'Particular'} {pat.insurancePlan ? `(${pat.insurancePlan})` : ''}
+                                </div>
+                              </div>
+                              <span style={{ background: '#eff6ff', color: '#076ABC', fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: '4px' }}>
+                                Seleccionar
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Patient Quick Context Badges */}
@@ -733,7 +782,7 @@ export const NewConsultationModal = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Activity size={17} color="#002182" />
                   <span style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a' }}>
-                    Signos Vitales & Medición Antropométrica
+                    Signos Vitales & Medición Antropométrica (Opcional)
                   </span>
                 </div>
 
@@ -926,7 +975,7 @@ export const NewConsultationModal = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '1.25rem' }}>
               <div style={{ position: 'relative' }}>
                 <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.45rem' }}>
-                  Diagnóstico Principal (CIE-10) *
+                  Diagnóstico Principal (CIE-10 o Escrito Libre) *
                 </label>
                 <div style={{ position: 'relative' }}>
                   <input
@@ -938,7 +987,7 @@ export const NewConsultationModal = () => {
                       setShowDiagnosisDropdown(true);
                     }}
                     onFocus={() => setShowDiagnosisDropdown(true)}
-                    placeholder="Buscar diagnóstico o código CIE-10..."
+                    placeholder="Buscar CIE-10 o escribir diagnóstico personalizado..."
                     style={{
                       width: '100%',
                       padding: '0.75rem 2.2rem 0.75rem 1rem',
@@ -972,6 +1021,27 @@ export const NewConsultationModal = () => {
                       marginTop: '4px'
                     }}
                   >
+                    {formData.diagnosis.trim().length > 0 && (
+                      <div
+                        onClick={() => {
+                          setShowDiagnosisDropdown(false);
+                        }}
+                        style={{
+                          padding: '0.65rem 1rem',
+                          cursor: 'pointer',
+                          fontSize: '0.84rem',
+                          background: '#f0fdf4',
+                          borderBottom: '1.5px solid #bbf7d0',
+                          color: '#166534',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <span>✍ Usar diagnóstico ingresado: <strong>"{formData.diagnosis}"</strong></span>
+                      </div>
+                    )}
                     {matchedCIE10.map((d) => (
                       <div
                         key={d.code}

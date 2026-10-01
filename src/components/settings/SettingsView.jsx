@@ -22,7 +22,9 @@ import {
   Globe,
   Loader2,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  Edit2,
+  X
 } from 'lucide-react';
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
@@ -35,10 +37,6 @@ export const SettingsView = () => {
     setSpecialties,
     addSpecialty,
     deleteSpecialty,
-    rooms,
-    setRooms,
-    addRoom,
-    deleteRoom,
     healthInsurances,
     setHealthInsurances,
     users,
@@ -100,9 +98,13 @@ export const SettingsView = () => {
   const [newEspName, setNewEspName] = useState('');
   const [newEspDuration, setNewEspDuration] = useState(30);
 
-  // New Room inline state (Admin)
-  const [newRoomName, setNewRoomName] = useState('');
-  const [newRoomFloor, setNewRoomFloor] = useState('Piso 1');
+  // Edit Insurance modal state
+  const [editingInsurance, setEditingInsurance] = useState(null);
+  const [isInsuranceModalOpen, setIsInsuranceModalOpen] = useState(false);
+
+  // Edit User modal state
+  const [editingUser, setEditingUser] = useState(null);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
   // Secretary: reset password for any user
   const handleSecretaryResetPassword = (e) => {
@@ -188,20 +190,98 @@ export const SettingsView = () => {
     deleteSpecialty(id);
   };
 
-  const handleAddRoom = (e) => {
-    e.preventDefault();
-    if (!newRoomName.trim()) return;
-    addRoom({
-      name: newRoomName,
-      floor: newRoomFloor,
-      branchId: 'branch-1',
-      specialty: 'General'
+  // Obra Social handlers
+  const handleOpenEditInsurance = (insurance) => {
+    setEditingInsurance({
+      ...insurance,
+      plansInput: (insurance.plans || []).join(', ')
     });
-    setNewRoomName('');
+    setIsInsuranceModalOpen(true);
   };
 
-  const handleDeleteRoom = (id) => {
-    deleteRoom(id);
+  const handleOpenNewInsurance = () => {
+    setEditingInsurance({
+      id: 'new',
+      name: '',
+      plansInput: '',
+      copay: 0,
+      status: 'Activa'
+    });
+    setIsInsuranceModalOpen(true);
+  };
+
+  const handleSaveInsurance = (e) => {
+    e.preventDefault();
+    if (!editingInsurance || !editingInsurance.name.trim()) return;
+    const plansArray = editingInsurance.plansInput
+      ? editingInsurance.plansInput.split(',').map((p) => p.trim()).filter(Boolean)
+      : (editingInsurance.plans || []);
+
+    if (editingInsurance.id === 'new') {
+      const newInsurance = {
+        id: `os-${Date.now()}`,
+        name: editingInsurance.name.trim(),
+        copay: Number(editingInsurance.copay) || 0,
+        status: editingInsurance.status || 'Activa',
+        plans: plansArray
+      };
+      setHealthInsurances((prev) => [...prev, newInsurance]);
+      if (logAudit) {
+        logAudit('CREATE', 'Obras Sociales', '-', `Alta de cobertura médica: ${newInsurance.name}`);
+      }
+      addToast('Obra Social Agregada', `Se habilitó ${newInsurance.name} en el sistema.`, 'success');
+    } else {
+      const updatedData = {
+        name: editingInsurance.name.trim(),
+        copay: Number(editingInsurance.copay) || 0,
+        status: editingInsurance.status || 'Activa',
+        plans: plansArray
+      };
+      setHealthInsurances((prev) =>
+        prev.map((hi) => (hi.id === editingInsurance.id ? { ...hi, ...updatedData } : hi))
+      );
+      if (logAudit) {
+        logAudit('UPDATE', 'Obras Sociales', '-', `Actualización de ${updatedData.name}`);
+      }
+      addToast('Obra Social Actualizada', `Se guardaron los cambios para ${updatedData.name}.`, 'success');
+    }
+    setIsInsuranceModalOpen(false);
+    setEditingInsurance(null);
+  };
+
+  // User handlers
+  const handleOpenEditUser = (user) => {
+    setEditingUser({
+      ...user,
+      name: user.name || '',
+      email: user.email || '',
+      role: user.role || '',
+      adminType: user.adminType || 'administrative',
+      status: user.status || 'Activo'
+    });
+    setIsUserModalOpen(true);
+  };
+
+  const handleSaveUser = (e) => {
+    e.preventDefault();
+    if (!editingUser || !editingUser.name.trim()) return;
+    const updatedData = {
+      name: editingUser.name.trim(),
+      email: editingUser.email.trim(),
+      role: editingUser.role.trim(),
+      adminType: editingUser.adminType,
+      status: editingUser.status
+    };
+    if (typeof updateUser === 'function') {
+      updateUser(editingUser.id, updatedData);
+    } else {
+      setUsers((prev) =>
+        prev.map((u) => (u.id === editingUser.id ? { ...u, ...updatedData } : u))
+      );
+      addToast('Usuario Actualizado', 'Los datos del usuario fueron guardados.', 'success');
+    }
+    setIsUserModalOpen(false);
+    setEditingUser(null);
   };
 
   // Secretaría / Admin profile & password
@@ -365,9 +445,9 @@ export const SettingsView = () => {
         <div className="page-title-group">
           <h1>
             <Settings size={28} color="#2563eb" />
-            <span>Configuración del Sistema SaaS</span>
+            <span>Configuración</span>
           </h1>
-          <p>Parámetros institucionales, roles de usuario, sedes, especialidades y obras sociales</p>
+          <p>Parámetros institucionales, roles de usuario, especialidades y obras sociales</p>
         </div>
       </div>
 
@@ -388,13 +468,6 @@ export const SettingsView = () => {
           <span>Mi Perfil & Seguridad</span>
         </button>
         <button
-          className={`tab-btn ${activeTab === 'branches' ? 'active' : ''}`}
-          onClick={() => setActiveTab('branches')}
-        >
-          <Building2 size={16} />
-          <span>Sedes & Sucursales</span>
-        </button>
-        <button
           className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
           onClick={() => setActiveTab('users')}
         >
@@ -406,7 +479,7 @@ export const SettingsView = () => {
           onClick={() => setActiveTab('specialties')}
         >
           <Clock size={16} />
-          <span>Especialidades & Consultorios</span>
+          <span>Especialidades</span>
         </button>
         <button
           className={`tab-btn ${activeTab === 'insurances' ? 'active' : ''}`}
@@ -417,83 +490,11 @@ export const SettingsView = () => {
         </button>
       </div>
 
-      {/* TAB 1: DATOS INSTITUCIONALES (SINCRONIZADOS 100% CON BASE DE DATOS Y WEB PACIENTES) */}
+      {/* TAB 1: DATOS INSTITUCIONALES */}
       {activeTab === 'general' && (
         <div className="card" style={{ width: '100%', maxWidth: '100%' }}>
-          {/* Live Supabase Synchronization Badge */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              background: '#f0fdf4',
-              border: '1px solid #bbf7d0',
-              borderRadius: '12px',
-              padding: '1rem 1.25rem',
-              marginBottom: '1.5rem',
-              flexWrap: 'wrap',
-              gap: '0.75rem'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-              <div
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '10px',
-                  background: '#16a34a',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}
-              >
-                <Database size={20} />
-              </div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontWeight: 800, color: '#14532d', fontSize: '0.94rem' }}>
-                    Sincronización Cloud Supabase PostgreSQL Activa
-                  </span>
-                  <span
-                    style={{
-                      background: '#dcfce7',
-                      color: '#15803d',
-                      fontSize: '0.72rem',
-                      fontWeight: 800,
-                      padding: '0.15rem 0.55rem',
-                      borderRadius: '100px',
-                      border: '1px solid #86efac'
-                    }}
-                  >
-                    100% VINCULADO
-                  </span>
-                </div>
-                <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', color: '#166534', lineHeight: 1.4 }}>
-                  Los cambios guardados aquí se persisten en la base de datos e impactan en tiempo real en la página web pública de pacientes (botones de turnos, WhatsApp, teléfonos, dirección, horarios), en recetas electrónicas y comprobantes fiscales ARCA.
-                </p>
-              </div>
-            </div>
-            <div style={{ fontSize: '0.76rem', color: '#15803d', fontWeight: 700, background: '#ffffff', padding: '0.35rem 0.75rem', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
-              Base: mlmslhyvzohccniddemr.supabase.co
-            </div>
-          </div>
-
           <form onSubmit={handleSaveGeneral}>
             <div className="form-row">
-              <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                <label className="form-label">Nombre Institucional de la Clínica</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={generalForm.name || ''}
-                  onChange={(e) => setGeneralForm({ ...generalForm, name: e.target.value })}
-                  placeholder="CITRA"
-                  required
-                />
-              </div>
-
               <div className="form-group">
                 <label className="form-label">CUIT / Identificación Tributaria AFIP-ARCA</label>
                 <input
@@ -502,6 +503,17 @@ export const SettingsView = () => {
                   value={generalForm.cuit || ''}
                   onChange={(e) => setGeneralForm({ ...generalForm, cuit: e.target.value })}
                   placeholder="30-71829340-8"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Razón Social / Subtítulo Institucional</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={generalForm.tagline || ''}
+                  onChange={(e) => setGeneralForm({ ...generalForm, tagline: e.target.value })}
+                  placeholder="Centro Integral de Traumatología y Rehabilitación Arroyito"
                 />
               </div>
             </div>
@@ -640,49 +652,18 @@ export const SettingsView = () => {
               </div>
             </div>
 
-            {/* Parámetros Sanitarios y Fiscales */}
-            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' }}>
-              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Shield size={16} color="#002182" />
-                <span>Parámetros de Integración Fiscal y Sanitaria (ARCA & SISA)</span>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Código Establecimiento SISA REFES</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={generalForm.sisaRefesCode || ''}
-                    onChange={(e) => setGeneralForm({ ...generalForm, sisaRefesCode: e.target.value })}
-                    placeholder="REFES-04-14289"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Punto de Venta ARCA Facturación Electrónica</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={generalForm.arcaPtoVta || 1}
-                    onChange={(e) => setGeneralForm({ ...generalForm, arcaPtoVta: Number(e.target.value) })}
-                    placeholder="1"
-                  />
-                </div>
-              </div>
-            </div>
-
             <div style={{ marginTop: '1.75rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                Al guardar, la información se actualiza de inmediato en Supabase Cloud y en la página web pública.
+                Al guardar, la información se actualiza de inmediato en la página web pública.
               </span>
               <button
                 type="submit"
                 className="btn btn-primary"
                 disabled={isSavingGeneral}
-                style={{ minWidth: '220px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                style={{ minWidth: '200px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
               >
                 {isSavingGeneral ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                <span>{isSavingGeneral ? 'Guardando en Supabase...' : 'Guardar y Sincronizar'}</span>
+                <span>{isSavingGeneral ? 'Guardando...' : 'Guardar y Sincronizar'}</span>
               </button>
             </div>
           </form>
@@ -800,25 +781,7 @@ export const SettingsView = () => {
         </div>
       )}
 
-      {/* TAB 2: SEDES & SUCURSALES (Multi-Branch) */}
-      {activeTab === 'branches' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
-            {clinicInfo.branches.map((b) => (
-              <div key={b.id} className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #2563eb' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <h3 style={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>{b.name}</h3>
-                  <span style={{ fontSize: '0.75rem', background: '#eff6ff', color: '#2563eb', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
-                    {b.consultorios} Salas
-                  </span>
-                </div>
-                <div style={{ fontSize: '0.84rem', color: '#64748b' }}>Dirección: {b.address}</div>
-                <div style={{ fontSize: '0.84rem', color: '#64748b' }}>Teléfono: {b.phone}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+
 
       {/* TAB 3: USUARIOS & ROLES + RESET PASSWORD */}
       {activeTab === 'users' && (
@@ -840,7 +803,7 @@ export const SettingsView = () => {
                     <th>Email</th>
                     <th>Tipo / Rol de Acceso</th>
                     <th>Estado</th>
-                    <th>Restablecer Contraseña</th>
+                    <th style={{ textAlign: 'center' }}>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -862,21 +825,35 @@ export const SettingsView = () => {
                           </span>
                         </td>
                         <td>
-                          <span style={{ color: '#16a34a', fontWeight: 600, fontSize: '0.82rem' }}>● Activo</span>
+                          <span style={{ color: (u.status || 'Activo') === 'Activo' ? '#16a34a' : '#94a3b8', fontWeight: 600, fontSize: '0.82rem' }}>● {u.status || 'Activo'}</span>
                         </td>
-                        <td>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setResetTargetUserId(resetTargetUserId === u.id ? null : u.id);
-                              setResetNewPwd('');
-                              setResetConfirmPwd('');
-                            }}
-                            style={{ background: resetTargetUserId === u.id ? '#fee2e2' : '#f1f5f9', border: '1px solid ' + (resetTargetUserId === u.id ? '#fca5a5' : '#cbd5e1'), color: resetTargetUserId === u.id ? '#991b1b' : '#334155', padding: '0.35rem 0.75rem', borderRadius: '7px', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
-                          >
-                            <KeyRound size={13} />
-                            <span>{resetTargetUserId === u.id ? 'Cancelar' : 'Restablecer'}</span>
-                          </button>
+                        <td style={{ textAlign: 'center' }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditUser(u)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '0.35rem 0.65rem', fontSize: '0.78rem' }}
+                              title="Editar datos de usuario"
+                            >
+                              <Edit2 size={13} />
+                              <span>Editar</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setResetTargetUserId(resetTargetUserId === u.id ? null : u.id);
+                                setResetNewPwd('');
+                                setResetConfirmPwd('');
+                              }}
+                              className="btn btn-secondary btn-sm"
+                              style={{ background: resetTargetUserId === u.id ? '#fee2e2' : '#f1f5f9', border: '1px solid ' + (resetTargetUserId === u.id ? '#fca5a5' : '#cbd5e1'), color: resetTargetUserId === u.id ? '#991b1b' : '#334155', padding: '0.35rem 0.65rem', borderRadius: '7px', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                              title="Restablecer clave"
+                            >
+                              <KeyRound size={13} />
+                              <span>{resetTargetUserId === u.id ? 'Cancelar' : 'Clave'}</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                       {resetTargetUserId === u.id && (
@@ -928,9 +905,9 @@ export const SettingsView = () => {
         </div>
       )}
 
-      {/* TAB 4: ESPECIALIDADES & CONSULTORIOS */}
+      {/* TAB 4: ESPECIALIDADES */}
       {activeTab === 'specialties' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+        <div style={{ maxWidth: '850px' }}>
           {/* Specialties List & Add */}
           <div className="card">
             <div className="card-header">
@@ -961,7 +938,7 @@ export const SettingsView = () => {
               </button>
             </form>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '350px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '420px', overflowY: 'auto' }}>
               {specialties.map((s) => (
                 <div
                   key={s.id}
@@ -969,7 +946,7 @@ export const SettingsView = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '0.6rem 0.85rem',
+                    padding: '0.65rem 0.95rem',
                     background: '#f8fafc',
                     borderRadius: '8px',
                     border: '1px solid #e2e8f0'
@@ -991,123 +968,323 @@ export const SettingsView = () => {
               ))}
             </div>
           </div>
-
-          {/* Rooms List & Add */}
-          <div className="card">
-            <div className="card-header">
-              <div className="card-title">Consultorios Físicos ({rooms.length})</div>
-            </div>
-
-            <form onSubmit={handleAddRoom} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Nombre (Ej: Consultorio 301)"
-                value={newRoomName}
-                onChange={(e) => setNewRoomName(e.target.value)}
-              />
-              <select
-                className="form-control"
-                value={newRoomFloor}
-                onChange={(e) => setNewRoomFloor(e.target.value)}
-                style={{ width: '110px' }}
-              >
-                <option value="Piso 1">Piso 1</option>
-                <option value="Piso 2">Piso 2</option>
-                <option value="Piso 3">Piso 3</option>
-              </select>
-              <button type="submit" className="btn btn-primary btn-sm">
-                <Plus size={16} />
-              </button>
-            </form>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '350px', overflowY: 'auto' }}>
-              {rooms.map((r) => (
-                <div
-                  key={r.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0.6rem 0.85rem',
-                    background: '#f8fafc',
-                    borderRadius: '8px',
-                    border: '1px solid #e2e8f0'
-                  }}
-                >
-                  <span style={{ fontWeight: 600, fontSize: '0.88rem', color: '#0f172a' }}>{r.name}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <span style={{ fontSize: '0.75rem', background: '#eff6ff', color: '#2563eb', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
-                      {r.floor}
-                    </span>
-                    <button
-                      type="button"
-                      className="btn btn-danger btn-icon"
-                      style={{ width: '26px', height: '26px' }}
-                      onClick={() => handleDeleteRoom(r.id)}
-                      title="Eliminar consultorio"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       )}
 
       {/* TAB 5: OBRAS SOCIALES & PREPAGAS */}
       {activeTab === 'insurances' && (
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div className="table-container" style={{ border: 'none' }}>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Obra Social / Prepaga</th>
-                  <th>Planes Habilitados</th>
-                  <th>Copago Estándar ($)</th>
-                  <th>Estado Prestación</th>
-                </tr>
-              </thead>
-              <tbody>
-                {healthInsurances.map((hi) => (
-                  <tr key={hi.id}>
-                    <td>
-                      <span style={{ fontWeight: 700, color: '#0f172a' }}>{hi.name}</span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-                        {hi.plans.map((p, idx) => (
-                          <span
-                            key={idx}
-                            style={{
-                              background: '#f1f5f9',
-                              padding: '0.15rem 0.45rem',
-                              borderRadius: '4px',
-                              fontSize: '0.75rem',
-                              color: '#334155',
-                              fontWeight: 600
-                            }}
-                          >
-                            {p}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td style={{ fontWeight: 700, color: '#16a34a' }}>
-                      ${hi.copay.toLocaleString()}
-                    </td>
-                    <td>
-                      <span style={{ color: '#16a34a', fontWeight: 600, fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                        <Check size={12} />
-                        <span>{hi.status}</span>
-                      </span>
-                    </td>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <span style={{ fontSize: '0.86rem', color: '#64748b' }}>
+              Gestión de convenios, aranceles de copago y planes habilitados para turnos y facturación.
+            </span>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={handleOpenNewInsurance}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+            >
+              <Plus size={15} />
+              <span>Nueva Obra Social</span>
+            </button>
+          </div>
+
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="table-container" style={{ border: 'none' }}>
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Obra Social / Prepaga</th>
+                    <th>Planes Habilitados</th>
+                    <th>Copago Estándar ($)</th>
+                    <th>Estado Prestación</th>
+                    <th style={{ textAlign: 'center' }}>Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {healthInsurances.map((hi) => (
+                    <tr key={hi.id}>
+                      <td>
+                        <span style={{ fontWeight: 700, color: '#0f172a' }}>{hi.name}</span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                          {(hi.plans || []).map((p, idx) => (
+                            <span
+                              key={idx}
+                              style={{
+                                background: '#f1f5f9',
+                                padding: '0.15rem 0.45rem',
+                                borderRadius: '4px',
+                                fontSize: '0.75rem',
+                                color: '#334155',
+                                fontWeight: 600
+                              }}
+                            >
+                              {p}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td style={{ fontWeight: 700, color: '#16a34a' }}>
+                        ${(Number(hi.copay) || 0).toLocaleString()}
+                      </td>
+                      <td>
+                        <span style={{ color: hi.status === 'Activa' ? '#16a34a' : '#d97706', fontWeight: 600, fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                          <Check size={12} />
+                          <span>{hi.status}</span>
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => handleOpenEditInsurance(hi)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
+                          title="Editar obra social"
+                        >
+                          <Edit2 size={13} />
+                          <span>Editar</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Editar / Nueva Obra Social */}
+      {isInsuranceModalOpen && editingInsurance && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1200,
+            padding: '1rem'
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '16px',
+              maxWidth: '480px',
+              width: '100%',
+              padding: '1.75rem',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+              border: '1px solid #e2e8f0'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
+                {editingInsurance.id === 'new' ? 'Nueva Obra Social / Prepaga' : 'Editar Obra Social / Prepaga'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => { setIsInsuranceModalOpen(false); setEditingInsurance(null); }}
+                style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveInsurance} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label className="form-label">Nombre de la Obra Social / Prepaga</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={editingInsurance.name}
+                  onChange={(e) => setEditingInsurance({ ...editingInsurance, name: e.target.value })}
+                  placeholder="Ej: OSDE, Swiss Medical, Apross"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="form-label">Planes Habilitados (separados por coma)</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={editingInsurance.plansInput}
+                  onChange={(e) => setEditingInsurance({ ...editingInsurance, plansInput: e.target.value })}
+                  placeholder="Ej: Obligatorio, Voluntario, Plan 210, Plan 310"
+                />
+                <small style={{ color: '#64748b', fontSize: '0.74rem', marginTop: '3px', display: 'block' }}>
+                  Ingresá los nombres de los planes separados por comas.
+                </small>
+              </div>
+
+              <div>
+                <label className="form-label">Copago Estándar ($)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="100"
+                  className="form-control"
+                  value={editingInsurance.copay}
+                  onChange={(e) => setEditingInsurance({ ...editingInsurance, copay: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="form-label">Estado de la Prestación</label>
+                <select
+                  className="form-control"
+                  value={editingInsurance.status}
+                  onChange={(e) => setEditingInsurance({ ...editingInsurance, status: e.target.value })}
+                >
+                  <option value="Activa">Activa</option>
+                  <option value="Suspendida">Suspendida</option>
+                  <option value="Inactiva">Inactiva</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => { setIsInsuranceModalOpen(false); setEditingInsurance(null); }}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  <Save size={16} />
+                  <span>Guardar Obra Social</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Editar Usuario */}
+      {isUserModalOpen && editingUser && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1200,
+            padding: '1rem'
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '16px',
+              maxWidth: '480px',
+              width: '100%',
+              padding: '1.75rem',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+              border: '1px solid #e2e8f0'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
+                Editar Usuario
+              </h3>
+              <button
+                type="button"
+                onClick={() => { setIsUserModalOpen(false); setEditingUser(null); }}
+                style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveUser} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label className="form-label">Nombre Completo / Profesional</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={editingUser.name}
+                  onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="form-label">Correo Electrónico (Login)</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  value={editingUser.email}
+                  onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="form-label">Rol / Especialidad</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={editingUser.role}
+                  onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
+                  placeholder="Ej: Médico · Traumatología o Secretaría"
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label className="form-label">Tipo de Acceso</label>
+                  <select
+                    className="form-control"
+                    value={editingUser.adminType}
+                    onChange={(e) => setEditingUser({ ...editingUser, adminType: e.target.value })}
+                  >
+                    <option value="administrative">Secretaría</option>
+                    <option value="doctor">Médico</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="form-label">Estado</label>
+                  <select
+                    className="form-control"
+                    value={editingUser.status}
+                    onChange={(e) => setEditingUser({ ...editingUser, status: e.target.value })}
+                  >
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => { setIsUserModalOpen(false); setEditingUser(null); }}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  <Save size={16} />
+                  <span>Guardar Usuario</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

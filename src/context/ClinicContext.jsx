@@ -873,9 +873,19 @@ export const ClinicProvider = ({ children }) => {
       updateAppointmentStatus(consultationData.appointmentId, 'atendido');
     }
 
-    logAudit('CREATE', 'Historia Clínica', consultationData.patientDni, `Registro firmado digitalmente con Hash SHA-256: ${integrityHash.substring(0, 16)}...`);
-    addToast('Acto Médico Firmado Digitalmente', 'Consulta registrada con firma digital y hash inmutable.', 'success');
+    logAudit('CREATE', 'Historia Clínica', consultationData.patientDni, `Consulta médica registrada exitosamente.`);
+    addToast('Consulta Registrada', 'La atención médica fue guardada exitosamente en la Historia Clínica.', 'success');
     return finalizedRecord;
+  };
+
+  const updateConsultation = (consultationId, updatedFields) => {
+    setConsultations((prev) =>
+      prev.map((c) => (c.id === consultationId ? { ...c, ...updatedFields } : c))
+    );
+    if (dataService.isLive()) {
+      dataService.updateConsultation?.(consultationId, updatedFields).catch(console.warn);
+    }
+    addToast('Consulta Actualizada', 'Los datos clínicos fueron guardados correctamente.', 'success');
   };
 
   // Adenda Médica Versionada (No destructiva)
@@ -2385,6 +2395,7 @@ export const ClinicProvider = ({ children }) => {
         deletePatient,
         addPatientFile,
         addConsultation,
+        updateConsultation,
         addConsultationAdenda,
         addElectronicPrescription,
         updatePrescriptionStatus,

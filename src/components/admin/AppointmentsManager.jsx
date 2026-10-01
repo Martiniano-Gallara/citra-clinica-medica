@@ -219,8 +219,8 @@ export const AppointmentsManager = () => {
       addToast(
         hasExistingHC ? 'Evolución Médica' : 'Consulta Médica',
         hasExistingHC
-          ? `Atendiendo a ${app.patientName} — Registrando nueva evolución en su Historia Clínica existente.`
-          : `Iniciando consulta para ${app.patientName} en ${currentDoctor?.roomName || 'Consultorio'}.`,
+          ? `Atendiendo a ${app.patientName} — Registrando nueva evolución en su Historia Clínica.`
+          : `Iniciando consulta para ${app.patientName}.`,
         'info'
       );
     } else {
@@ -232,7 +232,7 @@ export const AppointmentsManager = () => {
   // Call patient to room
   const handleCallToRoom = (app) => {
     updateAppointmentStatus(app.id, 'en_sala');
-    addToast('Llamado a Consultorio', `Notificación enviada a pantalla de recepción: ${app.patientName} pase a ${currentDoctor?.roomName || 'Consultorio 102'}.`, 'success');
+    addToast('Llamado a Paciente', `Notificación enviada a recepción: ${app.patientName} pase a atención.`, 'success');
   };
 
   // Create manual appointment
@@ -930,7 +930,7 @@ export const AppointmentsManager = () => {
                               {/* Column 3: Clinical Reason & Quick Actions */}
                               <div>
                                 <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                  <FileText size={14} /> Consulta en {currentDoctor?.roomName || 'Consultorio 102'}
+                                  <FileText size={14} /> Motivo de Consulta
                                 </div>
                                 <p style={{ fontSize: '0.82rem', color: '#334155', margin: '0 0 0.75rem', lineHeight: '1.4' }}>
                                   {app.reason || 'Sin motivo detallado'}
@@ -1007,27 +1007,6 @@ export const AppointmentsManager = () => {
                                         >
                                           <Stethoscope size={13} /> Iniciar Historia Clínica
                                         </button>
-                                      )}
-
-                                      {/* Status badge: HC Existente */}
-                                      {(consultations || []).some((c) => c.patientId === app.patientId || c.patientDni === app.patientDni) && (
-                                        <span
-                                          style={{
-                                            fontSize: '0.7rem',
-                                            color: '#002182',
-                                            background: '#eff6ff',
-                                            border: '1px solid #bfdbfe',
-                                            padding: '0.2rem 0.5rem',
-                                            borderRadius: '4px',
-                                            fontWeight: 700,
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '3px'
-                                          }}
-                                          title="Este paciente cuenta con expediente clínico unificado en CITRA"
-                                        >
-                                          <Shield size={11} /> HC Activa
-                                        </span>
                                       )}
                                     </>
                                   )}

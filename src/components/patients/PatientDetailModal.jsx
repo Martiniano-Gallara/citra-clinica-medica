@@ -136,7 +136,17 @@ export const PatientDetailModal = () => {
     <Modal
       isOpen={!!selectedPatientForDetail}
       onClose={() => setSelectedPatientForDetail(null)}
-      title={isDoctor ? `Ficha Clínica Integral — ${patient.name}` : `Ficha de Afiliado — ${patient.name}`}
+      title={
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontWeight: 800, color: '#002182' }}>Ficha Clínica — {patient.name}</span>
+          <span style={{ background: '#EFF6FF', color: '#076ABC', padding: '2px 8px', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 700 }}>
+            DNI {patient.dni}
+          </span>
+          <span style={{ background: '#F1F5F9', color: '#475569', padding: '2px 8px', borderRadius: '6px', fontSize: '0.76rem', fontWeight: 600 }}>
+            {patient.birthDate ? `${calculateAge(patient.birthDate)} · ` : ''}{patient.insuranceName} {patient.insurancePlan ? `(${patient.insurancePlan})` : ''}
+          </span>
+        </div>
+      }
       size="xl"
       footer={
         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
@@ -172,33 +182,15 @@ export const PatientDetailModal = () => {
                 }}
               >
                 <FileCheck2 size={16} color="#076ABC" />
-                <span>Exportar Historial (PDF Firmado)</span>
+                <span>Exportar Historial (PDF)</span>
               </button>
             )}
 
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => {
-                setAppointmentModalData({
-                  patientId: patient.id,
-                  patientName: patient.name,
-                  patientPhone: patient.phone,
-                  patientDni: patient.dni,
-                  patientInsurance: `${patient.insuranceName} (${patient.insurancePlan})`
-                });
-                setIsAppointmentModalOpen(true);
-              }}
-            >
-              <CalendarPlus size={16} />
-              <span>+ Agendar Turno</span>
-            </button>
-
-            {isDoctor && (
+            {isDoctor ? (
               <button
                 type="button"
-                className="btn btn-outline"
-                style={{ borderColor: '#059669', color: '#059669', fontWeight: 800 }}
+                className="btn btn-primary"
+                style={{ background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                 onClick={() => {
                   setConsultationPreloadData({
                     patientId: patient.id,
@@ -212,146 +204,26 @@ export const PatientDetailModal = () => {
                 <Stethoscope size={16} />
                 <span>+ Nueva Consulta HCE</span>
               </button>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  setPatientFormModalData(patient);
+                  setIsPatientFormModalOpen(true);
+                }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Edit2 size={15} />
+                <span>Editar Datos del Paciente</span>
+              </button>
             )}
           </div>
         </div>
       }
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-        {/* 1. TOP PATIENT HEADER BANNER (NO FOTO, NO FACTOR SANGUINEO, ULTRA LIMPIO) */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, #001f66 0%, #076ABC 100%)',
-            borderRadius: '16px',
-            padding: '1.35rem 1.75rem',
-            color: '#ffffff',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '1rem',
-            boxShadow: '0 8px 24px rgba(0, 33, 130, 0.18)'
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
-              <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', margin: 0, letterSpacing: '-0.02em' }}>
-                {patient.name}
-              </h2>
-              <span
-                style={{
-                  background: 'rgba(255, 255, 255, 0.22)',
-                  color: '#ffffff',
-                  padding: '3px 10px',
-                  borderRadius: '100px',
-                  fontSize: '0.78rem',
-                  fontWeight: 800
-                }}
-              >
-                DNI {patient.dni}
-              </span>
-              <span
-                style={{
-                  background: '#EBF3FD',
-                  color: '#002182',
-                  padding: '3px 12px',
-                  borderRadius: '100px',
-                  fontSize: '0.78rem',
-                  fontWeight: 900
-                }}
-              >
-                {patient.insuranceName} ({patient.insurancePlan})
-              </span>
-            </div>
-
-            <div style={{ fontSize: '0.86rem', color: '#D2E3FC', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              <span>{calculateAge(patient.birthDate)} ({patient.birthDate})</span>
-              <span>•</span>
-              <span>Género: {patient.gender}</span>
-              <span>•</span>
-              <span>Tel: {patient.phone}</span>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <a
-              href={`https://wa.me/${patient.phone?.replace(/[^0-9]/g, '')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                background: '#25D366',
-                color: '#ffffff',
-                fontWeight: 800,
-                border: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                borderRadius: '8px',
-                padding: '0.45rem 0.95rem',
-                fontSize: '0.84rem',
-                textDecoration: 'none',
-                boxShadow: '0 4px 12px rgba(37, 211, 102, 0.35)',
-                transition: 'transform 0.15s ease'
-              }}
-              title="Abrir chat oficial de WhatsApp"
-            >
-              <WhatsAppIcon size={16} color="#ffffff" />
-              <span>WhatsApp</span>
-            </a>
-
-            {isDoctor && (
-              <button
-                type="button"
-                onClick={() => setIsLegalHceModalOpen(true)}
-                style={{
-                  background: '#ffffff',
-                  color: '#002182',
-                  fontWeight: 800,
-                  border: 'none',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  borderRadius: '8px',
-                  padding: '0.45rem 0.95rem',
-                  fontSize: '0.84rem',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(0, 33, 130, 0.15)'
-                }}
-              >
-                <FileCheck2 size={16} color="#002182" />
-                <span>Exportar PDF</span>
-              </button>
-            )}
-
-            {!isDoctor && (
-              <button
-                type="button"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  color: '#ffffff',
-                  fontWeight: 700,
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  borderRadius: '8px',
-                  padding: '0.45rem 0.85rem',
-                  fontSize: '0.84rem',
-                  cursor: 'pointer'
-                }}
-                onClick={() => {
-                  setPatientFormModalData(patient);
-                  setIsPatientFormModalOpen(true);
-                }}
-              >
-                <Edit2 size={14} />
-                <span>Editar</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* 2. CLINICAL ALERTS & SURGICAL WARNINGS (SOLO MÉDICO) */}
+        {/* 1. CLINICAL ALERTS & SURGICAL WARNINGS */}
         {isDoctor && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {patient.allergies && patient.allergies.length > 0 && (
@@ -452,7 +324,7 @@ export const PatientDetailModal = () => {
         {/* TAB 1: DATOS & COBERTURA */}
         {activeTab === 'general' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
-            <div className="card" style={{ padding: '1.5rem', border: '1.5px solid #D2E3FC', borderRadius: '16px', boxShadow: '0 4px 14px rgba(0, 33, 130, 0.03)' }}>
+            <div className="card" style={{ padding: '1.35rem 1.5rem', border: '1.5px solid #D2E3FC', borderRadius: '14px', background: '#ffffff', boxShadow: '0 4px 14px rgba(0, 33, 130, 0.03)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.15rem', paddingBottom: '0.65rem', borderBottom: '1.5px solid #EDF3FD' }}>
                 <User size={18} color="#076ABC" />
                 <h4 style={{ fontWeight: 800, fontSize: '0.98rem', color: '#002182', margin: 0 }}>
@@ -460,23 +332,48 @@ export const PatientDetailModal = () => {
                 </h4>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.86rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F8FAFC', paddingBottom: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F8FAFC', paddingBottom: '5px' }}>
                   <span style={{ color: '#64748b' }}>Teléfono Móvil:</span>
-                  <strong style={{ color: '#0f172a' }}>{patient.phone || '-'}</strong>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <strong style={{ color: '#0f172a' }}>{patient.phone || '-'}</strong>
+                    {patient.phone && (
+                      <a
+                        href={`https://wa.me/${patient.phone.replace(/[^0-9]/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          background: '#25D366',
+                          color: '#ffffff',
+                          padding: '2px 8px',
+                          borderRadius: '6px',
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
+                          textDecoration: 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                        title="Abrir WhatsApp"
+                      >
+                        <WhatsAppIcon size={12} color="#ffffff" />
+                        <span>WhatsApp</span>
+                      </a>
+                    )}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F8FAFC', paddingBottom: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F8FAFC', paddingBottom: '5px' }}>
                   <span style={{ color: '#64748b' }}>Email:</span>
                   <strong style={{ color: '#0f172a' }}>{patient.email || '-'}</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F8FAFC', paddingBottom: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F8FAFC', paddingBottom: '5px' }}>
                   <span style={{ color: '#64748b' }}>Dirección:</span>
                   <strong style={{ color: '#0f172a' }}>{patient.address || 'Arroyito, Córdoba'}</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F8FAFC', paddingBottom: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F8FAFC', paddingBottom: '5px' }}>
                   <span style={{ color: '#64748b' }}>Contacto de Emergencia:</span>
                   <strong style={{ color: '#076ABC' }}>{patient.emergencyContact || 'No especificado'}</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F8FAFC', paddingBottom: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F8FAFC', paddingBottom: '5px' }}>
                   <span style={{ color: '#64748b' }}>Fecha de Alta en CITRA:</span>
                   <strong style={{ color: '#0f172a' }}>{patient.registeredAt || '2023-01-15'}</strong>
                 </div>
@@ -487,54 +384,12 @@ export const PatientDetailModal = () => {
               </div>
             </div>
 
-            <div className="card" style={{ padding: '1.5rem', border: '1.5px solid #D2E3FC', borderRadius: '16px', boxShadow: '0 4px 14px rgba(0, 33, 130, 0.03)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.15rem', paddingBottom: '0.65rem', borderBottom: '1.5px solid #EDF3FD' }}>
-                <Shield size={18} color="#059669" />
-                <h4 style={{ fontWeight: 800, fontSize: '0.98rem', color: '#002182', margin: 0 }}>
-                  Cobertura Médica & Padrón
-                </h4>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.86rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F8FAFC', paddingBottom: '4px' }}>
-                  <span style={{ color: '#64748b' }}>Obra Social / Prepaga:</span>
-                  <strong style={{ color: '#076ABC', fontWeight: 900 }}>{patient.insuranceName}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F8FAFC', paddingBottom: '4px' }}>
-                  <span style={{ color: '#64748b' }}>Plan Asignado:</span>
-                  <strong style={{ color: '#0f172a' }}>{patient.insurancePlan}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F8FAFC', paddingBottom: '4px' }}>
-                  <span style={{ color: '#64748b' }}>N° Afiliado / Credencial:</span>
-                  <strong style={{ color: '#0f172a' }}>{patient.insuranceNumber || '310-892110-01'}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F8FAFC', paddingBottom: '4px' }}>
-                  <span style={{ color: '#64748b' }}>Estado Padrón SISA:</span>
-                  <span style={{ color: '#059669', fontWeight: 800, background: '#D1FAE5', padding: '3px 10px', borderRadius: '6px', fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                    <Check size={13} />
-                    <span>Habilitado para prestaciones</span>
-                  </span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#64748b' }}>Portal del Paciente:</span>
-                  <span style={{ color: '#002182', fontWeight: 800, background: '#EFF6FF', padding: '3px 10px', borderRadius: '6px', fontSize: '0.76rem' }}>
-                    Activo (Acceso DNI)
-                  </span>
-                </div>
-                {patient.observations && (
-                  <div style={{ marginTop: '0.4rem', padding: '0.65rem 0.85rem', background: '#F5F8FE', borderRadius: '8px', fontSize: '0.82rem', color: '#1e293b', border: '1px solid #E2E8F0' }}>
-                    <strong>Observaciones:</strong> {patient.observations}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Tarjeta de Profesionales Asignados */}
-            <div className="card" style={{ padding: '1.5rem', border: '1.5px solid #D2E3FC', borderRadius: '16px', boxShadow: '0 4px 14px rgba(0, 33, 130, 0.03)', gridColumn: 'span 2' }}>
+            <div className="card" style={{ padding: '1.35rem 1.5rem', border: '1.5px solid #D2E3FC', borderRadius: '14px', background: '#ffffff', boxShadow: '0 4px 14px rgba(0, 33, 130, 0.03)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.15rem', paddingBottom: '0.65rem', borderBottom: '1.5px solid #EDF3FD' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Stethoscope size={18} color="#076ABC" />
+                  <Shield size={18} color="#059669" />
                   <h4 style={{ fontWeight: 800, fontSize: '0.98rem', color: '#002182', margin: 0 }}>
-                    Profesionales Médicos Asignados (Secretaría)
+                    Cobertura Médica & Obra Social
                   </h4>
                 </div>
                 {!isDoctor && (
@@ -549,8 +404,8 @@ export const PatientDetailModal = () => {
                       color: '#076ABC',
                       border: '1px solid #bfdbfe',
                       borderRadius: '6px',
-                      padding: '4px 10px',
-                      fontSize: '0.78rem',
+                      padding: '3px 8px',
+                      fontSize: '0.74rem',
                       fontWeight: 700,
                       cursor: 'pointer',
                       display: 'flex',
@@ -558,64 +413,35 @@ export const PatientDetailModal = () => {
                       gap: '4px'
                     }}
                   >
-                    <Edit2 size={12} /> Modificar Asignación
+                    <Edit2 size={11} /> Modificar
                   </button>
                 )}
               </div>
-
-              {assignedDoctors.length > 0 ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.75rem' }}>
-                  {assignedDoctors.map((doc) => (
-                    <div
-                      key={doc.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                        padding: '0.75rem',
-                        borderRadius: '10px',
-                        border: '1px solid #e2e8f0',
-                        background: '#f8fafc'
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '50%',
-                          background: doc.color || '#002182',
-                          color: '#ffffff',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 800,
-                          fontSize: '0.82rem',
-                          flexShrink: 0
-                        }}
-                      >
-                        {doc.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
-                      </div>
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0f172a' }}>
-                          {doc.name}
-                        </div>
-                        <div style={{ fontSize: '0.76rem', color: '#076ABC', fontWeight: 600 }}>
-                          {doc.specialtyName}
-                        </div>
-                        {doc.roomName && (
-                          <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                            {doc.roomName}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.86rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F8FAFC', paddingBottom: '5px' }}>
+                  <span style={{ color: '#64748b' }}>Obra Social / Prepaga:</span>
+                  <strong style={{ color: '#076ABC', fontWeight: 900 }}>{patient.insuranceName}</strong>
                 </div>
-              ) : (
-                <div style={{ padding: '1rem', background: '#f8fafc', borderRadius: '8px', color: '#64748b', fontSize: '0.84rem', fontStyle: 'italic' }}>
-                  Este paciente no tiene profesionales médicos asignados de manera fija. {!isDoctor && 'Haga clic en "Modificar Asignación" para vincularlo a uno o más doctores.'}
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F8FAFC', paddingBottom: '5px' }}>
+                  <span style={{ color: '#64748b' }}>Plan Asignado:</span>
+                  <strong style={{ color: '#0f172a' }}>{patient.insurancePlan}</strong>
                 </div>
-              )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F8FAFC', paddingBottom: '5px' }}>
+                  <span style={{ color: '#64748b' }}>N° Afiliado / Credencial:</span>
+                  <strong style={{ color: '#0f172a' }}>{patient.insuranceNumber || '310-892110-01'}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F8FAFC', paddingBottom: '5px' }}>
+                  <span style={{ color: '#64748b' }}>Profesional Asignado:</span>
+                  <span style={{ color: '#002182', fontWeight: 700 }}>
+                    {assignedDoctors.length > 0 ? assignedDoctors.map(d => d.name).join(', ') : 'Atención a demanda'}
+                  </span>
+                </div>
+                {patient.observations && (
+                  <div style={{ marginTop: '0.35rem', padding: '0.65rem 0.85rem', background: '#F8FAFC', borderRadius: '8px', fontSize: '0.82rem', color: '#334155', border: '1px solid #E2E8F0', lineHeight: 1.45 }}>
+                    <strong style={{ color: '#002182' }}>Observaciones:</strong> {patient.observations}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -814,90 +640,79 @@ export const PatientDetailModal = () => {
         {isDoctor && activeTab === 'rehab' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {patientRehabPlans.length === 0 ? (
-              <div className="card" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
-                <Activity size={36} color="var(--c-accent)" style={{ marginBottom: '0.5rem' }} />
-                <div style={{ fontWeight: 800, color: 'var(--text-main)' }}>Sin planes de rehabilitación activos</div>
-                <p style={{ fontSize: '0.84rem', marginTop: '4px' }}>Prescribe un nuevo plan kinesiológico desde el módulo de Kinesiología.</p>
+              <div className="card" style={{ textAlign: 'center', padding: '2.5rem', color: '#64748b' }}>
+                <Activity size={32} color="#076ABC" style={{ marginBottom: '0.5rem' }} />
+                <div style={{ fontWeight: 800, color: '#0f172a' }}>Sin plan de kinesiología activo</div>
+                <p style={{ fontSize: '0.84rem', marginTop: '4px', color: '#64748b' }}>
+                  El paciente no tiene sesiones de fisioterapia o rehabilitación registradas.
+                </p>
               </div>
             ) : (
               patientRehabPlans.map((plan) => {
                 const therapist = plan.therapistName || plan.kinesiologistName || 'Lic. Barrea';
-                const referring = plan.referringDoctor || plan.prescribingDoctor || 'Dr. Alejandro Blanco';
+                const referring = plan.referringDoctor || plan.prescribingDoctor || 'Dr. Blanco';
                 const completed = plan.completedSessions ?? plan.sessionsCompleted ?? 14;
                 const prescribed = plan.prescribedSessions ?? plan.sessionsPrescribed ?? 20;
                 const progressPercent = Math.min(100, Math.round((completed / (prescribed || 1)) * 100));
-                const evaInit = plan.initialEvaScore ?? plan.evaInitial ?? 8;
-                const evaCurr = plan.currentEvaScore ?? plan.evaCurrent ?? 2;
-                const diagnosisTitle = plan.diagnosis || plan.pathology || 'Post-Quirúrgico Reconstrucción LCA Rodilla Derecha (Injerto HTH)';
-                const romText = plan.currentRom
-                  ? `Flexión ${plan.currentRom.flexion || '135°'} / Extensión ${plan.currentRom.extension || '0°'}`
-                  : plan.romRange || 'Flexión 135° / Extensión 0°';
-                const danielsText = plan.danielsScale || 'Grado 4+/5 (Buena)';
+                const diagnosisTitle = plan.diagnosis || plan.pathology || 'Rehabilitación Post-Quirúrgica LCA';
 
                 return (
-                  <div key={plan.id} className="card" style={{ padding: '1.25rem', border: '1.5px solid #D2E3FC' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.85rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div key={plan.id} className="card" style={{ padding: '1.35rem', border: '1.5px solid #D2E3FC', borderRadius: '14px', background: '#ffffff', boxShadow: '0 2px 10px rgba(0, 33, 130, 0.04)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                       <div>
-                        <div style={{ background: '#ECFDF5', color: '#059669', padding: '3px 10px', borderRadius: '6px', fontSize: '0.76rem', fontWeight: 800, display: 'inline-block', marginBottom: '6px' }}>
-                          Plan de Fisioterapia & Rehabilitación Motora
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                          <span style={{ background: '#ECFDF5', color: '#059669', padding: '3px 9px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
+                            Plan de Rehabilitación
+                          </span>
+                          <span style={{ background: '#EFF6FF', color: '#002182', padding: '3px 9px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700 }}>
+                            En curso
+                          </span>
                         </div>
-                        <h4 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#002182', margin: 0 }}>
+                        <h4 style={{ fontSize: '1.08rem', fontWeight: 900, color: '#002182', margin: '4px 0' }}>
                           {diagnosisTitle}
                         </h4>
-                        <div style={{ fontSize: '0.82rem', color: '#475569', marginTop: '4px' }}>
-                          Kinesiólogo a cargo: <strong>{therapist}</strong> · Médico derivante: <strong>{referring}</strong>
+                        <div style={{ fontSize: '0.84rem', color: '#64748b', marginTop: '3px' }}>
+                          Kinesiólogo: <strong style={{ color: '#0f172a' }}>{therapist}</strong> · Derivó: <strong style={{ color: '#0f172a' }}>{referring}</strong>
                         </div>
                       </div>
 
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#002182' }}>
+                        <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#002182' }}>
                           {completed} / {prescribed}
                         </div>
                         <span style={{ fontSize: '0.76rem', color: '#059669', fontWeight: 700 }}>
-                          {progressPercent}% sesiones completadas
+                          {progressPercent}% sesiones realizadas
                         </span>
                       </div>
                     </div>
 
                     {/* Progress Bar */}
-                    <div style={{ width: '100%', height: '9px', background: '#F1F5F9', borderRadius: '10px', overflow: 'hidden', marginBottom: '1rem' }}>
+                    <div style={{ width: '100%', height: '8px', background: '#F1F5F9', borderRadius: '10px', overflow: 'hidden', margin: '0.85rem 0' }}>
                       <div
                         style={{
                           width: `${progressPercent}%`,
                           height: '100%',
-                          background: 'linear-gradient(90deg, #076ABC, #25D366)',
+                          background: 'linear-gradient(90deg, #076ABC 0%, #10B981 100%)',
                           borderRadius: '10px'
                         }}
                       />
                     </div>
 
-                    {/* Metrics Row */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', fontSize: '0.82rem' }}>
-                      <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                        <span style={{ color: '#64748b' }}>Escala de Dolor EVA:</span>
+                    {/* Simple summary cards */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginTop: '0.75rem' }}>
+                      <div style={{ background: '#F8FAFC', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                        <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>Evolución</span>
                         <div style={{ fontWeight: 800, color: '#059669', marginTop: '2px', fontSize: '0.88rem' }}>
-                          Inicial: {evaInit}/10 → Actual: {evaCurr}/10 (Mejoría notable)
+                          Favorable · Buena respuesta al tratamiento
                         </div>
                       </div>
-                      <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                        <span style={{ color: '#64748b' }}>Rango Articular (ROM):</span>
-                        <div style={{ fontWeight: 800, color: '#002182', marginTop: '2px', fontSize: '0.88rem' }}>
-                          {romText}
-                        </div>
-                      </div>
-                      <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                        <span style={{ color: '#64748b' }}>Fuerza Muscular (Daniels):</span>
-                        <div style={{ fontWeight: 800, color: '#076ABC', marginTop: '2px', fontSize: '0.88rem' }}>
-                          {danielsText}
+                      <div style={{ background: '#F8FAFC', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                        <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>Objetivo</span>
+                        <div style={{ fontWeight: 700, color: '#0f172a', marginTop: '2px', fontSize: '0.84rem' }}>
+                          {plan.objective || 'Fortalecimiento muscular y recuperación de movilidad funcional.'}
                         </div>
                       </div>
                     </div>
-
-                    {plan.objective && (
-                      <div style={{ marginTop: '0.75rem', padding: '0.65rem 0.85rem', background: '#F5F8FE', borderRadius: '8px', fontSize: '0.82rem', color: '#1e293b' }}>
-                        <strong>Objetivo Terapéutico:</strong> {plan.objective}
-                      </div>
-                    )}
                   </div>
                 );
               })
@@ -972,22 +787,32 @@ export const PatientDetailModal = () => {
         {isDoctor && activeTab === 'files' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             {/* Upload File Box */}
-            <form onSubmit={handleUploadFile} className="card" style={{ padding: '1rem', background: '#F8FAFC', border: '1.5px dashed #076ABC' }}>
-              <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#002182', marginBottom: '0.65rem' }}>
-                + Adjuntar Nuevo Estudio Radiológico o Informe
+            <form
+              onSubmit={handleUploadFile}
+              style={{
+                padding: '1rem 1.25rem',
+                background: '#ffffff',
+                border: '1.5px solid #D2E3FC',
+                borderRadius: '12px',
+                boxShadow: '0 2px 8px rgba(0, 33, 130, 0.04)'
+              }}
+            >
+              <div style={{ fontWeight: 800, fontSize: '0.86rem', color: '#002182', marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Upload size={15} color="#076ABC" />
+                <span>Adjuntar Nuevo Estudio o Informe Radiológico</span>
               </div>
               <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
                 <input
                   type="text"
-                  className="form-input"
+                  className="form-control"
                   style={{ flex: 1, minWidth: '220px', fontSize: '0.84rem' }}
-                  placeholder="Nombre del archivo (ej. RMN_Rodilla_Control.pdf)..."
+                  placeholder="Nombre o descripción (ej. RMN_Rodilla_Control.pdf)..."
                   value={newFileName}
                   onChange={(e) => setNewFileName(e.target.value)}
                 />
                 <select
-                  className="form-select"
-                  style={{ width: '210px', fontSize: '0.84rem' }}
+                  className="form-control"
+                  style={{ width: '220px', fontSize: '0.84rem' }}
                   value={newFileType}
                   onChange={(e) => setNewFileType(e.target.value)}
                 >
@@ -998,9 +823,9 @@ export const PatientDetailModal = () => {
                   <option value="Laboratorio Bioquímico">Laboratorio Bioquímico</option>
                   <option value="Consentimiento Informado">Consentimiento Informado</option>
                 </select>
-                <button type="submit" className="btn btn-primary btn-sm">
+                <button type="submit" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                   <Upload size={14} />
-                  Adjuntar
+                  <span>Adjuntar</span>
                 </button>
               </div>
             </form>
