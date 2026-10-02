@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import {
-  CalendarPlus,
   Shield,
   Menu,
   X,
@@ -11,14 +10,12 @@ import {
   ShieldCheck,
   PhoneCall
 } from 'lucide-react';
-import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
 export const Navbar = () => {
   const {
     currentView,
     setCurrentView,
-    authRole,
-    clinicInfo
+    authRole
   } = useClinic();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -45,7 +42,6 @@ export const Navbar = () => {
 
   const navItems = [
     { id: 'home', label: 'Inicio', icon: Home },
-    { id: 'booking', label: 'Sacar Turno', icon: CalendarPlus },
     { id: 'services', label: 'Servicios', icon: Stethoscope },
     { id: 'doctors', label: 'Equipo Médico', icon: Users },
     { id: 'insurances', label: 'Obras Sociales', icon: ShieldCheck },
@@ -73,16 +69,6 @@ export const Navbar = () => {
     }
     setCurrentView(viewId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const rawWa = (clinicInfo?.whatsapp || '543576450214').replace(/\D/g, '');
-  const cleanWa = rawWa.startsWith('54') ? rawWa : `54${rawWa}`;
-  const clinicName = clinicInfo?.name || 'CITRA';
-
-  const handleBookingClick = (customText) => {
-    setMobileMenuOpen(false);
-    const msg = customText || `Hola ${clinicName}, quisiera solicitar un turno.`;
-    window.open(`https://wa.me/${cleanWa}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
   };
 
   const handleAdminAccessClick = () => {
@@ -196,94 +182,41 @@ export const Navbar = () => {
             })}
           </nav>
 
-          {/* Desktop Actions: Mis Turnos, Sacar Turno Online (Principal) & Turno por WhatsApp */}
+          {/* Desktop Actions: Portal de Administración */}
           <div className="desktop-only" style={{ alignItems: 'center', gap: '0.65rem' }}>
             <button
-              onClick={() => navigateToPage('portal')}
-              title="Portal Pacientes - Consultar y gestionar mis turnos"
+              onClick={handleAdminAccessClick}
+              title="Portal de Administración y Gestión Clínica"
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.4rem',
-                background: currentView === 'portal' ? '#EBF3FD' : 'transparent',
+                gap: '0.5rem',
+                background: currentView === 'admin-login' || currentView === 'admin-panel' ? '#002182' : '#F5F8FE',
                 border: '1.5px solid #D2E3FC',
-                color: '#002182',
-                padding: '0.55rem 0.85rem',
+                color: currentView === 'admin-login' || currentView === 'admin-panel' ? '#ffffff' : '#002182',
+                padding: '0.55rem 1rem',
                 borderRadius: '10px',
                 fontSize: '0.84rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#EBF3FD';
-                e.currentTarget.style.borderColor = '#BFDBFE';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = currentView === 'portal' ? '#EBF3FD' : 'transparent';
-                e.currentTarget.style.borderColor = '#D2E3FC';
-              }}
-            >
-              <Users size={15} color="#076ABC" />
-              <span>Mis Turnos</span>
-            </button>
-
-            <button
-              onClick={() => navigateToPage('booking')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.45rem',
-                background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
-                border: 'none',
-                color: '#ffffff',
-                padding: '0.6rem 1.15rem',
-                borderRadius: '10px',
-                fontSize: '0.86rem',
                 fontWeight: 800,
                 cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(7, 106, 188, 0.28)',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 6px rgba(0, 33, 130, 0.04)'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(7, 106, 188, 0.38)';
+                e.currentTarget.style.background = '#002182';
+                e.currentTarget.style.color = '#ffffff';
+                e.currentTarget.style.borderColor = '#002182';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(7, 106, 188, 0.28)';
+                if (currentView !== 'admin-login' && currentView !== 'admin-panel') {
+                  e.currentTarget.style.background = '#F5F8FE';
+                  e.currentTarget.style.color = '#002182';
+                  e.currentTarget.style.borderColor = '#D2E3FC';
+                }
               }}
             >
-              <CalendarPlus size={16} color="#ffffff" />
-              <span>Sacar Turno Online</span>
-            </button>
-
-            <button
-              onClick={() => handleBookingClick()}
-              title="Solicitar asistencia de turnos por WhatsApp"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.45rem',
-                background: '#F0FDF4',
-                border: '1.5px solid #86EFAC',
-                color: '#15803D',
-                padding: '0.55rem 0.95rem',
-                borderRadius: '10px',
-                fontSize: '0.84rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#DCFCE7';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#F0FDF4';
-              }}
-            >
-              <WhatsAppIcon size={16} color="#22C55E" />
-              <span>WhatsApp</span>
+              <Shield size={16} />
+              <span>Portal de Administración</span>
             </button>
           </div>
 
@@ -325,51 +258,6 @@ export const Navbar = () => {
           >
             {/* Scrollable Drawer Body */}
             <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.1rem', flex: 1 }}>
-
-              {/* Highlighted Primary CTA: Sacar Turno Online */}
-              <button
-                onClick={() => navigateToPage('booking')}
-                style={{
-                  background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '0.85rem 1rem',
-                  borderRadius: '12px',
-                  fontWeight: 900,
-                  fontSize: '0.92rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.55rem',
-                  cursor: 'pointer',
-                  boxShadow: '0 6px 18px rgba(7, 106, 188, 0.3)'
-                }}
-              >
-                <CalendarPlus size={19} color="#ffffff" />
-                <span>Sacar Turno Online</span>
-              </button>
-
-              {/* Secondary CTA: Asistencia por WhatsApp */}
-              <button
-                onClick={() => handleBookingClick()}
-                style={{
-                  background: '#F0FDF4',
-                  color: '#15803D',
-                  border: '1.5px solid #86EFAC',
-                  padding: '0.75rem 1rem',
-                  borderRadius: '12px',
-                  fontWeight: 800,
-                  fontSize: '0.88rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.55rem',
-                  cursor: 'pointer'
-                }}
-              >
-                <WhatsAppIcon size={18} color="#22C55E" />
-                <span>Asistencia por WhatsApp</span>
-              </button>
 
               {/* Navigation Links */}
               <div>
@@ -435,27 +323,8 @@ export const Navbar = () => {
                 </div>
               </div>
 
-              {/* Patient and Admin Portal Access links */}
+              {/* Admin Portal Access link */}
               <div style={{ borderTop: '1px solid #D2E3FC', paddingTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                <button
-                  onClick={() => navigateToPage('portal')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    padding: '0.65rem 0.8rem',
-                    borderRadius: '10px',
-                    fontSize: '0.88rem',
-                    fontWeight: 700,
-                    color: '#076ABC',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.6rem'
-                  }}
-                >
-                  <Users size={16} />
-                  <span>Portal Pacientes (Mis Turnos)</span>
-                </button>
                 <button
                   onClick={handleAdminAccessClick}
                   style={{
@@ -465,7 +334,7 @@ export const Navbar = () => {
                     borderRadius: '10px',
                     fontSize: '0.88rem',
                     fontWeight: 700,
-                    color: '#475569',
+                    color: '#002182',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
