@@ -13,10 +13,11 @@ export const IntegrationsHubView = () => {
       name: 'ReNaPDiS — Receta Electrónica Nacional',
       organism: 'Ministerio de Salud de la Nación (MSAL)',
       normative: 'Homologación ReNaPDiS / Ley 27.553',
-      status: 'Sandbox / Simulado',
+      status: 'Próximamente (Fase 2 / En Homologación)',
+      badge: 'PRÓXIMAMENTE',
       isLive: false,
       endpoint: 'https://sisa.msal.gov.ar/ws/renapdis/v2',
-      details: `Motor generador CUIR activo localmente con ID ${clinicInfo.renapdisPlatformId}. Conector SOAP en entorno de prueba / homologación.`,
+      details: `Motor generador CUIR activo con ID de plataforma ${clinicInfo.renapdisPlatformId}. Conector SOAP en desarrollo para homologación directa con el Ministerio de Salud (Fase 2).`,
       icon: 'Pill',
       color: '#076ABC'
     },
@@ -25,10 +26,11 @@ export const IntegrationsHubView = () => {
       name: 'ARCA — Facturación Electrónica WSFE v1',
       organism: 'Agencia de Recaudación y Control Aduanero (ex AFIP)',
       normative: 'RG 4291 / RG 4892 (QR Fiscal)',
-      status: 'Sandbox / Homologación',
+      status: 'Próximamente (Fase 2 / En Homologación)',
+      badge: 'PRÓXIMAMENTE',
       isLive: false,
       endpoint: 'https://servicios1.afip.gov.ar/wsfev1/service.asmx',
-      details: `Generador de CAE y QR fiscal offline/testing habilitado para CUIT ${clinicInfo.cuit}. Certificados X.509 de producción pendientes de delegación.`,
+      details: `Generador de CAE y QR fiscal operativo para CUIT ${clinicInfo.cuit}. Conexión directa contra Web Services en homologación a la espera de certificados de producción delegados (Fase 2).`,
       icon: 'Receipt',
       color: '#002182'
     },
@@ -37,10 +39,11 @@ export const IntegrationsHubView = () => {
       name: 'SISA — Registro Federal de Profesionales (REFEPS)',
       organism: 'Sistema de Información Sanitaria Argentino',
       normative: 'Resolución MSAL 1341/2013',
-      status: 'Catálogo Local / Simulado',
+      status: 'Próximamente (Fase 2 / En Certificación)',
+      badge: 'PRÓXIMAMENTE',
       isLive: false,
       endpoint: 'https://sisa.msal.gov.ar/ws/refeps/v1',
-      details: `Establecimiento REFES: ${clinicInfo.sisaRefesCode}. Validación de matrículas profesionales operando contra base local pre-cargada.`,
+      details: `Establecimiento REFES: ${clinicInfo.sisaRefesCode}. Validación de matrículas profesionales operando en catálogo interno con sincronización federada programada para Fase 2.`,
       icon: 'ShieldCheck',
       color: '#0d9488'
     },
@@ -49,10 +52,11 @@ export const IntegrationsHubView = () => {
       name: 'HL7® FHIR® Argentina Core',
       organism: 'Dirección Nacional de Sistemas de Información Sanitaria',
       normative: 'Estrategia Nacional de Salud Digital 2024-2030',
-      status: 'Próximamente / En Desarrollo',
+      status: 'Próximamente (Fase 2 / En Diseño)',
+      badge: 'PRÓXIMAMENTE',
       isLive: false,
       endpoint: 'https://fhir.salud.gob.ar/r4/citra',
-      details: 'Esquema de recursos Patient, Encounter y MedicationRequest en diseño para futura interoperabilidad federada.',
+      details: 'Definición de perfiles HL7 FHIR Argentina Core (Patient, Encounter, Condition) en diseño para futura interoperabilidad federada (Fase 2).',
       icon: 'Globe',
       color: '#257CE6'
     }
@@ -86,7 +90,7 @@ export const IntegrationsHubView = () => {
         <AlertCircle size={22} color="#1D4ED8" style={{ flexShrink: 0, marginTop: '2px' }} />
         <div style={{ fontSize: '0.88rem', color: '#1E3A8A', lineHeight: 1.5 }}>
           <strong>Aviso de Homologación & Transparencia Regulatoria (B-03):</strong>
-          <div>Los servicios expuestos a continuación operan bajo arquitectura <strong>Sandbox / Simulación Local</strong>. La emisión directa contra los Web Services gubernamentales en tiempo real requiere la adhesión formal de certificados fiscales delegados (AFIP/ARCA) y claves WS-Security de SISA provistas por el Ministerio de Salud.</div>
+          <div>Los servicios expuestos a continuación se encuentran rotulados como <strong>PRÓXIMAMENTE (FASE 2)</strong>. Operan bajo arquitectura de simulación normativa interna. La emisión directa contra los Web Services gubernamentales en tiempo real requiere la adhesión formal de certificados fiscales delegados (AFIP/ARCA) y claves WS-Security de SISA provistas por el Ministerio de Salud.</div>
         </div>
       </div>
 
@@ -150,7 +154,7 @@ export const IntegrationsHubView = () => {
                 disabled={testingService === item.id}
               >
                 <RefreshCw size={14} className={testingService === item.id ? 'animate-spin' : ''} />
-                <span>{testingService === item.id ? 'Comprobando...' : 'Verificar Mock Sandbox'}</span>
+                <span>{testingService === item.id ? 'Comprobando...' : 'Verificar Mock Sandbox (Próximamente)'}</span>
               </button>
             </div>
           </div>

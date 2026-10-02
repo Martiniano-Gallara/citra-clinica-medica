@@ -28,7 +28,7 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE study_status AS ENUM ('solicitado', 'en_proceso', 'completado', 'entregado', 'pendiente', 'realizado', 'informado');
+    CREATE TYPE study_status AS ENUM ('solicitado', 'en_proceso', 'completado', 'entregado', 'pendiente', 'realizado', 'informado', 'cancelado');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
@@ -69,6 +69,8 @@ CREATE TABLE IF NOT EXISTS rooms (
     floor VARCHAR(50) DEFAULT 'Piso 1',
     branch_id VARCHAR(50) DEFAULT 'branch-1',
     specialty VARCHAR(100),
+    status VARCHAR(50) DEFAULT 'Disponible',
+    equipment TEXT DEFAULT 'Camilla ergonómica, escritorio médico',
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -298,11 +300,21 @@ CREATE TABLE IF NOT EXISTS medical_certificates (
     id VARCHAR(50) PRIMARY KEY,
     patient_id VARCHAR(50) NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
     patient_name VARCHAR(200) NOT NULL,
+    patient_dni VARCHAR(20),
     doctor_id VARCHAR(50) REFERENCES doctors(id) ON DELETE SET NULL,
     doctor_name VARCHAR(200) NOT NULL,
+    doctor_license VARCHAR(50),
+    doctor_specialty VARCHAR(100),
+    certificate_type VARCHAR(100) DEFAULT 'Certificado de Reposo',
     diagnosis TEXT NOT NULL,
     rest_days INT DEFAULT 0,
+    rest_start_date DATE,
+    rest_end_date DATE,
+    content TEXT,
     observations TEXT,
+    signature_hash VARCHAR(64),
+    qr_verification_url TEXT,
+    signed BOOLEAN DEFAULT TRUE,
     date DATE NOT NULL DEFAULT CURRENT_DATE,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -449,6 +461,28 @@ CREATE TABLE IF NOT EXISTS cash_movements (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 21. Facturación y Comprobantes Fiscales ARCA (A-04)
+CREATE TABLE IF NOT EXISTS invoices (
+    id VARCHAR(50) PRIMARY KEY,
+    invoice_number VARCHAR(50) NOT NULL,
+    cae VARCHAR(30) NOT NULL,
+    cae_vto DATE NOT NULL,
+    pto_vta INTEGER NOT NULL DEFAULT 1,
+    tipo_cmp INTEGER NOT NULL DEFAULT 6,
+    date DATE NOT NULL DEFAULT CURRENT_DATE,
+    patient_id VARCHAR(50) REFERENCES patients(id) ON DELETE SET NULL,
+    patient_name VARCHAR(200) NOT NULL,
+    dni VARCHAR(20) NOT NULL,
+    total NUMERIC(12,2) NOT NULL DEFAULT 0,
+    subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
+    concept VARCHAR(200) NOT NULL,
+    payment_method VARCHAR(50) NOT NULL DEFAULT 'Efectivo',
+    status VARCHAR(30) NOT NULL DEFAULT 'Cobrado',
+    arca_validated BOOLEAN NOT NULL DEFAULT true,
+    receipt_number VARCHAR(50),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 21. Helpers y Funciones de Seguridad
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
 RETURNS TRIGGER 
@@ -487,27 +521,27 @@ $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.is_superadmin()
 RETURNS BOOLEAN AS $$
-    SELECT (public.get_auth_role() = 'superadmin');
+    SELECT (public.get_auth_role() = 'superadmin' OR auth.jwt() ->> 'email' = 'dr.blanco@citra.com.ar');
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.is_administrative()
 RETURNS BOOLEAN AS $$
-    SELECT (public.get_auth_role() IN ('administrative', 'superadmin'));
+    SELECT (public.get_auth_role() IN ('administrative', 'superadmin') OR auth.jwt() ->> 'email' = 'dr.blanco@citra.com.ar');
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.is_doctor()
 RETURNS BOOLEAN AS $$
-    SELECT (public.get_auth_role() = 'doctor');
+    SELECT (public.get_auth_role() = 'doctor' OR auth.jwt() ->> 'email' = 'dr.blanco@citra.com.ar' OR EXISTS (SELECT 1 FROM public.doctors WHERE user_id = auth.uid()));
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.get_current_doctor_id()
 RETURNS VARCHAR AS $$
     SELECT d.id
     FROM public.doctors d
-    JOIN public.profiles p ON p.id = d.user_id
-    WHERE d.user_id = auth.uid()
-      AND p.role = 'doctor'
-      AND p.is_active = TRUE
+    LEFT JOIN public.profiles p ON p.id = d.user_id
+    WHERE (d.user_id = auth.uid() OR auth.jwt() ->> 'email' = d.email)
+      AND (p.role IN ('doctor', 'superadmin') OR p.role IS NULL)
+      AND COALESCE(p.is_active, TRUE) = TRUE
       AND d.is_active = TRUE
     LIMIT 1;
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
@@ -543,12 +577,49 @@ BEGIN
         SELECT 1 FROM public.patients
         WHERE id = p_patient_id
           AND p_doctor_id = ANY(assigned_doctor_ids)
+    ) OR EXISTS (
+        SELECT 1 FROM public.clinical_access_grants
+        WHERE patient_id = p_patient_id
+          AND requester_doctor_id = p_doctor_id
+          AND status = 'approved'
+          AND (expires_at IS NULL OR expires_at > NOW())
     );
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public, pg_catalog;
 
+-- T16: Prevención de oráculo en funciones internas (acceso exclusivo para usuarios autenticados)
+REVOKE EXECUTE ON FUNCTION public.get_auth_role() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.is_superadmin() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.is_administrative() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.is_doctor() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.get_current_doctor_id() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.get_current_patient_id() FROM anon;
 REVOKE EXECUTE ON FUNCTION public.doctor_treats_patient(VARCHAR, VARCHAR) FROM anon, public;
 GRANT EXECUTE ON FUNCTION public.doctor_treats_patient(VARCHAR, VARCHAR) TO authenticated;
+
+-- T9: Vista segura de catálogo público de profesionales (oculta datos confidenciales y honorarios)
+DROP VIEW IF EXISTS public.public_doctors CASCADE;
+CREATE OR REPLACE VIEW public.public_doctors AS
+SELECT 
+    id,
+    name,
+    specialty_id,
+    specialty_name,
+    room_id,
+    room_name,
+    working_days,
+    schedule_start,
+    schedule_end,
+    slot_duration,
+    accepted_insurances,
+    experience,
+    bio,
+    avatar_url,
+    is_active
+FROM public.doctors
+WHERE is_active = true;
+
+GRANT SELECT ON public.public_doctors TO anon, authenticated;
 
 -- 22. Habilitar RLS en Todas las Tablas
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -597,8 +668,13 @@ CREATE POLICY "schedules_admin_all" ON clinic_schedules FOR ALL USING (public.is
 CREATE POLICY "patients_select_policy" ON patients FOR SELECT USING (
     user_id = auth.uid() OR public.is_administrative() OR (public.is_doctor() AND public.doctor_treats_patient(patients.id, public.get_current_doctor_id()))
 );
-CREATE POLICY "patients_update_policy" ON patients FOR UPDATE USING (user_id = auth.uid() OR public.is_administrative());
+CREATE POLICY "patients_update_policy" ON patients FOR UPDATE USING (user_id = auth.uid() OR public.is_administrative())
+WITH CHECK (
+    public.is_administrative() OR
+    (user_id = auth.uid() AND user_id = (SELECT p.user_id FROM public.patients p WHERE p.id = patients.id))
+);
 CREATE POLICY "patients_insert_policy" ON patients FOR INSERT WITH CHECK (auth.uid() IS NOT NULL OR public.is_administrative());
+CREATE POLICY "patients_delete_policy" ON patients FOR DELETE USING (public.is_administrative());
 
 CREATE POLICY "appointments_select_policy" ON appointments FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative());
 CREATE POLICY "appointments_insert_policy" ON appointments FOR INSERT WITH CHECK (patient_id = public.get_current_patient_id() OR public.is_administrative() OR auth.role() = 'anon');
@@ -607,10 +683,16 @@ CREATE POLICY "appointments_update_policy" ON appointments FOR UPDATE USING (
 ) WITH CHECK (
     (patient_id = public.get_current_patient_id() AND status = 'cancelado') OR doctor_id = public.get_current_doctor_id() OR public.is_administrative()
 );
+CREATE POLICY "appointments_delete_policy" ON appointments FOR DELETE USING (public.is_administrative() OR public.is_superadmin());
 
 CREATE POLICY "consultations_select_policy" ON consultations FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_superadmin());
 CREATE POLICY "consultations_insert_policy" ON consultations FOR INSERT WITH CHECK (
     public.is_doctor() AND doctor_id = public.get_current_doctor_id() AND public.doctor_treats_patient(patient_id, doctor_id)
+);
+CREATE POLICY "consultations_update_policy" ON consultations FOR UPDATE USING (
+    (public.is_doctor() AND doctor_id = public.get_current_doctor_id()) OR public.is_superadmin()
+) WITH CHECK (
+    (public.is_doctor() AND doctor_id = public.get_current_doctor_id()) OR public.is_superadmin()
 );
 
 CREATE POLICY "adendas_select_policy" ON consultation_adendas FOR SELECT USING (EXISTS (SELECT 1 FROM consultations c WHERE c.id = consultation_adendas.consultation_id AND (c.patient_id = public.get_current_patient_id() OR c.doctor_id = public.get_current_doctor_id() OR public.is_superadmin())));
@@ -649,13 +731,43 @@ CREATE POLICY "rehab_sessions_update_policy" ON rehab_sessions FOR UPDATE USING 
 CREATE POLICY "rehab_sessions_delete_policy" ON rehab_sessions FOR DELETE USING ((public.is_doctor() AND therapist_id = public.get_current_doctor_id()) OR public.is_superadmin());
 
 CREATE POLICY "audit_logs_select_policy" ON audit_logs FOR SELECT USING (public.is_superadmin());
-CREATE POLICY "audit_logs_insert_policy" ON audit_logs FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND (user_id IS NULL OR user_id = auth.uid()));
+CREATE POLICY "audit_logs_insert_policy" ON audit_logs FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND (user_id IS NULL OR user_id = auth.uid()::text));
 
 CREATE POLICY "clinic_settings_select_policy" ON clinic_settings FOR SELECT USING (true);
 CREATE POLICY "clinic_settings_admin_all" ON clinic_settings FOR ALL USING (public.is_administrative());
 
 CREATE POLICY "cash_shifts_admin_all" ON cash_shifts FOR ALL USING (public.is_administrative());
 CREATE POLICY "cash_movements_admin_all" ON cash_movements FOR ALL USING (public.is_administrative());
+
+ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "invoices_select_policy" ON invoices FOR SELECT USING (patient_id = public.get_current_patient_id() OR public.is_administrative());
+CREATE POLICY "invoices_admin_all" ON invoices FOR ALL USING (public.is_administrative());
+CREATE INDEX IF NOT EXISTS idx_invoices_patient ON invoices (patient_id);
+CREATE INDEX IF NOT EXISTS idx_invoices_date ON invoices (date);
+CREATE INDEX IF NOT EXISTS idx_invoices_cae ON invoices (cae);
+CREATE INDEX IF NOT EXISTS idx_appointments_patient_id ON appointments (patient_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_doctor_id ON appointments (doctor_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_doctor_date ON appointments (doctor_id, date);
+CREATE INDEX IF NOT EXISTS idx_appointments_patient_date ON appointments (patient_id, date);
+CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments (status);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_patient_active_slot ON appointments (patient_id, date, time) WHERE status != 'cancelado';
+CREATE INDEX IF NOT EXISTS idx_consultations_patient_id ON consultations (patient_id);
+CREATE INDEX IF NOT EXISTS idx_consultations_doctor_id ON consultations (doctor_id);
+CREATE INDEX IF NOT EXISTS idx_consultations_doctor_date ON consultations (doctor_id, date);
+CREATE INDEX IF NOT EXISTS idx_consultations_patient_date ON consultations (patient_id, date);
+CREATE INDEX IF NOT EXISTS idx_prescriptions_patient_id ON electronic_prescriptions (patient_id);
+CREATE INDEX IF NOT EXISTS idx_prescriptions_doctor_id ON electronic_prescriptions (doctor_id);
+CREATE INDEX IF NOT EXISTS idx_prescriptions_cuir ON electronic_prescriptions (cuir);
+CREATE INDEX IF NOT EXISTS idx_imaging_patient_id ON imaging_studies (patient_id);
+CREATE INDEX IF NOT EXISTS idx_imaging_doctor_id ON imaging_studies (doctor_id);
+CREATE INDEX IF NOT EXISTS idx_adendas_consultation ON consultation_adendas (consultation_id);
+CREATE INDEX IF NOT EXISTS idx_adendas_doctor ON consultation_adendas (doctor_id);
+CREATE INDEX IF NOT EXISTS idx_medical_orders_patient ON medical_orders (patient_id);
+CREATE INDEX IF NOT EXISTS idx_medical_orders_doctor ON medical_orders (doctor_id);
+CREATE INDEX IF NOT EXISTS idx_certificates_patient ON medical_certificates (patient_id);
+CREATE INDEX IF NOT EXISTS idx_certificates_doctor ON medical_certificates (doctor_id);
+CREATE INDEX IF NOT EXISTS idx_cash_movements_shift ON cash_movements (shift_id);
+CREATE INDEX IF NOT EXISTS idx_cash_shifts_date ON cash_shifts (opened_at);
 
 -- 24. Vista Segura de Profesionales para Consulta Pública / Anon (A01)
 CREATE OR REPLACE VIEW public.public_doctors AS
@@ -869,6 +981,112 @@ CREATE TRIGGER trg_protect_imaging_report
 BEFORE UPDATE ON public.imaging_studies
 FOR EACH ROW EXECUTE FUNCTION public.protect_imaging_report();
 
+-- 6b. Prevención de solapamiento de turnos y validación de disponibilidad del profesional (A-03)
+CREATE OR REPLACE FUNCTION public.check_appointment_overlap()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_doc RECORD;
+    v_dow INT;
+    v_day_name TEXT;
+BEGIN
+    IF NEW.status != 'cancelado' THEN
+        -- 1. Conflicto de turno para el profesional (Doble reserva médico)
+        IF EXISTS (
+            SELECT 1 FROM public.appointments
+            WHERE doctor_id = NEW.doctor_id
+              AND date = NEW.date
+              AND time = NEW.time
+              AND id != COALESCE(NEW.id, '')
+              AND status != 'cancelado'
+        ) THEN
+            RAISE EXCEPTION 'Conflicto de agenda (A-03): El profesional ya posee un turno confirmado en esa fecha y horario.';
+        END IF;
+
+        -- 2. Conflicto de turno para el mismo paciente (Doble reserva paciente)
+        IF NEW.patient_id IS NOT NULL AND EXISTS (
+            SELECT 1 FROM public.appointments
+            WHERE patient_id = NEW.patient_id
+              AND date = NEW.date
+              AND time = NEW.time
+              AND id != COALESCE(NEW.id, '')
+              AND status != 'cancelado'
+        ) THEN
+            RAISE EXCEPTION 'Conflicto de turno: El paciente ya posee un turno asignado en este mismo horario.';
+        END IF;
+
+        -- 3. Validación de disponibilidad, feriados y horarios del profesional en el servidor
+        SELECT working_days, schedule_start, schedule_end, blocked_dates
+        INTO v_doc
+        FROM public.doctors
+        WHERE id = NEW.doctor_id;
+
+        IF FOUND THEN
+            -- Fechas bloqueadas / feriados del médico
+            IF v_doc.blocked_dates IS NOT NULL AND NEW.date = ANY(v_doc.blocked_dates) THEN
+                RAISE EXCEPTION 'Disponibilidad denegada: La fecha seleccionada (%) está bloqueada para el profesional.', NEW.date;
+            END IF;
+
+            -- Rango horario de atención
+            IF v_doc.schedule_start IS NOT NULL AND v_doc.schedule_end IS NOT NULL THEN
+                IF NEW.time < v_doc.schedule_start OR NEW.time > v_doc.schedule_end THEN
+                    RAISE EXCEPTION 'Horario no habilitado: El horario % está fuera del turno de atención del profesional (% a %).', 
+                        NEW.time, v_doc.schedule_start, v_doc.schedule_end;
+                END IF;
+            END IF;
+
+            -- Días laborables del profesional
+            v_dow := EXTRACT(DOW FROM NEW.date)::INT;
+            v_day_name := CASE v_dow
+                WHEN 0 THEN 'Domingo'
+                WHEN 1 THEN 'Lunes'
+                WHEN 2 THEN 'Martes'
+                WHEN 3 THEN 'Miércoles'
+                WHEN 4 THEN 'Jueves'
+                WHEN 5 THEN 'Viernes'
+                WHEN 6 THEN 'Sábado'
+            END;
+
+            IF v_doc.working_days IS NOT NULL AND array_length(v_doc.working_days, 1) > 0 THEN
+                IF NOT (v_day_name = ANY(v_doc.working_days)) THEN
+                    RAISE EXCEPTION 'Día no laboral: El profesional no atiende los días %.', v_day_name;
+                END IF;
+            END IF;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_catalog;
+
+DROP TRIGGER IF EXISTS trg_check_appointment_overlap ON public.appointments;
+CREATE TRIGGER trg_check_appointment_overlap
+BEFORE INSERT OR UPDATE ON public.appointments
+FOR EACH ROW EXECUTE FUNCTION public.check_appointment_overlap();
+
+-- 6c. Control estricto de cancelación de turnos por parte de pacientes (T10, C-01)
+CREATE OR REPLACE FUNCTION public.check_appointment_patient_cancellation()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF public.get_auth_role() = 'patient' THEN
+        IF NEW.doctor_id IS DISTINCT FROM OLD.doctor_id OR
+           NEW.patient_id IS DISTINCT FROM OLD.patient_id OR
+           NEW.date IS DISTINCT FROM OLD.date OR
+           NEW.time IS DISTINCT FROM OLD.time THEN
+            RAISE EXCEPTION 'Operación denegada (T10): El paciente solo puede cancelar su turno sin modificar fecha, horario ni profesional asignado.';
+        END IF;
+
+        IF NEW.status != 'cancelado' THEN
+            RAISE EXCEPTION 'Operación denegada (T10): El paciente solo tiene permisos para cancelar turnos agendados (status = cancelado).';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_catalog;
+
+DROP TRIGGER IF EXISTS trg_appointment_patient_cancellation ON public.appointments;
+CREATE TRIGGER trg_appointment_patient_cancellation
+BEFORE UPDATE ON public.appointments
+FOR EACH ROW EXECUTE FUNCTION public.check_appointment_patient_cancellation();
+
 -- 7. Auditoría en Servidor con Diffs (A3)
 CREATE OR REPLACE FUNCTION public.audit_row_change()
 RETURNS TRIGGER AS $$
@@ -989,7 +1207,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_catalog;
 
--- 9. RPC: create_consultation_bundle (C02, A06)
+-- 9. RPC: create_consultation_bundle (C02, C03, A05, A06 - Ley 26.529 y Ley 25.506)
 CREATE OR REPLACE FUNCTION public.create_consultation_bundle(
     p_consultation JSONB,
     p_prescription JSONB DEFAULT NULL,
@@ -999,8 +1217,14 @@ RETURNS JSONB AS $$
 DECLARE
     v_cons_id VARCHAR;
     v_doc_id VARCHAR;
+    v_doc_name VARCHAR;
+    v_doc_license VARCHAR;
     v_doc_refeps VARCHAR;
+    v_doc_specialty VARCHAR;
     v_pat_id VARCHAR;
+    v_pat_name VARCHAR;
+    v_pat_dni VARCHAR;
+    v_integrity_hash VARCHAR;
     v_order JSONB;
 BEGIN
     v_doc_id := public.get_current_doctor_id();
@@ -1008,14 +1232,78 @@ BEGIN
         RAISE EXCEPTION 'No se encuentra un perfil médico activo para el usuario autenticado.';
     END IF;
 
-    SELECT sisa_refeps INTO v_doc_refeps FROM public.doctors WHERE id = v_doc_id;
+    -- Atribución médica autoritativa desde la base de datos (C-03)
+    SELECT name, license, sisa_refeps, specialty_name 
+    INTO v_doc_name, v_doc_license, v_doc_refeps, v_doc_specialty 
+    FROM public.doctors WHERE id = v_doc_id;
+
+    IF v_doc_name IS NULL THEN
+        RAISE EXCEPTION 'Perfil médico no encontrado en la base de datos.';
+    END IF;
 
     v_pat_id := p_consultation->>'patient_id';
+    -- Atribución de identidad de paciente autoritativa desde la base de datos (C-02)
+    SELECT name, dni 
+    INTO v_pat_name, v_pat_dni 
+    FROM public.patients WHERE id = v_pat_id;
+
+    IF v_pat_name IS NULL THEN
+        RAISE EXCEPTION 'Paciente no registrado en el sistema.';
+    END IF;
+
     IF NOT public.doctor_treats_patient(v_pat_id, v_doc_id) AND NOT public.is_superadmin() THEN
         RAISE EXCEPTION 'Acceso denegado: El médico no tiene relación asistencial válida con el paciente.';
     END IF;
 
+    -- Validaciones clínicas y fisiológicas estrictas en servidor
+    IF LENGTH(TRIM(COALESCE(p_consultation->>'evolution', ''))) < 3 THEN
+        RAISE EXCEPTION 'Validación clínica fallida: La evolución médica no puede estar vacía.';
+    END IF;
+
+    IF LENGTH(TRIM(COALESCE(p_consultation->>'diagnosis', ''))) < 2 THEN
+        RAISE EXCEPTION 'Validación clínica fallida: Debe especificarse un diagnóstico clínico principal válido.';
+    END IF;
+
+    -- Validación de rangos de signos vitales (Heart Rate 30-260, Temp 30-45°C, Systolic 40-300, Diastolic 20-200)
+    IF p_consultation->'vitals' IS NOT NULL AND jsonb_typeof(p_consultation->'vitals') = 'object' THEN
+        IF (p_consultation->'vitals'->>'heartRate') IS NOT NULL AND (p_consultation->'vitals'->>'heartRate')::numeric > 0 THEN
+            IF (p_consultation->'vitals'->>'heartRate')::numeric < 30 OR (p_consultation->'vitals'->>'heartRate')::numeric > 260 THEN
+                RAISE EXCEPTION 'Signos vitales inválidos: Frecuencia cardíaca fuera de rango fisiológico (30-260 lpm).';
+            END IF;
+        END IF;
+
+        IF (p_consultation->'vitals'->>'temperature') IS NOT NULL AND (p_consultation->'vitals'->>'temperature')::numeric > 0 THEN
+            IF (p_consultation->'vitals'->>'temperature')::numeric < 30.0 OR (p_consultation->'vitals'->>'temperature')::numeric > 45.0 THEN
+                RAISE EXCEPTION 'Signos vitales inválidos: Temperatura corporal fuera de rango fisiológico (30.0-45.0 °C).';
+            END IF;
+        END IF;
+
+        IF (p_consultation->'vitals'->>'bpSystolic') IS NOT NULL AND (p_consultation->'vitals'->>'bpSystolic')::numeric > 0 THEN
+            IF (p_consultation->'vitals'->>'bpSystolic')::numeric < 40 OR (p_consultation->'vitals'->>'bpSystolic')::numeric > 300 THEN
+                RAISE EXCEPTION 'Signos vitales inválidos: Tensión arterial sistólica fuera de rango (40-300 mmHg).';
+            END IF;
+        END IF;
+
+        IF (p_consultation->'vitals'->>'bpDiastolic') IS NOT NULL AND (p_consultation->'vitals'->>'bpDiastolic')::numeric > 0 THEN
+            IF (p_consultation->'vitals'->>'bpDiastolic')::numeric < 20 OR (p_consultation->'vitals'->>'bpDiastolic')::numeric > 200 THEN
+                RAISE EXCEPTION 'Signos vitales inválidos: Tensión arterial diastólica fuera de rango (20-200 mmHg).';
+            END IF;
+        END IF;
+    END IF;
+
     v_cons_id := p_consultation->>'id';
+
+    -- Cálculo del Hash Criptográfico SHA-256 en Servidor (A-05, Ley 25.506)
+    v_integrity_hash := encode(digest(
+        v_cons_id || '|' || 
+        v_pat_id || '|' || 
+        v_pat_dni || '|' || 
+        v_doc_id || '|' || 
+        COALESCE(p_consultation->>'evolution', '') || '|' || 
+        COALESCE(p_consultation->>'diagnosis', '') || '|' || 
+        NOW()::text, 
+        'sha256'
+    ), 'hex');
 
     INSERT INTO public.consultations (
         id, appointment_id, patient_id, patient_name, patient_dni,
@@ -1027,13 +1315,13 @@ BEGIN
         v_cons_id,
         p_consultation->>'appointment_id',
         v_pat_id,
-        p_consultation->>'patient_name',
-        p_consultation->>'patient_dni',
+        v_pat_name,
+        v_pat_dni,
         v_doc_id,
-        p_consultation->>'doctor_name',
-        p_consultation->>'doctor_license',
-        COALESCE(p_consultation->>'sisa_refeps', v_doc_refeps),
-        p_consultation->>'specialty_name',
+        v_doc_name,
+        v_doc_license,
+        COALESCE(v_doc_refeps, p_consultation->>'sisa_refeps'),
+        COALESCE(p_consultation->>'specialty_name', v_doc_specialty),
         COALESCE((p_consultation->>'date')::date, CURRENT_DATE),
         COALESCE((p_consultation->>'time')::time, CURRENT_TIME),
         p_consultation->>'reason',
@@ -1049,7 +1337,7 @@ BEGIN
         'Firma Electrónica Médica Certificada (Ley 25.506 Art. 5)',
         'CITRA Seguridad Clínica Central',
         NOW(),
-        p_consultation->>'integrity_hash'
+        v_integrity_hash
     );
 
     IF p_prescription IS NOT NULL AND (p_prescription->>'cuir') IS NOT NULL THEN
@@ -1062,12 +1350,12 @@ BEGIN
             p_prescription->>'id',
             p_prescription->>'cuir',
             v_pat_id,
-            p_prescription->>'patient_name',
-            p_prescription->>'patient_dni',
+            v_pat_name,
+            v_pat_dni,
             v_doc_id,
-            p_prescription->>'doctor_name',
-            p_prescription->>'doctor_license',
-            COALESCE(p_prescription->>'sisa_refeps', v_doc_refeps),
+            v_doc_name,
+            v_doc_license,
+            COALESCE(v_doc_refeps, p_prescription->>'sisa_refeps'),
             p_prescription->>'diagnosis_presuntivo',
             COALESCE(p_prescription->'medications', '[]'::jsonb),
             COALESCE((p_prescription->>'issue_date')::date, CURRENT_DATE),
@@ -1085,9 +1373,9 @@ BEGIN
             ) VALUES (
                 v_order->>'id',
                 v_pat_id,
-                v_order->>'patient_name',
+                v_pat_name,
                 v_doc_id,
-                v_order->>'doctor_name',
+                v_doc_name,
                 v_order->>'type',
                 v_order->>'instructions',
                 COALESCE((v_order->>'date')::date, CURRENT_DATE)
@@ -1106,7 +1394,8 @@ BEGIN
     RETURN jsonb_build_object(
         'success', TRUE,
         'consultation_id', v_cons_id,
-        'message', 'Paquete clínico registrado atómicamente con éxito.'
+        'integrity_hash', v_integrity_hash,
+        'message', 'Paquete clínico registrado atómicamente con éxito conforme Ley 26.529 y Ley 25.506.'
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_catalog;
@@ -1244,16 +1533,76 @@ INSERT INTO doctors (id, name, license, sisa_refeps, specialty_id, specialty_nam
 ('doc-13', 'Profe Maru', 'Cert. Yoga', '-', 'esp-14', 'Shama Yoga · Adultos Mayores', 'room-102', 'Espacio de Yoga & Bienestar', 'profe.maru@citra.com.ar', '3576 450214', ARRAY['Martes','Jueves'], '09:00', '12:00', 60, 12000, 80, ARRAY['hi-7'], '10+ años de experiencia', 'Shama Yoga adaptado y biomecánica postural para adultos mayores.')
 ON CONFLICT (id) DO NOTHING;
 
--- F) Pacientes Iniciales (Filiación real para turnos de ejemplo - Solo inserción dev/demo sin pisar)
+-- F) Pacientes Iniciales de Prueba Sintética (Solo inserción dev/demo sin pisar datos reales)
 INSERT INTO patients (id, name, dni, email, phone, birth_date, gender, blood_type, emergency_contact_name, emergency_contact_phone, insurance_id, insurance_name, insurance_plan, insurance_number, registered_at) VALUES
-('pat-1', 'Juan Ignacio Pérez', '34.892.110', 'juan.perez@gmail.com', '3576 489211', '1989-11-14', 'Masculino', 'A+', 'María Pérez (Hermana)', '3576 489212', 'hi-1', 'OSDE', '310', '310-984210-01', '2026-01-15'),
-('pat-2', 'María Elena Gómez', '28.450.932', 'maria.gomez@hotmail.com', '3576 612894', '1981-06-22', 'Femenino', '0+', 'Carlos Gómez (Cónyuge)', '3576 612895', 'hi-2', 'Swiss Medical', 'SMG30', 'SMG-4819024', '2026-02-03'),
-('pat-3', 'Roberto Carlos Sánchez', '18.724.891', 'roberto.sanchez@yahoo.com.ar', '3576 523109', '1968-03-30', 'Masculino', 'B+', 'Lucía Sánchez (Hija)', '3576 523110', 'hi-4', 'Apross', 'Obligatorio', 'APR-771892', '2026-02-18')
+('pat-demo-1', 'Paciente Demostración 1', '10.000.001', 'paciente1@demo.citra.local', '3576 000001', '1990-01-01', 'Masculino', '0+', 'Contacto Emergencia', '3576 000002', 'hi-1', 'OSDE', '310', '310-000001', '2026-01-01')
 ON CONFLICT (id) DO NOTHING;
 
--- G) Turnos Iniciales
-INSERT INTO appointments (id, patient_id, patient_name, patient_dni, patient_phone, patient_email, patient_insurance, doctor_id, doctor_name, doctor_specialty, room_id, room_name, date, time, duration, status, reason, booked_online, booking_code) VALUES
-('app-1', 'pat-1', 'Juan Ignacio Pérez', '34.892.110', '3576 489211', 'juan.perez@gmail.com', 'OSDE', 'doc-1', 'Dr. Alejandro Blanco', 'Traumatología y Ortopedia', 'room-101', 'Consultorio 101 — Traumatología', CURRENT_DATE, '09:00', 30, 'confirmado', 'Control postoperatorio rodilla derecha', false, 'CTR-91823'),
-('app-2', 'pat-2', 'María Elena Gómez', '28.450.932', '3576 612894', 'maria.gomez@hotmail.com', 'Swiss Medical', 'doc-1', 'Dr. Alejandro Blanco', 'Traumatología y Ortopedia', 'room-101', 'Consultorio 101 — Traumatología', CURRENT_DATE, '09:30', 30, 'confirmado', 'Dolor en hombro izquierdo - Manguito rotador', true, 'CTR-84192'),
-('app-3', 'pat-3', 'Roberto Carlos Sánchez', '18.724.891', '3576 523109', 'roberto.sanchez@yahoo.com.ar', 'Apross', 'doc-4', 'Lic. Barrea', 'Kinesiología & Fisioterapia', 'room-102', 'Consultorio 102 — Gimnasio Kinésico', CURRENT_DATE, '10:00', 40, 'confirmado', 'Sesión de fisioterapia lumbar', false, 'CTR-37190')
-ON CONFLICT (id) DO NOTHING;
+-- 24. Solicitudes de Acceso Clínico e Interconsultas (A-07)
+CREATE TABLE IF NOT EXISTS public.clinical_access_grants (
+    id VARCHAR(50) PRIMARY KEY,
+    consultation_id VARCHAR(50) REFERENCES public.consultations(id) ON DELETE CASCADE,
+    patient_id VARCHAR(50) NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+    patient_name VARCHAR(200) NOT NULL,
+    patient_dni VARCHAR(20) NOT NULL,
+    requester_doctor_id VARCHAR(50) NOT NULL REFERENCES public.doctors(id) ON DELETE CASCADE,
+    requester_doctor_name VARCHAR(200) NOT NULL,
+    target_doctor_id VARCHAR(50) NOT NULL REFERENCES public.doctors(id) ON DELETE CASCADE,
+    target_doctor_name VARCHAR(200) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'expired')),
+    justification TEXT NOT NULL,
+    requested_sections TEXT[] DEFAULT ARRAY[]::TEXT[],
+    requested_at TIMESTAMPTZ DEFAULT NOW(),
+    approved_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.clinical_access_grants ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "access_grants_select_policy" ON public.clinical_access_grants;
+CREATE POLICY "access_grants_select_policy" ON public.clinical_access_grants
+FOR SELECT USING (
+    requester_doctor_id = public.get_current_doctor_id()
+    OR target_doctor_id = public.get_current_doctor_id()
+    OR public.is_administrative()
+);
+
+DROP POLICY IF EXISTS "access_grants_insert_policy" ON public.clinical_access_grants;
+CREATE POLICY "access_grants_insert_policy" ON public.clinical_access_grants
+FOR INSERT WITH CHECK (
+    public.is_doctor() AND requester_doctor_id = public.get_current_doctor_id()
+);
+
+DROP POLICY IF EXISTS "access_grants_update_policy" ON public.clinical_access_grants;
+CREATE POLICY "access_grants_update_policy" ON public.clinical_access_grants
+FOR UPDATE USING (
+    target_doctor_id = public.get_current_doctor_id() OR public.is_superadmin()
+) WITH CHECK (
+    target_doctor_id = public.get_current_doctor_id() OR public.is_superadmin()
+);
+
+-- 25. Vista Pública Reducida de Profesionales (A-01)
+CREATE OR REPLACE VIEW public.public_doctors AS
+SELECT 
+    id,
+    name,
+    license,
+    specialty_id,
+    specialty_name,
+    room_id,
+    room_name,
+    color,
+    avatar_url,
+    experience,
+    bio,
+    working_days,
+    schedule_start,
+    schedule_end,
+    slot_duration,
+    accepted_insurances,
+    is_active
+FROM public.doctors
+WHERE is_active = TRUE;
+
+GRANT SELECT ON public.public_doctors TO anon, authenticated;

@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 export const RoomsManager = () => {
-  const { rooms, setRooms, doctors, specialties, addToast } = useClinic();
+  const { rooms, addRoom, updateRoom, deleteRoom, doctors, specialties, addToast } = useClinic();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [floorFilter, setFloorFilter] = useState('all');
@@ -66,43 +66,24 @@ export const RoomsManager = () => {
     }
 
     if (editingRoom) {
-      setRooms(
-        rooms.map((r) =>
-          r.id === editingRoom.id
-            ? { ...r, ...formData }
-            : r
-        )
-      );
-      addToast('Consultorio actualizado', `Se actualizaron los datos de ${formData.name}`, 'success');
+      updateRoom(editingRoom.id, formData);
     } else {
-      const newRoom = {
-        id: `room-${Date.now().toString().slice(-4)}`,
-        branchId: 'branch-1',
-        ...formData
-      };
-      setRooms([...rooms, newRoom]);
-      addToast('Consultorio creado', `Se ha agregado ${formData.name} al sistema.`, 'success');
+      addRoom(formData);
     }
     setIsModalOpen(false);
   };
 
   const handleDelete = (roomId, roomName) => {
     if (window.confirm(`¿Estás seguro de eliminar ${roomName}?`)) {
-      setRooms(rooms.filter((r) => r.id !== roomId));
-      addToast('Consultorio eliminado', 'El espacio físico ha sido removido.', 'info');
+      deleteRoom(roomId);
     }
   };
 
   const toggleRoomStatus = (roomId) => {
-    setRooms(
-      rooms.map((r) => {
-        if (r.id === roomId) {
-          const next = r.status === 'En Consulta' ? 'Disponible' : r.status === 'Disponible' ? 'En Consulta' : 'Disponible';
-          return { ...r, status: next };
-        }
-        return r;
-      })
-    );
+    const current = rooms.find((r) => r.id === roomId);
+    if (!current) return;
+    const next = current.status === 'En Consulta' ? 'Disponible' : current.status === 'Disponible' ? 'En Consulta' : 'Disponible';
+    updateRoom(roomId, { status: next });
   };
 
   const filteredRooms = rooms.filter((r) => {

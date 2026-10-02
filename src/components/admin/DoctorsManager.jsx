@@ -24,6 +24,7 @@ import {
   Layers,
   Sparkles
 } from 'lucide-react';
+import { generateSecureTempPassword } from '../../utils/cryptoAudit';
 
 export const DoctorsManager = ({ initialTab }) => {
   const {
@@ -42,9 +43,7 @@ export const DoctorsManager = ({ initialTab }) => {
     users = [],
     addUser,
     updateUser,
-    deleteUser,
-    addToast,
-    logAudit
+    isDoctor
   } = useClinic();
 
   // --- CABECERA: ESPECIALIDADES & OBRAS SOCIALES (SEPARADAS POR PESTAÑAS) ---
@@ -84,7 +83,7 @@ export const DoctorsManager = ({ initialTab }) => {
 
   // Acceso y Permisos del médico
   const [docEmail, setDocEmail] = useState('');
-  const [docPassword, setDocPassword] = useState('Citra.2026!');
+  const [docPassword, setDocPassword] = useState('');
   const [docRole, setDocRole] = useState('Médico / Especialista');
 
   // Obras sociales aceptadas por el médico
@@ -93,7 +92,7 @@ export const DoctorsManager = ({ initialTab }) => {
   // --- MODAL DE CONTRASEÑA RÁPIDA (RESET SECRETARÍA) ---
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [passwordTargetDoctor, setPasswordTargetDoctor] = useState(null);
-  const [quickPasswordValue, setQuickPasswordValue] = useState('Citra.2026!');
+  const [quickPasswordValue, setQuickPasswordValue] = useState('');
 
   // --- MODAL DE ESPECIALIDAD (CABECERA) ---
   const [isSpecialtyModalOpen, setIsSpecialtyModalOpen] = useState(false);
@@ -115,7 +114,7 @@ export const DoctorsManager = ({ initialTab }) => {
   const [staffName, setStaffName] = useState('');
   const [staffEmail, setStaffEmail] = useState('');
   const [staffRole, setStaffRole] = useState('Secretaría / Recepción');
-  const [staffPassword, setStaffPassword] = useState('Citra.2026!');
+  const [staffPassword, setStaffPassword] = useState('');
 
   const allDays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
@@ -280,7 +279,7 @@ export const DoctorsManager = ({ initialTab }) => {
     setDocSlotDuration(30);
     setDocScheduleDisplay('Consultar en secretaría');
     setDocEmail('');
-    setDocPassword('Citra.2026!');
+    setDocPassword('');
     setDocRole('Médico / Especialista');
     setDocAcceptedInsurances(healthInsurances.map((h) => h.id));
     setIsDoctorModalOpen(true);
@@ -314,7 +313,7 @@ export const DoctorsManager = ({ initialTab }) => {
 
     const matchedUser = getDoctorUser(doc);
     setDocEmail(matchedUser?.email || doc.email || `${(doc.name || 'doctor').toLowerCase().replace(/[^a-z]/g, '')}@citra.com.ar`);
-    setDocPassword(matchedUser?.password || 'Citra.2026!');
+    setDocPassword(matchedUser?.password || '');
     setDocRole(matchedUser?.role || `Médico ${doc.specialty || 'Profesional'}`);
     setDocAcceptedInsurances(doc.acceptedInsurances || healthInsurances.map((h) => h.id));
     setIsDoctorModalOpen(true);
@@ -360,13 +359,22 @@ export const DoctorsManager = ({ initialTab }) => {
       }
     }
 
+    // C-04 y T11: Bloqueo de auto-edición de honorarios y auto-reactivación por parte del médico
+    const effectivePrice = isDoctor && editingDoctor
+      ? (editingDoctor.priceConsultation || 25000)
+      : Number(docPriceConsultation);
+
+    const effectiveActive = isDoctor && editingDoctor
+      ? (editingDoctor.active !== false)
+      : docActive;
+
     const payload = {
       name: docName.trim(),
       specialty: finalSpecialty,
       specialtyName: finalSpecialty,
       specialtyId: matchedSpec?.id || 'esp-1',
-      priceConsultation: Number(docPriceConsultation),
-      active: docActive,
+      priceConsultation: effectivePrice,
+      active: effectiveActive,
       workingDays: docWorkingDays,
       scheduleStart: docScheduleStart,
       scheduleEnd: docScheduleEnd,
@@ -387,9 +395,13 @@ export const DoctorsManager = ({ initialTab }) => {
       targetDoctorId = created?.id;
     }
 
-    // Sincronizar cuenta de usuario y contraseña
+    // Sincronizar cuenta de usuario y contraseña (C-06: sin clave por defecto predecible)
     const cleanEmail = docEmail.trim() || `${docName.toLowerCase().replace(/[^a-z]/g, '')}@citra.com.ar`;
-    const cleanPassword = docPassword.trim() || 'Citra.2026!';
+    let cleanPassword = docPassword.trim();
+    if (!cleanPassword && !editingDoctor) {
+      cleanPassword = generateSecureTempPassword();
+      addToast('Clave Temporal Asignada (C-06)', `Contraseña criptográfica provisoria: ${cleanPassword}`, 'info');
+    }
     const effectiveDocId = editingDoctor ? editingDoctor.id : targetDoctorId;
 
     const matchedUser = users.find(
@@ -402,11 +414,11 @@ export const DoctorsManager = ({ initialTab }) => {
       updateUser(matchedUser.id, {
         name: docName.trim(),
         email: cleanEmail,
-        password: cleanPassword,
+        password: cleanPassword || matchedUser.password,
         role: docRole.trim() || `Médico ${finalSpecialty}`,
         specialty: finalSpecialty,
         doctorId: effectiveDocId,
-        status: docActive ? 'Activo' : 'Inactivo'
+        status: effectiveActive ? 'Activo' : 'Inactivo'
       });
     } else if (addUser) {
       addUser({
@@ -418,7 +430,7 @@ export const DoctorsManager = ({ initialTab }) => {
         adminType: 'doctor',
         doctorId: effectiveDocId,
         specialty: finalSpecialty,
-        status: docActive ? 'Activo' : 'Inactivo'
+        status: effectiveActive ? 'Activo' : 'Inactivo'
       });
     }
 
@@ -443,14 +455,18 @@ export const DoctorsManager = ({ initialTab }) => {
   const handleOpenQuickPassword = (doc) => {
     setPasswordTargetDoctor(doc);
     const matched = getDoctorUser(doc);
-    setQuickPasswordValue(matched?.password || 'Citra.2026!');
+    setQuickPasswordValue(matched?.password || '');
     setIsPasswordModalOpen(true);
   };
 
   const handleSaveQuickPassword = (e) => {
     e.preventDefault();
     if (!passwordTargetDoctor) return;
-    const newPwd = quickPasswordValue.trim() || 'Citra.2026!';
+    const newPwd = quickPasswordValue.trim();
+    if (!newPwd) {
+      addToast('Contraseña Requerida', 'Ingrese la nueva contraseña.', 'warning');
+      return;
+    }
     const matched = getDoctorUser(passwordTargetDoctor);
 
     if (matched && typeof updateUser === 'function') {
@@ -619,7 +635,7 @@ export const DoctorsManager = ({ initialTab }) => {
     setStaffName('');
     setStaffEmail('');
     setStaffRole('Secretaría / Recepción');
-    setStaffPassword('Citra.2026!');
+    setStaffPassword('');
     setIsStaffModalOpen(true);
   };
 
@@ -628,7 +644,7 @@ export const DoctorsManager = ({ initialTab }) => {
     setStaffName(user.name || '');
     setStaffEmail(user.email || '');
     setStaffRole(user.role || 'Secretaría / Recepción');
-    setStaffPassword(user.password || 'Citra.2026!');
+    setStaffPassword(user.password || '');
     setIsStaffModalOpen(true);
   };
 
@@ -645,7 +661,7 @@ export const DoctorsManager = ({ initialTab }) => {
       email: staffEmail.trim().toLowerCase(),
       role: staffRole.trim(),
       adminType: 'administrative',
-      password: staffPassword.trim() || 'Citra.2026!',
+      password: staffPassword.trim(),
       status: 'Activo'
     };
 
@@ -1477,9 +1493,15 @@ export const DoctorsManager = ({ initialTab }) => {
                         {doc.name}
                       </h4>
                       <span
-                        onClick={() => updateDoctor(doc.id, { active: !doc.active })}
+                        onClick={() => {
+                          if (isDoctor) {
+                            addToast('Acceso Denegado (T11)', 'Solo la Dirección Administrativa puede modificar la habilitación institucional de un profesional.', 'warning');
+                            return;
+                          }
+                          updateDoctor(doc.id, { active: !doc.active });
+                        }}
                         style={{
-                          cursor: 'pointer',
+                          cursor: isDoctor ? 'default' : 'pointer',
                           fontSize: '0.66rem',
                           fontWeight: 800,
                           padding: '0.14rem 0.5rem',
@@ -1489,7 +1511,7 @@ export const DoctorsManager = ({ initialTab }) => {
                           border: doc.active !== false ? '1px solid #a7f3d0' : '1px solid #fecaca',
                           flexShrink: 0
                         }}
-                        title="Clic para alternar activo/inactivo"
+                        title={isDoctor ? 'Habilitación gestionada por Secretaría' : 'Clic para alternar activo/inactivo'}
                       >
                         {doc.active !== false ? 'Activo' : 'Inactivo'}
                       </span>
@@ -1883,12 +1905,13 @@ export const DoctorsManager = ({ initialTab }) => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1rem' }}>
                       <div>
                         <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                          Arancel Consulta Particular ($ ARS)
+                          Arancel Consulta Particular ($ ARS) {isDoctor && <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 'normal' }}>(Fijado por Administración)</span>}
                         </label>
                         <input
                           type="number"
                           value={docPriceConsultation}
                           onChange={(e) => setDocPriceConsultation(Number(e.target.value))}
+                          disabled={isDoctor}
                           placeholder="25000"
                           style={{
                             width: '100%',
@@ -1897,19 +1920,22 @@ export const DoctorsManager = ({ initialTab }) => {
                             border: '1.5px solid #D2E3FC',
                             fontSize: '0.85rem',
                             outline: 'none',
-                            boxSizing: 'border-box'
+                            boxSizing: 'border-box',
+                            background: isDoctor ? '#f1f5f9' : '#fff',
+                            cursor: isDoctor ? 'not-allowed' : 'text'
                           }}
                         />
                       </div>
 
                       <div>
                         <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                          Estado en la Clínica
+                          Estado en la Clínica {isDoctor && <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 'normal' }}>(Solo Admin)</span>}
                         </label>
                         <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.2rem' }}>
                           <button
                             type="button"
-                            onClick={() => setDocActive(true)}
+                            disabled={isDoctor}
+                            onClick={() => !isDoctor && setDocActive(true)}
                             style={{
                               flex: 1,
                               background: docActive ? '#d1fae5' : '#F5F8FE',
@@ -1919,14 +1945,16 @@ export const DoctorsManager = ({ initialTab }) => {
                               borderRadius: '8px',
                               fontWeight: 800,
                               fontSize: '0.8rem',
-                              cursor: 'pointer'
+                              cursor: isDoctor ? 'not-allowed' : 'pointer',
+                              opacity: isDoctor ? 0.7 : 1
                             }}
                           >
                             Activo
                           </button>
                           <button
                             type="button"
-                            onClick={() => setDocActive(false)}
+                            disabled={isDoctor}
+                            onClick={() => !isDoctor && setDocActive(false)}
                             style={{
                               flex: 1,
                               background: !docActive ? '#fee2e2' : '#F5F8FE',
@@ -1936,7 +1964,8 @@ export const DoctorsManager = ({ initialTab }) => {
                               borderRadius: '8px',
                               fontWeight: 800,
                               fontSize: '0.8rem',
-                              cursor: 'pointer'
+                              cursor: isDoctor ? 'not-allowed' : 'pointer',
+                              opacity: isDoctor ? 0.7 : 1
                             }}
                           >
                             Inactivo
@@ -2092,7 +2121,7 @@ export const DoctorsManager = ({ initialTab }) => {
                           required
                           value={docPassword}
                           onChange={(e) => setDocPassword(e.target.value)}
-                          placeholder="Citra.2026!"
+                          placeholder="Contraseña institucional..."
                           style={{
                             flex: 1,
                             padding: '0.65rem 0.75rem',
@@ -2105,7 +2134,7 @@ export const DoctorsManager = ({ initialTab }) => {
                         />
                         <button
                           type="button"
-                          onClick={() => setDocPassword('Citra.2026!')}
+                          onClick={() => setDocPassword('Citra_' + Math.random().toString(36).slice(-6) + '!')}
                           style={{
                             background: '#F0F5FF',
                             border: '1px solid #D2E3FC',
@@ -2117,7 +2146,7 @@ export const DoctorsManager = ({ initialTab }) => {
                             cursor: 'pointer'
                           }}
                         >
-                          Reset Clave
+                          Generar Segura
                         </button>
                       </div>
                     </div>
@@ -2885,7 +2914,7 @@ export const DoctorsManager = ({ initialTab }) => {
                     type="text"
                     value={staffPassword}
                     onChange={(e) => setStaffPassword(e.target.value)}
-                    placeholder="Citra.2026!"
+                    placeholder="Contraseña segura..."
                     style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>

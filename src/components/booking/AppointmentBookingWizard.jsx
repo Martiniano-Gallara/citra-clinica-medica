@@ -311,7 +311,7 @@ export const AppointmentBookingWizard = () => {
     };
 
     const created = addAppointment(newAppointmentData);
-    setConfirmedAppointment(created);
+    setConfirmedAppointment(created || newAppointmentData);
     setCurrentStep(5);
   };
 
@@ -363,10 +363,10 @@ export const AppointmentBookingWizard = () => {
             <div style={{ fontSize: '0.82rem', color: '#496386' }}>
               ¿Ya tenés cuenta en CITRA?{' '}
               <button
-                onClick={() => { setAuthModalTab('login'); setIsAuthModalOpen(true); }}
+                onClick={() => setCurrentView('portal')}
                 style={{ background: 'none', border: 'none', color: '#076ABC', fontWeight: 800, cursor: 'pointer', padding: 0 }}
               >
-                Iniciá sesión aquí
+                Iniciá sesión en el Portal del Paciente
               </button>
             </div>
           )}
@@ -1367,7 +1367,7 @@ export const AppointmentBookingWizard = () => {
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: '0.7rem', color: '#7994B8', fontWeight: 700 }}>CÓDIGO DE RESERVA</div>
                       <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#002182', letterSpacing: '0.04em' }}>
-                        {confirmedAppointment.bookingCode || 'CITRA-TRN-8840'}
+                        {confirmedAppointment.bookingCode || (confirmedAppointment.id ? `CITRA-${confirmedAppointment.id}` : `CITRA-${Math.floor(10000 + Math.random() * 90000)}`)}
                       </div>
                     </div>
                   </div>
@@ -1403,7 +1403,7 @@ export const AppointmentBookingWizard = () => {
                     {/* QR Code SVG */}
                     <div style={{ textAlign: 'center', background: '#F8FAFD', padding: '1rem', borderRadius: '14px', border: '1px solid #D2E3FC' }}>
                       <QRCodeSVG
-                        value={`https://citra.com.ar/validar-turno/${confirmedAppointment.id}`}
+                        value={`https://citra.com.ar/#mis-turnos?code=${confirmedAppointment.bookingCode || confirmedAppointment.id}`}
                         size={110}
                         bgColor="#F8FAFD"
                         fgColor="#002182"

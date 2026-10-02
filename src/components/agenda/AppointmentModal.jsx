@@ -203,19 +203,19 @@ export const AppointmentModal = () => {
       footer={
         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
           <div>
-            {appointmentModalData && (
+            {appointmentModalData && appointmentModalData.status !== 'cancelado' && (
               <button
                 type="button"
                 className="btn btn-danger btn-sm"
                 onClick={() => {
-                  if (window.confirm('¿Está seguro de eliminar este turno?')) {
+                  if (window.confirm('¿Está seguro de cancelar este turno? Conforme a la Ley 26.529, el registro será archivado con estado cancelado manteniendo su trazabilidad legal.')) {
                     deleteAppointment(appointmentModalData.id);
                     setIsAppointmentModalOpen(false);
                   }
                 }}
               >
                 <Trash2 size={16} />
-                <span>Eliminar Turno</span>
+                <span>Cancelar y Archivar</span>
               </button>
             )}
           </div>

@@ -22,6 +22,8 @@ import { ReportsView } from '../reports/ReportsView';
 import { CommunicationsView } from '../communications/CommunicationsView';
 import { SettingsView } from '../settings/SettingsView';
 import { AuditLogsView } from '../audit/AuditLogsView';
+import { IntegrationsHubView } from '../integrations/IntegrationsHubView';
+import { KinesiologyView } from '../kinesio/KinesiologyView';
 
 // Global Clinical Modals
 import { PatientDetailModal } from '../patients/PatientDetailModal';
@@ -141,6 +143,7 @@ import {
   Calendar,
   Users,
   FileText,
+  Activity,
   Stethoscope,
   Layers,
   Clock,
@@ -178,6 +181,7 @@ export const AdminManagementHub = () => {
     specialties,
     rooms,
     electronicPrescriptions,
+    imagingStudies,
     healthInsurances,
     consultations,
     setSelectedPatientForDetail,
@@ -238,8 +242,10 @@ export const AdminManagementHub = () => {
               label: 'Historial Clínico',
               icon: FileText,
               badge: pendingUrgentRequests > 0 ? `${pendingUrgentRequests} Urgente` : scopedConsultations.length
-            }
-            // { id: 'prescriptions', label: 'Mis Recetas (CUIR)', icon: Pill, badge: scopedElectronicPrescriptions.length }
+            },
+            { id: 'prescriptions', label: 'Mis Recetas (CUIR)', icon: Pill, badge: scopedElectronicPrescriptions.length },
+            { id: 'imaging', label: 'Estudios & PACS', icon: Eye, badge: scopedImagingStudies.length },
+            { id: 'kinesio', label: 'Kinesiología & Rehab', icon: Activity, badge: null }
           ]
         },
         {
@@ -269,7 +275,10 @@ export const AdminManagementHub = () => {
         title: 'GESTIÓN DE ATENCIÓN',
         items: [
           { id: 'appointments', label: 'Gestión de Turnos', icon: CalendarCheck, badge: appointments.length },
-          { id: 'patients', label: 'Pacientes', icon: Users, badge: patients.length }
+          { id: 'patients', label: 'Pacientes', icon: Users, badge: patients.length },
+          { id: 'prescriptions', label: 'Recetas (CUIR)', icon: Pill, badge: (electronicPrescriptions || []).length },
+          { id: 'imaging', label: 'Estudios & PACS', icon: Eye, badge: (imagingStudies || []).length },
+          { id: 'kinesio', label: 'Kinesiología & Rehab', icon: Activity, badge: null }
         ]
       },
       {
@@ -283,7 +292,8 @@ export const AdminManagementHub = () => {
       {
         title: 'GESTIÓN Y AUDITORÍA',
         items: [
-          { id: 'audit', label: 'Auditoría', icon: ShieldAlert, badge: null }
+          { id: 'audit', label: 'Auditoría', icon: ShieldAlert, badge: null },
+          { id: 'integrations', label: 'Integraciones', icon: Layers, badge: 'Próx.' }
         ]
       },
       {
@@ -295,7 +305,7 @@ export const AdminManagementHub = () => {
     ];
 
     return adminSections;
-  }, [isDoctor, doctorAppointments.length, doctorPatients.length, scopedConsultations.length, scopedElectronicPrescriptions.length, scopedImagingStudies.length, appointments.length, patients.length, healthInsurances.length, availableRooms, activeDoctors]);
+  }, [isDoctor, doctorAppointments.length, doctorPatients.length, scopedConsultations.length, scopedElectronicPrescriptions.length, scopedImagingStudies.length, appointments.length, patients.length, electronicPrescriptions.length, imagingStudies?.length, healthInsurances.length, availableRooms, activeDoctors]);
 
   // RBAC Guard Effect: automatically redirect to dashboard if tab not permitted for current role
   React.useEffect(() => {
@@ -1423,6 +1433,12 @@ export const AdminManagementHub = () => {
           {/* TAB 4: HISTORIAL CLÍNICO (Exclusivo Médico) */}
           {activeTab === 'clinical' && isDoctor && <ClinicalRecordsView />}
 
+          {/* TAB 5: RECETAS DIGITALES CUIR (Médico y Secretaría) */}
+          {activeTab === 'prescriptions' && <PrescriptionsManager />}
+
+          {/* TAB 6: ESTUDIOS & PACS (Médico y Secretaría) */}
+          {activeTab === 'imaging' && <ImagingView />}
+
           {/* TAB UNIFICADO: CUERPO MÉDICO, ESPECIALIDADES, OBRAS SOCIALES, HORARIOS Y PERMISOS (Secretaría) */}
           {(activeTab === 'doctors' || activeTab === 'services' || activeTab === 'schedules' || activeTab === 'insurances' || activeTab === 'staff') && !isDoctor && (
             <DoctorsManager initialTab={activeTab} />
@@ -1439,6 +1455,12 @@ export const AdminManagementHub = () => {
 
           {/* TAB 17: AUDITORÍA Y SEGURIDAD (Secretaría) */}
           {activeTab === 'audit' && !isDoctor && <AuditLogsView />}
+
+          {/* TAB 18: HUB DE INTEGRACIONES (Secretaría) */}
+          {activeTab === 'integrations' && !isDoctor && <IntegrationsHubView />}
+
+          {/* TAB 19: KINESIOLOGÍA & REHABILITACIÓN FUNCIONAL (C-05, T8) */}
+          {activeTab === 'kinesio' && <KinesiologyView />}
           </AdminTabErrorBoundary>
         </main>
       </div>

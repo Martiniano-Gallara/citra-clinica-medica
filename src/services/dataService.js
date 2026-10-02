@@ -310,12 +310,26 @@ export const dataService = {
     return null;
   },
 
+  async updateConsultation(id, updates) {
+    if (isSupabaseConfigured && supabase) {
+      if (updates.adendas && Array.isArray(updates.adendas) && updates.adendas.length > 0) {
+        const latestAdenda = updates.adendas[updates.adendas.length - 1];
+        return await this.addConsultationAdenda({
+          consultationId: id,
+          ...latestAdenda
+        });
+      }
+      return null;
+    }
+    return null;
+  },
+
   async addConsultationAdenda(adendaData) {
     if (isSupabaseConfigured && supabase) {
       const payload = {
         id: adendaData.id,
         consultation_id: adendaData.consultationId,
-        doctor_id: adendaData.doctorId || 'doc-1',
+        doctor_id: adendaData.doctorId || null,
         doctor_name: adendaData.doctorName,
         doctor_license: adendaData.doctorLicense || null,
         note: adendaData.adendaText || adendaData.note || '',
@@ -361,7 +375,7 @@ export const dataService = {
         sisa_refeps: prescriptionData.sisaRefeps || null,
         diagnosis_presuntivo: prescriptionData.diagnosisPresuntivo || 'Control clínico',
         medications: prescriptionData.medications || [],
-        issue_date: prescriptionData.issueDate || new Date().toISOString().split('T')[0],
+        issue_date: prescriptionData.issueDate || getTodayArgentina(),
         expiration_date: prescriptionData.expirationDate,
         status: prescriptionData.status || (prescriptionData.dispensationStatus?.toLowerCase().includes('dispensada') ? 'dispensada' : 'activa'),
         verification_url: prescriptionData.verificationUrl || `https://citra.com.ar/receta/${prescriptionData.cuir}`
@@ -415,12 +429,25 @@ export const dataService = {
     return null;
   },
 
-  // --- PACIENTES (PATIENTS) ---
-  async fetchPatients(limit = 300) {
+  // --- PACIENTES (PATIENTS / Soporte de paginación) ---
+  async fetchPatients(options = 300) {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.from('patients').select('*').order('name', { ascending: true }).limit(limit);
+      let query = supabase.from('patients').select('*', { count: 'exact' }).order('name', { ascending: true });
+      if (typeof options === 'object' && options !== null) {
+        const { page = 1, limit = 15 } = options;
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+        query = query.range(from, to);
+      } else if (typeof options === 'number') {
+        query = query.limit(options);
+      }
+      const { data, error, count } = await query;
       if (error) throw error;
-      return toCamelCase(data);
+      const result = toCamelCase(data);
+      if (typeof options === 'object' && options !== null) {
+        return { data: result, total: count };
+      }
+      return result;
     }
     return null;
   },
@@ -532,12 +559,21 @@ export const dataService = {
     return false;
   },
 
-  // --- CUERPO MÉDICO (DOCTORS) ---
+  // --- CUERPO MÉDICO (DOCTORS / A-01: Soporte de Vista Pública) ---
   async fetchDoctors() {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.from('doctors').select('*').order('name', { ascending: true });
-      if (error) throw error;
-      return toCamelCase(data);
+      try {
+        const { data, error } = await supabase.from('doctors').select('*').order('name', { ascending: true });
+        if (!error && data && data.length > 0) return toCamelCase(data);
+      } catch (err) {
+        console.warn('Acceso restringido a tabla doctors, consultando public_doctors:', err);
+      }
+      try {
+        const { data: pubData, error: pubErr } = await supabase.from('public_doctors').select('*').order('name', { ascending: true });
+        if (!pubErr && pubData) return toCamelCase(pubData);
+      } catch (err2) {
+        console.warn('Error al consultar public_doctors:', err2);
+      }
     }
     return null;
   },
@@ -688,6 +724,8 @@ export const dataService = {
         floor: roomData.floor || 'Piso 1',
         branch_id: roomData.branchId || 'branch-1',
         specialty: roomData.specialty || null,
+        equipment: roomData.equipment || null,
+        status: roomData.status || 'Disponible',
         is_active: roomData.isActive !== false && roomData.status !== 'Inactivo'
       };
       const { data, error } = await supabase.from('rooms').insert([payload]).select().single();
@@ -843,6 +881,9 @@ export const dataService = {
       const validStatus = (statusLower === 'informado' || statusLower === 'completado')
         ? 'informado'
         : (statusLower === 'realizado' ? 'realizado' : 'solicitado');
+      if (!studyData.referringDoctor?.trim()) {
+        throw new Error('Atribución clínica obligatoria (Ley 26.529): Debe especificarse el médico prescriptor o solicitante del estudio de imágenes.');
+      }
       const payload = {
         id: studyData.id,
         patient_id: studyData.patientId,
@@ -850,9 +891,9 @@ export const dataService = {
         patient_dni: studyData.patientDni,
         study_type: studyData.studyType || studyData.modality || 'Estudio de Imágenes',
         region: studyData.region || studyData.bodyPart || 'Región Anatómica',
-        date: studyData.date || new Date().toISOString().split('T')[0],
+        date: studyData.date || getTodayArgentina(),
         doctor_id: studyData.doctorId || null,
-        referring_doctor: studyData.referringDoctor || 'Dr. Alejandro Blanco',
+        referring_doctor: studyData.referringDoctor.trim(),
         status: validStatus,
         findings: studyData.findings || '',
         report: studyData.report || studyData.conclusion || '',
@@ -909,7 +950,7 @@ export const dataService = {
         doctor_name: orderData.doctorName || 'Médico Prescriptor',
         type: orderData.type || orderData.orderType || 'Indicación Médica',
         instructions: orderData.instructions || orderData.indications || 'Según indicación médica',
-        date: orderData.date || new Date().toISOString().split('T')[0]
+        date: orderData.date || getTodayArgentina()
       };
       const { data, error } = await supabase.from('medical_orders').insert([payload]).select().single();
       if (error) throw error;
@@ -936,12 +977,22 @@ export const dataService = {
         id: certData.id,
         patient_id: certData.patientId,
         patient_name: certData.patientName,
+        patient_dni: certData.patientDni || null,
         doctor_id: certData.doctorId || null,
         doctor_name: certData.doctorName || 'Médico Evaluador',
+        doctor_license: certData.doctorLicense || null,
+        doctor_specialty: certData.doctorSpecialty || null,
+        certificate_type: certData.certificateType || 'Certificado de Reposo',
         diagnosis: certData.diagnosis || 'Certificado médico',
         rest_days: Number(certData.restDays) || 0,
+        rest_start_date: certData.restStartDate || null,
+        rest_end_date: certData.restEndDate || null,
+        content: certData.content || null,
         observations: certData.observations || '',
-        date: certData.date || new Date().toISOString().split('T')[0]
+        signature_hash: certData.signatureHash || null,
+        qr_verification_url: certData.qrVerificationUrl || null,
+        signed: certData.signed !== false,
+        date: certData.date || getTodayArgentina()
       };
       const { data, error } = await supabase.from('medical_certificates').insert([payload]).select().single();
       if (error) throw error;
@@ -970,7 +1021,7 @@ export const dataService = {
         patient_id: consentData.patientId,
         patient_name: consentData.patientName,
         patient_dni: consentData.patientDni,
-        doctor_id: consentData.doctorId || 'doc-1',
+        doctor_id: consentData.doctorId || null,
         doctor_name: consentData.doctorName,
         procedure_type: consentData.procedureType || 'Procedimiento Médico',
         title: consentData.title || 'Consentimiento Informado',
@@ -1031,7 +1082,7 @@ export const dataService = {
         diagnosis: planData.diagnosis,
         target_sessions: planData.targetSessions || planData.prescribedSessions || 10,
         completed_sessions: planData.completedSessions || 0,
-        start_date: planData.startDate || new Date().toISOString().split('T')[0],
+        start_date: planData.startDate || getTodayArgentina(),
         status: planData.status || 'En curso',
         goals: planData.goals || '',
         exercises: planData.exercises || []
@@ -1087,15 +1138,19 @@ export const dataService = {
 
   async createRehabSession(sessionData) {
     if (isSupabaseConfigured && supabase) {
+      const assignedTherapistId = sessionData.therapistId || sessionData.doctorId;
+      if (!assignedTherapistId) {
+        throw new Error('Atribución profesional requerida: Debe indicarse el profesional/kinesiólogo a cargo de la sesión.');
+      }
       const payload = {
         id: sessionData.id || `ses-${Date.now()}`,
         plan_id: sessionData.planId || null,
         patient_id: sessionData.patientId,
         patient_name: sessionData.patientName,
-        therapist_id: sessionData.therapistId || sessionData.doctorId || 'doc-4',
+        therapist_id: assignedTherapistId,
         therapist_name: sessionData.therapistName || sessionData.doctorName || 'Kinesiólogo Tratante',
         session_number: Number(sessionData.sessionNumber) || 1,
-        date: sessionData.date || new Date().toISOString().split('T')[0],
+        date: sessionData.date || getTodayArgentina(),
         time: sessionData.time || '09:00',
         eva_score: sessionData.evaScore !== undefined ? Number(sessionData.evaScore) : null,
         procedures: sessionData.procedures || [],
@@ -1246,6 +1301,46 @@ export const dataService = {
     return null;
   },
 
+  // --- FACTURACIÓN Y COMPROBANTES FISCALES ARCA (A-04) ---
+  async fetchInvoices(patientId = null, limit = 200) {
+    if (isSupabaseConfigured && supabase) {
+      let query = supabase.from('invoices').select('*').order('date', { ascending: false }).limit(limit);
+      if (patientId) query = query.eq('patient_id', patientId);
+      const { data, error } = await query;
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
+  async createInvoice(invoiceData) {
+    if (isSupabaseConfigured && supabase) {
+      const payload = {
+        id: invoiceData.id,
+        invoice_number: invoiceData.invoiceNumber || invoiceData.id,
+        cae: invoiceData.cae,
+        cae_vto: invoiceData.caeVto,
+        pto_vta: invoiceData.ptoVta || 1,
+        tipo_cmp: invoiceData.tipoCmp || 6,
+        date: invoiceData.date || getTodayArgentina(),
+        patient_id: invoiceData.patientId || null,
+        patient_name: invoiceData.patientName,
+        dni: invoiceData.dni,
+        total: invoiceData.total || 0,
+        subtotal: invoiceData.subtotal || invoiceData.total || 0,
+        concept: invoiceData.concept || 'Atención médica',
+        payment_method: invoiceData.paymentMethod || 'Efectivo',
+        status: invoiceData.status || 'Cobrado',
+        arca_validated: true,
+        receipt_number: invoiceData.receiptNumber || null
+      };
+      const { data, error } = await supabase.from('invoices').insert([payload]).select().single();
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
   // --- STORAGE / ARCHIVOS MÉDICOS (A-09: Signed URLs) ---
   async uploadMedicalFile(bucketName, path, file) {
     if (isSupabaseConfigured && supabase) {
@@ -1313,5 +1408,75 @@ export const dataService = {
       }
     }
     return () => {};
+  },
+
+  // --- INTERCONSULTAS & ACCESO CLÍNICO (A-07) ---
+  async fetchClinicalAccessRequests(doctorId = null) {
+    if (isSupabaseConfigured && supabase) {
+      let query = supabase.from('clinical_access_grants').select('*').order('requested_at', { ascending: false });
+      if (doctorId) {
+        query = query.or(`requester_doctor_id.eq.${doctorId},target_doctor_id.eq.${doctorId}`);
+      }
+      const { data, error } = await query;
+      if (error) {
+        console.warn('Error fetching clinical access grants:', error);
+        return [];
+      }
+      return (data || []).map(toCamelCase);
+    }
+    return [];
+  },
+
+  async createClinicalAccessRequest(grantData) {
+    if (isSupabaseConfigured && supabase) {
+      const payload = toSnakeCase(grantData);
+      const { data, error } = await supabase.from('clinical_access_grants').insert([payload]).select().single();
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
+  async updateClinicalAccessRequest(id, status) {
+    if (isSupabaseConfigured && supabase) {
+      const payload = {
+        status,
+        approved_at: status === 'approved' ? new Date().toISOString() : null,
+        expires_at: status === 'approved' ? new Date(Date.now() + 48 * 3600 * 1000).toISOString() : null
+      };
+      const { data, error } = await supabase.from('clinical_access_grants').update(payload).eq('id', id).select().single();
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
+  // --- MÉTRICAS DE SERVIDOR (M-07) ---
+  async fetchDashboardStats() {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const [
+          { count: appointmentsCount },
+          { count: patientsCount },
+          { count: consultationsCount },
+          { count: prescriptionsCount }
+        ] = await Promise.all([
+          supabase.from('appointments').select('*', { count: 'exact', head: true }),
+          supabase.from('patients').select('*', { count: 'exact', head: true }),
+          supabase.from('consultations').select('*', { count: 'exact', head: true }),
+          supabase.from('electronic_prescriptions').select('*', { count: 'exact', head: true })
+        ]);
+        return {
+          totalAppointments: appointmentsCount || 0,
+          totalPatients: patientsCount || 0,
+          totalConsultations: consultationsCount || 0,
+          totalPrescriptions: prescriptionsCount || 0
+        };
+      } catch (err) {
+        console.warn('Error fetching dashboard stats from Supabase:', err);
+      }
+    }
+    return null;
   }
 };
+

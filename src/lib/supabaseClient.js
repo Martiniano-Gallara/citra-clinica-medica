@@ -45,11 +45,28 @@ export const isSupabaseConfigured = Boolean(
   supabaseAnonKey &&
   isValidUrl(supabaseUrl) &&
   supabaseUrl !== 'https://your-project.supabase.co' &&
-  !supabaseUrl.includes('placeholder')
+  supabaseUrl !== 'https://tu-proyecto.supabase.co' &&
+  !supabaseUrl.includes('placeholder') &&
+  supabaseAnonKey !== 'tu-anon-public-key-aqui' &&
+  !supabaseAnonKey.includes('placeholder')
 );
 
+export const supabaseConfigDiagnostics = {
+  isConfigured: isSupabaseConfigured,
+  missingUrl: !supabaseUrl || !isValidUrl(supabaseUrl) || supabaseUrl.includes('placeholder') || supabaseUrl === 'https://your-project.supabase.co' || supabaseUrl === 'https://tu-proyecto.supabase.co',
+  missingKey: !supabaseAnonKey || supabaseAnonKey.includes('placeholder') || supabaseAnonKey === 'tu-anon-public-key-aqui',
+  isProd: Boolean(import.meta.env.PROD || import.meta.env.VITE_APP_ENV === 'production'),
+  errorReason: !isSupabaseConfigured
+    ? (!supabaseUrl || !isValidUrl(supabaseUrl) || supabaseUrl.includes('placeholder')
+        ? 'VITE_SUPABASE_URL ausente o inválida en el archivo .env'
+        : !supabaseAnonKey || supabaseAnonKey.includes('placeholder')
+          ? 'VITE_SUPABASE_ANON_KEY ausente o inválida en el archivo .env'
+          : 'Configuración de Supabase incompleta')
+    : null
+};
+
 if (!isSupabaseConfigured) {
-  const errMsg = '[CITRA PERSISTENCIA ADVERTENCIA] Variables de entorno VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY ausentes o inválidas. El sistema opera en memoria local (Sandbox / Mock). Los registros clínicos no se persistirán en la base de datos cloud.';
+  const errMsg = '[CITRA PERSISTENCIA ADVERTENCIA (B-04)] Variables de entorno VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY ausentes o inválidas. El sistema requiere configuración en .env para persistencia en base de datos central.';
   if (import.meta.env.PROD) {
     console.error(errMsg);
   } else {

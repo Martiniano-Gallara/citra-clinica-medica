@@ -235,7 +235,7 @@ export const NewConsultationModal = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (isSubmitting) return;
@@ -251,6 +251,14 @@ export const NewConsultationModal = () => {
     }
 
     if (existingForAppointment) {
+      if (existingForAppointment.signed) {
+        addToast(
+          'Consulta Inmutable (Ley 26.529)',
+          'Esta consulta ya se encuentra firmada digitalmente y no puede ser modificada directamente. Para registrar correcciones o ampliaciones clínicas debe asentar una Adenda Médica en la ficha del paciente.',
+          'warning'
+        );
+        return;
+      }
       setIsSubmitting(true);
       try {
         updateConsultation(existingForAppointment.id, {
@@ -289,7 +297,7 @@ export const NewConsultationModal = () => {
         prescriptions: formData.prescriptions.filter((p) => p.medication && p.medication.trim())
       };
 
-      addConsultation(payload);
+      await addConsultation(payload);
       setIsNewConsultationModalOpen(false);
       addToast(
         hasExistingHC ? 'Evolución Clínica Registrada' : 'Consulta Médica Registrada',
@@ -300,7 +308,7 @@ export const NewConsultationModal = () => {
       );
     } catch (err) {
       console.error('Error al registrar consulta:', err);
-      addToast('Error', 'No se pudo asentar la consulta médica.', 'error');
+      addToast('Error al Registrar Consulta', err.message || 'No se pudo asentar la consulta médica.', 'error');
     } finally {
       setIsSubmitting(false);
     }

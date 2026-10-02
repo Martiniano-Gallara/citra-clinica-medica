@@ -112,7 +112,7 @@ export const NewImagingStudyModal = () => {
       findings: findings.trim(),
       conclusion: conclusion.trim(),
       date: todayStr,
-      status: hasReport ? 'Informado' : 'Realizado',
+      status: hasReport ? 'informado' : 'realizado',
       seriesCount: modality.includes('RMN') ? 4 : modality.includes('TAC') ? 3 : 2,
       fileSize: modality.includes('RMN') ? '48.2 MB' : modality.includes('TAC') ? '62.1 MB' : '18.4 MB',
       hashSha256: generateSHA256Hash(`${selectedPatient.dni}|${modality}|${bodyPart}|${todayStr}|${Date.now()}`),

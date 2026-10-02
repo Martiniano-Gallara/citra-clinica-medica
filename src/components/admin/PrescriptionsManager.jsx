@@ -30,6 +30,7 @@ export const PrescriptionsManager = () => {
     currentDoctor,
     addElectronicPrescription,
     updatePrescriptionStatus,
+    annulPrescription,
     patients,
     scopedPatients,
     doctors,
@@ -231,6 +232,15 @@ export const PrescriptionsManager = () => {
     const text = `Hola ${prescription.patientName}, desde Clínica CITRA te compartimos tu Receta Médica Electrónica Oficial (CUIR: ${prescription.cuir}). Podés presentarla en farmacias de todo el país. Vigencia: 30 días.`;
     const url = targetPhone ? `https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
+  };
+
+  const handleAnnulPrescription = (prescription) => {
+    const reason = window.prompt(
+      `Anulación formal de Receta CUIR ${prescription.cuir || prescription.id} (Ley 27.553 / T13):\nIngrese el motivo clínico de la anulación:`
+    );
+    if (reason && reason.trim()) {
+      annulPrescription(prescription.id, reason.trim());
+    }
   };
 
   const filteredPrescriptions = effectivePrescriptions.filter((rx) => {
@@ -651,6 +661,29 @@ export const PrescriptionsManager = () => {
                           <Printer size={14} />
                           <span>Ver / Imprimir</span>
                         </button>
+
+                        {isDoctor && !p.annulled && p.dispensationStatus?.toLowerCase() !== 'anulada' && p.status?.toLowerCase() !== 'anulada' && (
+                          <button
+                            onClick={() => handleAnnulPrescription(p)}
+                            title="Anular formalmente receta electrónica (Ley 27.553 / T13)"
+                            style={{
+                              background: '#fee2e2',
+                              border: '1px solid #fecaca',
+                              color: '#991b1b',
+                              padding: '0.4rem 0.65rem',
+                              borderRadius: '8px',
+                              fontSize: '0.78rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem'
+                            }}
+                          >
+                            <Trash2 size={13} />
+                            <span>Anular</span>
+                          </button>
+                        )}
 
                         <button
                           onClick={() => sharePrescriptionWhatsApp(p)}

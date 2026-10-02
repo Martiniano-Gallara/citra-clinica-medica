@@ -27,6 +27,8 @@ export const PaymentModal = () => {
     status: 'Cobrado'
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     if (paymentPreloadData) {
       setFormData((prev) => ({
@@ -49,32 +51,42 @@ export const PaymentModal = () => {
     }
   }, [paymentPreloadData, isPaymentModalOpen, patients, doctors]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     if (!formData.patientName || formData.amount <= 0) {
       addToast('Error', 'Debe seleccionar un paciente y monto válido.', 'error');
       return;
     }
 
-    const invNumber = `FC-B 0001-0000${Math.floor(4820 + Math.random() * 2000)}`;
-
-    addInvoice({
-      ...formData,
-      invoiceNumber: invNumber
-    });
-
-    // Throw celebratory confetti for payment registration
+    setIsSubmitting(true);
     try {
-      confetti({
-        particleCount: 40,
-        spread: 60,
-        origin: { y: 0.8 }
-      });
-    } catch (e) {
-      // ignore
-    }
+      const invNumber = `FC-B 0001-0000${Math.floor(4820 + Math.random() * 2000)}`;
 
-    setIsPaymentModalOpen(false);
+      await addInvoice({
+        ...formData,
+        invoiceNumber: invNumber
+      });
+
+      // Throw celebratory confetti for payment registration
+      try {
+        confetti({
+          particleCount: 40,
+          spread: 60,
+          origin: { y: 0.8 }
+        });
+      } catch (e) {
+        // ignore
+      }
+
+      setIsPaymentModalOpen(false);
+    } catch (err) {
+      console.error('Error al registrar cobro:', err);
+      addToast('Error', 'No se pudo registrar el comprobante.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -92,9 +104,9 @@ export const PaymentModal = () => {
           >
             Cancelar
           </button>
-          <button type="button" className="btn btn-primary" onClick={handleSubmit}>
+          <button type="button" className="btn btn-primary" onClick={handleSubmit} disabled={isSubmitting}>
             <Receipt size={16} />
-            <span>Confirmar & Cobrar</span>
+            <span>{isSubmitting ? 'Procesando...' : 'Confirmar & Cobrar'}</span>
           </button>
         </div>
       }

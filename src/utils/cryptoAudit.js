@@ -82,3 +82,18 @@ export const createAuditLog = (user, action, resource, targetDni, details) => {
     eventHash
   };
 };
+
+/**
+ * Genera una contraseña temporal criptográficamente robusta para nuevos usuarios o médicos (C-06)
+ * Evita contraseñas predecibles por defecto tipo '123456' o 'Citra2024'.
+ */
+export const generateSecureTempPassword = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%^&*';
+  const array = new Uint8Array(12);
+  if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
+    window.crypto.getRandomValues(array);
+  } else {
+    for (let i = 0; i < 12; i++) array[i] = Math.floor(Math.random() * 256);
+  }
+  return Array.from(array, (byte) => chars[byte % chars.length]).join('');
+};

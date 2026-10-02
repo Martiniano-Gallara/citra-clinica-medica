@@ -15,8 +15,10 @@ import {
   ExternalLink,
   Lock,
   Stethoscope,
-  BadgeCheck
+  BadgeCheck,
+  RefreshCw
 } from 'lucide-react';
+import { generateSecureTempPassword } from '../../utils/cryptoAudit';
 
 export const UsersManager = () => {
   const {
@@ -44,12 +46,12 @@ export const UsersManager = () => {
     specialty: '',
     adminType: 'doctor',
     sisaLicense: '',
-    password: 'Citra.2026!'
+    password: ''
   });
 
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [passwordUser, setPasswordUser] = useState(null);
-  const [newPasswordValue, setNewPasswordValue] = useState('Citra.2026!');
+  const [newPasswordValue, setNewPasswordValue] = useState('');
 
   // Filtered users
   const filteredUsers = useMemo(() => {
@@ -91,6 +93,20 @@ export const UsersManager = () => {
     setEditingUser(null);
   };
 
+  const handleOpenAddModal = () => {
+    setNewUserData({
+      name: '',
+      fullName: '',
+      email: '',
+      role: 'administrative',
+      specialty: '',
+      adminType: 'general',
+      sisaLicense: '',
+      password: generateSecureTempPassword()
+    });
+    setIsAddModalOpen(true);
+  };
+
   const handleCreateUser = (e) => {
     e.preventDefault();
     if (!newUserData.name || !newUserData.email) {
@@ -98,9 +114,12 @@ export const UsersManager = () => {
       return;
     }
 
+    const secureInitialPassword = newUserData.password?.trim() || generateSecureTempPassword();
+
     if (typeof addUser === 'function') {
       addUser({
         ...newUserData,
+        password: secureInitialPassword,
         fullName: newUserData.fullName || newUserData.name,
         avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80'
       });
@@ -115,18 +134,30 @@ export const UsersManager = () => {
       specialty: '',
       adminType: 'doctor',
       sisaLicense: '',
-      password: 'Citra.2026!'
+      password: ''
     });
+    if (addToast) addToast('Usuario Creado', `Usuario creado exitosamente con clave provisoria segura.`, 'success');
+  };
+
+  const handleOpenPasswordModal = (u) => {
+    setPasswordUser(u);
+    setNewPasswordValue(generateSecureTempPassword());
+    setIsPasswordModalOpen(true);
   };
 
   const handleChangePassword = (e) => {
     e.preventDefault();
     if (!passwordUser) return;
+    if (!newPasswordValue.trim()) {
+      if (addToast) addToast('Contraseña Requerida', 'Ingrese la nueva contraseña.', 'warning');
+      return;
+    }
     if (typeof updateUser === 'function') {
-      updateUser(passwordUser.id, { password: newPasswordValue.trim() || 'Citra.2026!' });
+      updateUser(passwordUser.id, { password: newPasswordValue.trim() });
     }
     setIsPasswordModalOpen(false);
     setPasswordUser(null);
+    setNewPasswordValue('');
     if (addToast) addToast('Contraseña Actualizada', `Nueva clave asignada a ${passwordUser.name}.`, 'success');
   };
 
@@ -144,7 +175,7 @@ export const UsersManager = () => {
         </div>
 
         <button
-          onClick={() => setIsAddModalOpen(true)}
+          onClick={handleOpenAddModal}
           style={{
             background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
             color: '#ffffff',
@@ -511,11 +542,7 @@ export const UsersManager = () => {
                           {/* Change password */}
                           <button
                             type="button"
-                            onClick={() => {
-                              setPasswordUser(u);
-                              setNewPasswordValue('');
-                              setIsPasswordModalOpen(true);
-                            }}
+                            onClick={() => handleOpenPasswordModal(u)}
                             title="Gestionar clave de acceso"
                             style={{
                               background: '#ffffff',
@@ -886,24 +913,51 @@ export const UsersManager = () => {
               </div>
 
               <div>
-                <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155', display: 'block', marginBottom: '0.35rem' }}>
-                  Contraseña Inicial de Acceso
-                </label>
-                <input
-                  type="text"
-                  value={newUserData.password}
-                  onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 0.85rem',
-                    borderRadius: '8px',
-                    border: '1.5px solid #D2E3FC',
-                    fontSize: '0.86rem',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                  required
-                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155', margin: 0 }}>
+                    Contraseña Inicial de Acceso (Criptográficamente Segura)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setNewUserData({ ...newUserData, password: generateSecureTempPassword() })}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#076ABC',
+                      fontSize: '0.74rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      padding: 0
+                    }}
+                  >
+                    <RefreshCw size={12} /> Regenerar Clave
+                  </button>
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    value={newUserData.password}
+                    onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.85rem',
+                      paddingLeft: '2.2rem',
+                      borderRadius: '8px',
+                      border: '1.5px solid #D2E3FC',
+                      fontSize: '0.86rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      fontFamily: 'monospace',
+                      fontWeight: 600,
+                      letterSpacing: '0.05em'
+                    }}
+                    required
+                  />
+                  <KeyRound size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+                </div>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
@@ -992,24 +1046,51 @@ export const UsersManager = () => {
               </p>
 
               <div>
-                <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155', display: 'block', marginBottom: '0.35rem' }}>
-                  Contraseña
-                </label>
-                <input
-                  type="text"
-                  value={newPasswordValue}
-                  onChange={(e) => setNewPasswordValue(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 0.85rem',
-                    borderRadius: '8px',
-                    border: '1.5px solid #D2E3FC',
-                    fontSize: '0.86rem',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                  required
-                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155', margin: 0 }}>
+                    Nueva Contraseña Provisoria (Segura)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setNewPasswordValue(generateSecureTempPassword())}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#076ABC',
+                      fontSize: '0.74rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      padding: 0
+                    }}
+                  >
+                    <RefreshCw size={12} /> Regenerar Clave
+                  </button>
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    value={newPasswordValue}
+                    onChange={(e) => setNewPasswordValue(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.85rem',
+                      paddingLeft: '2.2rem',
+                      borderRadius: '8px',
+                      border: '1.5px solid #D2E3FC',
+                      fontSize: '0.86rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      fontFamily: 'monospace',
+                      fontWeight: 600,
+                      letterSpacing: '0.05em'
+                    }}
+                    required
+                  />
+                  <KeyRound size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+                </div>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>

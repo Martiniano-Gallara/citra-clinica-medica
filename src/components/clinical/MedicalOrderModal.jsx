@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
-import { FileText, X, CheckCircle2, Printer, ShieldCheck, Plus, Trash2 } from 'lucide-react';
+import { FileText, X, CheckCircle2, Printer, ShieldCheck, Plus, Trash2, AlertCircle } from 'lucide-react';
 
 export const MedicalOrderModal = () => {
   const {
@@ -40,13 +40,14 @@ export const MedicalOrderModal = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!isDoctor) return;
     if (studies.length === 0) return;
 
     addMedicalOrder({
       patientId: selectedPatient.id,
       patientName: selectedPatient.name,
       patientDni: selectedPatient.dni,
-      doctorId: (isDoctor && currentDoctor ? currentDoctor.id : currentUser?.id) || '',
+      doctorId: (isDoctor && currentDoctor ? currentDoctor.id : currentUser?.doctorId) || '',
       doctorName: (isDoctor && currentDoctor ? currentDoctor.name : currentUser?.name) || 'Profesional Médico CITRA',
       doctorLicense: (isDoctor && currentDoctor ? currentDoctor.license : (currentUser?.sisaLicense || currentUser?.license)) || '',
       orderType,
@@ -94,7 +95,7 @@ export const MedicalOrderModal = () => {
                 onChange={(e) => setSelectedPatientId(e.target.value)}
                 required
               >
-                {patients.map((pat) => (
+                {effectivePatients.map((pat) => (
                   <option key={pat.id} value={pat.id}>
                     {pat.name} — DNI {pat.dni} ({pat.insuranceName})
                   </option>
@@ -199,6 +200,15 @@ export const MedicalOrderModal = () => {
               <ShieldCheck size={16} color="var(--primary)" />
               <span>Esta orden médica será firmada digitalmente con certificado X.509 y almacenada de forma inmutable.</span>
             </div>
+
+            {!isDoctor && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '0.75rem 1rem', color: '#991b1b', fontSize: '0.82rem', marginTop: '0.75rem' }}>
+                <AlertCircle size={18} color="#dc2626" style={{ flexShrink: 0 }} />
+                <span>
+                  <strong>Atribución Médica Exclusiva (T7):</strong> Solo profesionales médicos habilitados pueden emitir y firmar órdenes de estudios e interconsultas diagnósticas.
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="modal-footer">
@@ -209,7 +219,7 @@ export const MedicalOrderModal = () => {
             >
               Cancelar
             </button>
-            <button type="submit" className="btn btn-primary" disabled={studies.length === 0}>
+            <button type="submit" className="btn btn-primary" disabled={studies.length === 0 || !isDoctor}>
               <CheckCircle2 size={16} />
               Emitir y Firmar Orden Médica
             </button>

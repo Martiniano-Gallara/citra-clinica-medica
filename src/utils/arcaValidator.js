@@ -3,6 +3,8 @@
  * Especificación WebServices Factura Electrónica (WSFEv1) y Código QR Fiscal (RG 4892)
  */
 
+import { formatDateArgentina } from './dateUtils';
+
 export const generateCAE = () => {
   // Simula CAE oficial de 14 dígitos numéricos
   const part1 = Math.floor(7000000 + Math.random() * 2999999);
@@ -12,7 +14,7 @@ export const generateCAE = () => {
   // Vencimiento de CAE: 10 días corridos a partir de la emisión
   const vtoDate = new Date();
   vtoDate.setDate(vtoDate.getDate() + 10);
-  const caeVto = vtoDate.toISOString().split('T')[0];
+  const caeVto = formatDateArgentina(vtoDate);
 
   return { cae, caeVto };
 };

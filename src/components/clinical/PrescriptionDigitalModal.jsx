@@ -25,6 +25,7 @@ export const PrescriptionDigitalModal = () => {
     clinicInfo,
     patients,
     updatePrescriptionStatus,
+    annulPrescription,
     addToast
   } = useClinic();
 
@@ -244,6 +245,40 @@ export const PrescriptionDigitalModal = () => {
               </button>
             )}
 
+            {rx.dispensationStatus !== 'Anulada' && rx.dispensationStatus !== 'Dispensada' && (
+              <button
+                type="button"
+                onClick={() => {
+                  const reason = window.prompt('Motivo formal de anulación de la receta médica (Ley 27.553):', 'Error en posología / Cambio de indicación clínica');
+                  if (reason && reason.trim()) {
+                    annulPrescription(rx.id, reason.trim());
+                    setSelectedPrescriptionForView((prev) => ({
+                      ...prev,
+                      dispensationStatus: 'Anulada',
+                      annulled: true,
+                      annulReason: reason.trim()
+                    }));
+                  }
+                }}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.2)',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  color: '#FCA5A5',
+                  padding: '0.45rem 0.85rem',
+                  borderRadius: '8px',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  cursor: 'pointer'
+                }}
+              >
+                <X size={14} />
+                <span>Anular Receta</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={handleShareWhatsApp}
@@ -323,6 +358,28 @@ export const PrescriptionDigitalModal = () => {
               fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
             }}
           >
+            {rx.dispensationStatus === 'Anulada' && (
+              <div
+                style={{
+                  background: '#FEF2F2',
+                  border: '2px solid #EF4444',
+                  borderRadius: '10px',
+                  padding: '1rem',
+                  marginBottom: '1.5rem',
+                  textAlign: 'center',
+                  color: '#991B1B'
+                }}
+              >
+                <div style={{ fontSize: '1.1rem', fontWeight: 900, letterSpacing: '0.05em' }}>
+                  RECETA MÉDICA ELECTRÓNICA FORMALMENTE ANULADA
+                </div>
+                <div style={{ fontSize: '0.84rem', marginTop: '4px', fontWeight: 600 }}>
+                  Este documento carece de validez legal para dispensa farmacéutica conforme a la Ley 27.553.
+                  {rx.annulReason ? ` Motivo: ${rx.annulReason}` : ''}
+                </div>
+              </div>
+            )}
+
             {/* 1. OFFICIAL INSTITUTIONAL HEADER */}
             <div
               style={{

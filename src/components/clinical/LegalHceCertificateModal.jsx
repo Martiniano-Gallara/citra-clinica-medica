@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { getTodayArgentina } from '../../utils/dateUtils';
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
 import {
   Printer,
@@ -85,7 +86,7 @@ export const LegalHceCertificateModal = ({ isOpen, onClose, targetPatient = null
     ? currentDoctor.license
     : (latestConsultation?.doctorLicense || (doctors.find((d) => d.name === activeDoctorName)?.license) || doctors[0]?.license || '');
 
-  const currentDateStr = new Date().toISOString().split('T')[0];
+  const currentDateStr = getTodayArgentina();
   const currentTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const dossierId = `HC-${activePatient?.dni || '000'}`;
 

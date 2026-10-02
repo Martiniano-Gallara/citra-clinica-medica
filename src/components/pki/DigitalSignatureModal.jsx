@@ -63,18 +63,24 @@ export const DigitalSignatureModal = () => {
       <div>
         <div
           style={{
-            background: '#EBF3FD',
+            background: '#F8FAFC',
             padding: '0.85rem 1rem',
             borderRadius: '8px',
-            border: '1px solid #257CE6',
+            border: '1.5px solid #94A3B8',
             marginBottom: '1.25rem',
-            fontSize: '0.86rem',
-            color: '#002182'
+            fontSize: '0.84rem',
+            color: '#1E293B'
           }}
         >
-          <strong>Validación de Firma Digital Criptográfica:</strong>
-          <p style={{ marginTop: '3px' }}>
-            La validez jurídica de los actos médicos y recetas electrónicas requiere el uso de certificados digitales emitidos por Certificadores Licenciados reconocidos por el Ente Licenciante (ONTI / Secretaría de Innovación Pública). No se admiten firmas escaneadas ni imágenes insertadas.
+          <div style={{ fontWeight: 800, color: '#002182', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <ShieldCheck size={16} color="#076ABC" />
+            <span>Marco Legal de Firma (Ley 25.506 · Firma Electrónica vs Firma Digital):</span>
+          </div>
+          <p style={{ margin: '0 0 6px', lineHeight: 1.45 }}>
+            • <strong>Firma Electrónica Médica Activa (Art. 5):</strong> Las consultas y recetas emitidas en CITRA cuentan con verificación de identidad, marca temporal de servidor y cadena de integridad criptográfica SHA-256 auditable.
+          </p>
+          <p style={{ margin: 0, lineHeight: 1.45, color: '#475569' }}>
+            • <strong>Firma Digital con Token Criptográfico (Art. 2):</strong> Requiere dispositivo criptográfico de hardware FIPS 140-2 (token USB) emitido por una Autoridad Certificante Licenciada (AC ONTI). Este simulador permite validar la compatibilidad del certificado X.509 de cada profesional.
           </p>
         </div>
 

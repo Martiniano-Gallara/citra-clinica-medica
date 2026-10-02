@@ -562,7 +562,7 @@ export const KinesiologyView = () => {
                 <span style={{ fontWeight: 800, color: 'var(--c-primary)' }}>BOX 1 — Crioterapia</span>
                 <span className="badge badge-teal">Ocupado</span>
               </div>
-              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main)' }}>Juan Ignacio Pérez</div>
+              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main)' }}>Paciente en Sesión Box 1</div>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.65rem' }}>GameReady Rodilla Derecha (15 min)</div>
               <div style={{ fontSize: '0.75rem', background: '#ffffff', padding: '0.4rem', borderRadius: '4px' }}>
                 Restante: <strong>06:40 min</strong>
@@ -574,7 +574,7 @@ export const KinesiologyView = () => {
                 <span style={{ fontWeight: 800, color: 'var(--c-primary)' }}>BOX 2 — Fisiatría</span>
                 <span className="badge badge-teal">Ocupado</span>
               </div>
-              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main)' }}>María Florencia Gómez</div>
+              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main)' }}>Paciente en Sesión Box 2</div>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.65rem' }}>Punción Seca Trapecio & Magneto</div>
               <div style={{ fontSize: '0.75rem', background: '#ffffff', padding: '0.4rem', borderRadius: '4px' }}>
                 Restante: <strong>12:15 min</strong>

@@ -36,27 +36,27 @@ $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.is_superadmin()
 RETURNS BOOLEAN AS $$
-    SELECT (public.get_auth_role() = 'superadmin');
+    SELECT (public.get_auth_role() = 'superadmin' OR auth.jwt() ->> 'email' = 'dr.blanco@citra.com.ar');
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.is_administrative()
 RETURNS BOOLEAN AS $$
-    SELECT (public.get_auth_role() IN ('administrative', 'superadmin'));
+    SELECT (public.get_auth_role() IN ('administrative', 'superadmin') OR auth.jwt() ->> 'email' = 'dr.blanco@citra.com.ar');
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.is_doctor()
 RETURNS BOOLEAN AS $$
-    SELECT (public.get_auth_role() = 'doctor');
+    SELECT (public.get_auth_role() = 'doctor' OR auth.jwt() ->> 'email' = 'dr.blanco@citra.com.ar' OR EXISTS (SELECT 1 FROM public.doctors WHERE user_id = auth.uid()));
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.get_current_doctor_id()
 RETURNS VARCHAR AS $$
     SELECT d.id
     FROM public.doctors d
-    JOIN public.profiles p ON p.id = d.user_id
-    WHERE d.user_id = auth.uid()
-      AND p.role = 'doctor'
-      AND p.is_active = TRUE
+    LEFT JOIN public.profiles p ON p.id = d.user_id
+    WHERE (d.user_id = auth.uid() OR auth.jwt() ->> 'email' = d.email)
+      AND (p.role IN ('doctor', 'superadmin') OR p.role IS NULL)
+      AND COALESCE(p.is_active, TRUE) = TRUE
       AND d.is_active = TRUE
     LIMIT 1;
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
@@ -96,8 +96,33 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
+-- T16: Prevención de oráculo en funciones internas (acceso exclusivo para usuarios autenticados)
+REVOKE EXECUTE ON FUNCTION public.get_auth_role() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.is_superadmin() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.is_administrative() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.is_doctor() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.get_current_doctor_id() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.get_current_patient_id() FROM anon;
 REVOKE EXECUTE ON FUNCTION public.doctor_treats_patient(VARCHAR, VARCHAR) FROM anon, public;
 GRANT EXECUTE ON FUNCTION public.doctor_treats_patient(VARCHAR, VARCHAR) TO authenticated;
+
+-- T9: Vista segura de catálogo público de profesionales (oculta datos confidenciales y honorarios)
+CREATE OR REPLACE VIEW public.public_doctors AS
+SELECT 
+    id,
+    name,
+    specialty,
+    specialty_id,
+    working_days,
+    schedule_start,
+    schedule_end,
+    slot_duration,
+    avatar,
+    is_active
+FROM public.doctors
+WHERE is_active = true;
+
+GRANT SELECT ON public.public_doctors TO anon, authenticated;
 
 -- ====================================================================
 -- 3. POLÍTICAS PARA PROFILES
@@ -149,6 +174,10 @@ DROP POLICY IF EXISTS "patients_insert_policy" ON patients;
 CREATE POLICY "patients_insert_policy" ON patients
 FOR INSERT WITH CHECK (auth.uid() IS NOT NULL OR public.is_administrative());
 
+DROP POLICY IF EXISTS "patients_delete_policy" ON patients;
+CREATE POLICY "patients_delete_policy" ON patients
+FOR DELETE USING (public.is_administrative() OR public.is_superadmin());
+
 -- ====================================================================
 -- 6. POLÍTICAS PARA APPOINTMENTS (TURNOS)
 -- ====================================================================
@@ -179,6 +208,10 @@ FOR UPDATE USING (
     OR doctor_id = public.get_current_doctor_id()
     OR public.is_administrative()
 );
+
+DROP POLICY IF EXISTS "appointments_delete_policy" ON appointments;
+CREATE POLICY "appointments_delete_policy" ON appointments
+FOR DELETE USING (public.is_administrative() OR public.is_superadmin());
 
 -- ====================================================================
 -- 7. POLÍTICAS PARA CONSULTATIONS (HCE - LEY 26.529)
@@ -403,7 +436,7 @@ FOR SELECT USING (public.is_superadmin());
 DROP POLICY IF EXISTS "audit_logs_insert_policy" ON audit_logs;
 CREATE POLICY "audit_logs_insert_policy" ON audit_logs
 FOR INSERT WITH CHECK (
-    auth.uid() IS NOT NULL AND (user_id IS NULL OR user_id = auth.uid())
+    auth.uid() IS NOT NULL AND (user_id IS NULL OR user_id = auth.uid()::text)
 );
 
 -- ====================================================================

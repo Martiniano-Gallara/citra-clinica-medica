@@ -2,6 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { StatisticsReportPrintModal } from './StatisticsReportPrintModal';
 import {
+  formatDateArgentina,
+  getDaysAgoArgentina,
+  getCurrentMonthArgentina,
+  getCurrentYearArgentina
+} from '../../utils/dateUtils';
+import {
   BarChart3,
   TrendingUp,
   Download,
@@ -103,32 +109,25 @@ export const ReportsView = () => {
       periodLabel = 'Esta Semana';
       trendLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'];
       // Últimos 7 días
-      const today = new Date();
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(today.getDate() - 7);
-      const minDate = sevenDaysAgo.toISOString().split('T')[0];
+      const minDate = getDaysAgoArgentina(7);
 
       periodAppointments = allDocAppointments.filter((a) => a.date >= minDate);
       periodConsultations = allDocConsultations.filter((c) => c.date >= minDate);
 
       trendConsultations = [0, 1, 2, 3, 4].map(dayOffset => {
-        const d = new Date();
-        d.setDate(today.getDate() - (4 - dayOffset));
-        const dateStr = d.toISOString().split('T')[0];
+        const dateStr = getDaysAgoArgentina(4 - dayOffset);
         return periodConsultations.filter(c => c.date === dateStr).length;
       });
 
       trendRevenue = [0, 1, 2, 3, 4].map(dayOffset => {
-        const d = new Date();
-        d.setDate(today.getDate() - (4 - dayOffset));
-        const dateStr = d.toISOString().split('T')[0];
+        const dateStr = getDaysAgoArgentina(4 - dayOffset);
         const dayCons = periodConsultations.filter(c => c.date === dateStr);
         return dayCons.reduce((sum, c) => sum + Math.round((Number(c.cost) || 25000) * (docFeePct / 100)), 0);
       });
     } else if (period === 'year') {
       periodLabel = 'Año en Curso (Acumulado)';
       trendLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-      const currentYear = new Date().getFullYear().toString();
+      const currentYear = getCurrentYearArgentina();
       periodAppointments = allDocAppointments.filter((a) => a.date && a.date.startsWith(currentYear));
       periodConsultations = allDocConsultations.filter((c) => c.date && c.date.startsWith(currentYear));
 
@@ -146,7 +145,7 @@ export const ReportsView = () => {
       // Month
       periodLabel = 'Este Mes';
       trendLabels = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'];
-      const currentMonthPrefix = new Date().toISOString().substring(0, 7);
+      const currentMonthPrefix = getCurrentMonthArgentina();
       periodAppointments = allDocAppointments.filter((a) => a.date && a.date.startsWith(currentMonthPrefix));
       periodConsultations = allDocConsultations.filter((c) => c.date && c.date.startsWith(currentMonthPrefix));
 
@@ -200,7 +199,7 @@ export const ReportsView = () => {
     const newPatientsCount = allDocPatients.filter((p) => {
       if (!patientIds.has(p.id)) return false;
       const regMonth = (p.registeredAt || '').substring(0, 7);
-      const currentMonth = new Date().toISOString().substring(0, 7);
+      const currentMonth = getCurrentMonthArgentina();
       return regMonth === currentMonth;
     }).length;
     const recurringPatientsCount = Math.max(0, patientsCount - newPatientsCount);

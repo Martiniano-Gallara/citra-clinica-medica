@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { getTodayArgentina } from '../../utils/dateUtils';
 import {
   FileCheck2,
   ShieldAlert,
@@ -175,7 +176,7 @@ export const ConsentFormsModal = () => {
       title: formData.title,
       procedureType: formData.procedureType,
       legalFramework: 'Protocolo de Consentimiento Informado & Declaración de Voluntad',
-      date: new Date().toISOString().split('T')[0],
+      date: getTodayArgentina(),
       doctorId: activeDoctor.id,
       doctorName: activeDoctor.name,
       doctorLicense: activeDoctor.license,

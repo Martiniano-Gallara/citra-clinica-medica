@@ -87,9 +87,10 @@ export const ImagingView = () => {
       if (modalityFilter !== 'all' && !study.modality.toLowerCase().includes(modalityFilter.toLowerCase())) {
         return false;
       }
-      // Status filter
-      if (statusFilter === 'informados' && study.status !== 'Informado') return false;
-      if (statusFilter === 'pendientes' && study.status === 'Informado') return false;
+      // Status filter (M-03 case-insensitive)
+      const isStudyInformed = study.status?.toLowerCase() === 'informado';
+      if (statusFilter === 'informados' && !isStudyInformed) return false;
+      if (statusFilter === 'pendientes' && isStudyInformed) return false;
 
       // Search match
       if (searchTerm.trim() !== '') {
@@ -111,7 +112,7 @@ export const ImagingView = () => {
     const total = effectiveStudies.length;
     const rmnCount = effectiveStudies.filter((s) => s.modality.includes('Resonancia') || s.modality.includes('RMN')).length;
     const rxTacCount = effectiveStudies.filter((s) => s.modality.includes('Radiografía') || s.modality.includes('Tomografía') || s.modality.includes('TAC') || s.modality.includes('RX')).length;
-    const informedCount = effectiveStudies.filter((s) => s.status === 'Informado').length;
+    const informedCount = effectiveStudies.filter((s) => s.status?.toLowerCase() === 'informado').length;
     return { total, rmnCount, rxTacCount, informedCount };
   }, [effectiveStudies]);
 
@@ -146,9 +147,13 @@ export const ImagingView = () => {
     setExpandedStudyId((prev) => (prev === studyId ? null : studyId));
   };
 
-  // Start editing report
+  // Start editing report (T7: Exclusivo cuerpo médico)
   const handleStartEdit = (study, e) => {
     if (e) e.stopPropagation();
+    if (!isDoctor) {
+      addToast('Acceso Denegado (T7)', 'La redacción y edición del informe radiológico es competencia exclusiva de profesionales médicos.', 'error');
+      return;
+    }
     setEditingStudyId(study.id);
     setEditFindings(study.findings || '');
     setEditConclusion(study.conclusion || '');
@@ -156,6 +161,10 @@ export const ImagingView = () => {
 
   // Save edited report
   const handleSaveReport = (studyId) => {
+    if (!isDoctor) {
+      addToast('Acceso Denegado (T7)', 'Solo profesionales médicos pueden firmar y guardar informes radiológicos.', 'error');
+      return;
+    }
     const study = effectiveStudies.find((s) => s.id === studyId);
     if (!study) return;
     updateImagingStudyReport(
@@ -957,9 +966,9 @@ export const ImagingView = () => {
                           </div>
                           <span
                             style={{
-                              background: study.status === 'Informado' ? '#ecfdf5' : '#fffbeb',
-                              color: study.status === 'Informado' ? '#059669' : '#b45309',
-                              border: study.status === 'Informado' ? '1px solid #a7f3d0' : '1px solid #fde68a',
+                              background: study.status?.toLowerCase() === 'informado' ? '#ecfdf5' : '#fffbeb',
+                              color: study.status?.toLowerCase() === 'informado' ? '#059669' : '#b45309',
+                              border: study.status?.toLowerCase() === 'informado' ? '1px solid #a7f3d0' : '1px solid #fde68a',
                               padding: '0.15rem 0.55rem',
                               borderRadius: '100px',
                               fontSize: '0.75rem',
@@ -1166,44 +1175,46 @@ export const ImagingView = () => {
                                     Enviar WhatsApp
                                   </button>
 
-                                  {editingStudyId !== study.id ? (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => handleStartEdit(study, e)}
-                                      style={{
-                                        background: '#f8fafc',
-                                        border: '1px solid #cbd5e1',
-                                        color: '#334155',
-                                        padding: '0.45rem 0.85rem',
-                                        borderRadius: '7px',
-                                        fontSize: '0.82rem',
-                                        fontWeight: 700,
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '5px',
-                                        cursor: 'pointer'
-                                      }}
-                                    >
-                                      <Edit3 size={14} />
-                                      Editar
-                                    </button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => setEditingStudyId(null)}
-                                      style={{
-                                        background: '#f8fafc',
-                                        border: '1px solid #cbd5e1',
-                                        color: '#64748b',
-                                        padding: '0.45rem 0.85rem',
-                                        borderRadius: '7px',
-                                        fontSize: '0.82rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer'
-                                      }}
-                                    >
-                                      Cancelar
-                                    </button>
+                                  {isDoctor && (
+                                    editingStudyId !== study.id ? (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => handleStartEdit(study, e)}
+                                        style={{
+                                          background: '#f8fafc',
+                                          border: '1px solid #cbd5e1',
+                                          color: '#334155',
+                                          padding: '0.45rem 0.85rem',
+                                          borderRadius: '7px',
+                                          fontSize: '0.82rem',
+                                          fontWeight: 700,
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '5px',
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        <Edit3 size={14} />
+                                        Editar Informe
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditingStudyId(null)}
+                                        style={{
+                                          background: '#f8fafc',
+                                          border: '1px solid #cbd5e1',
+                                          color: '#64748b',
+                                          padding: '0.45rem 0.85rem',
+                                          borderRadius: '7px',
+                                          fontSize: '0.82rem',
+                                          fontWeight: 700,
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        Cancelar
+                                      </button>
+                                    )
                                   )}
                                 </div>
                               </div>

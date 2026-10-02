@@ -3,7 +3,9 @@
  * (Registro Nacional de Plataformas Digitales Sanitarias - Ministerio de Salud de la Nación)
  */
 
-export const generateCUIR = (doctorId, patientDni, dateStr = new Date().toISOString()) => {
+import { getTodayArgentina, formatDateArgentina } from './dateUtils';
+
+export const generateCUIR = (doctorId, patientDni, dateStr = getTodayArgentina()) => {
   const cleanDni = (patientDni || '00000000').replace(/\D/g, '');
   const cleanDoc = (doctorId || 'DOC').replace(/\D/g, '').padStart(3, '0');
   const d = new Date(dateStr);
@@ -19,7 +21,7 @@ export const generateCUIR = (doctorId, patientDni, dateStr = new Date().toISOStr
 export const calculatePrescriptionExpiration = (issueDateStr) => {
   const date = new Date(issueDateStr || new Date());
   date.setDate(date.getDate() + 30); // 30 días corridos según normativa sanitaria
-  return date.toISOString().split('T')[0];
+  return formatDateArgentina(date);
 };
 
 export const generateReNaPDiSVerificationUrl = (cuir, sisaRefepsLicense) => {

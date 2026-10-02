@@ -1111,7 +1111,18 @@ export const ClinicalRecordsView = () => {
                                     )}
 
                                     {/* Action Footer */}
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '0.3rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '0.3rem', gap: '0.5rem' }}>
+                                      {isDoctor && (
+                                        <button
+                                          type="button"
+                                          className="btn btn-outline btn-sm"
+                                          onClick={() => setIsMedicalOrderModalOpen(true)}
+                                          style={{ fontSize: '0.76rem', fontWeight: 700, padding: '0.3rem 0.7rem' }}
+                                        >
+                                          <FileText size={13} />
+                                          <span>+ Solicitar Estudio / Orden</span>
+                                        </button>
+                                      )}
                                       <button
                                         type="button"
                                         className="btn btn-outline btn-sm"

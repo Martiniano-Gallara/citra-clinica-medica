@@ -27,6 +27,7 @@ import {
   X
 } from 'lucide-react';
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
+import { dataService } from '../../services/dataService';
 
 export const SettingsView = () => {
   const {
@@ -78,7 +79,7 @@ export const SettingsView = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleUpdateDoctorPassword = (e) => {
+  const handleUpdateDoctorPassword = async (e) => {
     e.preventDefault();
     if (!newPassword || newPassword.length < 6) {
       addToast('Error', 'La nueva contraseña debe tener al menos 6 caracteres.', 'warning');
@@ -89,23 +90,32 @@ export const SettingsView = () => {
       return;
     }
 
-    const userEmail = authAdmin?.email || currentDoctor?.email;
-    if (userEmail) {
-      setUsers((prev) =>
-        prev.map((u) => (u.email?.toLowerCase() === userEmail.toLowerCase() ? { ...u, password: newPassword } : u))
-      );
-      if (setAuthAdmin && authAdmin) {
-        setAuthAdmin((prev) => ({ ...prev, password: newPassword }));
+    try {
+      if (dataService.isLive()) {
+        await dataService.updateUserPassword(newPassword);
       }
-    }
 
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    if (logAudit) {
-      logAudit('UPDATE_PASSWORD', 'Seguridad & Credenciales', authAdmin?.email || '-', 'El profesional actualizó su contraseña de acceso.');
+      const userEmail = authAdmin?.email || currentDoctor?.email;
+      if (userEmail) {
+        setUsers((prev) =>
+          prev.map((u) => (u.email?.toLowerCase() === userEmail.toLowerCase() ? { ...u, password: newPassword } : u))
+        );
+        if (setAuthAdmin && authAdmin) {
+          setAuthAdmin((prev) => ({ ...prev, password: newPassword }));
+        }
+      }
+
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      if (logAudit) {
+        logAudit('UPDATE_PASSWORD', 'Seguridad & Credenciales', authAdmin?.email || '-', 'El profesional actualizó su contraseña de acceso.');
+      }
+      addToast('Contraseña Actualizada', 'Tu clave de acceso ha sido cambiada con éxito en la plataforma.', 'success');
+    } catch (err) {
+      console.error('Error al actualizar contraseña médica:', err);
+      addToast('Error al Cambiar Contraseña', 'No se pudo actualizar la contraseña en el servidor: ' + (err.message || ''), 'error');
     }
-    addToast('Contraseña Actualizada', 'Tu clave de acceso ha sido cambiada con éxito.', 'success');
   };
 
   const handleSaveGeneral = async (e) => {
@@ -144,7 +154,7 @@ export const SettingsView = () => {
     }
   };
 
-  const handleUpdateAdminPassword = (e) => {
+  const handleUpdateAdminPassword = async (e) => {
     e.preventDefault();
     if (!adminNewPassword || adminNewPassword.length < 6) {
       addToast('Error', 'La nueva contraseña debe tener al menos 6 caracteres.', 'warning');
@@ -155,23 +165,32 @@ export const SettingsView = () => {
       return;
     }
 
-    const userEmail = authAdmin?.email;
-    if (userEmail) {
-      setUsers((prev) =>
-        prev.map((u) => (u.email?.toLowerCase() === userEmail.toLowerCase() ? { ...u, password: adminNewPassword } : u))
-      );
-      if (setAuthAdmin && authAdmin) {
-        setAuthAdmin((prev) => ({ ...prev, password: adminNewPassword }));
+    try {
+      if (dataService.isLive()) {
+        await dataService.updateUserPassword(adminNewPassword);
       }
-    }
 
-    setAdminCurrentPassword('');
-    setAdminNewPassword('');
-    setAdminConfirmPassword('');
-    if (logAudit) {
-      logAudit('UPDATE_PASSWORD', 'Seguridad & Credenciales', authAdmin?.email || '-', 'El personal de secretaría/admin actualizó su contraseña de acceso.');
+      const userEmail = authAdmin?.email;
+      if (userEmail) {
+        setUsers((prev) =>
+          prev.map((u) => (u.email?.toLowerCase() === userEmail.toLowerCase() ? { ...u, password: adminNewPassword } : u))
+        );
+        if (setAuthAdmin && authAdmin) {
+          setAuthAdmin((prev) => ({ ...prev, password: adminNewPassword }));
+        }
+      }
+
+      setAdminCurrentPassword('');
+      setAdminNewPassword('');
+      setAdminConfirmPassword('');
+      if (logAudit) {
+        logAudit('UPDATE_PASSWORD', 'Seguridad & Credenciales', authAdmin?.email || '-', 'El personal de secretaría/admin actualizó su contraseña de acceso.');
+      }
+      addToast('Contraseña Actualizada', 'Tu clave administrativa ha sido cambiada con éxito en la plataforma.', 'success');
+    } catch (err) {
+      console.error('Error al actualizar contraseña de administración:', err);
+      addToast('Error al Cambiar Contraseña', 'No se pudo actualizar la contraseña en el servidor: ' + (err.message || ''), 'error');
     }
-    addToast('Contraseña Actualizada', 'Tu clave administrativa ha sido cambiada con éxito.', 'success');
   };
 
   // Doctor display name without duplicate prefix

@@ -10,10 +10,16 @@ import { ServicesPage } from './components/institutional/ServicesPage';
 import { InsurancesPage } from './components/institutional/InsurancesPage';
 import { DoctorsPage } from './components/institutional/DoctorsPage';
 import { Footer } from './components/institutional/Footer';
+import { AppointmentBookingWizard } from './components/booking/AppointmentBookingWizard';
+import { PatientPortalView } from './components/portal/PatientPortalView';
 
 // Administration Views
 import { AdminLoginView } from './components/auth/AdminLoginView';
 import { AdminManagementHub } from './components/admin/AdminManagementHub';
+
+// Environment & Cloud Diagnostics (Audit B-04)
+import { supabaseConfigDiagnostics } from './lib/supabaseClient';
+import { EnvConfigErrorScreen } from './components/common/EnvConfigErrorScreen';
 
 import './App.css';
 
@@ -95,6 +101,17 @@ const useGlobalModalScrollLock = () => {
 const MainLayout = () => {
   useGlobalModalScrollLock();
   const { currentView } = useClinic();
+  const [devBypass, setDevBypass] = React.useState(false);
+
+  // Fallo explícito de arranque si faltan variables de entorno (Auditoría B-04)
+  if (!supabaseConfigDiagnostics.isConfigured && (!import.meta.env.DEV || !devBypass)) {
+    return (
+      <EnvConfigErrorScreen
+        diagnostics={supabaseConfigDiagnostics}
+        onBypass={() => setDevBypass(true)}
+      />
+    );
+  }
 
   // Render by currentView
   const renderCurrentView = () => {
@@ -145,6 +162,16 @@ const MainLayout = () => {
         );
 
       case 'booking':
+        return (
+          <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+            <Navbar />
+            <main style={{ flex: 1 }}>
+              <AppointmentBookingWizard />
+            </main>
+            <Footer />
+          </div>
+        );
+
       case 'my-turnos':
       case 'patient-portal':
       case 'portal':
@@ -152,7 +179,7 @@ const MainLayout = () => {
           <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             <Navbar />
             <main style={{ flex: 1 }}>
-              <InstitutionalHome />
+              <PatientPortalView />
             </main>
             <Footer />
           </div>
@@ -179,6 +206,11 @@ const MainLayout = () => {
 
   return (
     <div className="citra-platform" style={{ minHeight: '100vh', background: 'var(--bg-app)' }}>
+      {!supabaseConfigDiagnostics.isConfigured && (
+        <div style={{ background: '#FEF3C7', color: '#92400E', padding: '0.45rem 1rem', textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, borderBottom: '1px solid #FDE68A' }}>
+          ⚠️ AVISO MODO DESARROLLO (B-04): Persistencia cloud no configurada en .env. El sistema opera en sandbox local volátil.
+        </div>
+      )}
       {renderCurrentView()}
 
       {/* Global Notifications */}

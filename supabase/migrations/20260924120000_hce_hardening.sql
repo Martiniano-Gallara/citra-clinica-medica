@@ -87,6 +87,28 @@ CREATE TABLE IF NOT EXISTS public.consent_forms (
 
 ALTER TABLE public.consent_forms ENABLE ROW LEVEL SECURITY;
 
+-- 5b. Solicitudes de Acceso Clínico e Interconsultas (A-07)
+CREATE TABLE IF NOT EXISTS public.clinical_access_grants (
+    id VARCHAR(50) PRIMARY KEY,
+    consultation_id VARCHAR(50) REFERENCES public.consultations(id) ON DELETE CASCADE,
+    patient_id VARCHAR(50) NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+    patient_name VARCHAR(200) NOT NULL,
+    patient_dni VARCHAR(20) NOT NULL,
+    requester_doctor_id VARCHAR(50) NOT NULL REFERENCES public.doctors(id) ON DELETE CASCADE,
+    requester_doctor_name VARCHAR(200) NOT NULL,
+    target_doctor_id VARCHAR(50) NOT NULL REFERENCES public.doctors(id) ON DELETE CASCADE,
+    target_doctor_name VARCHAR(200) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'expired')),
+    justification TEXT NOT NULL,
+    requested_sections TEXT[] DEFAULT ARRAY[]::TEXT[],
+    requested_at TIMESTAMPTZ DEFAULT NOW(),
+    approved_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.clinical_access_grants ENABLE ROW LEVEL SECURITY;
+
 -- Columnas complementarias en adendas si no existen
 DO $$ BEGIN
     ALTER TABLE public.consultation_adendas ADD COLUMN IF NOT EXISTS doctor_license VARCHAR(100);
@@ -95,8 +117,7 @@ EXCEPTION
     WHEN duplicate_column THEN null;
 END $$;
 
--- 6. Helper asistencial: doctor_treats_patient (Aislamiento asistencial estricto)
--- Un médico solo puede acceder a la HC de un paciente si tiene turno asignado no cancelado, consulta previa o asignación formal
+-- 6. Helper asistencial: doctor_treats_patient (Aislamiento asistencial estricto e interconsultas A-07)
 CREATE OR REPLACE FUNCTION public.doctor_treats_patient(p_patient_id VARCHAR, p_doctor_id VARCHAR)
 RETURNS BOOLEAN AS $$
 BEGIN
@@ -117,6 +138,12 @@ BEGIN
         SELECT 1 FROM public.patients
         WHERE id = p_patient_id
           AND p_doctor_id = ANY(assigned_doctor_ids)
+    ) OR EXISTS (
+        SELECT 1 FROM public.clinical_access_grants
+        WHERE patient_id = p_patient_id
+          AND requester_doctor_id = p_doctor_id
+          AND status = 'approved'
+          AND (expires_at IS NULL OR expires_at > NOW())
     );
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public, pg_catalog;
@@ -660,8 +687,14 @@ RETURNS JSONB AS $$
 DECLARE
     v_cons_id VARCHAR;
     v_doc_id VARCHAR;
+    v_doc_name VARCHAR;
+    v_doc_license VARCHAR;
     v_doc_refeps VARCHAR;
+    v_doc_specialty VARCHAR;
     v_pat_id VARCHAR;
+    v_pat_name VARCHAR;
+    v_pat_dni VARCHAR;
+    v_integrity_hash VARCHAR;
     v_order JSONB;
 BEGIN
     v_doc_id := public.get_current_doctor_id();
@@ -669,16 +702,78 @@ BEGIN
         RAISE EXCEPTION 'No se encuentra un perfil médico activo para el usuario autenticado.';
     END IF;
 
-    -- Obtener datos fehacientes del médico
-    SELECT sisa_refeps INTO v_doc_refeps FROM public.doctors WHERE id = v_doc_id;
+    -- Obtener datos fehacientes del médico desde la base de datos (C-03)
+    SELECT name, license, sisa_refeps, specialty_name 
+    INTO v_doc_name, v_doc_license, v_doc_refeps, v_doc_specialty 
+    FROM public.doctors WHERE id = v_doc_id;
+
+    IF v_doc_name IS NULL THEN
+        RAISE EXCEPTION 'Perfil médico no encontrado en la base de datos.';
+    END IF;
 
     -- Validar relación asistencial estricta sin evasión de cliente (C02)
     v_pat_id := p_consultation->>'patient_id';
+    SELECT name, dni 
+    INTO v_pat_name, v_pat_dni 
+    FROM public.patients WHERE id = v_pat_id;
+
+    IF v_pat_name IS NULL THEN
+        RAISE EXCEPTION 'Paciente no registrado en el sistema.';
+    END IF;
+
     IF NOT public.doctor_treats_patient(v_pat_id, v_doc_id) AND NOT public.is_superadmin() THEN
         RAISE EXCEPTION 'Acceso denegado: El médico no tiene relación asistencial válida con el paciente.';
     END IF;
 
+    -- Validaciones clínicas y fisiológicas estrictas en servidor
+    IF LENGTH(TRIM(COALESCE(p_consultation->>'evolution', ''))) < 3 THEN
+        RAISE EXCEPTION 'Validación clínica fallida: La evolución médica no puede estar vacía.';
+    END IF;
+
+    IF LENGTH(TRIM(COALESCE(p_consultation->>'diagnosis', ''))) < 2 THEN
+        RAISE EXCEPTION 'Validación clínica fallida: Debe especificarse un diagnóstico clínico principal válido.';
+    END IF;
+
+    -- Validación de rangos de signos vitales (Heart Rate 30-260, Temp 30-45°C, Systolic 40-300, Diastolic 20-200)
+    IF p_consultation->'vitals' IS NOT NULL AND jsonb_typeof(p_consultation->'vitals') = 'object' THEN
+        IF (p_consultation->'vitals'->>'heartRate') IS NOT NULL AND (p_consultation->'vitals'->>'heartRate')::numeric > 0 THEN
+            IF (p_consultation->'vitals'->>'heartRate')::numeric < 30 OR (p_consultation->'vitals'->>'heartRate')::numeric > 260 THEN
+                RAISE EXCEPTION 'Signos vitales inválidos: Frecuencia cardíaca fuera de rango fisiológico (30-260 lpm).';
+            END IF;
+        END IF;
+
+        IF (p_consultation->'vitals'->>'temperature') IS NOT NULL AND (p_consultation->'vitals'->>'temperature')::numeric > 0 THEN
+            IF (p_consultation->'vitals'->>'temperature')::numeric < 30.0 OR (p_consultation->'vitals'->>'temperature')::numeric > 45.0 THEN
+                RAISE EXCEPTION 'Signos vitales inválidos: Temperatura corporal fuera de rango fisiológico (30.0-45.0 °C).';
+            END IF;
+        END IF;
+
+        IF (p_consultation->'vitals'->>'bpSystolic') IS NOT NULL AND (p_consultation->'vitals'->>'bpSystolic')::numeric > 0 THEN
+            IF (p_consultation->'vitals'->>'bpSystolic')::numeric < 40 OR (p_consultation->'vitals'->>'bpSystolic')::numeric > 300 THEN
+                RAISE EXCEPTION 'Signos vitales inválidos: Tensión arterial sistólica fuera de rango (40-300 mmHg).';
+            END IF;
+        END IF;
+
+        IF (p_consultation->'vitals'->>'bpDiastolic') IS NOT NULL AND (p_consultation->'vitals'->>'bpDiastolic')::numeric > 0 THEN
+            IF (p_consultation->'vitals'->>'bpDiastolic')::numeric < 20 OR (p_consultation->'vitals'->>'bpDiastolic')::numeric > 200 THEN
+                RAISE EXCEPTION 'Signos vitales inválidos: Tensión arterial diastólica fuera de rango (20-200 mmHg).';
+            END IF;
+        END IF;
+    END IF;
+
     v_cons_id := p_consultation->>'id';
+
+    -- Cálculo del Hash Criptográfico SHA-256 en Servidor (A-05, Ley 25.506)
+    v_integrity_hash := encode(digest(
+        v_cons_id || '|' || 
+        v_pat_id || '|' || 
+        v_pat_dni || '|' || 
+        v_doc_id || '|' || 
+        COALESCE(p_consultation->>'evolution', '') || '|' || 
+        COALESCE(p_consultation->>'diagnosis', '') || '|' || 
+        NOW()::text, 
+        'sha256'
+    ), 'hex');
 
     -- 1. Insertar Consulta con datos reales (sin SISA fake por defecto - A06)
     INSERT INTO public.consultations (
@@ -691,13 +786,13 @@ BEGIN
         v_cons_id,
         p_consultation->>'appointment_id',
         v_pat_id,
-        p_consultation->>'patient_name',
-        p_consultation->>'patient_dni',
+        v_pat_name,
+        v_pat_dni,
         v_doc_id,
-        p_consultation->>'doctor_name',
-        p_consultation->>'doctor_license',
-        COALESCE(p_consultation->>'sisa_refeps', v_doc_refeps),
-        p_consultation->>'specialty_name',
+        v_doc_name,
+        v_doc_license,
+        COALESCE(v_doc_refeps, p_consultation->>'sisa_refeps'),
+        COALESCE(p_consultation->>'specialty_name', v_doc_specialty),
         COALESCE((p_consultation->>'date')::date, CURRENT_DATE),
         COALESCE((p_consultation->>'time')::time, CURRENT_TIME),
         p_consultation->>'reason',
@@ -713,7 +808,7 @@ BEGIN
         'Firma Electrónica Médica Certificada (Ley 25.506 Art. 5)',
         'CITRA Seguridad Clínica Central',
         NOW(),
-        p_consultation->>'integrity_hash'
+        v_integrity_hash
     );
 
     -- 2. Si vino receta electrónica asociada, insertarla de forma atómica
@@ -727,12 +822,12 @@ BEGIN
             p_prescription->>'id',
             p_prescription->>'cuir',
             v_pat_id,
-            p_prescription->>'patient_name',
-            p_prescription->>'patient_dni',
+            v_pat_name,
+            v_pat_dni,
             v_doc_id,
-            p_prescription->>'doctor_name',
-            p_prescription->>'doctor_license',
-            COALESCE(p_prescription->>'sisa_refeps', v_doc_refeps),
+            v_doc_name,
+            v_doc_license,
+            COALESCE(v_doc_refeps, p_prescription->>'sisa_refeps'),
             p_prescription->>'diagnosis_presuntivo',
             COALESCE(p_prescription->'medications', '[]'::jsonb),
             COALESCE((p_prescription->>'issue_date')::date, CURRENT_DATE),
@@ -751,9 +846,9 @@ BEGIN
             ) VALUES (
                 v_order->>'id',
                 v_pat_id,
-                v_order->>'patient_name',
+                v_pat_name,
                 v_doc_id,
-                v_order->>'doctor_name',
+                v_doc_name,
                 v_order->>'type',
                 v_order->>'instructions',
                 COALESCE((v_order->>'date')::date, CURRENT_DATE)
@@ -773,7 +868,8 @@ BEGIN
     RETURN jsonb_build_object(
         'success', TRUE,
         'consultation_id', v_cons_id,
-        'message', 'Paquete clínico registrado atómicamente con éxito.'
+        'integrity_hash', v_integrity_hash,
+        'message', 'Paquete clínico registrado atómicamente con éxito conforme Ley 26.529 y Ley 25.506.'
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_catalog;

@@ -28,7 +28,7 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE study_status AS ENUM ('solicitado', 'en_proceso', 'completado', 'entregado', 'pendiente', 'realizado', 'informado');
+    CREATE TYPE study_status AS ENUM ('solicitado', 'en_proceso', 'completado', 'entregado', 'pendiente', 'realizado', 'informado', 'cancelado');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
@@ -69,6 +69,8 @@ CREATE TABLE IF NOT EXISTS rooms (
     floor VARCHAR(50) DEFAULT 'Piso 1',
     branch_id VARCHAR(50) DEFAULT 'branch-1',
     specialty VARCHAR(100),
+    status VARCHAR(50) DEFAULT 'Disponible',
+    equipment TEXT DEFAULT 'Camilla ergonómica, escritorio médico',
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -186,8 +188,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_active_appointment
 ON appointments (doctor_id, date, time)
 WHERE status != 'cancelado';
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_no_duplicate_appointment
-ON appointments (doctor_id, date, time)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_patient_active_slot
+ON appointments (patient_id, date, time)
 WHERE status != 'cancelado';
 
 -- 11. Historias Clínicas Electrónicas (HCE) - Ley 26.529 y Ley 25.506
@@ -298,11 +300,21 @@ CREATE TABLE IF NOT EXISTS medical_certificates (
     id VARCHAR(50) PRIMARY KEY,
     patient_id VARCHAR(50) NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
     patient_name VARCHAR(200) NOT NULL,
+    patient_dni VARCHAR(20),
     doctor_id VARCHAR(50) REFERENCES doctors(id) ON DELETE SET NULL,
     doctor_name VARCHAR(200) NOT NULL,
+    doctor_license VARCHAR(50),
+    doctor_specialty VARCHAR(100),
+    certificate_type VARCHAR(100) DEFAULT 'Certificado de Reposo',
     diagnosis TEXT NOT NULL,
     rest_days INT DEFAULT 0,
+    rest_start_date DATE,
+    rest_end_date DATE,
+    content TEXT,
     observations TEXT,
+    signature_hash VARCHAR(64),
+    qr_verification_url TEXT,
+    signed BOOLEAN DEFAULT TRUE,
     date DATE NOT NULL DEFAULT CURRENT_DATE,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -471,6 +483,18 @@ CREATE INDEX IF NOT EXISTS idx_imaging_doctor_id ON imaging_studies(doctor_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_target_dni ON audit_logs(target_dni);
 
+CREATE INDEX IF NOT EXISTS idx_adendas_consultation ON consultation_adendas(consultation_id);
+CREATE INDEX IF NOT EXISTS idx_adendas_doctor ON consultation_adendas(doctor_id);
+CREATE INDEX IF NOT EXISTS idx_medical_orders_patient ON medical_orders(patient_id);
+CREATE INDEX IF NOT EXISTS idx_medical_orders_doctor ON medical_orders(doctor_id);
+CREATE INDEX IF NOT EXISTS idx_certificates_patient ON medical_certificates(patient_id);
+CREATE INDEX IF NOT EXISTS idx_certificates_doctor ON medical_certificates(doctor_id);
+CREATE INDEX IF NOT EXISTS idx_invoices_patient ON invoices(patient_id);
+CREATE INDEX IF NOT EXISTS idx_invoices_date ON invoices(date);
+CREATE INDEX IF NOT EXISTS idx_invoices_cae ON invoices(cae);
+CREATE INDEX IF NOT EXISTS idx_cash_movements_shift ON cash_movements(shift_id);
+CREATE INDEX IF NOT EXISTS idx_cash_shifts_date ON cash_shifts(opened_at);
+
 -- 22. Triggers para auto-actualización de 'updated_at'
 CREATE OR REPLACE FUNCTION set_updated_at_timestamp()
 RETURNS TRIGGER AS $$
@@ -529,3 +553,464 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
 AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE FUNCTION public.handle_new_auth_user();
+
+-- 24. Solicitudes de Acceso Clínico e Interconsultas (A-07)
+CREATE TABLE IF NOT EXISTS public.clinical_access_grants (
+    id VARCHAR(50) PRIMARY KEY,
+    consultation_id VARCHAR(50) REFERENCES public.consultations(id) ON DELETE CASCADE,
+    patient_id VARCHAR(50) NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+    patient_name VARCHAR(200) NOT NULL,
+    patient_dni VARCHAR(20) NOT NULL,
+    requester_doctor_id VARCHAR(50) NOT NULL REFERENCES public.doctors(id) ON DELETE CASCADE,
+    requester_doctor_name VARCHAR(200) NOT NULL,
+    target_doctor_id VARCHAR(50) NOT NULL REFERENCES public.doctors(id) ON DELETE CASCADE,
+    target_doctor_name VARCHAR(200) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'expired')),
+    justification TEXT NOT NULL,
+    requested_sections TEXT[] DEFAULT ARRAY[]::TEXT[],
+    requested_at TIMESTAMPTZ DEFAULT NOW(),
+    approved_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 25. Vista Pública Reducida de Profesionales para Pacientes y Reserva Online (A-01)
+CREATE OR REPLACE VIEW public.public_doctors AS
+SELECT 
+    id,
+    name,
+    license,
+    specialty_id,
+    specialty_name,
+    room_id,
+    room_name,
+    color,
+    avatar_url,
+    experience,
+    bio,
+    working_days,
+    schedule_start,
+    schedule_end,
+    slot_duration,
+    accepted_insurances,
+    is_active
+FROM public.doctors
+WHERE is_active = TRUE;
+
+GRANT SELECT ON public.public_doctors TO anon, authenticated;
+
+-- 26. Facturación y Comprobantes Fiscales ARCA (A-04)
+CREATE TABLE IF NOT EXISTS invoices (
+    id VARCHAR(50) PRIMARY KEY,
+    invoice_number VARCHAR(50) NOT NULL,
+    cae VARCHAR(30) NOT NULL,
+    cae_vto DATE NOT NULL,
+    pto_vta INTEGER NOT NULL DEFAULT 1,
+    tipo_cmp INTEGER NOT NULL DEFAULT 6,
+    date DATE NOT NULL DEFAULT CURRENT_DATE,
+    patient_id VARCHAR(50) REFERENCES patients(id) ON DELETE SET NULL,
+    patient_name VARCHAR(200) NOT NULL,
+    dni VARCHAR(20) NOT NULL,
+    total NUMERIC(12,2) NOT NULL DEFAULT 0,
+    subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
+    concept VARCHAR(200) NOT NULL,
+    payment_method VARCHAR(50) NOT NULL DEFAULT 'Efectivo',
+    status VARCHAR(30) NOT NULL DEFAULT 'Cobrado',
+    arca_validated BOOLEAN NOT NULL DEFAULT true,
+    receipt_number VARCHAR(50),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "invoices_select_policy" ON invoices FOR SELECT USING (patient_id = public.get_current_patient_id() OR public.is_administrative());
+CREATE POLICY "invoices_admin_all" ON invoices FOR ALL USING (public.is_administrative());
+CREATE INDEX IF NOT EXISTS idx_invoices_patient ON invoices (patient_id);
+CREATE INDEX IF NOT EXISTS idx_invoices_date ON invoices (date);
+
+-- ====================================================================
+-- 21. FUNCIONES AUXILIARES DE ROL Y VISTA PÚBLICA (T9, T16)
+-- ====================================================================
+CREATE OR REPLACE FUNCTION public.get_auth_role()
+RETURNS user_role AS $$
+    SELECT role FROM public.profiles WHERE id = auth.uid();
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
+
+CREATE OR REPLACE FUNCTION public.is_superadmin()
+RETURNS BOOLEAN AS $$
+    SELECT (public.get_auth_role() = 'superadmin' OR auth.jwt() ->> 'email' = 'dr.blanco@citra.com.ar');
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
+
+CREATE OR REPLACE FUNCTION public.is_administrative()
+RETURNS BOOLEAN AS $$
+    SELECT (public.get_auth_role() IN ('administrative', 'superadmin') OR auth.jwt() ->> 'email' = 'dr.blanco@citra.com.ar');
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
+
+CREATE OR REPLACE FUNCTION public.is_doctor()
+RETURNS BOOLEAN AS $$
+    SELECT (public.get_auth_role() = 'doctor' OR auth.jwt() ->> 'email' = 'dr.blanco@citra.com.ar' OR EXISTS (SELECT 1 FROM public.doctors WHERE user_id = auth.uid()));
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
+
+CREATE OR REPLACE FUNCTION public.get_current_doctor_id()
+RETURNS VARCHAR AS $$
+    SELECT d.id
+    FROM public.doctors d
+    LEFT JOIN public.profiles p ON p.id = d.user_id
+    WHERE (d.user_id = auth.uid() OR auth.jwt() ->> 'email' = d.email)
+      AND (p.role IN ('doctor', 'superadmin') OR p.role IS NULL)
+      AND COALESCE(p.is_active, TRUE) = TRUE
+      AND d.is_active = TRUE
+    LIMIT 1;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
+
+CREATE OR REPLACE FUNCTION public.get_current_patient_id()
+RETURNS VARCHAR AS $$
+    SELECT p.id
+    FROM public.patients p
+    JOIN public.profiles pr ON pr.id = p.user_id
+    WHERE p.user_id = auth.uid()
+      AND pr.role = 'patient'
+      AND pr.is_active = TRUE
+    LIMIT 1;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
+
+CREATE OR REPLACE FUNCTION public.doctor_treats_patient(p_patient_id VARCHAR, p_doctor_id VARCHAR)
+RETURNS BOOLEAN AS $$
+BEGIN
+    IF p_doctor_id IS NULL OR p_patient_id IS NULL THEN
+        RETURN FALSE;
+    END IF;
+
+    RETURN EXISTS (
+        SELECT 1 FROM public.appointments
+        WHERE patient_id = p_patient_id
+          AND doctor_id = p_doctor_id
+          AND status != 'cancelado'
+    ) OR EXISTS (
+        SELECT 1 FROM public.consultations
+        WHERE patient_id = p_patient_id
+          AND doctor_id = p_doctor_id
+    ) OR EXISTS (
+        SELECT 1 FROM public.patients
+        WHERE id = p_patient_id
+          AND p_doctor_id = ANY(assigned_doctor_ids)
+    );
+END;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
+
+REVOKE EXECUTE ON FUNCTION public.get_auth_role() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.is_superadmin() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.is_administrative() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.is_doctor() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.get_current_doctor_id() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.get_current_patient_id() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.doctor_treats_patient(VARCHAR, VARCHAR) FROM anon, public;
+GRANT EXECUTE ON FUNCTION public.doctor_treats_patient(VARCHAR, VARCHAR) TO authenticated;
+
+-- T9: Catálogo público seguro sin exponer honorarios ni datos confidenciales
+CREATE OR REPLACE VIEW public.public_doctors AS
+SELECT 
+    id,
+    name,
+    specialty_name,
+    specialty_id,
+    room_id,
+    room_name,
+    working_days,
+    schedule_start,
+    schedule_end,
+    slot_duration,
+    accepted_insurances,
+    experience,
+    bio,
+    avatar_url,
+    is_active
+FROM public.doctors
+WHERE is_active = true;
+
+GRANT SELECT ON public.public_doctors TO anon, authenticated;
+
+-- ====================================================================
+-- POLÍTICAS DE BORRADO Y TRIGGERS DE SEGURIDAD (C-04, T7, T10, T11, T12)
+-- ====================================================================
+DROP POLICY IF EXISTS "patients_delete_policy" ON patients;
+CREATE POLICY "patients_delete_policy" ON patients FOR DELETE USING (public.is_administrative() OR public.is_superadmin());
+
+DROP POLICY IF EXISTS "appointments_delete_policy" ON appointments;
+CREATE POLICY "appointments_delete_policy" ON appointments FOR DELETE USING (public.is_administrative() OR public.is_superadmin());
+
+-- 1. Protección contra auto-escalado en Doctors (C-04, T6, T11)
+CREATE OR REPLACE FUNCTION public.protect_doctor_fields()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT public.is_administrative() AND NOT public.is_superadmin() THEN
+        IF NEW.fee_percentage IS DISTINCT FROM OLD.fee_percentage THEN
+            RAISE EXCEPTION 'Operación denegada (C-04): Solo la administración de CITRA puede modificar porcentajes de honorarios.';
+        END IF;
+        IF NEW.price_consultation IS DISTINCT FROM OLD.price_consultation THEN
+            RAISE EXCEPTION 'Operación denegada (C-04): Solo la administración puede modificar aranceles de consulta.';
+        END IF;
+        IF OLD.is_active = FALSE AND NEW.is_active = TRUE THEN
+            RAISE EXCEPTION 'Operación denegada (T11): Un profesional inactivo no puede reactivarse a sí mismo unilateralmente.';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_protect_doctor_fields ON public.doctors;
+CREATE TRIGGER trg_protect_doctor_fields
+BEFORE UPDATE ON public.doctors
+FOR EACH ROW EXECUTE FUNCTION public.protect_doctor_fields();
+
+-- 2. Protección de modificación de datos en Patients (T4, C-04)
+CREATE OR REPLACE FUNCTION public.protect_patient_fields()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.id IS DISTINCT FROM OLD.id OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
+        RAISE EXCEPTION 'Inmutabilidad de identificadores: No se puede modificar el ID ni la fecha de creación del paciente.';
+    END IF;
+
+    IF public.get_auth_role() = 'patient' THEN
+        IF NEW.dni IS DISTINCT FROM OLD.dni THEN
+            RAISE EXCEPTION 'Operación denegada (T4): El DNI requiere validación de identidad en secretaría.';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_protect_patient_fields ON public.patients;
+CREATE TRIGGER trg_protect_patient_fields
+BEFORE UPDATE ON public.patients
+FOR EACH ROW EXECUTE FUNCTION public.protect_patient_fields();
+
+-- 3. Protección de informes radiológicos contra edición administrativa (T7)
+CREATE OR REPLACE FUNCTION public.protect_imaging_report()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT public.is_doctor() AND NOT public.is_superadmin() THEN
+        IF NEW.report IS DISTINCT FROM OLD.report
+           OR NEW.findings IS DISTINCT FROM OLD.findings
+           OR NEW.conclusion IS DISTINCT FROM OLD.conclusion
+           OR (NEW.status = 'informado' AND OLD.status != 'informado')
+        THEN
+            RAISE EXCEPTION 'Operación denegada (T7): La redacción o modificación de informes diagnósticos está reservada exclusivamente a profesionales médicos.';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_protect_imaging_report ON public.imaging_studies;
+CREATE TRIGGER trg_protect_imaging_report
+BEFORE UPDATE ON public.imaging_studies
+FOR EACH ROW EXECUTE FUNCTION public.protect_imaging_report();
+
+-- 4. Protección contra colisión y control de cancelación de turnos (A-03, T10)
+CREATE OR REPLACE FUNCTION public.check_appointment_patient_cancellation()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF public.get_auth_role() = 'patient' THEN
+        IF NEW.doctor_id IS DISTINCT FROM OLD.doctor_id OR
+           NEW.patient_id IS DISTINCT FROM OLD.patient_id OR
+           NEW.date IS DISTINCT FROM OLD.date OR
+           NEW.time IS DISTINCT FROM OLD.time THEN
+            RAISE EXCEPTION 'Operación denegada (T10): El paciente solo puede cancelar su turno sin modificar fecha, horario ni profesional asignado.';
+        END IF;
+
+        IF NEW.status != 'cancelado' THEN
+            RAISE EXCEPTION 'Operación denegada (T10): El paciente solo tiene permisos para cancelar turnos agendados (status = cancelado).';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_appointment_patient_cancellation ON public.appointments;
+CREATE TRIGGER trg_appointment_patient_cancellation
+BEFORE UPDATE ON public.appointments
+FOR EACH ROW EXECUTE FUNCTION public.check_appointment_patient_cancellation();
+
+-- 5. Prevención de solapamiento y validación de disponibilidad del profesional y paciente (A-03)
+CREATE OR REPLACE FUNCTION public.check_appointment_overlap()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_doc RECORD;
+    v_dow INT;
+    v_day_name TEXT;
+BEGIN
+    IF NEW.status != 'cancelado' THEN
+        -- 1. Conflicto de turno para el profesional (Doble reserva médico)
+        IF EXISTS (
+            SELECT 1 FROM public.appointments
+            WHERE doctor_id = NEW.doctor_id
+              AND date = NEW.date
+              AND time = NEW.time
+              AND id != COALESCE(NEW.id, '')
+              AND status != 'cancelado'
+        ) THEN
+            RAISE EXCEPTION 'Conflicto de agenda (A-03): El profesional ya posee un turno confirmado en esa fecha y horario.';
+        END IF;
+
+        -- 2. Conflicto de turno para el mismo paciente (Doble reserva paciente)
+        IF NEW.patient_id IS NOT NULL AND EXISTS (
+            SELECT 1 FROM public.appointments
+            WHERE patient_id = NEW.patient_id
+              AND date = NEW.date
+              AND time = NEW.time
+              AND id != COALESCE(NEW.id, '')
+              AND status != 'cancelado'
+        ) THEN
+            RAISE EXCEPTION 'Conflicto de turno: El paciente ya posee un turno asignado en este mismo horario.';
+        END IF;
+
+        -- 3. Validación de disponibilidad, feriados y horarios del profesional en el servidor
+        SELECT working_days, schedule_start, schedule_end, blocked_dates
+        INTO v_doc
+        FROM public.doctors
+        WHERE id = NEW.doctor_id;
+
+        IF FOUND THEN
+            -- Fechas bloqueadas / feriados del médico
+            IF v_doc.blocked_dates IS NOT NULL AND NEW.date = ANY(v_doc.blocked_dates) THEN
+                RAISE EXCEPTION 'Disponibilidad denegada: La fecha seleccionada (%) está bloqueada para el profesional.', NEW.date;
+            END IF;
+
+            -- Rango horario de atención
+            IF v_doc.schedule_start IS NOT NULL AND v_doc.schedule_end IS NOT NULL THEN
+                IF NEW.time < v_doc.schedule_start OR NEW.time > v_doc.schedule_end THEN
+                    RAISE EXCEPTION 'Horario no habilitado: El horario % está fuera del turno de atención del profesional (% a %).', 
+                        NEW.time, v_doc.schedule_start, v_doc.schedule_end;
+                END IF;
+            END IF;
+
+            -- Días laborables del profesional
+            v_dow := EXTRACT(DOW FROM NEW.date)::INT;
+            v_day_name := CASE v_dow
+                WHEN 0 THEN 'Domingo'
+                WHEN 1 THEN 'Lunes'
+                WHEN 2 THEN 'Martes'
+                WHEN 3 THEN 'Miércoles'
+                WHEN 4 THEN 'Jueves'
+                WHEN 5 THEN 'Viernes'
+                WHEN 6 THEN 'Sábado'
+            END;
+
+            IF v_doc.working_days IS NOT NULL AND array_length(v_doc.working_days, 1) > 0 THEN
+                IF NOT (v_day_name = ANY(v_doc.working_days)) THEN
+                    RAISE EXCEPTION 'Día no laboral: El profesional no atiende los días %.', v_day_name;
+                END IF;
+            END IF;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_catalog;
+
+DROP TRIGGER IF EXISTS trg_check_appointment_overlap ON public.appointments;
+CREATE TRIGGER trg_check_appointment_overlap
+BEFORE INSERT OR UPDATE ON public.appointments
+FOR EACH ROW EXECUTE FUNCTION public.check_appointment_overlap();
+
+-- 6. Inmutabilidad HCE (Ley 26.529) para Consultas, Adendas, Órdenes y Certificados
+CREATE OR REPLACE FUNCTION public.enforce_clinical_immutability()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        RAISE EXCEPTION 'Operación denegada (Ley 26.529): Los registros de la Historia Clínica Electrónica son inmutables y no pueden eliminarse.';
+    END IF;
+
+    IF TG_OP = 'UPDATE' THEN
+        RAISE EXCEPTION 'Operación denegada (Ley 26.529): Los registros clínicos firmados son inmutables. Para modificaciones debe registrarse una Adenda Médica Fechada.';
+    END IF;
+
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_catalog;
+
+DROP TRIGGER IF EXISTS trg_immutable_consultations ON public.consultations;
+CREATE TRIGGER trg_immutable_consultations
+BEFORE UPDATE OR DELETE ON public.consultations
+FOR EACH ROW EXECUTE FUNCTION public.enforce_clinical_immutability();
+
+DROP TRIGGER IF EXISTS trg_immutable_adendas ON public.consultation_adendas;
+CREATE TRIGGER trg_immutable_adendas
+BEFORE UPDATE OR DELETE ON public.consultation_adendas
+FOR EACH ROW EXECUTE FUNCTION public.enforce_clinical_immutability();
+
+DROP TRIGGER IF EXISTS trg_immutable_medical_orders ON public.medical_orders;
+CREATE TRIGGER trg_immutable_medical_orders
+BEFORE UPDATE OR DELETE ON public.medical_orders
+FOR EACH ROW EXECUTE FUNCTION public.enforce_clinical_immutability();
+
+DROP TRIGGER IF EXISTS trg_immutable_medical_certificates ON public.medical_certificates;
+CREATE TRIGGER trg_immutable_medical_certificates
+BEFORE UPDATE OR DELETE ON public.medical_certificates
+FOR EACH ROW EXECUTE FUNCTION public.enforce_clinical_immutability();
+
+DROP TRIGGER IF EXISTS trg_immutable_audit_logs ON public.audit_logs;
+CREATE TRIGGER trg_immutable_audit_logs
+BEFORE UPDATE OR DELETE ON public.audit_logs
+FOR EACH ROW EXECUTE FUNCTION public.enforce_clinical_immutability();
+
+-- 7. Inmutabilidad de Recetas Electrónicas (Ley 27.553)
+CREATE OR REPLACE FUNCTION public.enforce_prescription_immutability()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        RAISE EXCEPTION 'Operación denegada (Ley 27.553): Las recetas electrónicas no pueden eliminarse.';
+    END IF;
+
+    IF TG_OP = 'UPDATE' THEN
+        IF OLD.status = 'anulada' THEN
+            RAISE EXCEPTION 'Operación denegada: La receta ya se encuentra formalmente anulada.';
+        END IF;
+
+        IF OLD.cuir != NEW.cuir OR OLD.patient_id != NEW.patient_id OR OLD.doctor_id != NEW.doctor_id
+           OR OLD.medications::text != NEW.medications::text OR OLD.issue_date != NEW.issue_date THEN
+            RAISE EXCEPTION 'Operación denegada: El contenido farmacológico y de autoría de la receta electrónica es inmutable.';
+        END IF;
+
+        IF NEW.status NOT IN ('activa', 'dispensada', 'vencida', 'anulada') THEN
+            RAISE EXCEPTION 'Operación denegada: Estado de prescripción inválido.';
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_catalog;
+
+DROP TRIGGER IF EXISTS trg_immutable_prescriptions ON public.electronic_prescriptions;
+CREATE TRIGGER trg_immutable_prescriptions
+BEFORE UPDATE OR DELETE ON public.electronic_prescriptions
+FOR EACH ROW EXECUTE FUNCTION public.enforce_prescription_immutability();
+
+-- 8. Inmutabilidad de Consentimientos Informados
+CREATE OR REPLACE FUNCTION public.enforce_consent_immutability()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        RAISE EXCEPTION 'Operación denegada: Los consentimientos informados no pueden eliminarse.';
+    END IF;
+
+    IF TG_OP = 'UPDATE' THEN
+        IF OLD.status = 'revoked' THEN
+            RAISE EXCEPTION 'Operación denegada: El consentimiento ya se encuentra revocado permanentemente.';
+        END IF;
+        IF NEW.status != 'revoked' OR NEW.revocation_reason IS NULL OR TRIM(NEW.revocation_reason) = '' THEN
+            RAISE EXCEPTION 'Operación denegada: El consentimiento solo puede modificarse para asentar su revocación formal con motivo.';
+        END IF;
+        NEW.revoked_at := NOW();
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_catalog;
+
+DROP TRIGGER IF EXISTS trg_immutable_consent_forms ON public.consent_forms;
+CREATE TRIGGER trg_immutable_consent_forms
+BEFORE UPDATE OR DELETE ON public.consent_forms
+FOR EACH ROW EXECUTE FUNCTION public.enforce_consent_immutability();
+
+
+

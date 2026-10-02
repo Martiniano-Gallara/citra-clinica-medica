@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { sanitizeCsvCell, getTodayArgentina } from '../../utils/dateUtils';
 import {
@@ -17,18 +17,13 @@ import {
   Stethoscope,
   Activity,
   Send,
-  Sparkles,
-  Heart,
-  Droplet,
-  CheckCircle2,
   UserCheck,
   ChevronDown,
   ChevronUp,
-  MessageSquare,
-  Mail
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { PatientFormModal } from './PatientFormModal';
-import { PatientDetailModal } from './PatientDetailModal';
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
 export const PatientsView = () => {
@@ -101,6 +96,20 @@ export const PatientsView = () => {
     });
   }, [effectivePatients, searchTerm, insuranceFilter, allergyOnlyFilter]);
 
+  // Paginación de Pacientes (Auditoría Forense / R: Sin paginación)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, insuranceFilter, allergyOnlyFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPatients.length / pageSize));
+  const paginatedPatients = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredPatients.slice(start, start + pageSize);
+  }, [filteredPatients, currentPage, pageSize]);
+
   const patientsWithAllergiesCount = effectivePatients.filter((p) => p.allergies && p.allergies.length > 0).length;
 
   const getAssignedDoctors = (pat) => {
@@ -133,7 +142,13 @@ export const PatientsView = () => {
     return [];
   };
 
-  const canExportPatients = !isDoctor || currentUser?.role === 'superadmin' || currentDoctor?.id === 'doc-1';
+  const canExportPatients = Boolean(
+    currentUser &&
+    (currentUser.adminType === 'administrative' ||
+     currentUser.role === 'superadmin' ||
+     currentUser.role === 'admin' ||
+     currentUser.role?.toLowerCase().includes('administra'))
+  );
 
   const exportPatientsCSV = () => {
     if (!canExportPatients) {
@@ -534,7 +549,7 @@ export const PatientsView = () => {
                   </td>
                 </tr>
               ) : (
-                filteredPatients.map((pat) => {
+                paginatedPatients.map((pat) => {
                   const isExpanded = expandedPatientId === pat.id;
                   const hasAllergies = pat.allergies && pat.allergies.length > 0;
 
@@ -967,6 +982,107 @@ export const PatientsView = () => {
               )}
             </tbody>
           </table>
+
+          {/* BARRA DE PAGINACIÓN PROFESIONAL (Auditoría Forense / R: Sin paginación) */}
+          {filteredPatients.length > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0.85rem 1.25rem',
+                background: '#ffffff',
+                borderTop: '1px solid #e2e8f0',
+                fontSize: '0.82rem',
+                color: '#64748b',
+                flexWrap: 'wrap',
+                gap: '0.75rem'
+              }}
+            >
+              {/* Info conteo */}
+              <div>
+                Mostrando <strong style={{ color: '#0f172a' }}>{(currentPage - 1) * pageSize + 1}</strong> a{' '}
+                <strong style={{ color: '#0f172a' }}>{Math.min(currentPage * pageSize, filteredPatients.length)}</strong> de{' '}
+                <strong style={{ color: '#0f172a' }}>{filteredPatients.length}</strong> pacientes
+              </div>
+
+              {/* Selector de tamaño y Controles de Página */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <span>Por página:</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    style={{
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.8rem',
+                      color: '#0f172a',
+                      background: '#f8fafc',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value={10}>10</option>
+                    <option value={15}>15</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    style={{
+                      background: currentPage === 1 ? '#f8fafc' : '#ffffff',
+                      border: '1px solid #cbd5e1',
+                      color: currentPage === 1 ? '#94a3b8' : '#0f172a',
+                      borderRadius: '6px',
+                      padding: '0.3rem 0.55rem',
+                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '2px',
+                      fontSize: '0.78rem',
+                      fontWeight: 600
+                    }}
+                  >
+                    <ChevronLeft size={14} /> Anterior
+                  </button>
+
+                  <span style={{ padding: '0 0.5rem', fontWeight: 700, color: '#0f172a', fontSize: '0.8rem' }}>
+                    Página {currentPage} de {totalPages}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    style={{
+                      background: currentPage === totalPages ? '#f8fafc' : '#ffffff',
+                      border: '1px solid #cbd5e1',
+                      color: currentPage === totalPages ? '#94a3b8' : '#0f172a',
+                      borderRadius: '6px',
+                      padding: '0.3rem 0.55rem',
+                      cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '2px',
+                      fontSize: '0.78rem',
+                      fontWeight: 600
+                    }}
+                  >
+                    Siguiente <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

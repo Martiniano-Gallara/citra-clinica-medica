@@ -32,6 +32,8 @@ export const ArcaInvoiceModal = () => {
     docHonorarioPercent: 75
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     if (arcaInvoicePreloadData) {
       setFormData((prev) => ({
@@ -43,30 +45,42 @@ export const ArcaInvoiceModal = () => {
 
   const honorariosCalc = calculateDoctorHonorarios(formData.amount, formData.docHonorarioPercent);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     if (!formData.patientName || formData.amount <= 0) {
       addToast('Error', 'Debe seleccionar un paciente y monto válido.', 'error');
       return;
     }
 
-    addArcaInvoice({
-      ...formData,
-      doctorHonorario: honorariosCalc.honorarioNeto
-    });
-
+    setIsSubmitting(true);
     try {
-      confetti({ particleCount: 35, spread: 55, origin: { y: 0.75 } });
-    } catch (e) {}
+      await addArcaInvoice({
+        ...formData,
+        isSimulation: true,
+        legalDisclaimer: 'Comprobante emitido en modo demostración/homologación. Requiere certificado digital X.509 activo en ARCA para validez tributaria vinculante.',
+        doctorHonorario: honorariosCalc.honorarioNeto
+      });
 
-    setIsArcaInvoiceModalOpen(false);
+      try {
+        confetti({ particleCount: 35, spread: 55, origin: { y: 0.75 } });
+      } catch (e) {}
+
+      setIsArcaInvoiceModalOpen(false);
+    } catch (err) {
+      console.error('Error al emitir factura ARCA:', err);
+      addToast('Error', 'No se pudo emitir el comprobante.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Modal
       isOpen={isArcaInvoiceModalOpen}
       onClose={() => setIsArcaInvoiceModalOpen(false)}
-      title="Emisión de Comprobante Fiscal Electrónico — ARCA (AFIP)"
+      title="Emisión de Comprobante Fiscal — ARCA (AFIP)"
       size="lg"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', width: '100%' }}>
@@ -77,16 +91,22 @@ export const ArcaInvoiceModal = () => {
           >
             Cancelar
           </button>
-          <button type="button" className="btn btn-primary" onClick={handleSubmit}>
+          <button type="button" className="btn btn-primary" onClick={handleSubmit} disabled={isSubmitting}>
             <Receipt size={16} />
-            <span>Emitir & Solicitar CAE a ARCA</span>
+            <span>{isSubmitting ? 'Emitiendo...' : 'Emitir Comprobante (Simulación CAE)'}</span>
           </button>
         </div>
       }
     >
       <form onSubmit={handleSubmit}>
-        <div style={{ background: '#EBF3FD', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #257CE6', marginBottom: '1.25rem', fontSize: '0.84rem', color: '#002182' }}>
-          <strong>Conexión ARCA WebServices (WSFEv1):</strong> Emisión oficial de comprobante fiscal con validación de CUIT emisor <strong>{clinicInfo.cuit}</strong> en Punto de Venta <strong>N° {clinicInfo.arcaPtoVta}</strong>.
+        <div style={{ background: '#FFFBEB', padding: '0.85rem 1rem', borderRadius: '8px', border: '1.5px solid #F59E0B', marginBottom: '1.25rem', fontSize: '0.84rem', color: '#92400E' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, marginBottom: '3px' }}>
+            <ShieldCheck size={16} color="#D97706" />
+            <span>MODO SIMULACIÓN FISCAL · HOMOLOGACIÓN ARCA (WSFEv1)</span>
+          </div>
+          <div>
+            Este módulo opera en entorno de previsualización y cálculo interno de honorarios profesionales. Los comprobantes y CAE generados en este panel son de <strong>carácter demostrativo</strong> y <strong>no tienen validez fiscal vinculante ante ARCA</strong> hasta configurar el certificado digital X.509 de producción.
+          </div>
         </div>
 
         <div className="form-row">

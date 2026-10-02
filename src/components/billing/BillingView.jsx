@@ -30,6 +30,7 @@ export const BillingView = () => {
     doctors,
     cashClosures,
     addCashMovement,
+    closeCashShift,
     setIsPaymentModalOpen,
     setPaymentPreloadData,
     setIsArcaInvoiceModalOpen,
@@ -41,6 +42,7 @@ export const BillingView = () => {
   const [activeSubTab, setActiveSubTab] = useState('invoices'); // 'invoices' or 'honorarios'
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMethod, setFilterMethod] = useState('all');
+  const [isClosingShift, setIsClosingShift] = useState(false);
 
   // KPI Calculations
   const totalFacturado = invoices.reduce((acc, curr) => acc + (curr.amount || 0), 0);
@@ -338,10 +340,26 @@ export const BillingView = () => {
                   <button
                     type="button"
                     className="btn btn-primary btn-sm"
-                    onClick={() => addToast('Arqueo de Turno Cerrado', 'Cierre de caja exportado y archivado.', 'success')}
+                    disabled={isClosingShift}
+                    onClick={async () => {
+                      if (isClosingShift) return;
+                      const confirmed = window.confirm('¿Confirma el cierre y arqueo definitivo de la caja? Esta operación registrará el balance fiscal.');
+                      if (!confirmed) return;
+                      const obs = prompt('Observaciones del arqueo (opcional):', 'Cierre de turno normal sin discrepancias');
+                      setIsClosingShift(true);
+                      try {
+                        if (typeof closeCashShift === 'function') {
+                          await closeCashShift(obs || '');
+                        }
+                      } catch (err) {
+                        console.error('Error cerrando caja:', err);
+                      } finally {
+                        setIsClosingShift(false);
+                      }
+                    }}
                   >
                     <CheckCircle2 size={15} />
-                    Cerrar y Arquear Turno
+                    {isClosingShift ? 'Cerrando Turno...' : 'Cerrar y Arquear Turno'}
                   </button>
                 </div>
               </div>

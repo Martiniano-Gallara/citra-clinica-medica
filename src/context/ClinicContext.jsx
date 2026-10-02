@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import {
   INITIAL_CLINIC_INFO,
   INITIAL_SPECIALTIES,
@@ -72,13 +72,14 @@ export const ClinicProvider = ({ children }) => {
     return list.map((d) => ({ ...d, license: '', roomName: '' }));
   });
   // Clinical & Sensitive Records (Kept in runtime memory; synced via dataService backend, not unencrypted localStorage)
-  const [patients, setPatients] = useState(() => INITIAL_PATIENTS);
-  const [appointments, setAppointments] = useState(() => INITIAL_APPOINTMENTS);
-  const [consultations, setConsultations] = useState(() => INITIAL_CONSULTATIONS);
-  const [electronicPrescriptions, setElectronicPrescriptions] = useState(() => INITIAL_ELECTRONIC_PRESCRIPTIONS);
-  const [consentForms, setConsentForms] = useState(() => INITIAL_CONSENT_FORMS);
-  const [invoices, setInvoices] = useState(() => INITIAL_INVOICES);
-  const [auditLogs, setAuditLogs] = useState(() => INITIAL_AUDIT_LOGS);
+  const isLiveMode = dataService.isLive();
+  const [patients, setPatients] = useState(() => (isLiveMode ? [] : INITIAL_PATIENTS));
+  const [appointments, setAppointments] = useState(() => (isLiveMode ? [] : INITIAL_APPOINTMENTS));
+  const [consultations, setConsultations] = useState(() => (isLiveMode ? [] : INITIAL_CONSULTATIONS));
+  const [electronicPrescriptions, setElectronicPrescriptions] = useState(() => (isLiveMode ? [] : INITIAL_ELECTRONIC_PRESCRIPTIONS));
+  const [consentForms, setConsentForms] = useState(() => (isLiveMode ? [] : INITIAL_CONSENT_FORMS));
+  const [invoices, setInvoices] = useState(() => (isLiveMode ? [] : INITIAL_INVOICES));
+  const [auditLogs, setAuditLogs] = useState(() => (isLiveMode ? [] : INITIAL_AUDIT_LOGS));
   const [tasks, setTasks] = useState(() => INITIAL_TASKS_AND_ALERTS);
   const [users, setUsers] = useState(() => {
     const loaded = loadStorage('users', INITIAL_USERS);
@@ -109,20 +110,20 @@ export const ClinicProvider = ({ children }) => {
   });
 
   // Clinical specialty modules state (runtime memory)
-  const [rehabPlans, setRehabPlans] = useState(() => INITIAL_REHAB_PLANS);
-  const [rehabSessions, setRehabSessions] = useState(() => INITIAL_REHAB_SESSIONS);
+  const [rehabPlans, setRehabPlans] = useState(() => (isLiveMode ? [] : INITIAL_REHAB_PLANS));
+  const [rehabSessions, setRehabSessions] = useState(() => (isLiveMode ? [] : INITIAL_REHAB_SESSIONS));
   const [homeExercises, setHomeExercises] = useState(() => INITIAL_HOME_EXERCISES);
-  const [imagingStudies, setImagingStudies] = useState(() => INITIAL_IMAGING_STUDIES);
+  const [imagingStudies, setImagingStudies] = useState(() => (isLiveMode ? [] : INITIAL_IMAGING_STUDIES));
   const [nomenclatorItems, setNomenclatorItems] = useState(() => loadStorage('nomenclatorItems', INITIAL_NOMENCLATOR_ITEMS));
   const [insuranceAgreements, setInsuranceAgreements] = useState(() => loadStorage('insuranceAgreements', INITIAL_INSURANCE_AGREEMENTS));
-  const [authorizations, setAuthorizations] = useState(() => INITIAL_AUTHORIZATIONS);
+  const [authorizations, setAuthorizations] = useState(() => (isLiveMode ? [] : INITIAL_AUTHORIZATIONS));
   const [inventoryItems, setInventoryItems] = useState(() => loadStorage('inventoryItems', INITIAL_INVENTORY_ITEMS));
   const [suppliers, setSuppliers] = useState(() => loadStorage('suppliers', INITIAL_SUPPLIERS));
   const [purchaseOrders, setPurchaseOrders] = useState(() => INITIAL_PURCHASE_ORDERS);
   const [communications, setCommunications] = useState(() => INITIAL_COMMUNICATION_LOGS);
-  const [cashClosures, setCashClosures] = useState(() => INITIAL_CASH_CLOSURES);
-  const [medicalOrders, setMedicalOrders] = useState(() => INITIAL_MEDICAL_ORDERS);
-  const [medicalCertificates, setMedicalCertificates] = useState(() => INITIAL_MEDICAL_CERTIFICATES);
+  const [cashClosures, setCashClosures] = useState(() => (isLiveMode ? [] : INITIAL_CASH_CLOSURES));
+  const [medicalOrders, setMedicalOrders] = useState(() => (isLiveMode ? [] : INITIAL_MEDICAL_ORDERS));
+  const [medicalCertificates, setMedicalCertificates] = useState(() => (isLiveMode ? [] : INITIAL_MEDICAL_CERTIFICATES));
 
   // Institutional Public Views & Navigation ('home', 'booking', 'my-turnos', 'admin-login', 'admin-panel')
   const [currentView, setCurrentView] = useState(() => {
@@ -214,7 +215,8 @@ export const ClinicProvider = ({ children }) => {
 
   // Portal and View Modes
   const [isPatientPortalMode, setIsPatientPortalMode] = useState(false);
-  const [currentPortalPatient, setCurrentPortalPatient] = useState(() => INITIAL_PATIENTS[0]);
+  const [currentPortalPatient, setCurrentPortalPatient] = useState(() => null);
+  const cashLockRef = useRef(false);
 
   // Navigation tabs: 'dashboard', 'agenda', 'patients', 'clinical', 'kinesio', 'imaging', 'insurances', 'inventory', 'communications', 'billing', 'doctors', 'reports', 'audit', 'security', 'integrations', 'settings'
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -260,34 +262,7 @@ export const ClinicProvider = ({ children }) => {
   const [isOnlineAuthModalOpen, setIsOnlineAuthModalOpen] = useState(false);
 
   // Solicitudes Urgentes de Acceso a Historias Clínicas entre Profesionales (Ley 26.529)
-  const INITIAL_ACCESS_REQUESTS = [
-    {
-      id: 'req-101',
-      consultationId: 'cons-103',
-      patientId: 'pat-3',
-      patientName: 'Carlos Alberto Fernández',
-      patientDni: '27.310.840',
-      consultationDate: '2026-09-30',
-      consultationReason: 'Evaluación de lumbociatalgia derecha de 3 semanas de evolución.',
-      requesterDoctorId: 'doc-2',
-      requesterDoctorName: 'Dr. Lagos',
-      requesterDoctorSpecialty: 'Traumatología',
-      targetDoctorId: 'doc-1',
-      targetDoctorName: 'Dr. Alejandro Blanco',
-      requestedSections: {
-        diagnosis: true,
-        evolution: true,
-        prescriptions: false,
-        studies: true,
-        indications: true,
-        vitals: true
-      },
-      justification: 'Paciente en interconsulta por recaída álgica y persistencia de radiculopatía derecha. Se solicita acceso urgente para cotejar la evolución y el reporte de resonancia magnética previo indicado por el Dr. Blanco.',
-      urgency: 'URGENTE',
-      status: 'pendiente',
-      createdAt: '2026-09-30 11:20 hs'
-    }
-  ];
+  const INITIAL_ACCESS_REQUESTS = [];
 
   const [clinicalAccessRequests, setClinicalAccessRequests] = useState(() =>
     loadStorage('clinicalAccessRequests', INITIAL_ACCESS_REQUESTS)
@@ -621,7 +596,9 @@ export const ClinicProvider = ({ children }) => {
           remoteConsents,
           remoteClinicInfo,
           remoteRehabPlans,
-          remoteRehabSessions
+          remoteRehabSessions,
+          remoteInvoices,
+          remoteCashShifts
         ] = await Promise.allSettled([
           dataService.fetchAppointments(),
           dataService.fetchPatients(),
@@ -638,7 +615,9 @@ export const ClinicProvider = ({ children }) => {
           dataService.fetchConsentForms(),
           dataService.fetchClinicInfo(),
           dataService.fetchRehabPlans(),
-          dataService.fetchRehabSessions()
+          dataService.fetchRehabSessions(),
+          dataService.fetchInvoices(),
+          dataService.fetchCashShifts()
         ]);
 
         if (!isMounted) return;
@@ -651,79 +630,46 @@ export const ClinicProvider = ({ children }) => {
           });
         }
 
-        if (remoteApps.status === 'fulfilled' && Array.isArray(remoteApps.value) && remoteApps.value.length > 0) {
-          setAppointments((prev) => {
-            const remoteMap = new Map(remoteApps.value.map((a) => [a.id, a]));
-            const localOnly = prev.filter((localA) => !remoteMap.has(localA.id));
-            return [...remoteApps.value, ...localOnly];
-          });
+        if (remoteApps.status === 'fulfilled' && Array.isArray(remoteApps.value)) {
+          setAppointments(remoteApps.value);
         }
-        if (remotePats.status === 'fulfilled' && Array.isArray(remotePats.value) && remotePats.value.length > 0) {
-          setPatients((prev) => {
-            const remoteMap = new Map(remotePats.value.map((p) => [p.id, p]));
-            const localOnly = prev.filter((localP) => !remoteMap.has(localP.id));
-            return [...remotePats.value, ...localOnly];
-          });
+        if (remotePats.status === 'fulfilled' && Array.isArray(remotePats.value)) {
+          setPatients(remotePats.value);
         }
-        if (remoteDocs.status === 'fulfilled' && Array.isArray(remoteDocs.value) && remoteDocs.value.length > 0) {
-          setDoctors((prev) => {
-            const remoteMap = new Map(remoteDocs.value.map((d) => [d.id, d]));
-            const localOnly = prev.filter((localD) => !remoteMap.has(localD.id));
-            return [...remoteDocs.value, ...localOnly];
-          });
+        if (remoteDocs.status === 'fulfilled' && Array.isArray(remoteDocs.value)) {
+          setDoctors(remoteDocs.value);
         }
-        if (remoteCons.status === 'fulfilled' && Array.isArray(remoteCons.value) && remoteCons.value.length > 0) {
-          setConsultations((prev) => {
-            const remoteMap = new Map(remoteCons.value.map((c) => [c.id, c]));
-            const localOnly = prev.filter((localC) => !remoteMap.has(localC.id));
-            return [...remoteCons.value, ...localOnly];
-          });
+        if (remoteCons.status === 'fulfilled' && Array.isArray(remoteCons.value)) {
+          setConsultations(remoteCons.value);
         }
-        if (remoteRxs.status === 'fulfilled' && Array.isArray(remoteRxs.value) && remoteRxs.value.length > 0) {
-          setElectronicPrescriptions((prev) => {
-            const remoteMap = new Map(remoteRxs.value.map((r) => [r.id, r]));
-            const localOnly = prev.filter((localR) => !remoteMap.has(localR.id));
-            return [...remoteRxs.value, ...localOnly];
-          });
+        if (remoteRxs.status === 'fulfilled' && Array.isArray(remoteRxs.value)) {
+          setElectronicPrescriptions(remoteRxs.value);
         }
-        if (remoteImgs.status === 'fulfilled' && Array.isArray(remoteImgs.value) && remoteImgs.value.length > 0) {
-          setImagingStudies((prev) => {
-            const remoteMap = new Map(remoteImgs.value.map((s) => [s.id, s]));
-            const localOnly = prev.filter((localS) => !remoteMap.has(localS.id));
-            return [...remoteImgs.value, ...localOnly];
-          });
+        if (remoteImgs.status === 'fulfilled' && Array.isArray(remoteImgs.value)) {
+          setImagingStudies(remoteImgs.value);
         }
-        if (remoteOrders.status === 'fulfilled' && Array.isArray(remoteOrders.value) && remoteOrders.value.length > 0) {
-          setMedicalOrders((prev) => {
-            const remoteMap = new Map(remoteOrders.value.map((o) => [o.id, o]));
-            const localOnly = prev.filter((localO) => !remoteMap.has(localO.id));
-            return [...remoteOrders.value, ...localOnly];
-          });
+        if (remoteOrders.status === 'fulfilled' && Array.isArray(remoteOrders.value)) {
+          setMedicalOrders(remoteOrders.value);
         }
-        if (remoteCerts.status === 'fulfilled' && Array.isArray(remoteCerts.value) && remoteCerts.value.length > 0) {
-          setMedicalCertificates((prev) => {
-            const remoteMap = new Map(remoteCerts.value.map((c) => [c.id, c]));
-            const localOnly = prev.filter((localC) => !remoteMap.has(localC.id));
-            return [...remoteCerts.value, ...localOnly];
-          });
+        if (remoteCerts.status === 'fulfilled' && Array.isArray(remoteCerts.value)) {
+          setMedicalCertificates(remoteCerts.value);
         }
         if (remoteSchedule.status === 'fulfilled' && remoteSchedule.value) setClinicSchedule(remoteSchedule.value);
-        if (remoteSpecs.status === 'fulfilled' && Array.isArray(remoteSpecs.value) && remoteSpecs.value.length > 0) setSpecialties(remoteSpecs.value);
-        if (remoteRooms.status === 'fulfilled' && Array.isArray(remoteRooms.value) && remoteRooms.value.length > 0) setRooms(remoteRooms.value);
-        if (remoteConsents.status === 'fulfilled' && Array.isArray(remoteConsents.value) && remoteConsents.value.length > 0) setConsentForms(remoteConsents.value);
-        if (remoteRehabPlans.status === 'fulfilled' && Array.isArray(remoteRehabPlans.value) && remoteRehabPlans.value.length > 0) {
-          setRehabPlans((prev) => {
-            const remoteMap = new Map(remoteRehabPlans.value.map((r) => [r.id, r]));
-            const localOnly = prev.filter((localR) => !remoteMap.has(localR.id));
-            return [...remoteRehabPlans.value, ...localOnly];
-          });
+        if (remoteSpecs.status === 'fulfilled' && Array.isArray(remoteSpecs.value)) setSpecialties(remoteSpecs.value);
+        if (remoteRooms.status === 'fulfilled' && Array.isArray(remoteRooms.value)) setRooms(remoteRooms.value);
+        if (remoteConsents.status === 'fulfilled' && Array.isArray(remoteConsents.value)) setConsentForms(remoteConsents.value);
+        if (remoteInsurances.status === 'fulfilled' && Array.isArray(remoteInsurances.value)) setHealthInsurances(remoteInsurances.value);
+        if (remoteRehabPlans.status === 'fulfilled' && Array.isArray(remoteRehabPlans.value)) {
+          setRehabPlans(remoteRehabPlans.value);
         }
-        if (remoteRehabSessions.status === 'fulfilled' && Array.isArray(remoteRehabSessions.value) && remoteRehabSessions.value.length > 0) {
-          setRehabSessions((prev) => {
-            const remoteMap = new Map(remoteRehabSessions.value.map((s) => [s.id, s]));
-            const localOnly = prev.filter((localS) => !remoteMap.has(localS.id));
-            return [...remoteRehabSessions.value, ...localOnly];
-          });
+        if (remoteRehabSessions.status === 'fulfilled' && Array.isArray(remoteRehabSessions.value)) {
+          setRehabSessions(remoteRehabSessions.value);
+        }
+        if (remoteInvoices.status === 'fulfilled' && Array.isArray(remoteInvoices.value)) {
+          setInvoices(remoteInvoices.value);
+        }
+        if (remoteCashShifts.status === 'fulfilled' && Array.isArray(remoteCashShifts.value) && remoteCashShifts.value.length > 0) {
+          setCashClosures(remoteCashShifts.value);
         }
       } catch (err) {
         console.warn('Supabase initial hydration notice:', err);
@@ -772,7 +718,7 @@ export const ClinicProvider = ({ children }) => {
   };
 
   // --- CONSULTAS & HISTORIA CLÍNICA INMUTABLE (Ley 26.529) ---
-  const addConsultation = (consultationData) => {
+  const addConsultation = async (consultationData) => {
     const newId = `cons-${Date.now()}`;
     const timestamp = new Date().toISOString();
     const dateStr = getTodayArgentina();
@@ -811,28 +757,24 @@ export const ClinicProvider = ({ children }) => {
     const integrityHash = generateSHA256Hash(recordPayload);
     const finalizedRecord = { ...recordPayload, integrityHash };
 
-    setConsultations((prev) => [finalizedRecord, ...prev]);
-    if (dataService.isLive()) {
-      dataService.createConsultation(finalizedRecord).catch((err) => {
-        console.error('Error sincronizando consulta con Supabase Cloud:', err);
-        addToast(
-          'Aviso de Sincronización Remota',
-          'La consulta se guardó en este dispositivo, pero falló la sincronización con el servidor central.',
-          'warning'
-        );
-      });
-    }
-
     // Generar automáticamente la Receta Electrónica ReNaPDiS si hay medicamentos prescritos
+    let rxRecordToInsert = null;
     if (consultationData.prescriptions && consultationData.prescriptions.length > 0) {
-      addElectronicPrescription({
+      const cuir = generateCUIR(consultationData.doctorId, consultationData.patientDni, dateStr);
+      const issueDate = dateStr;
+      const expirationDate = calculatePrescriptionExpiration(issueDate, 30);
+      rxRecordToInsert = {
+        id: `rx-${Date.now()}`,
+        cuir,
         patientId: consultationData.patientId,
         patientName: consultationData.patientName,
         patientDni: consultationData.patientDni,
         doctorId: consultationData.doctorId,
         doctorName: consultationData.doctorName,
         doctorLicense: consultationData.doctorLicense,
-        sisaRefeps: consultationData.sisaRefeps || '',
+        sisaRefeps: consultationData.sisaRefeps || consultationData.doctorLicense || '',
+        issueDate,
+        expirationDate,
         diagnosisPresuntivo: consultationData.diagnosis,
         medications: consultationData.prescriptions.map((p) => ({
           dci: p.dci || p.medication,
@@ -840,11 +782,17 @@ export const ClinicProvider = ({ children }) => {
           concentration: p.concentration || (p.dosage && p.dosage.includes('mg') ? p.dosage : 'Según prospecto'),
           quantityUnits: p.quantityUnits || '1 envase',
           instructions: [p.dosage, p.frequency, p.duration].filter(Boolean).join(' - ') || p.instructions || 'Según indicación médica'
-        }))
-      });
+        })),
+        dispensationStatus: 'Habilitada para Dispensa',
+        dispensedPharmacy: null,
+        renapdisVerified: true,
+        digitalSignatureHash: generateSHA256Hash(`${cuir}|${consultationData.patientDni}|${consultationData.doctorId}`)
+      };
     }
 
     // Generar automáticamente órdenes de estudios de diagnóstico e imágenes si fueron solicitados
+    const ordersToInsert = [];
+    const studiesToInsert = [];
     if (consultationData.studiesRequested && consultationData.studiesRequested.length > 0) {
       consultationData.studiesRequested.forEach((studyName) => {
         const cleanName = typeof studyName === 'string' ? studyName.trim() : 'Estudio Radiológico';
@@ -864,10 +812,7 @@ export const ClinicProvider = ({ children }) => {
           priority: 'Normal',
           images: []
         };
-        setImagingStudies((prev) => [newStudy, ...prev]);
-        if (dataService.isLive()) {
-          dataService.createImagingStudy(newStudy).catch(console.warn);
-        }
+        studiesToInsert.push(newStudy);
 
         // Registrar también en órdenes médicas
         const newOrderId = `ord-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -881,11 +826,42 @@ export const ClinicProvider = ({ children }) => {
           instructions: `Realizar ${cleanName} con motivo: ${consultationData.diagnosis}`,
           date: dateStr
         };
-        setMedicalOrders((prev) => [newOrder, ...prev]);
-        if (dataService.isLive()) {
-          dataService.createMedicalOrder(newOrder).catch(console.warn);
-        }
+        ordersToInsert.push(newOrder);
       });
+    }
+
+    // Transacción atómica en Supabase RPC si la conexión está activa (C-02, C-08, Ley 26.529)
+    if (dataService.isLive()) {
+      try {
+        const rpcResult = await dataService.createConsultationBundle(
+          finalizedRecord,
+          rxRecordToInsert,
+          ordersToInsert.length > 0 ? ordersToInsert : null
+        );
+        if (rpcResult?.integrityHash) {
+          finalizedRecord.integrityHash = rpcResult.integrityHash;
+        }
+      } catch (err) {
+        console.error('Error sincronizando consulta médica con Supabase Cloud:', err);
+        addToast(
+          'Error al Registrar Consulta',
+          'Falló la persistencia atómica en el servidor: ' + (err.message || ''),
+          'error'
+        );
+        throw err;
+      }
+    }
+
+    setConsultations((prev) => [finalizedRecord, ...prev]);
+    if (rxRecordToInsert) {
+      setElectronicPrescriptions((prev) => [rxRecordToInsert, ...prev]);
+      logAudit('CREATE', 'Receta ReNaPDiS', consultationData.patientDni, `Emisión de receta electrónica CUIR: ${rxRecordToInsert.cuir} en consulta.`);
+    }
+    if (studiesToInsert.length > 0) {
+      setImagingStudies((prev) => [...studiesToInsert, ...prev]);
+    }
+    if (ordersToInsert.length > 0) {
+      setMedicalOrders((prev) => [...ordersToInsert, ...prev]);
     }
 
     if (consultationData.appointmentId) {
@@ -898,11 +874,23 @@ export const ClinicProvider = ({ children }) => {
   };
 
   const updateConsultation = (consultationId, updatedFields) => {
+    const existing = consultations.find((c) => c.id === consultationId);
+    if (existing?.signed) {
+      addToast(
+        'Inmutabilidad Legal (Ley 26.529)',
+        'Esta consulta médica ya se encuentra firmada y bloqueada. Para anexar rectificaciones o aclaraciones posteriores debe asentar una Adenda Médica.',
+        'warning'
+      );
+      return;
+    }
     setConsultations((prev) =>
       prev.map((c) => (c.id === consultationId ? { ...c, ...updatedFields } : c))
     );
     if (dataService.isLive()) {
-      dataService.updateConsultation?.(consultationId, updatedFields).catch(console.warn);
+      dataService.updateConsultation?.(consultationId, updatedFields).catch((err) => {
+        console.error('Error al actualizar consulta:', err);
+        addToast('Error', 'No se pudo actualizar la consulta médica en el servidor.', 'error');
+      });
     }
     addToast('Consulta Actualizada', 'Los datos clínicos fueron guardados correctamente.', 'success');
   };
@@ -910,7 +898,7 @@ export const ClinicProvider = ({ children }) => {
   // Adenda Médica Versionada (No destructiva)
   const addConsultationAdenda = (consultationId, adendaText, doctorName, doctorLicense, doctorId) => {
     const timestamp = new Date().toISOString();
-    const effectiveDoctorId = doctorId || currentDoctor?.id || currentUser?.doctorId || currentUser?.id || 'doc-1';
+    const effectiveDoctorId = doctorId || currentDoctor?.id || currentUser?.doctorId || currentUser?.id || null;
     const effectiveDoctorName = doctorName || currentDoctor?.name || currentUser?.name || 'Médico';
     const effectiveLicense = doctorLicense || currentDoctor?.license || currentUser?.license || null;
     const adendaObj = {
@@ -941,7 +929,10 @@ export const ClinicProvider = ({ children }) => {
       dataService.addConsultationAdenda({
         consultationId,
         ...adendaObj
-      }).catch(console.warn);
+      }).catch((err) => {
+        console.error('Error al persistir adenda:', err);
+        addToast('Error de Conexión', 'No se pudo guardar la adenda en el servidor: ' + (err.message || 'Error de red'), 'error');
+      });
     }
 
     logAudit('UPDATE_ADENDA', 'Historia Clínica', '-', `Adenda médica agregada a consulta ${consultationId} por ${effectiveDoctorName}.`);
@@ -949,7 +940,7 @@ export const ClinicProvider = ({ children }) => {
   };
 
   // --- SOLICITUDES URGENTES DE ACCESO A HISTORIAL CLÍNICO ENTRE PROFESIONALES ---
-  const requestClinicalAccess = ({
+  const requestClinicalAccess = async ({
     consultationId,
     patientId,
     patientName,
@@ -961,9 +952,9 @@ export const ClinicProvider = ({ children }) => {
     requestedSections,
     justification
   }) => {
-    const effectiveRequesterId = currentDoctor?.id || 'doc-2';
-    const effectiveRequesterName = currentDoctor?.name || 'Dr. Solicitante';
-    const effectiveRequesterSpecialty = currentDoctor?.specialty || 'Traumatología';
+    const effectiveRequesterId = currentDoctor?.id || currentUser?.doctorId || currentUser?.id;
+    const effectiveRequesterName = currentDoctor?.name || currentUser?.name || 'Profesional Solicitante';
+    const effectiveRequesterSpecialty = currentDoctor?.specialty || currentUser?.specialty || 'Especialidad';
 
     const newReq = {
       id: `req-${Date.now()}`,
@@ -976,8 +967,8 @@ export const ClinicProvider = ({ children }) => {
       requesterDoctorId: effectiveRequesterId,
       requesterDoctorName: effectiveRequesterName,
       requesterDoctorSpecialty: effectiveRequesterSpecialty,
-      targetDoctorId: targetDoctorId || 'doc-1',
-      targetDoctorName: targetDoctorName || 'Dr. Alejandro Blanco',
+      targetDoctorId: targetDoctorId || null,
+      targetDoctorName: targetDoctorName || 'Médico Titular',
       requestedSections: requestedSections || {
         diagnosis: true,
         evolution: true,
@@ -993,6 +984,13 @@ export const ClinicProvider = ({ children }) => {
     };
 
     setClinicalAccessRequests((prev) => [newReq, ...prev]);
+    if (dataService.isLive()) {
+      try {
+        await dataService.createClinicalAccessRequest(newReq);
+      } catch (err) {
+        console.warn('Error al registrar solicitud de acceso clínico en Supabase:', err);
+      }
+    }
     logAudit(
       'ACCESS_REQUEST',
       'Historial Clínico',
@@ -1003,8 +1001,9 @@ export const ClinicProvider = ({ children }) => {
     return newReq;
   };
 
-  const resolveClinicalAccessRequest = (requestId, decision) => {
+  const resolveClinicalAccessRequest = async (requestId, decision) => {
     const newStatus = decision === 'approve' ? 'aprobada' : 'rechazada';
+    const approverName = currentDoctor?.name || currentUser?.name || 'Director Médico';
     setClinicalAccessRequests((prev) =>
       prev.map((r) => {
         if (r.id === requestId) {
@@ -1012,18 +1011,26 @@ export const ClinicProvider = ({ children }) => {
             decision === 'approve' ? 'ACCESS_GRANTED' : 'ACCESS_DENIED',
             'Historial Clínico',
             r.patientDni,
-            `Solicitud de acceso ${r.id} ${newStatus === 'aprobada' ? 'AUTORIZADA' : 'DENEGADA'} por ${currentDoctor?.name || 'Director Médico'}.`
+            `Solicitud de acceso ${r.id} ${newStatus === 'aprobada' ? 'AUTORIZADA' : 'DENEGADA'} por ${approverName}.`
           );
           return {
             ...r,
             status: newStatus,
             resolvedAt: `${getTodayArgentina()} ${getNowArgentinaTime()} hs`,
-            resolvedBy: currentDoctor?.name || 'Dr. Alejandro Blanco'
+            resolvedBy: approverName
           };
         }
         return r;
       })
     );
+
+    if (dataService.isLive()) {
+      try {
+        await dataService.updateClinicalAccessRequest(requestId, decision === 'approve' ? 'approved' : 'rejected');
+      } catch (err) {
+        console.warn('Error al actualizar solicitud de acceso clínico en Supabase:', err);
+      }
+    }
 
     if (decision === 'approve') {
       addToast('Acceso Autorizado', 'Se concedió acceso oficial a la historia clínica bajo auditoría de Ley 26.529.', 'success');
@@ -1119,7 +1126,10 @@ export const ClinicProvider = ({ children }) => {
 
     setElectronicPrescriptions((prev) => [rxRecord, ...prev]);
     if (dataService.isLive()) {
-      dataService.createPrescription(rxRecord).catch(console.warn);
+      dataService.createPrescription(rxRecord).catch((err) => {
+        console.error('Error al persistir receta:', err);
+        addToast('Error de Sincronización', 'No se pudo sincronizar la receta con el servidor: ' + (err.message || 'Error de red'), 'error');
+      });
     }
     logAudit('CREATE', 'Receta ReNaPDiS', rxData.patientDni, `Emisión de receta electrónica CUIR: ${cuir} en plataforma oficial ReNaPDiS.`);
     addToast('Receta Electrónica ReNaPDiS', `Receta emitida con CUIR: ${cuir}`, 'success');
@@ -1131,9 +1141,28 @@ export const ClinicProvider = ({ children }) => {
       prev.map((rx) => (rx.id === id ? { ...rx, dispensationStatus: newStatus, dispensedPharmacy: pharmacyName } : rx))
     );
     if (dataService.isLive()) {
-      dataService.updatePrescription(id, { dispensationStatus: newStatus, dispensedPharmacy: pharmacyName }).catch(console.warn);
+      dataService.updatePrescription(id, { dispensationStatus: newStatus, dispensedPharmacy: pharmacyName }).catch((err) => {
+        console.error('Error al actualizar receta:', err);
+        addToast('Error de Sincronización', 'No se pudo actualizar el estado de la receta en el servidor.', 'error');
+      });
     }
     addToast('Estado de Receta Actualizado', `Estado ReNaPDiS modificado a: ${newStatus}`, 'info');
+  };
+
+  // Anulación formal de receta electrónica (M-05, Ley 27.553)
+  const annulPrescription = async (id, reason = 'Anulación formal') => {
+    setElectronicPrescriptions((prev) =>
+      prev.map((rx) => (rx.id === id ? { ...rx, dispensationStatus: 'Anulada', annulled: true, annulReason: reason } : rx))
+    );
+    if (dataService.isLive()) {
+      try {
+        await dataService.annulPrescription(id, reason);
+      } catch (err) {
+        console.warn('Error al anular receta en Supabase:', err);
+      }
+    }
+    logAudit('ANNUL_PRESCRIPTION', 'Receta ReNaPDiS', id, `Anulación formal de receta electrónica. Motivo: ${reason}`);
+    addToast('Receta Anulada', 'La receta médica ha sido formalmente anulada.', 'info');
   };
 
   // --- CONSENTIMIENTOS INFORMADOS (Ley 26.529) ---
@@ -1195,7 +1224,7 @@ export const ClinicProvider = ({ children }) => {
       caeVto,
       ptoVta: 1,
       tipoCmp: 6, // Factura B Consumidor Final
-      date: new Date().toISOString().split('T')[0],
+      date: invoiceData.date || getTodayArgentina(),
       status: 'Cobrado',
       arcaValidated: true,
       receiptNumber: `REC-00${Math.floor(100 + Math.random() * 900)}`,
@@ -1203,6 +1232,12 @@ export const ClinicProvider = ({ children }) => {
     };
 
     setInvoices((prev) => [newInv, ...prev]);
+    if (dataService.isLive()) {
+      dataService.createInvoice(newInv).catch((err) => {
+        console.error('Error al sincronizar factura ARCA con Supabase:', err);
+        addToast('Aviso de Persistencia', 'El comprobante fiscal se generó localmente pero falló la sincronización con el servidor: ' + (err.message || ''), 'warning');
+      });
+    }
     logAudit('ARCA_INVOICE', 'Comprobante Fiscal', invoiceData.dni, `Factura ${invoiceNum} autorizada por ARCA con CAE: ${cae}`);
     addToast('Comprobante Fiscal ARCA Emitido', `Factura ${invoiceNum} autorizada con CAE ${cae}.`, 'success');
     return newInv;
@@ -1257,7 +1292,20 @@ export const ClinicProvider = ({ children }) => {
     const newApp = { ...appData, id: newId, patientId: effectivePatientId };
     setAppointments((prev) => [newApp, ...prev]);
     if (dataService.isLive()) {
-      dataService.createAppointment(newApp).catch(console.warn);
+      try {
+        await dataService.createAppointment(newApp);
+      } catch (err) {
+        console.error('Error al persistir turno en Supabase (A-03):', err);
+        setAppointments((prev) => prev.filter((a) => a.id !== newId));
+        addToast(
+          'Conflicto de Turno',
+          err.message?.includes('Conflicto') || err.message?.includes('solapamiento')
+            ? 'El turno no se pudo reservar: el profesional ya posee un turno confirmado en esa fecha y horario.'
+            : 'No se pudo reservar el turno en la base de datos central: ' + (err.message || ''),
+          'error'
+        );
+        throw err;
+      }
     }
     logAudit('CREATE', 'Turnos', appData.patientDni, `Turno agendado con ${appData.doctorName} para el ${appData.date} a las ${appData.time} hs.`);
     addToast('Turno Agendado', `Turno para ${appData.patientName} confirmado.`, 'success');
@@ -1269,7 +1317,10 @@ export const ClinicProvider = ({ children }) => {
       prev.map((app) => (app.id === id ? { ...app, status: newStatus } : app))
     );
     if (dataService.isLive()) {
-      dataService.updateAppointment(id, { status: newStatus }).catch(console.warn);
+      dataService.updateAppointment(id, { status: newStatus }).catch((err) => {
+        console.error('Error al actualizar turno:', err);
+        addToast('Error de Sincronización', 'No se pudo actualizar el estado del turno en el servidor: ' + (err.message || ''), 'error');
+      });
     }
     logAudit('STATUS_CHANGE', 'Turnos', '-', `Turno ${id} pasó a estado: ${newStatus}`);
   };
@@ -1286,7 +1337,10 @@ export const ClinicProvider = ({ children }) => {
     };
     setPatients((prev) => [newPat, ...prev]);
     if (dataService.isLive()) {
-      dataService.createPatient(newPat).catch(console.warn);
+      dataService.createPatient(newPat).catch((err) => {
+        console.error('Error al dar de alta paciente:', err);
+        addToast('Error de Sincronización', 'No se pudo guardar el paciente en el servidor: ' + (err.message || ''), 'error');
+      });
     }
     logAudit('CREATE', 'Padrón de Pacientes', patientData.dni, `Alta de paciente ${newPat.name}`);
     addToast('Paciente Registrado', `${newPat.name} ha sido dado de alta exitosamente.`, 'success');
@@ -1302,22 +1356,33 @@ export const ClinicProvider = ({ children }) => {
       setCurrentPortalPatient((prev) => ({ ...prev, ...updatedData }));
     }
     if (dataService.isLive()) {
-      dataService.updatePatient(id, updatedData).catch(console.warn);
+      dataService.updatePatient(id, updatedData).catch((err) => {
+        console.error('Error al actualizar paciente:', err);
+        addToast('Error de Sincronización', 'No se pudo actualizar la ficha del paciente en el servidor: ' + (err.message || ''), 'error');
+      });
     }
     logAudit('UPDATE', 'Padrón de Pacientes', updatedData.dni || '-', `Actualización de datos del paciente.`);
     addToast('Ficha Actualizada', 'Datos del paciente guardados.', 'success');
   };
 
   const addPatientFile = (patientId, fileObj) => {
+    let updatedFiles = [];
     setPatients((prev) =>
       prev.map((pat) => {
         if (pat.id === patientId) {
           const files = pat.files || [];
-          return { ...pat, files: [fileObj, ...files] };
+          updatedFiles = [fileObj, ...files];
+          return { ...pat, files: updatedFiles };
         }
         return pat;
       })
     );
+    if (dataService.isLive()) {
+      dataService.updatePatient(patientId, { files: updatedFiles }).catch((err) => {
+        console.error('Error al persistir adjunto en Supabase:', err);
+        addToast('Aviso de Persistencia', 'El archivo se cargó pero falló la vinculación con el paciente: ' + (err.message || ''), 'warning');
+      });
+    }
     logAudit('CREATE', 'Archivo Clínico', patientId, `Se adjuntó el archivo ${fileObj.name} a la ficha del paciente.`);
     addToast('Estudio Adjuntado', `El archivo ${fileObj.name} fue incorporado a la Historia Clínica.`, 'success');
   };
@@ -1335,7 +1400,10 @@ export const ClinicProvider = ({ children }) => {
       )
     );
     if (dataService.isLive()) {
-      dataService.deletePatient(patientId).catch(console.warn);
+      dataService.deletePatient(patientId).catch((err) => {
+        console.error('Error al archivar paciente:', err);
+        addToast('Error de Sincronización', 'No se pudo archivar la ficha en el servidor: ' + (err.message || ''), 'error');
+      });
     }
     logAudit('ARCHIVE', 'Padrón de Pacientes', pat.dni || '-', `Ficha archivada lógicamente conforme Ley 26.529 para ${pat.name}`);
     addToast('Ficha Archivada', `La ficha de ${pat.name} fue archivada lógicamente. Sus antecedentes clínicos quedan preservados por Ley 26.529.`, 'info');
@@ -1346,7 +1414,7 @@ export const ClinicProvider = ({ children }) => {
     const newId = planData.id || `rhb-${Date.now()}`;
     const newPlan = {
       id: newId,
-      startDate: new Date().toISOString().split('T')[0],
+      startDate: planData.startDate || getTodayArgentina(),
       status: 'En curso',
       completedSessions: 0,
       currentEvaScore: planData.initialEvaScore || 7,
@@ -1387,7 +1455,7 @@ export const ClinicProvider = ({ children }) => {
     const timestamp = new Date().toISOString();
     const newSession = {
       id: newId,
-      date: timestamp.split('T')[0],
+      date: sessionData.date || getTodayArgentina(),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       signed: true,
       signatureHash: generateSHA256Hash(`${newId}|${sessionData.patientId}|${sessionData.evaScore}|${timestamp}`),
@@ -1499,7 +1567,7 @@ export const ClinicProvider = ({ children }) => {
     const isApproved = authData.tokenProvided && authData.tokenProvided.trim().length > 3;
     const authRecord = {
       id: newId,
-      date: new Date().toISOString().split('T')[0],
+      date: authData.date || getTodayArgentina(),
       status: isApproved ? 'Aprobada Online' : 'Rechazada',
       authNumber: isApproved ? `AUT-${authData.insuranceName.substring(0, 4).toUpperCase()}-${Math.floor(10000 + Math.random() * 90000)}` : null,
       rejectionReason: isApproved ? null : 'Token inválido o falta de validación biométrica.',
@@ -1527,7 +1595,10 @@ export const ClinicProvider = ({ children }) => {
     const newHi = { id: newId, status: 'Activa', copay: 0, plans: ['Estándar'], ...insuranceData };
     setHealthInsurances((prev) => [...prev, newHi]);
     if (dataService.isLive()) {
-      dataService.createHealthInsurance(newHi).catch(console.warn);
+      dataService.createHealthInsurance(newHi).catch((err) => {
+        console.error('Error al persistir obra social:', err);
+        addToast('Error de Sincronización', 'No se pudo guardar la obra social en el servidor: ' + (err.message || ''), 'error');
+      });
     }
     logAudit('CREATE', 'Obras Sociales', '-', `Alta de cobertura ${newHi.name}`);
     addToast('Obra Social Agregada', `${newHi.name} fue incorporada con éxito.`, 'success');
@@ -1537,7 +1608,10 @@ export const ClinicProvider = ({ children }) => {
   const updateHealthInsurance = (id, updates) => {
     setHealthInsurances((prev) => prev.map((hi) => (hi.id === id ? { ...hi, ...updates } : hi)));
     if (dataService.isLive()) {
-      dataService.updateHealthInsurance(id, updates).catch(console.warn);
+      dataService.updateHealthInsurance(id, updates).catch((err) => {
+        console.error('Error al actualizar obra social:', err);
+        addToast('Error de Sincronización', 'No se pudo actualizar la cobertura en el servidor: ' + (err.message || ''), 'error');
+      });
     }
     logAudit('UPDATE', 'Obras Sociales', '-', `Actualización de cobertura ID ${id}`);
     addToast('Obra Social Actualizada', 'Los datos de la cobertura fueron actualizados.', 'success');
@@ -1547,7 +1621,10 @@ export const ClinicProvider = ({ children }) => {
     const target = healthInsurances.find((hi) => hi.id === id);
     setHealthInsurances((prev) => prev.filter((hi) => hi.id !== id));
     if (dataService.isLive()) {
-      dataService.deleteHealthInsurance(id).catch(console.warn);
+      dataService.deleteHealthInsurance(id).catch((err) => {
+        console.error('Error al eliminar obra social:', err);
+        addToast('Error de Sincronización', 'No se pudo eliminar la cobertura en el servidor: ' + (err.message || ''), 'error');
+      });
     }
     logAudit('DELETE', 'Obras Sociales', '-', `Baja de cobertura ${target?.name || id}`);
     addToast('Obra Social Eliminada', 'La cobertura fue dada de baja.', 'info');
@@ -1559,7 +1636,10 @@ export const ClinicProvider = ({ children }) => {
     const newRoom = { id: newId, branchId: 'branch-1', status: 'Disponible', ...roomData };
     setRooms((prev) => [...prev, newRoom]);
     if (dataService.isLive()) {
-      dataService.createRoom(newRoom).catch(console.warn);
+      dataService.createRoom(newRoom).catch((err) => {
+        console.error('Error al persistir consultorio:', err);
+        addToast('Error de Sincronización', 'No se pudo guardar el consultorio en el servidor: ' + (err.message || ''), 'error');
+      });
     }
     logAudit('CREATE', 'Consultorios', '-', `Alta de consultorio ${newRoom.name}`);
     addToast('Consultorio Creado', `Se ha agregado ${newRoom.name} al sistema.`, 'success');
@@ -1569,7 +1649,10 @@ export const ClinicProvider = ({ children }) => {
   const updateRoom = (id, updates) => {
     setRooms((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)));
     if (dataService.isLive()) {
-      dataService.updateRoom(id, updates).catch(console.warn);
+      dataService.updateRoom(id, updates).catch((err) => {
+        console.error('Error al actualizar consultorio:', err);
+        addToast('Error de Sincronización', 'No se pudo actualizar el consultorio en el servidor: ' + (err.message || ''), 'error');
+      });
     }
     logAudit('UPDATE', 'Consultorios', '-', `Actualización de consultorio ID ${id}`);
     addToast('Consultorio Actualizado', 'Modificaciones guardadas.', 'success');
@@ -1579,7 +1662,10 @@ export const ClinicProvider = ({ children }) => {
     const target = rooms.find((r) => r.id === id);
     setRooms((prev) => prev.filter((r) => r.id !== id));
     if (dataService.isLive()) {
-      dataService.deleteRoom(id).catch(console.warn);
+      dataService.deleteRoom(id).catch((err) => {
+        console.error('Error al eliminar consultorio:', err);
+        addToast('Error de Sincronización', 'No se pudo eliminar el consultorio en el servidor: ' + (err.message || ''), 'error');
+      });
     }
     logAudit('DELETE', 'Consultorios', '-', `Baja de consultorio ${target?.name || id}`);
     addToast('Consultorio Eliminado', 'El espacio físico ha sido removido.', 'info');
@@ -1619,7 +1705,7 @@ export const ClinicProvider = ({ children }) => {
     const newId = `oc-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
     const newPO = {
       id: newId,
-      date: new Date().toISOString().split('T')[0],
+      date: poData.date || getTodayArgentina(),
       status: 'Enviada al Proveedor',
       ...poData
     };
@@ -1662,55 +1748,104 @@ export const ClinicProvider = ({ children }) => {
     );
   };
 
-  // --- CAJA & ARQUEOS DIARIOS ---
-  const addCashMovement = (type, amount, concept, cashierName) => {
-    const numAmount = Number(amount);
-    if (isNaN(numAmount) || numAmount <= 0) {
-      addToast('Error de Caja', 'El monto ingresado debe ser un número positivo.', 'error');
+  // --- CAJA & ARQUEOS DIARIOS (M-08) ---
+  const addCashMovement = async (type, amount, concept, cashierName) => {
+    if (cashLockRef.current) {
+      addToast('Operación en Curso', 'Se está registrando un movimiento de caja. Aguarde un instante.', 'warning');
       return;
     }
-    const isExpense = String(type).trim().toUpperCase() === 'EGRESO';
-    setCashClosures((prev) =>
-      prev.map((c, idx) => {
-        if (idx === 0) {
-          const newExpenses = isExpense ? (c.totalExpenses || 0) + numAmount : c.totalExpenses;
-          const newCash = !isExpense ? (c.totalCash || 0) + numAmount : c.totalCash;
-          return {
-            ...c,
-            totalCash: newCash,
-            totalExpenses: newExpenses,
-            netTotal: (c.openingBalance || 0) + newCash + (c.totalCards || 0) + (c.totalQrTransfer || 0) - newExpenses
-          };
+    cashLockRef.current = true;
+    try {
+      const numAmount = Number(amount);
+      if (isNaN(numAmount) || numAmount <= 0) {
+        addToast('Error de Caja', 'El monto ingresado debe ser un número positivo.', 'error');
+        return;
+      }
+      const isExpense = String(type).trim().toUpperCase() === 'EGRESO';
+      setCashClosures((prev) =>
+        prev.map((c, idx) => {
+          if (idx === 0) {
+            const newExpenses = isExpense ? (c.totalExpenses || 0) + numAmount : c.totalExpenses;
+            const newCash = !isExpense ? (c.totalCash || 0) + numAmount : c.totalCash;
+            return {
+              ...c,
+              totalCash: newCash,
+              totalExpenses: newExpenses,
+              netTotal: (c.openingBalance || 0) + newCash + (c.totalCards || 0) + (c.totalQrTransfer || 0) - newExpenses
+            };
+          }
+          return c;
+        })
+      );
+
+      if (dataService.isLive()) {
+        try {
+          await dataService.addCashMovement({
+            type: isExpense ? 'expense' : 'income',
+            amount: numAmount,
+            concept: concept || 'Movimiento de caja',
+            cashierName: cashierName || currentUser?.name || 'Recepción'
+          });
+        } catch (err) {
+          console.warn('Error al sincronizar movimiento de caja con Supabase:', err);
         }
-        return c;
-      })
-    );
-    logAudit('CASH', 'Caja Diaria', '-', `Movimiento de caja ${type}: $${numAmount} por ${concept} (Operador: ${cashierName || 'Recepción'})`);
-    addToast('Movimiento de Caja Registrado', `${isExpense ? 'Egreso' : 'Ingreso'} de $${numAmount.toLocaleString()} asentado.`, 'info');
+      }
+
+      logAudit('CASH', 'Caja Diaria', '-', `Movimiento de caja ${type}: $${numAmount} por ${concept} (Operador: ${cashierName || currentUser?.name || 'Recepción'})`);
+      addToast('Movimiento de Caja Registrado', `${isExpense ? 'Egreso' : 'Ingreso'} de $${numAmount.toLocaleString()} asentado.`, 'info');
+    } finally {
+      setTimeout(() => {
+        cashLockRef.current = false;
+      }, 300);
+    }
   };
 
-  const closeCashShift = (observations) => {
-    setCashClosures((prev) =>
-      prev.map((c, idx) => (idx === 0 ? { ...c, status: 'Cerrada y Arqueada', closeTimestamp: new Date().toISOString(), observations } : c))
-    );
-    logAudit('CASH', 'Caja Diaria', '-', `Cierre de arqueo de caja turno mañana realizado por ${currentUser.name}`);
-    addToast('Arqueo de Caja Finalizado', 'Caja cerrada y balances fiscales consolidados.', 'success');
+  const closeCashShift = async (observations) => {
+    if (cashLockRef.current) return;
+    cashLockRef.current = true;
+    try {
+      setCashClosures((prev) =>
+        prev.map((c, idx) => (idx === 0 ? { ...c, status: 'Cerrada y Arqueada', closeTimestamp: new Date().toISOString(), observations } : c))
+      );
+      if (dataService.isLive()) {
+        try {
+          await dataService.closeCashShift('shift-1', observations || '');
+        } catch (err) {
+          console.warn('Error al cerrar turno de caja en Supabase:', err);
+        }
+      }
+      logAudit('CASH', 'Caja Diaria', '-', `Cierre de arqueo de caja realizado por ${currentUser?.name || 'Operador'}`);
+      addToast('Arqueo de Caja Finalizado', 'Caja cerrada y balances fiscales consolidados.', 'success');
+    } finally {
+      cashLockRef.current = false;
+    }
   };
 
   // --- ÓRDENES MÉDICAS & CERTIFICADOS DIGITALES ---
   const addMedicalOrder = (orderData) => {
+    // T7: Bloqueo estricto contra emisión de órdenes médicas por personal administrativo
+    const effectiveDoctorId = orderData.doctorId || (isDoctor && currentDoctor ? currentDoctor.id : (currentUser?.doctorId || null));
+    if (!effectiveDoctorId && !isDoctor) {
+      addToast('Acceso Denegado (T7)', 'Las órdenes médicas y solicitudes de estudios solo pueden ser emitidas y firmadas por un profesional médico matriculado.', 'error');
+      return null;
+    }
+
     const newId = `ord-${Date.now()}`;
     const timestamp = new Date().toISOString();
     const newOrder = {
       id: newId,
       date: getTodayArgentina(),
       signed: true,
+      doctorId: effectiveDoctorId,
       signatureHash: generateSHA256Hash(`${newId}|${orderData.patientDni}|${timestamp}`),
       ...orderData
     };
     setMedicalOrders((prev) => [newOrder, ...prev]);
     if (dataService.isLive()) {
-      dataService.createMedicalOrder(newOrder).catch(console.warn);
+      dataService.createMedicalOrder(newOrder).catch((err) => {
+        console.error('Error al persistir orden médica:', err);
+        addToast('Error de Sincronización', 'No se pudo registrar la orden en el servidor: ' + (err.message || ''), 'error');
+      });
     }
     logAudit('CREATE', 'Orden Médica Digital', orderData.patientDni, `Emisión de orden médica para ${orderData.orderType}`);
     addToast('Orden Médica Emitida', 'Documento firmado digitalmente y listo para imprimir o enviar.', 'success');
@@ -1730,7 +1865,10 @@ export const ClinicProvider = ({ children }) => {
     };
     setMedicalCertificates((prev) => [newCert, ...prev]);
     if (dataService.isLive()) {
-      dataService.createMedicalCertificate(newCert).catch(console.warn);
+      dataService.createMedicalCertificate(newCert).catch((err) => {
+        console.error('Error al persistir certificado médico:', err);
+        addToast('Error de Sincronización', 'No se pudo registrar el certificado en el servidor: ' + (err.message || ''), 'error');
+      });
     }
     logAudit('CREATE', 'Certificado Médico', certData.patientDni, `Certificado de ${certData.certificateType} emitido.`);
     addToast('Certificado Médico Generado', `Certificado firmado con código QR de verificación.`, 'success');
@@ -1757,7 +1895,10 @@ export const ClinicProvider = ({ children }) => {
       prev.map((app) => (app.id === id ? { ...app, status: 'cancelado', cancelReason: reason } : app))
     );
     if (dataService.isLive()) {
-      dataService.updateAppointment(id, { status: 'cancelado', cancelReason: reason }).catch(console.warn);
+      dataService.updateAppointment(id, { status: 'cancelado', cancelReason: reason }).catch((err) => {
+        console.error('Error al cancelar turno:', err);
+        addToast('Error de Sincronización', 'No se pudo cancelar el turno en el servidor: ' + (err.message || ''), 'error');
+      });
     }
     logAudit('CANCEL', 'Turnos', '-', `Turno ${id} cancelado. Motivo: ${reason}`);
     addToast('Turno Cancelado', 'El turno ha sido cancelado exitosamente.', 'info');
@@ -1768,7 +1909,10 @@ export const ClinicProvider = ({ children }) => {
       prev.map((app) => (app.id === id ? { ...app, ...updatedData } : app))
     );
     if (dataService.isLive()) {
-      dataService.updateAppointment(id, updatedData).catch(console.warn);
+      dataService.updateAppointment(id, updatedData).catch((err) => {
+        console.error('Error al actualizar turno:', err);
+        addToast('Error de Sincronización', 'No se pudo actualizar el turno en el servidor: ' + (err.message || ''), 'error');
+      });
     }
     logAudit('UPDATE', 'Turnos', '-', `Turno ${id} actualizado.`);
     addToast('Turno Actualizado', 'Los datos del turno fueron modificados.', 'success');
@@ -1783,7 +1927,10 @@ export const ClinicProvider = ({ children }) => {
       )
     );
     if (dataService.isLive()) {
-      dataService.cancelAppointment(id, 'Cancelado y archivado por administración').catch(console.warn);
+      dataService.cancelAppointment(id, 'Cancelado y archivado por administración').catch((err) => {
+        console.error('Error al archivar turno:', err);
+        addToast('Error de Sincronización', 'No se pudo archivar el turno en el servidor: ' + (err.message || ''), 'error');
+      });
     }
     logAudit('CANCEL_APPOINTMENT', 'Turnos', '-', `Turno ${id} cancelado y archivado por administración.`);
     addToast('Turno Archivado', 'El turno ha sido cancelado y archivado conforme a la trazabilidad legal.', 'info');
@@ -1812,12 +1959,12 @@ export const ClinicProvider = ({ children }) => {
       id: newUserId,
       name: newDoc.name,
       email: newDoc.email || `${newDoc.name.toLowerCase().replace(/[^a-z]/g, '')}@citra.com.ar`,
-      password: 'Citra.2026!',
+      password: newDoc.password || '',
       role: `Médico ${newDoc.specialty || 'Profesional'}`,
       adminType: 'doctor',
       doctorId: newDoc.id,
       specialty: newDoc.specialty,
-      sisaLicense: newDoc.sisaRefeps || 'REFEPS-MN-114829',
+      sisaLicense: newDoc.sisaRefeps || newDoc.license || '',
       status: 'Activo',
       lastAccess: 'Nunca',
       avatar: newDoc.avatar
@@ -1960,7 +2107,10 @@ export const ClinicProvider = ({ children }) => {
   const updateClinicSchedule = (newSchedule) => {
     setClinicSchedule((prev) => ({ ...prev, ...newSchedule }));
     if (dataService.isLive()) {
-      dataService.updateClinicSchedule(newSchedule).catch(console.warn);
+      dataService.updateClinicSchedule(newSchedule).catch((err) => {
+        console.error('Error al actualizar horarios de la clínica:', err);
+        addToast('Error de Sincronización', 'No se pudieron guardar los horarios en el servidor: ' + (err.message || ''), 'error');
+      });
     }
     logAudit('UPDATE', 'Configuración de Horarios', '-', 'Configuración de horarios de atención modificada.');
     addToast('Horarios Actualizados', 'La configuración de disponibilidad fue guardada.', 'success');
@@ -2009,7 +2159,7 @@ export const ClinicProvider = ({ children }) => {
       status: 'Activo',
       mfaEnabled: true,
       lastAccess: 'Nunca',
-      password: 'Citra.2026!',
+      password: userData.password || '',
       ...userData
     };
     setUsers((prev) => [...prev, newUser]);
@@ -2029,11 +2179,11 @@ export const ClinicProvider = ({ children }) => {
   };
 
   // --- AUTENTICACIÓN PACIENTES Y ADMINISTRADORES ---
-  const loginPatient = (dniOrEmail, password) => {
+  const loginPatient = async (dniOrEmail, password) => {
     const cleanInput = (dniOrEmail || '').trim().toLowerCase().replace(/\./g, '');
     const foundPatient = patients.find((p) => {
       const cleanDni = (p.dni || '').replace(/\./g, '');
-      const cleanEmail = (p.email || '').toLowerCase();
+      const cleanEmail = (p.email || '').toLowerCase().trim();
       return cleanDni === cleanInput || cleanEmail === cleanInput;
     });
 
@@ -2048,10 +2198,24 @@ export const ClinicProvider = ({ children }) => {
       return { success: false, message: 'Contraseña requerida' };
     }
 
-    const expectedPassword = foundPatient.password || 'Paciente.2026!';
-    if (password !== expectedPassword) {
-      addToast('Contraseña Incorrecta', 'La contraseña ingresada no es válida.', 'error');
-      return { success: false, message: 'Contraseña incorrecta' };
+    if (dataService.isLive() && foundPatient.email) {
+      try {
+        const { session, user } = await dataService.signInWithPassword(foundPatient.email, password);
+        if (!session && !user) {
+          addToast('Error de Autenticación', 'Credenciales no válidas en el servidor central.', 'error');
+          return { success: false, message: 'Fallo de autenticación GoTrue' };
+        }
+      } catch (err) {
+        if (!foundPatient.password || foundPatient.password !== password) {
+          addToast('Contraseña Incorrecta', 'La contraseña ingresada no es válida.', 'error');
+          return { success: false, message: 'Contraseña incorrecta' };
+        }
+      }
+    } else {
+      if (!foundPatient.password || foundPatient.password !== password) {
+        addToast('Contraseña Incorrecta', 'La contraseña ingresada no es válida.', 'error');
+        return { success: false, message: 'Contraseña incorrecta' };
+      }
     }
 
     setAuthRole('patient');
@@ -2066,7 +2230,7 @@ export const ClinicProvider = ({ children }) => {
   const registerPatient = (patientData) => {
     const newPat = addPatient({
       ...patientData,
-      registeredAt: new Date().toISOString().split('T')[0]
+      registeredAt: patientData.registeredAt || getTodayArgentina()
     });
     setAuthRole('patient');
     setAuthPatient(newPat);
@@ -2080,6 +2244,7 @@ export const ClinicProvider = ({ children }) => {
   const logoutPatient = () => {
     setAuthRole('guest');
     setAuthPatient(null);
+    setCurrentPortalPatient(null);
     if (currentView === 'my-turnos' || currentView === 'portal' || currentView === 'patient-portal') {
       setCurrentView('home');
     }
@@ -2117,8 +2282,7 @@ export const ClinicProvider = ({ children }) => {
       }
     } else {
       // Modo local / offline: validar contra la contraseña guardada del usuario (sin comodín universal)
-      const expectedPassword = adminUser.password || 'Citra.2026!';
-      if (password !== expectedPassword) {
+      if (!adminUser.password || password !== adminUser.password) {
         addToast('Contraseña Incorrecta', 'La contraseña administrativa no es correcta.', 'error');
         return { success: false, message: 'Contraseña incorrecta' };
       }
@@ -2281,8 +2445,23 @@ export const ClinicProvider = ({ children }) => {
     }
   };
 
-  // Exportar Backup Cifrado AES-256
+  // Exportar Backup Cifrado AES-256 (M-10)
   const exportEncryptedBackup = (secretPassphrase) => {
+    const isAuthorized = Boolean(
+      isSuperAdmin ||
+      isDoctorBlanco ||
+      currentUser?.role === 'superadmin' ||
+      currentUser?.adminType === 'superadmin' ||
+      currentUser?.role?.includes('Dirección Médica') ||
+      currentUser?.role?.includes('Director Médico')
+    );
+
+    if (!isAuthorized) {
+      logAudit('EXPORT_DENIED', 'Base de Datos', '-', `Intento no autorizado de exportación de snapshot por ${currentUser?.name || 'usuario no privilegiado'}.`);
+      addToast('Acceso Denegado', 'La generación de snapshots completos de la base de datos está restringida a la Dirección Médica o Administrador de Infraestructura.', 'error');
+      return;
+    }
+
     const fullDatabase = {
       clinicInfo,
       patients,
@@ -2327,7 +2506,7 @@ export const ClinicProvider = ({ children }) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `CITRA_Backup_Cifrado_${new Date().toISOString().split('T')[0]}.citrabackup`;
+    link.download = `CITRA_Backup_Cifrado_${getTodayArgentina()}.citrabackup`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -2506,6 +2685,7 @@ export const ClinicProvider = ({ children }) => {
         addConsultationAdenda,
         addElectronicPrescription,
         updatePrescriptionStatus,
+        annulPrescription,
         addConsentForm,
         revokeConsentForm,
         addArcaInvoice,

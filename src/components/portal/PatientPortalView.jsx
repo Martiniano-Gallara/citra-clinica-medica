@@ -33,12 +33,145 @@ export const PatientPortalView = () => {
     setIsAppointmentModalOpen,
     setAppointmentModalData,
     addToast,
-    logAudit
+    logAudit,
+    loginPatient,
+    logoutPatient
   } = useClinic();
 
   const [portalTab, setPortalTab] = useState('appointments'); // 'appointments', 'prescriptions', 'files', 'hce_request'
+  const [loginDniOrEmail, setLoginDniOrEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const patient = currentPortalPatient || patients[0];
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    if (!loginDniOrEmail.trim() || !loginPassword.trim()) {
+      addToast('Campos Requeridos', 'Por favor ingrese su DNI / Correo y Contraseña.', 'warning');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await loginPatient(loginDniOrEmail.trim(), loginPassword);
+      if (!res.success) {
+        setIsSubmitting(false);
+      }
+    } catch (err) {
+      setIsSubmitting(false);
+      addToast('Error', 'No se pudo verificar el acceso.', 'error');
+    }
+  };
+
+  if (!currentPortalPatient) {
+    return (
+      <div style={{ maxWidth: '480px', margin: '3rem auto', padding: '0 1rem' }}>
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '20px',
+            boxShadow: 'var(--shadow-xl)',
+            padding: '2.5rem 2rem',
+            border: '1px solid #D2E3FC'
+          }}
+        >
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <div
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '16px',
+                background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ffffff',
+                marginBottom: '1rem',
+                boxShadow: '0 10px 20px rgba(0, 33, 130, 0.2)'
+              }}
+            >
+              <Lock size={32} />
+            </div>
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#002182', margin: '0 0 0.5rem' }}>
+              Portal del Paciente
+            </h2>
+            <p style={{ fontSize: '0.88rem', color: '#496386', margin: 0 }}>
+              Acceso seguro y confidencial a sus turnos médicos, recetas ReNaPDiS y constancias clínicas.
+            </p>
+          </div>
+
+          <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, color: '#002182', marginBottom: '0.4rem' }}>
+                DNI o Correo Electrónico
+              </label>
+              <input
+                type="text"
+                required
+                className="form-control"
+                placeholder="Ej. 34892110 o paciente@email.com"
+                value={loginDniOrEmail}
+                onChange={(e) => setLoginDniOrEmail(e.target.value)}
+                style={{ padding: '0.75rem 1rem', fontSize: '0.95rem' }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, color: '#002182', marginBottom: '0.4rem' }}>
+                Contraseña de Acceso
+              </label>
+              <input
+                type="password"
+                required
+                className="form-control"
+                placeholder="••••••••••••"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                style={{ padding: '0.75rem 1rem', fontSize: '0.95rem' }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary"
+              style={{
+                width: '100%',
+                padding: '0.85rem',
+                fontSize: '0.95rem',
+                fontWeight: 800,
+                marginTop: '0.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+              disabled={isSubmitting}
+            >
+              <Lock size={16} />
+              <span>{isSubmitting ? 'Verificando credenciales...' : 'Ingresar a Mi Portal'}</span>
+            </button>
+
+            <div style={{ textAlign: 'center', marginTop: '1rem', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
+              <button
+                type="button"
+                onClick={() => setIsPatientPortalMode(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#496386',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  fontWeight: 600
+                }}
+              >
+                ← Volver al Modo Clínica
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  const patient = currentPortalPatient;
 
   const myAppointments = appointments.filter((a) => a.patientId === patient.id);
   const myPrescriptions = electronicPrescriptions.filter((p) => p.patientId === patient.id || p.patientDni === patient.dni);
@@ -71,11 +204,31 @@ export const PatientPortalView = () => {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <img
-            src={patient.avatar}
-            alt={patient.name}
-            style={{ width: '68px', height: '68px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #257CE6' }}
-          />
+          {patient.avatar ? (
+            <img
+              src={patient.avatar}
+              alt={patient.name}
+              style={{ width: '68px', height: '68px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #257CE6' }}
+            />
+          ) : (
+            <div
+              style={{
+                width: '68px',
+                height: '68px',
+                borderRadius: '50%',
+                background: '#257CE6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ffffff',
+                fontWeight: 900,
+                fontSize: '1.5rem',
+                border: '3px solid #D2E3FC'
+              }}
+            >
+              {patient.name?.charAt(0) || 'P'}
+            </div>
+          )}
           <div>
             <div style={{ fontSize: '0.8rem', color: '#D2E3FC', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 800 }}>
               Portal Autogestión del Paciente
@@ -84,36 +237,22 @@ export const PatientPortalView = () => {
               Hola, {patient.name}
             </h1>
             <div style={{ fontSize: '0.86rem', color: '#EBF3FD' }}>
-              DNI: {patient.dni} · Cobertura: {patient.insuranceName} ({patient.insurancePlan})
+              DNI: {patient.dni} · Cobertura: {patient.insuranceName} ({patient.insurancePlan || 'Particular'})
             </div>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-          {/* Switch patient demo selector */}
-          <select
-            className="form-control"
-            style={{ width: '220px', background: 'rgba(255, 255, 255, 0.15)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.3)' }}
-            value={patient.id}
-            onChange={(e) => {
-              const p = patients.find((pat) => pat.id === e.target.value);
-              if (p) setCurrentPortalPatient(p);
-            }}
-          >
-            {patients.map((p) => (
-              <option key={p.id} value={p.id} style={{ color: '#002182' }}>
-                Simular como: {p.name}
-              </option>
-            ))}
-          </select>
-
           <button
             className="btn btn-outline"
             style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.4)', background: 'rgba(0,0,0,0.2)' }}
-            onClick={() => setIsPatientPortalMode(false)}
+            onClick={() => {
+              logoutPatient();
+              setIsPatientPortalMode(false);
+            }}
           >
             <LogOut size={16} />
-            <span>Volver a Modo Clínica</span>
+            <span>Cerrar Sesión</span>
           </button>
         </div>
       </div>

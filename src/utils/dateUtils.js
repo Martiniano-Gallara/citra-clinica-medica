@@ -4,23 +4,39 @@
  * Includes CSV formula injection sanitization.
  */
 
-export const getTodayArgentina = () => {
+export const formatDateArgentina = (date = new Date()) => {
   try {
+    const d = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
     const formatter = new Intl.DateTimeFormat('en-CA', {
       timeZone: 'America/Argentina/Buenos_Aires',
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
     });
-    return formatter.format(new Date());
+    return formatter.format(d);
   } catch {
-    // Fallback if timezone data is unavailable
-    const d = new Date();
+    const d = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
+};
+
+export const getTodayArgentina = () => formatDateArgentina(new Date());
+
+export const getCurrentMonthArgentina = (date = new Date()) => {
+  return formatDateArgentina(date).substring(0, 7);
+};
+
+export const getCurrentYearArgentina = (date = new Date()) => {
+  return formatDateArgentina(date).substring(0, 4);
+};
+
+export const getDaysAgoArgentina = (days = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return formatDateArgentina(d);
 };
 
 export const getNowArgentinaTime = () => {

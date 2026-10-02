@@ -8,12 +8,12 @@ export const BackupAndSecurityView = () => {
   const [passphrase, setPassphrase] = useState('');
   const [isExporting, setIsExporting] = useState(false);
 
-  // M-10: Restrict export to Superadmin or Medical Director
+  // M-10: Restrict export strictly to Superadmin or Medical Director
   const canExportBackup = Boolean(
     currentUser?.role === 'superadmin' ||
     currentUser?.adminType === 'superadmin' ||
-    currentUser?.doctorId === 'doc-1' ||
-    currentUser?.role?.includes('Dirección Médica')
+    currentUser?.role?.includes('Dirección Médica') ||
+    currentUser?.role?.includes('Director Médico')
   );
 
   const handleExportBackup = (e) => {

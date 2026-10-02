@@ -13,8 +13,11 @@ export const DoctorModal = () => {
     rooms,
     addDoctor,
     updateDoctor,
-    addToast
+    addToast,
+    currentUser
   } = useClinic();
+
+  const isDoctor = currentUser?.role === 'doctor';
 
   const [isCustomSpecialty, setIsCustomSpecialty] = useState(false);
   const [customSpecialty, setCustomSpecialty] = useState('');
@@ -119,6 +122,7 @@ export const DoctorModal = () => {
 
     const payload = {
       ...formData,
+      ...(isDoctor && doctorModalData ? { priceConsultation: doctorModalData.priceConsultation } : {}),
       specialty: finalSpecialtyName,
       specialtyName: finalSpecialtyName,
       specialtyId: matchedSpec?.id || 'spec-1',
@@ -248,11 +252,15 @@ export const DoctorModal = () => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Valor Consulta Particular ($)</label>
+            <label className="form-label">
+              Valor Consulta Particular ($) {isDoctor && <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 'normal' }}>(Fijado por Administración)</span>}
+            </label>
             <input
               type="number"
               className="form-control"
               value={formData.priceConsultation}
+              disabled={isDoctor}
+              style={isDoctor ? { background: '#f1f5f9', cursor: 'not-allowed' } : {}}
               onChange={(e) => setFormData({ ...formData, priceConsultation: Number(e.target.value) })}
             />
           </div>

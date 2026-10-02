@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { getTodayArgentina } from '../../utils/dateUtils';
+import { dataService } from '../../services/dataService';
 import { Modal } from '../common/Modal';
 import { Badge } from '../common/Badge';
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
@@ -52,6 +53,8 @@ export const PatientDetailModal = () => {
   const [activeTab, setActiveTab] = useState('general'); // 'general', 'hce', 'rehab', 'appointments', 'files', 'antecedentes'
   const [newFileName, setNewFileName] = useState('');
   const [newFileType, setNewFileType] = useState('Resonancia Magnética (RMN)');
+  const [selectedBinaryFile, setSelectedBinaryFile] = useState(null);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [isLegalHceModalOpen, setIsLegalHceModalOpen] = useState(false);
 
   const assignedDoctors = useMemo(() => {
@@ -115,21 +118,63 @@ export const PatientDetailModal = () => {
   const patientConsultations = (effectiveConsultations || []).filter((c) => c.patientId === patient.id || c.patientDni === patient.dni);
   const patientRehabPlans = rehabPlans.filter((r) => r.patientId === patient.id);
 
-  // File upload handler
-  const handleUploadFile = (e) => {
+  // File upload handler con Supabase Storage (A-09)
+  const handleUploadFile = async (e) => {
     e.preventDefault();
-    if (!newFileName.trim()) return;
+    const effectiveName = selectedBinaryFile ? selectedBinaryFile.name : newFileName.trim();
+    if (!effectiveName) return;
+
+    setIsUploadingFile(true);
+    let downloadUrl = null;
+    let storagePath = null;
+    const cleanSize = selectedBinaryFile ? `${(selectedBinaryFile.size / (1024 * 1024)).toFixed(2)} MB` : '1.2 MB';
+
+    try {
+      if (dataService.isLive() && selectedBinaryFile) {
+        storagePath = `${patient.id}/${Date.now()}_${selectedBinaryFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        downloadUrl = await dataService.uploadMedicalFile('medical-records', storagePath, selectedBinaryFile);
+      }
+    } catch (err) {
+      console.warn('Error subiendo archivo a Supabase Storage:', err);
+      setIsUploadingFile(false);
+      addToast('Error de Almacenamiento', 'No se pudo subir el archivo adjunto al almacenamiento seguro (Supabase Storage). Verifique su conexión y permisos.', 'error');
+      return;
+    }
+
     const fileObj = {
       id: `f-${Date.now()}`,
-      name: newFileName.endsWith('.pdf') ? newFileName : `${newFileName}.pdf`,
+      name: effectiveName,
       type: newFileType,
-      size: `${(Math.random() * 2 + 0.8).toFixed(1)} MB`,
+      size: cleanSize,
       date: getTodayArgentina(),
+      url: downloadUrl || null,
+      storagePath: storagePath || null,
       hashSha256: `sha256_${Math.random().toString(36).substring(2, 15)}`
     };
     addPatientFile(patient.id, fileObj);
     setNewFileName('');
+    setSelectedBinaryFile(null);
+    setIsUploadingFile(false);
     addToast('Estudio Adjuntado', 'El archivo fue incorporado a la Historia Clínica con Hash SHA-256.', 'success');
+  };
+
+  const handleDownloadFile = async (file) => {
+    if (file.url) {
+      window.open(file.url, '_blank');
+      return;
+    }
+    if (file.storagePath && dataService.isLive()) {
+      try {
+        const signedUrl = await dataService.getSignedMedicalUrl('medical-records', file.storagePath, 3600);
+        if (signedUrl) {
+          window.open(signedUrl, '_blank');
+          return;
+        }
+      } catch (e) {
+        console.warn('Error obteniendo URL firmada:', e);
+      }
+    }
+    addToast('Documento Clínico', `Visualizando registro de ${file.name}`, 'info');
   };
 
   return (
@@ -799,20 +844,41 @@ export const PatientDetailModal = () => {
             >
               <div style={{ fontWeight: 800, fontSize: '0.86rem', color: '#002182', marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Upload size={15} color="#076ABC" />
-                <span>Adjuntar Nuevo Estudio o Informe Radiológico</span>
+                <span>Adjuntar Nuevo Estudio o Archivo Clínico Digital (Ley 26.529)</span>
               </div>
-              <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                <input
+                  type="file"
+                  id="medical-file-input"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) {
+                      setSelectedBinaryFile(f);
+                      if (!newFileName) setNewFileName(f.name);
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={() => document.getElementById('medical-file-input')?.click()}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                >
+                  <Upload size={14} />
+                  <span>{selectedBinaryFile ? selectedBinaryFile.name : 'Seleccionar archivo...'}</span>
+                </button>
                 <input
                   type="text"
                   className="form-control"
-                  style={{ flex: 1, minWidth: '220px', fontSize: '0.84rem' }}
-                  placeholder="Nombre o descripción (ej. RMN_Rodilla_Control.pdf)..."
+                  style={{ flex: 1, minWidth: '180px', fontSize: '0.84rem' }}
+                  placeholder="Descripción o nombre..."
                   value={newFileName}
                   onChange={(e) => setNewFileName(e.target.value)}
                 />
                 <select
                   className="form-control"
-                  style={{ width: '220px', fontSize: '0.84rem' }}
+                  style={{ width: '200px', fontSize: '0.84rem' }}
                   value={newFileType}
                   onChange={(e) => setNewFileType(e.target.value)}
                 >
@@ -823,9 +889,14 @@ export const PatientDetailModal = () => {
                   <option value="Laboratorio Bioquímico">Laboratorio Bioquímico</option>
                   <option value="Consentimiento Informado">Consentimiento Informado</option>
                 </select>
-                <button type="submit" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-sm"
+                  disabled={isUploadingFile || (!selectedBinaryFile && !newFileName.trim())}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                >
                   <Upload size={14} />
-                  <span>Adjuntar</span>
+                  <span>{isUploadingFile ? 'Subiendo...' : 'Adjuntar'}</span>
                 </button>
               </div>
             </form>
@@ -862,10 +933,10 @@ export const PatientDetailModal = () => {
                     <button
                       type="button"
                       className="btn btn-outline btn-sm"
-                      onClick={() => addToast('Descargando Documento', `Descargando ${file.name}`, 'info')}
+                      onClick={() => handleDownloadFile(file)}
                     >
                       <Download size={13} />
-                      <span>Descargar</span>
+                      <span>{file.url ? 'Abrir Archivo' : 'Descargar'}</span>
                     </button>
                   </div>
                 </div>

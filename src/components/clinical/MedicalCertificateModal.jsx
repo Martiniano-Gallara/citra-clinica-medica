@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { getTodayArgentina, formatDateArgentina } from '../../utils/dateUtils';
 import {
   FileBadge,
   X,
@@ -52,7 +53,7 @@ export const MedicalCertificateModal = () => {
   const [certificateType, setCertificateType] = useState('Certificado de Reposo Laboral / Licencia Médica');
   const [diagnosis, setDiagnosis] = useState('');
   const [restDays, setRestDays] = useState(3);
-  const [restStartDate, setRestStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [restStartDate, setRestStartDate] = useState(getTodayArgentina());
   const [customContent, setCustomContent] = useState('');
   const [issuedCertificate, setIssuedCertificate] = useState(null);
 
@@ -78,7 +79,7 @@ export const MedicalCertificateModal = () => {
     try {
       const d = new Date(startDateStr);
       d.setDate(d.getDate() + Number(days) - 1);
-      return d.toISOString().split('T')[0];
+      return formatDateArgentina(d);
     } catch {
       return startDateStr;
     }
@@ -88,7 +89,7 @@ export const MedicalCertificateModal = () => {
     try {
       const d = new Date(startDateStr);
       d.setDate(d.getDate() + Number(days));
-      return d.toISOString().split('T')[0];
+      return formatDateArgentina(d);
     } catch {
       return startDateStr;
     }
@@ -832,7 +833,7 @@ export const MedicalCertificateModal = () => {
                       N° CERT-2026-0894
                     </div>
                     <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-                      Fecha: {formatDateSpanish(new Date().toISOString().split('T')[0])}
+                      Fecha: {formatDateSpanish(getTodayArgentina())}
                     </div>
                   </div>
                 </div>

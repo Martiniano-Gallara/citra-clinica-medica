@@ -48,6 +48,7 @@ export const Navbar = () => {
 
   const navItems = [
     { id: 'home', label: 'Inicio', icon: Home },
+    { id: 'booking', label: 'Sacar Turno', icon: CalendarPlus },
     { id: 'services', label: 'Servicios', icon: Stethoscope },
     { id: 'doctors', label: 'Equipo Médico', icon: Users },
     { id: 'insurances', label: 'Obras Sociales', icon: ShieldCheck },
@@ -156,7 +157,31 @@ export const Navbar = () => {
           </a>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <button
+            onClick={() => navigateToPage('portal')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#D2E3FC',
+              fontSize: '0.75rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              cursor: 'pointer',
+              padding: '0.2rem 0.5rem',
+              borderRadius: '6px',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = '#D2E3FC')}
+          >
+            <Users size={13} color="#257CE6" />
+            Portal Pacientes (Mis Turnos)
+          </button>
+
+          <span style={{ color: 'rgba(210, 227, 252, 0.3)' }}>|</span>
+
           <button
             onClick={handleAdminAccessClick}
             style={{
@@ -279,36 +304,64 @@ export const Navbar = () => {
             })}
           </nav>
 
-          {/* Desktop Actions (Sacar Turno por WhatsApp) */}
-          <div className="desktop-only" style={{ alignItems: 'center', gap: '0.75rem' }}>
+          {/* Desktop Actions: Sacar Turno Online (Principal) & Turno por WhatsApp */}
+          <div className="desktop-only" style={{ alignItems: 'center', gap: '0.65rem' }}>
             <button
-              onClick={() => handleBookingClick()}
+              onClick={() => navigateToPage('booking')}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem',
-                background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+                gap: '0.45rem',
+                background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
                 border: 'none',
                 color: '#ffffff',
-                padding: '0.6rem 1.25rem',
+                padding: '0.6rem 1.15rem',
                 borderRadius: '10px',
-                fontSize: '0.88rem',
+                fontSize: '0.86rem',
                 fontWeight: 800,
                 cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(37, 211, 102, 0.28)',
-                transition: 'all 0.2s'
+                boxShadow: '0 4px 12px rgba(7, 106, 188, 0.28)',
+                transition: 'all 0.2s ease'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(37, 211, 102, 0.38)';
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(7, 106, 188, 0.38)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.28)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(7, 106, 188, 0.28)';
               }}
             >
-              <WhatsAppIcon size={17} color="#ffffff" />
-              <span>Turno por WhatsApp</span>
+              <CalendarPlus size={16} color="#ffffff" />
+              <span>Sacar Turno Online</span>
+            </button>
+
+            <button
+              onClick={() => handleBookingClick()}
+              title="Solicitar asistencia de turnos por WhatsApp"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                background: '#F0FDF4',
+                border: '1.5px solid #86EFAC',
+                color: '#15803D',
+                padding: '0.55rem 0.95rem',
+                borderRadius: '10px',
+                fontSize: '0.84rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#DCFCE7';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#F0FDF4';
+              }}
+            >
+              <WhatsAppIcon size={16} color="#22C55E" />
+              <span>WhatsApp</span>
             </button>
           </div>
 
@@ -351,27 +404,49 @@ export const Navbar = () => {
             {/* Scrollable Drawer Body */}
             <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.1rem', flex: 1 }}>
 
-              {/* Highlighted Primary CTA: Sacar Turno por WhatsApp */}
+              {/* Highlighted Primary CTA: Sacar Turno Online */}
               <button
-                onClick={() => handleBookingClick()}
+                onClick={() => navigateToPage('booking')}
                 style={{
-                  background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+                  background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
                   color: '#ffffff',
                   border: 'none',
-                  padding: '0.9rem 1rem',
+                  padding: '0.85rem 1rem',
                   borderRadius: '12px',
                   fontWeight: 900,
-                  fontSize: '0.95rem',
+                  fontSize: '0.92rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.6rem',
+                  gap: '0.55rem',
                   cursor: 'pointer',
-                  boxShadow: '0 6px 18px rgba(37, 211, 102, 0.3)'
+                  boxShadow: '0 6px 18px rgba(7, 106, 188, 0.3)'
                 }}
               >
-                <WhatsAppIcon size={20} color="#ffffff" />
-                <span>Sacar Turno por WhatsApp</span>
+                <CalendarPlus size={19} color="#ffffff" />
+                <span>Sacar Turno Online</span>
+              </button>
+
+              {/* Secondary CTA: Asistencia por WhatsApp */}
+              <button
+                onClick={() => handleBookingClick()}
+                style={{
+                  background: '#F0FDF4',
+                  color: '#15803D',
+                  border: '1.5px solid #86EFAC',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '12px',
+                  fontWeight: 800,
+                  fontSize: '0.88rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.55rem',
+                  cursor: 'pointer'
+                }}
+              >
+                <WhatsAppIcon size={18} color="#22C55E" />
+                <span>Asistencia por WhatsApp</span>
               </button>
 
               {/* Navigation Links */}
@@ -436,6 +511,48 @@ export const Navbar = () => {
                     );
                   })}
                 </div>
+              </div>
+
+              {/* Patient and Admin Portal Access links */}
+              <div style={{ borderTop: '1px solid #D2E3FC', paddingTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <button
+                  onClick={() => navigateToPage('portal')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '0.65rem 0.8rem',
+                    borderRadius: '10px',
+                    fontSize: '0.88rem',
+                    fontWeight: 700,
+                    color: '#076ABC',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.6rem'
+                  }}
+                >
+                  <Users size={16} />
+                  <span>Portal Pacientes (Mis Turnos)</span>
+                </button>
+                <button
+                  onClick={handleAdminAccessClick}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '0.65rem 0.8rem',
+                    borderRadius: '10px',
+                    fontSize: '0.88rem',
+                    fontWeight: 700,
+                    color: '#475569',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.6rem'
+                  }}
+                >
+                  <Shield size={16} />
+                  <span>Portal de Administración</span>
+                </button>
               </div>
             </div>
           </div>
