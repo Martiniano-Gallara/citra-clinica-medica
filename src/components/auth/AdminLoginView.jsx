@@ -8,14 +8,11 @@ import {
   Eye,
   EyeOff,
   AlertTriangle,
-  Stethoscope,
   ShieldCheck,
   Shield,
   X,
   CheckCircle2,
-  Activity,
-  Clock,
-  Users
+  Clock
 } from 'lucide-react';
 
 export const AdminLoginView = () => {
@@ -368,164 +365,53 @@ export const AdminLoginView = () => {
           </button>
         </div>
 
-        {/* Center Presentation */}
-        <div style={{ maxWidth: '520px', zIndex: 2, margin: '2rem 0' }}>
+        {/* Center Presentation — Simplificada y Limpia */}
+        <div style={{ maxWidth: '480px', zIndex: 2, margin: 'auto 0' }}>
           <div
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.45rem',
-              background: 'rgba(255, 255, 255, 0.15)',
-              border: '1px solid rgba(255, 255, 255, 0.28)',
+              background: 'rgba(255, 255, 255, 0.12)',
+              border: '1px solid rgba(255, 255, 255, 0.22)',
               color: '#ffffff',
               padding: '0.35rem 0.85rem',
               borderRadius: '100px',
               fontSize: '0.74rem',
               fontWeight: 800,
-              letterSpacing: '0.06em',
+              letterSpacing: '0.05em',
               textTransform: 'uppercase',
               marginBottom: '1.25rem',
               backdropFilter: 'blur(8px)'
             }}
           >
             <ShieldCheck size={14} color="#93C5FD" />
-            Sistema de Gestión Clínica & Administrativa
+            CITRA · Panel de Gestión
           </div>
 
           <h2
             style={{
-              fontSize: 'clamp(1.85rem, 2.7vw, 2.45rem)',
+              fontSize: 'clamp(2rem, 3vw, 2.6rem)',
               fontWeight: 900,
-              lineHeight: 1.18,
+              lineHeight: 1.15,
               letterSpacing: '-0.03em',
               margin: '0 0 1rem',
               color: '#ffffff'
             }}
           >
-            Tecnología médica para la excelencia en cada consulta.
+            Portal Clínico & Administrativo
           </h2>
 
           <p
             style={{
-              fontSize: '0.94rem',
+              fontSize: '0.98rem',
               lineHeight: 1.6,
               color: 'rgba(255, 255, 255, 0.85)',
-              margin: '0 0 1.75rem'
+              margin: 0
             }}
           >
-            Acceso unificado para el equipo de profesionales de la salud, mesa de entrada, kinesiología y dirección médica.
+            Acceso unificado para el equipo de profesionales de la salud, consultorios y secretaría central.
           </p>
-
-          {/* 3 Authentic Clinical Modules */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div
-              style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 255, 255, 0.14)',
-                borderRadius: '14px',
-                padding: '0.85rem 1.1rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.85rem',
-                backdropFilter: 'blur(10px)'
-              }}
-            >
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '10px',
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}
-              >
-                <Stethoscope size={18} color="#93C5FD" />
-              </div>
-              <div>
-                <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#ffffff' }}>
-                  Historia Clínica Electrónica (HCE Inmutable)
-                </div>
-                <div style={{ fontSize: '0.74rem', color: 'rgba(255, 255, 255, 0.75)' }}>
-                  Aislamiento estricto por profesional. Cada médico accede exclusivamente a sus pacientes y evoluciones.
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 255, 255, 0.14)',
-                borderRadius: '14px',
-                padding: '0.85rem 1.1rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.85rem',
-                backdropFilter: 'blur(10px)'
-              }}
-            >
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '10px',
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}
-              >
-                <Activity size={18} color="#86EFAC" />
-              </div>
-              <div>
-                <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#ffffff' }}>
-                  Rehabilitación & Kinesiología Motora
-                </div>
-                <div style={{ fontSize: '0.74rem', color: 'rgba(255, 255, 255, 0.75)' }}>
-                  Planes de fisioterapia activa, suelo pélvico, ATM y gimnasio terapéutico.
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 255, 255, 0.14)',
-                borderRadius: '14px',
-                padding: '0.85rem 1.1rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.85rem',
-                backdropFilter: 'blur(10px)'
-              }}
-            >
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '10px',
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}
-              >
-                <Users size={18} color="#FDE047" />
-              </div>
-              <div>
-                <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#ffffff' }}>
-                  Mesa de Entrada & Asignación de Turnos
-                </div>
-                <div style={{ fontSize: '0.74rem', color: 'rgba(255, 255, 255, 0.75)' }}>
-                  Recepción de pacientes en sala y coordinación centralizada de turnos para todos los médicos.
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Left Bottom Spacer */}
@@ -563,6 +449,97 @@ export const AdminLoginView = () => {
             <p style={{ margin: '0.35rem 0 0', fontSize: '0.82rem', color: '#64748b' }}>
               Gestión clínica, turnos y recepción
             </p>
+          </div>
+
+          {/* Selector de Credenciales Temporales (Secretaría / Dr. Blanco) */}
+          <div
+            style={{
+              background: '#F0F7FF',
+              border: '1.5px solid #D2E3FC',
+              borderRadius: '12px',
+              padding: '0.75rem 0.85rem',
+              marginBottom: '1.15rem'
+            }}
+          >
+            <div
+              style={{
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                color: '#076ABC',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                marginBottom: '0.45rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              <span>Acceso Rápido (Credenciales)</span>
+              <span
+                style={{
+                  fontSize: '0.66rem',
+                  background: '#DBEAFE',
+                  color: '#1E40AF',
+                  padding: '0.1rem 0.45rem',
+                  borderRadius: '4px',
+                  fontWeight: 700
+                }}
+              >
+                1 Clic
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('secretaria@citra.com.ar');
+                  setPassword('secretaria2026');
+                  setErrorMsg('');
+                }}
+                style={{
+                  background: email === 'secretaria@citra.com.ar' ? '#002182' : '#ffffff',
+                  color: email === 'secretaria@citra.com.ar' ? '#ffffff' : '#002182',
+                  border: '1px solid #BFDBFE',
+                  borderRadius: '8px',
+                  padding: '0.5rem 0.6rem',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px'
+                }}
+              >
+                <span style={{ fontSize: '0.8rem', fontWeight: 800 }}>👩‍💼 Secretaría</span>
+                <span style={{ fontSize: '0.67rem', opacity: 0.8 }}>secretaria2026</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('dr.blanco@citra.com.ar');
+                  setPassword('blanco2026');
+                  setErrorMsg('');
+                }}
+                style={{
+                  background: email === 'dr.blanco@citra.com.ar' ? '#002182' : '#ffffff',
+                  color: email === 'dr.blanco@citra.com.ar' ? '#ffffff' : '#002182',
+                  border: '1px solid #BFDBFE',
+                  borderRadius: '8px',
+                  padding: '0.5rem 0.6rem',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px'
+                }}
+              >
+                <span style={{ fontSize: '0.8rem', fontWeight: 800 }}>👨‍⚕️ Dr. Blanco</span>
+                <span style={{ fontSize: '0.67rem', opacity: 0.8 }}>blanco2026</span>
+              </button>
+            </div>
           </div>
 
 
@@ -831,13 +808,7 @@ export const AdminLoginView = () => {
             </button>
           </form>
 
-          {/* Security Notice Footer */}
-          <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.74rem', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
-              <ShieldCheck size={14} color="#059669" />
-              <span>Portal protegido bajo estándar de cifrado TLS 1.3 y auditoría Ley 25.326</span>
-            </div>
-          </div>
+
 
         </div>
       </div>

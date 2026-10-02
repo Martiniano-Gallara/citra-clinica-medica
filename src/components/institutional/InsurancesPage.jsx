@@ -4,8 +4,6 @@ import { WhatsAppIcon } from '../common/WhatsAppIcon';
 import {
   ShieldCheck,
   Search,
-  CheckCircle2,
-  Sparkles,
   ChevronDown,
   X
 } from 'lucide-react';
@@ -265,8 +263,8 @@ export const InsurancesPage = () => {
           </span>
         </div>
 
-        {/* Insurances List — Tarjetas Limpias, Resumidas y Sin Datos Falsos */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem', marginBottom: '2.5rem' }}>
+        {/* Insurances List — Tarjetas Compactas, Foto, Nombre y Botón de WhatsApp Solo Ícono */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '2.5rem' }}>
           {filteredInsurances.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3.5rem 1rem', background: '#ffffff', borderRadius: '18px', border: '1.5px dashed #D2E3FC' }}>
               <ShieldCheck size={40} color="#7994B8" style={{ margin: '0 auto 0.85rem' }} />
@@ -289,27 +287,36 @@ export const InsurancesPage = () => {
                     background: '#ffffff',
                     border: '1.5px solid #E2EDFC',
                     borderRadius: '16px',
-                    padding: '1.25rem 1.35rem',
-                    boxShadow: '0 2px 10px rgba(0, 33, 130, 0.03)',
+                    padding: '0.85rem 1.15rem',
+                    boxShadow: '0 2px 8px rgba(0, 33, 130, 0.03)',
                     display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.85rem',
-                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '0.9rem',
+                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#BFDBFE';
+                    e.currentTarget.style.boxShadow = '0 4px 14px rgba(0, 33, 130, 0.06)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#E2EDFC';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 33, 130, 0.03)';
                   }}
                 >
-                  {/* Fila superior: Logo + Nombre + Badge */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
+                  {/* Foto / Logo + Nombre + Categoría */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: 1, minWidth: 0 }}>
                     <div
                       style={{
-                        width: '52px',
-                        height: '52px',
+                        width: '48px',
+                        height: '48px',
                         borderRadius: '12px',
                         background: '#ffffff',
                         border: '1.5px solid #D2E3FC',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        padding: '5px',
+                        padding: '4px',
                         flexShrink: 0,
                         boxShadow: '0 2px 6px rgba(0, 33, 130, 0.04)',
                         overflow: 'hidden'
@@ -331,7 +338,7 @@ export const InsurancesPage = () => {
                       <span
                         style={{
                           display: logoSrc ? 'none' : 'flex',
-                          fontSize: '0.95rem',
+                          fontSize: '0.9rem',
                           fontWeight: 900,
                           color: hi.logoColor || '#076ABC'
                         }}
@@ -341,17 +348,17 @@ export const InsurancesPage = () => {
                     </div>
 
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.2rem' }}>
-                        <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#002182' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                        <h3 style={{ margin: 0, fontSize: '1.12rem', fontWeight: 900, color: '#002182', letterSpacing: '-0.01em' }}>
                           {hi.name}
                         </h3>
                         <span
                           style={{
-                            fontSize: '0.7rem',
+                            fontSize: '0.68rem',
                             fontWeight: 800,
                             background: '#EBF3FD',
                             color: '#076ABC',
-                            padding: '0.15rem 0.55rem',
+                            padding: '0.15rem 0.5rem',
                             borderRadius: '100px',
                             border: '1px solid #D2E3FC'
                           }}
@@ -359,54 +366,42 @@ export const InsurancesPage = () => {
                           {category}
                         </span>
                       </div>
-                      <div style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                        <CheckCircle2 size={13} color="#16a34a" />
-                        <span>Convenio activo en CITRA</span>
-                      </div>
                     </div>
                   </div>
 
-                  {/* Descripción simple de 1 renglón */}
-                  <p style={{ margin: 0, fontSize: '0.84rem', color: '#496386', lineHeight: 1.45 }}>
-                    Consultá con secretaría los alcances de cobertura y aranceles según tu plan para coordinar tu atención.
-                  </p>
-
-                  {/* Botón único directo a WhatsApp */}
+                  {/* Botón WhatsApp solo icono */}
                   <a
                     href={`https://wa.me/${cleanWa}?text=${encodeURIComponent(`Hola ${clinicName}, quisiera consultar por la cobertura de ${hi.name}.`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label={`Consultar por ${hi.name}`}
+                    title={`Consultar por ${hi.name}`}
                     style={{
-                      width: '100%',
+                      flexShrink: 0,
+                      width: '44px',
+                      height: '44px',
                       background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
                       color: '#ffffff',
                       border: 'none',
-                      padding: '0.8rem 1.1rem',
                       borderRadius: '12px',
-                      fontWeight: 800,
-                      fontSize: '0.88rem',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '0.5rem',
                       cursor: 'pointer',
                       textDecoration: 'none',
-                      boxShadow: '0 4px 14px rgba(37, 211, 102, 0.28)',
-                      minHeight: '44px',
-                      transition: 'all 0.2s ease',
-                      boxSizing: 'border-box'
+                      boxShadow: '0 4px 12px rgba(37, 211, 102, 0.28)',
+                      transition: 'all 0.2s ease'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 6px 18px rgba(37, 211, 102, 0.38)';
+                      e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+                      e.currentTarget.style.boxShadow = '0 6px 18px rgba(37, 211, 102, 0.42)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 14px rgba(37, 211, 102, 0.28)';
+                      e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.28)';
                     }}
                   >
-                    <WhatsAppIcon size={17} color="#ffffff" />
-                    <span>Consultar Cobertura de {hi.name}</span>
+                    <WhatsAppIcon size={22} color="#ffffff" />
                   </a>
                 </div>
               );

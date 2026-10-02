@@ -2,10 +2,7 @@ import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import {
   Search,
-  Clock,
-  Stethoscope,
-  Sparkles,
-  Award
+  Stethoscope
 } from 'lucide-react';
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
@@ -246,8 +243,8 @@ export const DoctorsPage = () => {
           </span>
         </div>
 
-        {/* Doctors Cards — Sin Fotos, Sin Consultorio, Sin MP, Sin Años de Experiencia. SOLO Área, Nombre, Días y Horarios, y Botón Sacar Turno con [Nombre] */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {/* Doctors Cards — Diseño Compacto, Simple y Sin Días/Horarios */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
           {filteredDoctors.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3rem 1rem', background: '#ffffff', borderRadius: '16px', border: '1.5px dashed #D2E3FC' }}>
               <Stethoscope size={36} color="#7994B8" style={{ margin: '0 auto 0.75rem' }} />
@@ -260,11 +257,6 @@ export const DoctorsPage = () => {
             </div>
           ) : (
             filteredDoctors.map((doc) => {
-              const scheduleText =
-                doc.scheduleDisplay ||
-                (Array.isArray(doc.workingDays) ? doc.workingDays.join(', ') : doc.workingDays) ||
-                'Consultar días y horarios en secretaría';
-
               return (
                 <div
                   key={doc.id}
@@ -272,113 +264,90 @@ export const DoctorsPage = () => {
                     background: '#ffffff',
                     border: '1.5px solid #E2EDFC',
                     borderRadius: '16px',
-                    padding: '1.25rem 1.35rem',
-                    boxShadow: '0 2px 10px rgba(0, 33, 130, 0.03)',
+                    padding: '0.95rem 1.25rem',
+                    boxShadow: '0 2px 8px rgba(0, 33, 130, 0.03)',
                     display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.8rem',
-                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '1rem',
+                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#BFDBFE';
+                    e.currentTarget.style.boxShadow = '0 4px 14px rgba(0, 33, 130, 0.06)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#E2EDFC';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 33, 130, 0.03)';
                   }}
                 >
-                  {/* Área (Especialidad) */}
-                  <div>
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.35rem',
-                        background: '#EBF3FD',
-                        color: '#076ABC',
-                        padding: '0.28rem 0.75rem',
-                        borderRadius: '100px',
-                        fontSize: '0.78rem',
-                        fontWeight: 800,
-                        border: '1px solid #D2E3FC'
-                      }}
-                    >
-                      <Stethoscope size={13} color="#076ABC" />
-                      <span>{doc.specialty || doc.specialtyName}</span>
-                    </span>
-                  </div>
-
-                  {/* Nombre */}
-                  <h3
-                    style={{
-                      margin: 0,
-                      fontSize: '1.18rem',
-                      fontWeight: 900,
-                      color: '#002182',
-                      letterSpacing: '-0.01em',
-                      lineHeight: 1.25
-                    }}
-                  >
-                    {doc.name}
-                  </h3>
-
-                  {/* Días y Horarios */}
-                  <div
-                    style={{
-                      background: '#F8FAFE',
-                      borderRadius: '12px',
-                      padding: '0.75rem 0.95rem',
-                      border: '1px solid #E2EDFC',
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '0.55rem'
-                    }}
-                  >
-                    <Clock size={16} color="#076ABC" style={{ flexShrink: 0, marginTop: '2px' }} />
-                    <div style={{ fontSize: '0.84rem', color: '#002182', fontWeight: 700, lineHeight: 1.45 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {/* Área / Especialidad */}
+                    <div style={{ marginBottom: '0.25rem' }}>
                       <span
                         style={{
-                          color: '#496386',
-                          fontWeight: 700,
-                          display: 'block',
-                          fontSize: '0.7rem',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.04em',
-                          marginBottom: '2px'
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          background: '#EBF3FD',
+                          color: '#076ABC',
+                          padding: '0.2rem 0.65rem',
+                          borderRadius: '100px',
+                          fontSize: '0.74rem',
+                          fontWeight: 800,
+                          border: '1px solid #D2E3FC'
                         }}
                       >
-                        Días y Horarios
+                        <Stethoscope size={12} color="#076ABC" />
+                        <span>{doc.specialty || doc.specialtyName}</span>
                       </span>
-                      {scheduleText}
                     </div>
+
+                    {/* Nombre del profesional */}
+                    <h3
+                      style={{
+                        margin: 0,
+                        fontSize: '1.14rem',
+                        fontWeight: 900,
+                        color: '#002182',
+                        letterSpacing: '-0.01em',
+                        lineHeight: 1.25
+                      }}
+                    >
+                      {doc.name}
+                    </h3>
                   </div>
 
-                  {/* Botón Sacar Turno con [Nombre] */}
+                  {/* Botón WhatsApp solo icono */}
                   <button
                     onClick={() => handleBook(doc)}
+                    aria-label={`Sacar turno con ${doc.name}`}
+                    title={`Sacar turno con ${doc.name}`}
                     style={{
-                      width: '100%',
+                      flexShrink: 0,
+                      width: '44px',
+                      height: '44px',
                       background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
                       color: '#ffffff',
                       border: 'none',
-                      padding: '0.85rem 1.15rem',
                       borderRadius: '12px',
-                      fontWeight: 800,
-                      fontSize: '0.92rem',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '0.55rem',
                       cursor: 'pointer',
-                      boxShadow: '0 6px 18px rgba(37, 211, 102, 0.28)',
-                      minHeight: '46px',
-                      transition: 'all 0.2s ease',
-                      boxSizing: 'border-box'
+                      boxShadow: '0 4px 12px rgba(37, 211, 102, 0.28)',
+                      transition: 'all 0.2s ease'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 8px 24px rgba(37, 211, 102, 0.4)';
+                      e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+                      e.currentTarget.style.boxShadow = '0 6px 18px rgba(37, 211, 102, 0.42)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 6px 18px rgba(37, 211, 102, 0.28)';
+                      e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.28)';
                     }}
                   >
-                    <WhatsAppIcon size={18} color="#ffffff" />
-                    <span>Sacar Turno con {doc.name}</span>
+                    <WhatsAppIcon size={22} color="#ffffff" />
                   </button>
                 </div>
               );

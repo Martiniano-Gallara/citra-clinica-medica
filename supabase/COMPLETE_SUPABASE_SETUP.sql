@@ -770,6 +770,7 @@ CREATE INDEX IF NOT EXISTS idx_cash_movements_shift ON cash_movements (shift_id)
 CREATE INDEX IF NOT EXISTS idx_cash_shifts_date ON cash_shifts (opened_at);
 
 -- 24. Vista Segura de Profesionales para Consulta Pública / Anon (A01)
+DROP VIEW IF EXISTS public.public_doctors CASCADE;
 CREATE OR REPLACE VIEW public.public_doctors AS
 SELECT
     id, name, specialty_id, specialty_name, room_id, room_name,
@@ -1127,13 +1128,13 @@ BEGIN
         COALESCE(public.get_auth_role()::text, 'system'),
         TG_OP,
         TG_TABLE_NAME,
-        COALESCE(CASE WHEN TG_OP != 'DELETE' AND to_jsonb(NEW) ? 'patient_dni' THEN NEW.patient_dni ELSE '-' END, '-'),
+        COALESCE(to_jsonb(NEW) ->> 'patient_dni', to_jsonb(OLD) ->> 'patient_dni', '-'),
         v_details::text,
         COALESCE(inet_client_addr()::text, '127.0.0.1'),
         NOW(),
-        encode(digest(TG_TABLE_NAME || TG_OP || NOW()::text || COALESCE(NEW.id, OLD.id, ''), 'sha256'), 'hex'),
+        encode(digest(TG_TABLE_NAME || TG_OP || NOW()::text || COALESCE(to_jsonb(NEW) ->> 'id', to_jsonb(OLD) ->> 'id', ''), 'sha256'), 'hex'),
         TG_TABLE_NAME,
-        COALESCE(NEW.id, OLD.id, 'N/A')
+        COALESCE(to_jsonb(NEW) ->> 'id', to_jsonb(OLD) ->> 'id', 'N/A')
     );
 
     RETURN COALESCE(NEW, OLD);
@@ -1583,6 +1584,7 @@ FOR UPDATE USING (
 );
 
 -- 25. Vista Pública Reducida de Profesionales (A-01)
+DROP VIEW IF EXISTS public.public_doctors CASCADE;
 CREATE OR REPLACE VIEW public.public_doctors AS
 SELECT 
     id,

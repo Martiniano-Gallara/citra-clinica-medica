@@ -25,26 +25,24 @@ export const ServicesSection = () => {
       label: 'Consultas Médicas',
       title: 'CONSULTAS MÉDICAS',
       badge: 'Especialistas',
-      description: 'Tocá la especialidad que necesitás para solicitar tu turno directo con secretaría:',
       items: [
-        { name: 'Traumatología', detail: 'Dr. Blanco (Mar, mié y jue tarde) · Dr. Lagos (Lun 18 hs)', icon: Bone },
-        { name: 'Neurología', detail: 'Dra. Ferreira · Consultar en secretaría', icon: Brain },
-        { name: 'Reumatología', detail: 'Dra. Miretti · Consultar en secretaría', icon: Activity },
-        { name: 'Nutrición', detail: 'Lic. Tsakoumagkos · Consultar en secretaría', icon: Apple },
-        { name: 'Atención PAMI', detail: 'Dra. Allione · Martes y jueves (solo por la mañana)', icon: Heart }
+        { name: 'Traumatología', detail: 'Dr. Blanco · Dr. Lagos', icon: Bone },
+        { name: 'Neurología', detail: 'Dra. Ferreira · Secretaría', icon: Brain },
+        { name: 'Reumatología', detail: 'Dra. Miretti · Secretaría', icon: Activity },
+        { name: 'Nutrición', detail: 'Lic. Tsakoumagkos · Secretaría', icon: Apple },
+        { name: 'Atención PAMI', detail: 'Dra. Allione · Mar y jue mañana', icon: Heart }
       ]
     },
     {
       id: 'kinesio',
-      label: 'Kinesiología & Rehabilitación',
-      title: 'KINESIOLOGÍA & REHABILITACIÓN',
+      label: 'Rehabilitación',
+      title: 'REHABILITACIÓN',
       badge: 'Gimnasio Terapéutico',
-      description: 'Tocá el área de rehabilitación para coordinar tus sesiones con secretaría:',
       items: [
-        { name: 'Kinesiología & Fisioterapia', detail: 'Lic. Barrea (8 a 16) · Lic. Baravalle (8 a 14) · Lic. Mondino (14 a 20:30)', icon: Dumbbell },
-        { name: 'Osteopatía', detail: 'Lic. Mondino · Confirmar con el profesional o en CITRA', icon: Layers },
-        { name: 'ATM (Mandíbula)', detail: 'Lic. Baravalle · Confirmar con la profesional o en CITRA', icon: Smile },
-        { name: 'Suelo Pélvico', detail: 'Lic. Baravalle · Confirmar con la profesional o en CITRA', icon: Heart }
+        { name: 'Kinesiología & Fisioterapia', detail: 'Lic. Barrea · Lic. Baravalle · Lic. Mondino', icon: Dumbbell },
+        { name: 'Osteopatía', detail: 'Lic. Mondino · Consultar en CITRA', icon: Layers },
+        { name: 'ATM (Mandíbula)', detail: 'Lic. Baravalle · Consultar en CITRA', icon: Smile },
+        { name: 'Suelo Pélvico', detail: 'Lic. Baravalle · Consultar en CITRA', icon: Heart }
       ]
     },
     {
@@ -52,13 +50,12 @@ export const ServicesSection = () => {
       label: 'Diagnóstico & Terapias',
       title: 'DIAGNÓSTICO & BIENESTAR',
       badge: 'Estudios & Tratamientos',
-      description: 'Tocá el servicio o estudio para consultar disponibilidad y turnos:',
       items: [
-        { name: 'Radiología Digital', detail: 'Lic. Emilio · Próximamente (Consultar en secretaría)', icon: ScanLine },
-        { name: 'Ozonoterapia', detail: 'Dr. Luque · Consultar en secretaría', icon: Sparkles },
-        { name: 'Estudio de Pisada y Plantillas', detail: 'Lic. Salvagno · Consultar en secretaría', icon: Footprints },
-        { name: 'Medicina Estética', detail: 'Dra. Allione · Lunes, miércoles y viernes', icon: Sparkles },
-        { name: 'Shama Yoga', detail: 'Profe Maru · Lunes y martes (Adultos mayores: mar 10 hs)', icon: Activity }
+        { name: 'Radiología Digital', detail: 'Lic. Emilio · Próximamente', icon: ScanLine },
+        { name: 'Ozonoterapia', detail: 'Dr. Luque · Secretaría', icon: Sparkles },
+        { name: 'Estudio de Pisada', detail: 'Lic. Salvagno · Secretaría', icon: Footprints },
+        { name: 'Medicina Estética', detail: 'Dra. Allione · Lun, mié y vie', icon: Sparkles },
+        { name: 'Shama Yoga', detail: 'Profe Maru · Lun y mar', icon: Activity }
       ]
     }
   ];
@@ -231,9 +228,7 @@ export const ServicesSection = () => {
             </span>
           </div>
 
-          <p style={{ fontSize: '0.86rem', color: '#496386', lineHeight: 1.45, margin: '0 0 1rem' }}>
-            {activeCategory.description}
-          </p>
+
 
           {/* Lista de especialidades / servicios: 100% interactivos y seleccionables */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.25rem' }}>
@@ -279,29 +274,22 @@ export const ServicesSection = () => {
                       <ItemIcon size={18} />
                     </div>
 
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div
-                        style={{
-                          fontSize: '0.94rem',
-                          fontWeight: 800,
-                          color: isSelected ? '#002182' : '#1E293B',
-                          lineHeight: 1.25
-                        }}
-                      >
-                        {item.name}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: '0.76rem',
-                          color: '#496386',
-                          marginTop: '2px',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
-                        }}
-                      >
-                        {item.detail}
-                      </div>
+                    <div
+                      style={{
+                        minWidth: 0,
+                        flex: 1,
+                        fontSize: '0.88rem',
+                        fontWeight: 700,
+                        color: isSelected ? '#002182' : '#1E293B',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}
+                    >
+                      {item.name}
+                      <span style={{ fontWeight: 500, color: '#496386', marginLeft: '0.35rem' }}>
+                        · {item.detail}
+                      </span>
                     </div>
                   </div>
 

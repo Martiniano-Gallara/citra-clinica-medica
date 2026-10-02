@@ -6,9 +6,6 @@ import {
   Menu,
   X,
   Stethoscope,
-  Phone,
-  Clock,
-  MapPin,
   Home,
   Users,
   ShieldCheck,
@@ -80,11 +77,6 @@ export const Navbar = () => {
 
   const rawWa = (clinicInfo?.whatsapp || '543576450214').replace(/\D/g, '');
   const cleanWa = rawWa.startsWith('54') ? rawWa : `54${rawWa}`;
-  const phoneFijo = (clinicInfo?.phone || '3576450214').replace(/\D/g, '');
-  const phoneDisplay = clinicInfo?.phoneFormatted || clinicInfo?.phone || '3576 450214';
-  const addressDisplay = clinicInfo?.addressFull || clinicInfo?.address || 'Av. Carlos Pontin 556, Arroyito (CP 2434)';
-  const scheduleDisplay = clinicInfo?.scheduleShort || clinicInfo?.schedule || 'Lunes a Viernes: 8 a 20 hs';
-  const mapsUrl = clinicInfo?.mapsUrl || 'https://maps.app.goo.gl/FJhLndjvgSAWb2Si6';
   const clinicName = clinicInfo?.name || 'CITRA';
 
   const handleBookingClick = (customText) => {
@@ -105,106 +97,6 @@ export const Navbar = () => {
 
   return (
     <>
-      {/* Top emergency & contact strip (DESKTOP ONLY) */}
-      <div
-        className="desktop-only"
-        style={{
-          background: '#001556',
-          color: '#D2E3FC',
-          fontSize: '0.78rem',
-          padding: '0.45rem 1.5rem',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: '1px solid rgba(210, 227, 252, 0.15)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
-          <a
-            href={mapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              color: 'inherit',
-              textDecoration: 'none',
-              transition: 'color 0.2s ease'
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = '#ffffff'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = '#D2E3FC'; }}
-          >
-            <MapPin size={13} color="#257CE6" />
-            {addressDisplay}
-          </a>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <Clock size={13} color="#257CE6" />
-            {scheduleDisplay}
-          </span>
-          <a
-            href={`tel:0${phoneFijo}`}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              color: '#ffffff',
-              fontWeight: 800,
-              textDecoration: 'none'
-            }}
-          >
-            <Phone size={13} color="#257CE6" />
-            {phoneDisplay}
-          </a>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-          <button
-            onClick={() => navigateToPage('portal')}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#D2E3FC',
-              fontSize: '0.75rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              cursor: 'pointer',
-              padding: '0.2rem 0.5rem',
-              borderRadius: '6px',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = '#D2E3FC')}
-          >
-            <Users size={13} color="#257CE6" />
-            Portal Pacientes (Mis Turnos)
-          </button>
-
-          <span style={{ color: 'rgba(210, 227, 252, 0.3)' }}>|</span>
-
-          <button
-            onClick={handleAdminAccessClick}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#D2E3FC',
-              fontSize: '0.75rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              cursor: 'pointer',
-              padding: '0.2rem 0.5rem',
-              borderRadius: '6px',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = '#D2E3FC')}
-          >
-            <Shield size={13} color="#257CE6" />
-            Portal Administración
-          </button>
-        </div>
-      </div>
 
       {/* Main Sticky Navbar */}
       <header
@@ -304,8 +196,38 @@ export const Navbar = () => {
             })}
           </nav>
 
-          {/* Desktop Actions: Sacar Turno Online (Principal) & Turno por WhatsApp */}
+          {/* Desktop Actions: Mis Turnos, Sacar Turno Online (Principal) & Turno por WhatsApp */}
           <div className="desktop-only" style={{ alignItems: 'center', gap: '0.65rem' }}>
+            <button
+              onClick={() => navigateToPage('portal')}
+              title="Portal Pacientes - Consultar y gestionar mis turnos"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                background: currentView === 'portal' ? '#EBF3FD' : 'transparent',
+                border: '1.5px solid #D2E3FC',
+                color: '#002182',
+                padding: '0.55rem 0.85rem',
+                borderRadius: '10px',
+                fontSize: '0.84rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#EBF3FD';
+                e.currentTarget.style.borderColor = '#BFDBFE';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = currentView === 'portal' ? '#EBF3FD' : 'transparent';
+                e.currentTarget.style.borderColor = '#D2E3FC';
+              }}
+            >
+              <Users size={15} color="#076ABC" />
+              <span>Mis Turnos</span>
+            </button>
+
             <button
               onClick={() => navigateToPage('booking')}
               style={{
