@@ -84,7 +84,7 @@ export const DoctorsManager = ({ initialTab }) => {
 
   // Acceso y Permisos del médico
   const [docEmail, setDocEmail] = useState('');
-  const [docPassword, setDocPassword] = useState('citra2026');
+  const [docPassword, setDocPassword] = useState('Citra.2026!');
   const [docRole, setDocRole] = useState('Médico / Especialista');
 
   // Obras sociales aceptadas por el médico
@@ -93,7 +93,7 @@ export const DoctorsManager = ({ initialTab }) => {
   // --- MODAL DE CONTRASEÑA RÁPIDA (RESET SECRETARÍA) ---
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [passwordTargetDoctor, setPasswordTargetDoctor] = useState(null);
-  const [quickPasswordValue, setQuickPasswordValue] = useState('citra2026');
+  const [quickPasswordValue, setQuickPasswordValue] = useState('Citra.2026!');
 
   // --- MODAL DE ESPECIALIDAD (CABECERA) ---
   const [isSpecialtyModalOpen, setIsSpecialtyModalOpen] = useState(false);
@@ -115,11 +115,11 @@ export const DoctorsManager = ({ initialTab }) => {
   const [staffName, setStaffName] = useState('');
   const [staffEmail, setStaffEmail] = useState('');
   const [staffRole, setStaffRole] = useState('Secretaría / Recepción');
-  const [staffPassword, setStaffPassword] = useState('citra2026');
+  const [staffPassword, setStaffPassword] = useState('Citra.2026!');
 
   const allDays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-  // Universal background scroll lock
+  // Universal background scroll lock sin mutaciones de estilo conflictivas
   const isAnyModalOpen =
     isDoctorModalOpen ||
     isPasswordModalOpen ||
@@ -129,13 +129,11 @@ export const DoctorsManager = ({ initialTab }) => {
 
   useEffect(() => {
     if (isAnyModalOpen) {
-      const prevBody = document.body.style.overflow;
-      const prevHtml = document.documentElement.style.overflow;
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
+      document.body.classList.add('modal-open');
+      document.documentElement.classList.add('modal-open');
       return () => {
-        document.body.style.overflow = prevBody;
-        document.documentElement.style.overflow = prevHtml;
+        document.body.classList.remove('modal-open');
+        document.documentElement.classList.remove('modal-open');
       };
     }
   }, [isAnyModalOpen]);
@@ -204,14 +202,16 @@ export const DoctorsManager = ({ initialTab }) => {
 
   // Helper: Obtener doctores vinculados a una especialidad
   const getDoctorsForSpecialty = (spec) => {
+    if (!spec) return [];
     const sName = normalizeStr(spec.name);
-    return doctors.filter((d) => {
-      if (d.specialtyId && d.specialtyId === spec.id) return true;
-      if (Array.isArray(d.specialtyIds) && d.specialtyIds.includes(spec.id)) return true;
+    return (doctors || []).filter((d) => {
+      if (!d) return false;
+      if (d.specialtyId && spec.id && d.specialtyId === spec.id) return true;
+      if (Array.isArray(d.specialtyIds) && spec.id && d.specialtyIds.includes(spec.id)) return true;
       const docSpec = normalizeStr(d.specialty);
       const docSpecName = normalizeStr(d.specialtyName);
-      if (docSpec && docSpec === sName) return true;
-      if (docSpecName && docSpecName === sName) return true;
+      if (sName && docSpec && docSpec === sName) return true;
+      if (sName && docSpecName && docSpecName === sName) return true;
       return false;
     });
   };
@@ -280,7 +280,7 @@ export const DoctorsManager = ({ initialTab }) => {
     setDocSlotDuration(30);
     setDocScheduleDisplay('Consultar en secretaría');
     setDocEmail('');
-    setDocPassword('citra2026');
+    setDocPassword('Citra.2026!');
     setDocRole('Médico / Especialista');
     setDocAcceptedInsurances(healthInsurances.map((h) => h.id));
     setIsDoctorModalOpen(true);
@@ -314,7 +314,7 @@ export const DoctorsManager = ({ initialTab }) => {
 
     const matchedUser = getDoctorUser(doc);
     setDocEmail(matchedUser?.email || doc.email || `${(doc.name || 'doctor').toLowerCase().replace(/[^a-z]/g, '')}@citra.com.ar`);
-    setDocPassword(matchedUser?.password || 'citra2026');
+    setDocPassword(matchedUser?.password || 'Citra.2026!');
     setDocRole(matchedUser?.role || `Médico ${doc.specialty || 'Profesional'}`);
     setDocAcceptedInsurances(doc.acceptedInsurances || healthInsurances.map((h) => h.id));
     setIsDoctorModalOpen(true);
@@ -389,7 +389,7 @@ export const DoctorsManager = ({ initialTab }) => {
 
     // Sincronizar cuenta de usuario y contraseña
     const cleanEmail = docEmail.trim() || `${docName.toLowerCase().replace(/[^a-z]/g, '')}@citra.com.ar`;
-    const cleanPassword = docPassword.trim() || 'citra2026';
+    const cleanPassword = docPassword.trim() || 'Citra.2026!';
     const effectiveDocId = editingDoctor ? editingDoctor.id : targetDoctorId;
 
     const matchedUser = users.find(
@@ -443,14 +443,14 @@ export const DoctorsManager = ({ initialTab }) => {
   const handleOpenQuickPassword = (doc) => {
     setPasswordTargetDoctor(doc);
     const matched = getDoctorUser(doc);
-    setQuickPasswordValue(matched?.password || 'citra2026');
+    setQuickPasswordValue(matched?.password || 'Citra.2026!');
     setIsPasswordModalOpen(true);
   };
 
   const handleSaveQuickPassword = (e) => {
     e.preventDefault();
     if (!passwordTargetDoctor) return;
-    const newPwd = quickPasswordValue.trim() || 'citra2026';
+    const newPwd = quickPasswordValue.trim() || 'Citra.2026!';
     const matched = getDoctorUser(passwordTargetDoctor);
 
     if (matched && typeof updateUser === 'function') {
@@ -484,10 +484,15 @@ export const DoctorsManager = ({ initialTab }) => {
   };
 
   const handleOpenEditSpecialty = (spec) => {
+    if (!spec) return;
     setEditingSpecialty(spec);
     setSpecialtyName(spec.name || '');
-    const assigned = getDoctorsForSpecialty(spec).map((d) => d.id);
-    setSpecialtySelectedDocIds(assigned);
+    try {
+      const assigned = getDoctorsForSpecialty(spec).map((d) => d.id);
+      setSpecialtySelectedDocIds(assigned || []);
+    } catch {
+      setSpecialtySelectedDocIds([]);
+    }
     setIsSpecialtyModalOpen(true);
   };
 
@@ -614,7 +619,7 @@ export const DoctorsManager = ({ initialTab }) => {
     setStaffName('');
     setStaffEmail('');
     setStaffRole('Secretaría / Recepción');
-    setStaffPassword('citra2026');
+    setStaffPassword('Citra.2026!');
     setIsStaffModalOpen(true);
   };
 
@@ -623,7 +628,7 @@ export const DoctorsManager = ({ initialTab }) => {
     setStaffName(user.name || '');
     setStaffEmail(user.email || '');
     setStaffRole(user.role || 'Secretaría / Recepción');
-    setStaffPassword(user.password || 'citra2026');
+    setStaffPassword(user.password || 'Citra.2026!');
     setIsStaffModalOpen(true);
   };
 
@@ -640,7 +645,7 @@ export const DoctorsManager = ({ initialTab }) => {
       email: staffEmail.trim().toLowerCase(),
       role: staffRole.trim(),
       adminType: 'administrative',
-      password: staffPassword.trim() || 'citra2026',
+      password: staffPassword.trim() || 'Citra.2026!',
       status: 'Activo'
     };
 
@@ -2087,7 +2092,7 @@ export const DoctorsManager = ({ initialTab }) => {
                           required
                           value={docPassword}
                           onChange={(e) => setDocPassword(e.target.value)}
-                          placeholder="citra2026"
+                          placeholder="Citra.2026!"
                           style={{
                             flex: 1,
                             padding: '0.65rem 0.75rem',
@@ -2100,7 +2105,7 @@ export const DoctorsManager = ({ initialTab }) => {
                         />
                         <button
                           type="button"
-                          onClick={() => setDocPassword('citra2026')}
+                          onClick={() => setDocPassword('Citra.2026!')}
                           style={{
                             background: '#F0F5FF',
                             border: '1px solid #D2E3FC',
@@ -2112,7 +2117,7 @@ export const DoctorsManager = ({ initialTab }) => {
                             cursor: 'pointer'
                           }}
                         >
-                          Reset citra2026
+                          Reset Clave
                         </button>
                       </div>
                     </div>
@@ -2880,7 +2885,7 @@ export const DoctorsManager = ({ initialTab }) => {
                     type="text"
                     value={staffPassword}
                     onChange={(e) => setStaffPassword(e.target.value)}
-                    placeholder="citra2026"
+                    placeholder="Citra.2026!"
                     style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>

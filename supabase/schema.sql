@@ -1,7 +1,7 @@
 -- ====================================================================
 -- CITRA · Centro Integral de Traumatología & Rehabilitación Arroyito
--- ESQUEMA DE BASE DE DATOS PARA PRODUCCIÓN EN SUPABASE (PostgreSQL 15+)
--- Cumplimiento: Ley 26.529, Ley 25.506 (Firma Digital), Ley 27.553 (ReNaPDiS)
+-- ESQUEMA COMPLETO DE BASE DE DATOS (PostgreSQL 15+ / Supabase DDL)
+-- Cumplimiento: Ley 26.529, Ley 25.506 (Firma Digital), Ley 27.553 (ReNaPDiS), Ley 25.326
 -- ====================================================================
 
 -- 1. Extensiones necesarias
@@ -28,7 +28,7 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE study_status AS ENUM ('solicitado', 'en_proceso', 'completado', 'entregado');
+    CREATE TYPE study_status AS ENUM ('solicitado', 'en_proceso', 'completado', 'entregado', 'pendiente', 'realizado', 'informado');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS doctors (
     user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
     name VARCHAR(200) NOT NULL,
     license VARCHAR(100) NOT NULL,
-    sisa_refeps VARCHAR(100) DEFAULT 'REFEPS-MN-114829',
+    sisa_refeps VARCHAR(100),
     specialty_id VARCHAR(50) REFERENCES specialties(id) ON DELETE SET NULL,
     specialty_name VARCHAR(150) NOT NULL,
     room_id VARCHAR(50) REFERENCES rooms(id) ON DELETE SET NULL,
@@ -136,6 +136,7 @@ CREATE TABLE IF NOT EXISTS patients (
     assigned_doctor_ids TEXT[] DEFAULT ARRAY[]::TEXT[],
     registered_at DATE DEFAULT CURRENT_DATE,
     avatar_url TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -181,22 +182,25 @@ CREATE TABLE IF NOT EXISTS appointments (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Evitar turnos duplicados con el mismo doctor, fecha y hora si no están cancelados
 CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_active_appointment
+ON appointments (doctor_id, date, time)
+WHERE status != 'cancelado';
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_no_duplicate_appointment
 ON appointments (doctor_id, date, time)
 WHERE status != 'cancelado';
 
 -- 11. Historias Clínicas Electrónicas (HCE) - Ley 26.529 y Ley 25.506
 CREATE TABLE IF NOT EXISTS consultations (
     id VARCHAR(50) PRIMARY KEY,
-    appointment_id VARCHAR(50) REFERENCES appointments(id) ON DELETE SET NULL,
-    patient_id VARCHAR(50) NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    appointment_id VARCHAR(50) REFERENCES appointments(id) ON DELETE RESTRICT,
+    patient_id VARCHAR(50) NOT NULL REFERENCES patients(id) ON DELETE RESTRICT,
     patient_name VARCHAR(200) NOT NULL,
     patient_dni VARCHAR(20) NOT NULL,
-    doctor_id VARCHAR(50) NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
+    doctor_id VARCHAR(50) NOT NULL REFERENCES doctors(id) ON DELETE RESTRICT,
     doctor_name VARCHAR(200) NOT NULL,
     doctor_license VARCHAR(100) NOT NULL,
-    sisa_refeps VARCHAR(100) DEFAULT 'REFEPS-MN-114829',
+    sisa_refeps VARCHAR(100),
     specialty_name VARCHAR(150) NOT NULL,
     date DATE NOT NULL DEFAULT CURRENT_DATE,
     time TIME NOT NULL DEFAULT CURRENT_TIME,
@@ -218,36 +222,41 @@ CREATE TABLE IF NOT EXISTS consultations (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 12. Adendas Clínicas (Inmutabilidad de HCE: sólo se anexa información)
+-- 12. Adendas Clínicas (Inmutabilidad de HCE)
 CREATE TABLE IF NOT EXISTS consultation_adendas (
     id VARCHAR(50) PRIMARY KEY,
-    consultation_id VARCHAR(50) NOT NULL REFERENCES consultations(id) ON DELETE CASCADE,
-    doctor_id VARCHAR(50) NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
+    consultation_id VARCHAR(50) NOT NULL REFERENCES consultations(id) ON DELETE RESTRICT,
+    doctor_id VARCHAR(50) NOT NULL REFERENCES doctors(id) ON DELETE RESTRICT,
     doctor_name VARCHAR(200) NOT NULL,
+    doctor_license VARCHAR(100),
     note TEXT NOT NULL,
     reason VARCHAR(250),
     timestamp TIMESTAMPTZ DEFAULT NOW(),
-    integrity_hash VARCHAR(64) NOT NULL
+    integrity_hash VARCHAR(64) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 13. Recetas Electrónicas Oficiales (ReNaPDiS - Ley 27.553)
 CREATE TABLE IF NOT EXISTS electronic_prescriptions (
     id VARCHAR(50) PRIMARY KEY,
     cuir VARCHAR(100) UNIQUE NOT NULL,
-    patient_id VARCHAR(50) NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    patient_id VARCHAR(50) NOT NULL REFERENCES patients(id) ON DELETE RESTRICT,
     patient_name VARCHAR(200) NOT NULL,
     patient_dni VARCHAR(20) NOT NULL,
-    doctor_id VARCHAR(50) NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
+    doctor_id VARCHAR(50) NOT NULL REFERENCES doctors(id) ON DELETE RESTRICT,
     doctor_name VARCHAR(200) NOT NULL,
     doctor_license VARCHAR(100) NOT NULL,
-    sisa_refeps VARCHAR(100) DEFAULT 'REFEPS-MN-114829',
+    sisa_refeps VARCHAR(100),
     diagnosis_presuntivo TEXT NOT NULL,
     medications JSONB NOT NULL DEFAULT '[]'::jsonb,
     issue_date DATE NOT NULL DEFAULT CURRENT_DATE,
     expiration_date DATE NOT NULL,
     status prescription_status DEFAULT 'activa',
     verification_url TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    dispensation_status VARCHAR(50) DEFAULT 'Pendiente',
+    dispensed_pharmacy VARCHAR(150),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 14. Diagnóstico por Imágenes & Radiología
@@ -264,6 +273,8 @@ CREATE TABLE IF NOT EXISTS imaging_studies (
     status study_status DEFAULT 'solicitado',
     report TEXT,
     findings TEXT,
+    conclusion TEXT,
+    radiologist VARCHAR(150),
     images JSONB DEFAULT '[]'::jsonb,
     priority VARCHAR(20) DEFAULT 'Normal',
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -299,8 +310,9 @@ CREATE TABLE IF NOT EXISTS medical_certificates (
 -- 16. Kinesiología & Rehabilitación
 CREATE TABLE IF NOT EXISTS rehab_plans (
     id VARCHAR(50) PRIMARY KEY,
-    patient_id VARCHAR(50) NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    patient_id VARCHAR(50) NOT NULL REFERENCES patients(id) ON DELETE RESTRICT,
     patient_name VARCHAR(200) NOT NULL,
+    doctor_id VARCHAR(50) REFERENCES doctors(id) ON DELETE RESTRICT,
     prescribing_doctor VARCHAR(200) NOT NULL,
     diagnosis TEXT NOT NULL,
     target_sessions INT DEFAULT 10,
@@ -313,7 +325,47 @@ CREATE TABLE IF NOT EXISTS rehab_plans (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 17. Registro Inmutable de Auditoría (Audit Logs - Ley 25.326 y Ley 26.529)
+-- Sesiones de Rehabilitación (C05, T8)
+CREATE TABLE IF NOT EXISTS rehab_sessions (
+    id VARCHAR(50) PRIMARY KEY,
+    plan_id VARCHAR(50) REFERENCES rehab_plans(id) ON DELETE CASCADE,
+    patient_id VARCHAR(50) REFERENCES patients(id) ON DELETE RESTRICT,
+    patient_name VARCHAR(200) NOT NULL,
+    therapist_id VARCHAR(50) REFERENCES doctors(id) ON DELETE RESTRICT,
+    therapist_name VARCHAR(200) NOT NULL,
+    session_number INT NOT NULL,
+    date DATE NOT NULL DEFAULT CURRENT_DATE,
+    time VARCHAR(10) DEFAULT '09:00',
+    eva_score INT CHECK (eva_score BETWEEN 0 AND 10),
+    procedures JSONB DEFAULT '[]'::jsonb,
+    patient_tolerance VARCHAR(50) DEFAULT 'Buena',
+    next_session_planned TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 17. Consentimientos Informados (Ley 26.529 Art. 5 a 10)
+CREATE TABLE IF NOT EXISTS consent_forms (
+    id VARCHAR(50) PRIMARY KEY,
+    patient_id VARCHAR(50) NOT NULL REFERENCES patients(id) ON DELETE RESTRICT,
+    patient_name VARCHAR(200) NOT NULL,
+    patient_dni VARCHAR(20) NOT NULL,
+    doctor_id VARCHAR(50) NOT NULL REFERENCES doctors(id) ON DELETE RESTRICT,
+    doctor_name VARCHAR(200) NOT NULL,
+    procedure_type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    risks TEXT NOT NULL,
+    benefits TEXT NOT NULL,
+    witness_name VARCHAR(150),
+    witness_dni VARCHAR(50),
+    status VARCHAR(20) NOT NULL DEFAULT 'signed' CHECK (status IN ('signed', 'revoked')),
+    revoked_at TIMESTAMPTZ,
+    revocation_reason TEXT,
+    signed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    integrity_hash VARCHAR(64) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 18. Registro Inmutable de Auditoría (Audit Logs - Ley 25.326 y Ley 26.529)
 CREATE TABLE IF NOT EXISTS audit_logs (
     id VARCHAR(100) PRIMARY KEY,
     timestamp TIMESTAMPTZ DEFAULT NOW(),
@@ -325,20 +377,92 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     target_dni VARCHAR(20) DEFAULT '-',
     details TEXT,
     ip_address VARCHAR(50),
-    event_hash VARCHAR(64) NOT NULL
+    event_hash VARCHAR(64) NOT NULL,
+    module VARCHAR(100),
+    target_id VARCHAR(100)
 );
 
--- 18. Índices de Alto Rendimiento para Producción
+-- 19. Configuración Institucional Dedicada (C09)
+CREATE TABLE IF NOT EXISTS clinic_settings (
+    id VARCHAR(50) PRIMARY KEY DEFAULT 'main-clinic-config',
+    name VARCHAR(200) DEFAULT 'CITRA',
+    legal_name VARCHAR(200) DEFAULT 'Centro Integral de Traumatología y Rehabilitación Arroyito S.R.L.',
+    cuit VARCHAR(20) DEFAULT '30-71829340-8',
+    iibb VARCHAR(50) DEFAULT '27-71829340',
+    activity_start DATE DEFAULT '2018-03-01',
+    iva_condition VARCHAR(50) DEFAULT 'Responsable Inscripto',
+    address VARCHAR(200) DEFAULT 'Av. Carlos Pontín 450',
+    city VARCHAR(100) DEFAULT 'Arroyito',
+    province VARCHAR(100) DEFAULT 'Córdoba',
+    postal_code VARCHAR(20) DEFAULT 'X2415',
+    phone VARCHAR(50) DEFAULT '+54 3576 450214',
+    whatsapp VARCHAR(50) DEFAULT '+54 9 3576 450214',
+    emergency_phone VARCHAR(50) DEFAULT '+54 3576 450215',
+    email VARCHAR(100) DEFAULT 'contacto@citra.com.ar',
+    director_name VARCHAR(150) DEFAULT 'Dr. Alejandro Blanco',
+    director_license VARCHAR(50) DEFAULT 'MP 38.412 / ME 19.820',
+    director_specialty VARCHAR(100) DEFAULT 'Traumatología y Ortopedia',
+    director_email VARCHAR(100) DEFAULT 'dr.blanco@citra.com.ar',
+    director_phone VARCHAR(50) DEFAULT '3576 450214',
+    director_schedule VARCHAR(100) DEFAULT 'Martes a Jueves 14:00 - 19:00',
+    sisa_refes_code VARCHAR(50) DEFAULT '14068219201412',
+    renapdis_platform_id VARCHAR(50) DEFAULT 'CITRA-HCE-2026',
+    arca_pto_vta INT DEFAULT 1,
+    schedule_summary VARCHAR(200) DEFAULT 'Lun a Vie 08:00 a 20:00 · Sáb 08:00 a 13:00',
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 20. Turnos y Movimientos de Caja Transaccional (M08)
+CREATE TABLE IF NOT EXISTS cash_shifts (
+    id VARCHAR(50) PRIMARY KEY,
+    user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    cashier_name VARCHAR(150) NOT NULL,
+    shift_name VARCHAR(100) DEFAULT 'Turno Mañana',
+    status VARCHAR(20) DEFAULT 'open' CHECK (status IN ('open', 'closed')),
+    opening_balance NUMERIC(12,2) DEFAULT 0,
+    closing_balance NUMERIC(12,2),
+    total_cash NUMERIC(12,2) DEFAULT 0,
+    total_cards NUMERIC(12,2) DEFAULT 0,
+    total_transfers NUMERIC(12,2) DEFAULT 0,
+    total_expenses NUMERIC(12,2) DEFAULT 0,
+    net_total NUMERIC(12,2) DEFAULT 0,
+    opened_at TIMESTAMPTZ DEFAULT NOW(),
+    closed_at TIMESTAMPTZ,
+    observations TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_open_shift_per_user
+ON cash_shifts (user_id) WHERE status = 'open';
+
+CREATE TABLE IF NOT EXISTS cash_movements (
+    id VARCHAR(50) PRIMARY KEY,
+    shift_id VARCHAR(50) REFERENCES cash_shifts(id) ON DELETE RESTRICT,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('income', 'expense')),
+    amount NUMERIC(12,2) NOT NULL CHECK (amount > 0),
+    concept VARCHAR(200) NOT NULL,
+    payment_method VARCHAR(50) DEFAULT 'Efectivo',
+    patient_id VARCHAR(50) REFERENCES patients(id) ON DELETE SET NULL,
+    patient_name VARCHAR(200),
+    cashier_name VARCHAR(150),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 21. Índices de Alto Rendimiento para Producción (M09)
 CREATE INDEX IF NOT EXISTS idx_appointments_patient_id ON appointments(patient_id);
 CREATE INDEX IF NOT EXISTS idx_appointments_doctor_id ON appointments(doctor_id);
-CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(date);
+CREATE INDEX IF NOT EXISTS idx_appointments_doctor_date ON appointments(doctor_id, date);
+CREATE INDEX IF NOT EXISTS idx_appointments_patient_date ON appointments(patient_id, date);
 CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status);
 
 CREATE INDEX IF NOT EXISTS idx_consultations_patient_id ON consultations(patient_id);
 CREATE INDEX IF NOT EXISTS idx_consultations_doctor_id ON consultations(doctor_id);
-CREATE INDEX IF NOT EXISTS idx_consultations_date ON consultations(date);
+CREATE INDEX IF NOT EXISTS idx_consultations_doctor_date ON consultations(doctor_id, date);
+CREATE INDEX IF NOT EXISTS idx_consultations_patient_date ON consultations(patient_id, date);
 
 CREATE INDEX IF NOT EXISTS idx_prescriptions_patient_id ON electronic_prescriptions(patient_id);
+CREATE INDEX IF NOT EXISTS idx_prescriptions_doctor_id ON electronic_prescriptions(doctor_id);
 CREATE INDEX IF NOT EXISTS idx_prescriptions_cuir ON electronic_prescriptions(cuir);
 
 CREATE INDEX IF NOT EXISTS idx_imaging_patient_id ON imaging_studies(patient_id);
@@ -347,7 +471,7 @@ CREATE INDEX IF NOT EXISTS idx_imaging_doctor_id ON imaging_studies(doctor_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_target_dni ON audit_logs(target_dni);
 
--- 19. Triggers para auto-actualización de 'updated_at'
+-- 22. Triggers para auto-actualización de 'updated_at'
 CREATE OR REPLACE FUNCTION set_updated_at_timestamp()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -381,7 +505,7 @@ CREATE TRIGGER trigger_consultations_updated_at
 BEFORE UPDATE ON consultations
 FOR EACH ROW EXECUTE FUNCTION set_updated_at_timestamp();
 
--- 20. Disparador de alta automática de Perfil al registrarse en Auth
+-- 23. Disparador de alta automática de Perfil al registrarse en Auth
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
 RETURNS TRIGGER 
 SECURITY DEFINER
@@ -394,7 +518,7 @@ BEGIN
         NEW.email,
         COALESCE(NEW.raw_user_meta_data->>'first_name', split_part(NEW.email, '@', 1)),
         COALESCE(NEW.raw_user_meta_data->>'last_name', ''),
-        'patient'::user_role -- CITRA-007: Rol siempre paciente por defecto; roles de staff requieren asignación por superadmin
+        'patient'::user_role
     )
     ON CONFLICT (id) DO NOTHING;
     RETURN NEW;

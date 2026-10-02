@@ -125,18 +125,30 @@ export const DashboardView = () => {
 
   const progressPercentage = totalAppointmentsToday > 0 ? Math.round((attendedCount / totalAppointmentsToday) * 100) : 0;
 
-  // Chart data
-  const specialtyDistributionData = {
-    labels: ['Traumatología LCA', 'Kinesiología & Rehab', 'Manguito Rotador', 'Columna & Lumbalgia', 'Imágenes RMN'],
-    datasets: [
-      {
-        data: [38, 28, 16, 12, 6],
-        backgroundColor: ['#076ABC', '#257CE6', '#002182', '#2dd4bf', '#f59e0b'],
-        borderWidth: 2,
-        borderColor: '#ffffff'
-      }
-    ]
-  };
+  // Chart data: cálculo dinámico sobre turnos reales de la clínica (M-07)
+  const specialtyDistributionData = useMemo(() => {
+    const specCounts = {};
+    baseAppointments.forEach((a) => {
+      const spec = a.doctorSpecialty || a.specialtyName || 'Traumatología';
+      specCounts[spec] = (specCounts[spec] || 0) + 1;
+    });
+
+    const entries = Object.entries(specCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const labels = entries.length > 0 ? entries.map(([name]) => name) : ['Traumatología', 'Kinesiología'];
+    const data = entries.length > 0 ? entries.map(([, count]) => count) : [1, 0];
+
+    return {
+      labels,
+      datasets: [
+        {
+          data,
+          backgroundColor: ['#076ABC', '#257CE6', '#002182', '#2dd4bf', '#f59e0b'],
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }
+      ]
+    };
+  }, [baseAppointments]);
 
   const getInitials = (name) => {
     if (!name) return 'PT';

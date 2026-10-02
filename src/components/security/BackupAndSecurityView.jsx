@@ -3,13 +3,25 @@ import { useClinic } from '../../context/ClinicContext';
 import { Shield, Lock, Download, Database, Key, CheckCircle2, AlertTriangle, RefreshCw } from 'lucide-react';
 
 export const BackupAndSecurityView = () => {
-  const { exportEncryptedBackup, addToast, logAudit } = useClinic();
+  const { exportEncryptedBackup, addToast, currentUser } = useClinic();
 
   const [passphrase, setPassphrase] = useState('');
   const [isExporting, setIsExporting] = useState(false);
 
+  // M-10: Restrict export to Superadmin or Medical Director
+  const canExportBackup = Boolean(
+    currentUser?.role === 'superadmin' ||
+    currentUser?.adminType === 'superadmin' ||
+    currentUser?.doctorId === 'doc-1' ||
+    currentUser?.role?.includes('Dirección Médica')
+  );
+
   const handleExportBackup = (e) => {
     e.preventDefault();
+    if (!canExportBackup) {
+      addToast('Acceso Denegado', 'La generación de snapshots de base de datos está restringida a la Dirección Médica o Administrador de Infraestructura.', 'error');
+      return;
+    }
     if (!passphrase || passphrase.length < 8) {
       addToast('Seguridad Insuficiente', 'La clave de cifrado del backup debe tener al menos 8 caracteres.', 'error');
       return;
@@ -100,30 +112,40 @@ export const BackupAndSecurityView = () => {
           Genera un volcado completo de la base de datos de pacientes, historias clínicas, recetas y facturas, protegido mediante el estándar de cifrado militar <strong>AES-256</strong> con suma de verificación SHA-256.
         </p>
 
-        <form onSubmit={handleExportBackup}>
-          <div className="form-group">
-            <label className="form-label">Clave Secreta de Cifrado (Mínimo 8 caracteres) *</label>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <input
-                type="password"
-                className="form-control"
-                placeholder="Ingrese una contraseña segura para proteger el archivo de backup..."
-                value={passphrase}
-                onChange={(e) => setPassphrase(e.target.value)}
-                required
-              />
-              <button
-                type="submit"
-                className="btn btn-primary"
-                style={{ whiteSpace: 'nowrap' }}
-                disabled={isExporting}
-              >
-                <Download size={16} />
-                <span>{isExporting ? 'Cifrando base de datos...' : 'Descargar Backup Cifrado'}</span>
-              </button>
+        {!canExportBackup ? (
+          <div style={{ background: '#FEF3C7', padding: '1rem', borderRadius: '8px', border: '1px solid #F59E0B', color: '#92400E', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <AlertTriangle size={20} color="#D97706" style={{ flexShrink: 0 }} />
+            <div>
+              <strong>Acceso Restringido a Exportación de Base de Datos:</strong>
+              <div>La exportación masiva y snapshot de seguridad está reservada a la <strong>Dirección Médica</strong> y administradores de infraestructura autorizados bajo auditoría Ley 25.326.</div>
             </div>
           </div>
-        </form>
+        ) : (
+          <form onSubmit={handleExportBackup}>
+            <div className="form-group">
+              <label className="form-label">Clave Secreta de Cifrado (Mínimo 8 caracteres) *</label>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <input
+                  type="password"
+                  className="form-control"
+                  placeholder="Ingrese una contraseña segura para proteger el archivo de backup..."
+                  value={passphrase}
+                  onChange={(e) => setPassphrase(e.target.value)}
+                  required
+                />
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ whiteSpace: 'nowrap' }}
+                  disabled={isExporting}
+                >
+                  <Download size={16} />
+                  <span>{isExporting ? 'Cifrando base de datos...' : 'Descargar Backup Cifrado'}</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
 
         <div style={{ background: '#F5F8FE', padding: '0.85rem 1rem', borderRadius: '8px', border: '1px solid #D2E3FC', fontSize: '0.8rem', color: '#496386', marginTop: '1rem' }}>
           <strong>Aviso de Seguridad:</strong> Conserve la clave en un administrador de contraseñas seguro. Sin esta clave, los datos clínicos no podrán ser recuperados en un procedimiento de Disaster Recovery.
@@ -140,10 +162,11 @@ export const BackupAndSecurityView = () => {
         </div>
 
         <div style={{ fontSize: '0.88rem', color: '#172A4A', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-          <div><strong>RPO (Recovery Point Objective):</strong> Menor a 15 minutos (Snapshots incrementales).</div>
-          <div><strong>RTO (Recovery Time Objective):</strong> Menor a 1 hora en contingencia crítica.</div>
-          <div><strong>Retención Legal de Historias Clínicas:</strong> 10 años corridos con archivo inmutable cifrado.</div>
-          <div><strong>Alojamiento de Servidores:</strong> Data Center Tier III con georredundancia nacional.</div>
+          <div><strong>Infraestructura Cloud (PostgreSQL / Supabase):</strong> Respaldos continuos automáticos a nivel motor relacional mediante WAL archiving y PITR (Point-in-Time Recovery) cada 24 horas con georredundancia activa.</div>
+          <div><strong>RPO (Recovery Point Objective):</strong> Menor a 15 minutos (Snapshots transaccionales continuos).</div>
+          <div><strong>RTO (Recovery Time Objective):</strong> Menor a 1 hora en contingencia crítica de infraestructura.</div>
+          <div><strong>Retención Legal de Historias Clínicas:</strong> 10 años corridos con firmas hash SHA-256 e inmutabilidad garantizada (Ley 26.529).</div>
+          <div><strong>Respaldo Manual Cifrado:</strong> El snapshot descargable en este panel opera exclusivamente como copia fuera de banda (cold storage) para auditoría legal.</div>
         </div>
       </div>
     </div>

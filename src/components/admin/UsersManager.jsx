@@ -44,12 +44,12 @@ export const UsersManager = () => {
     specialty: '',
     adminType: 'doctor',
     sisaLicense: '',
-    password: 'citra2026'
+    password: 'Citra.2026!'
   });
 
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [passwordUser, setPasswordUser] = useState(null);
-  const [newPasswordValue, setNewPasswordValue] = useState('citra2026');
+  const [newPasswordValue, setNewPasswordValue] = useState('Citra.2026!');
 
   // Filtered users
   const filteredUsers = useMemo(() => {
@@ -115,7 +115,7 @@ export const UsersManager = () => {
       specialty: '',
       adminType: 'doctor',
       sisaLicense: '',
-      password: 'citra2026'
+      password: 'Citra.2026!'
     });
   };
 
@@ -123,7 +123,7 @@ export const UsersManager = () => {
     e.preventDefault();
     if (!passwordUser) return;
     if (typeof updateUser === 'function') {
-      updateUser(passwordUser.id, { password: newPasswordValue.trim() || 'citra2026' });
+      updateUser(passwordUser.id, { password: newPasswordValue.trim() || 'Citra.2026!' });
     }
     setIsPasswordModalOpen(false);
     setPasswordUser(null);

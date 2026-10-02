@@ -48,7 +48,8 @@ export const PatientsView = () => {
     setIsNewConsultationModalOpen,
     setConsultationPreloadData,
     addToast,
-    logAudit
+    logAudit,
+    currentUser
   } = useClinic();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -132,7 +133,13 @@ export const PatientsView = () => {
     return [];
   };
 
+  const canExportPatients = !isDoctor || currentUser?.role === 'superadmin' || currentDoctor?.id === 'doc-1';
+
   const exportPatientsCSV = () => {
+    if (!canExportPatients) {
+      addToast('Acceso Denegado', 'La exportación masiva de padrón de pacientes está reservada a personal administrativo auditado.', 'error');
+      return;
+    }
     const headers = 'ID,Nombre,DNI,FechaNacimiento,Edad,Genero,GrupoSanguineo,Telefono,Email,ObraSocial,Plan,NumeroAfiliado,Alergias\n';
     const rows = filteredPatients.map((p) => [
       sanitizeCsvCell(p.id),
@@ -158,9 +165,9 @@ export const PatientsView = () => {
     link.click();
     document.body.removeChild(link);
     if (logAudit) {
-      logAudit('EXPORT', 'Padrón de Pacientes', '-', `Exportación masiva de padrón (${filteredPatients.length} pacientes) a CSV.`);
+      logAudit('EXPORT_HCE', 'Padrón de Pacientes', '-', `Exportación masiva auditada de padrón (${filteredPatients.length} pacientes) a CSV por ${currentUser?.name || 'Administración'}.`);
     }
-    addToast('Padrón Exportado', 'Se descargó el archivo CSV de pacientes.', 'success');
+    addToast('Padrón Exportado', `Se descargó el archivo CSV auditado (${filteredPatients.length} pacientes).`, 'success');
   };
 
   const handleStartConsultation = (pat) => {
@@ -227,15 +234,18 @@ export const PatientsView = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '0.65rem' }}>
-          <button
-            type="button"
-            className="btn btn-outline"
-            onClick={exportPatientsCSV}
-            style={{ fontSize: '0.84rem' }}
-          >
-            <Download size={15} />
-            <span>Exportar CSV</span>
-          </button>
+          {canExportPatients && (
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={exportPatientsCSV}
+              style={{ fontSize: '0.84rem' }}
+              title="Exportación auditada conforme a Ley 25.326"
+            >
+              <Download size={15} />
+              <span>Exportar CSV</span>
+            </button>
+          )}
 
           {!isDoctor && (
             <button

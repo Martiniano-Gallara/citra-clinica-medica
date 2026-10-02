@@ -1,12 +1,13 @@
 import { generateSHA256Hash } from '../utils/cryptoAudit';
 import { generateCUIR, calculatePrescriptionExpiration } from '../utils/renapdisEngine';
 import { generateCAE } from '../utils/arcaValidator';
-import {
-  DOCTOR_BLANCO_PATIENTS,
-  DOCTOR_BLANCO_SEPTEMBER_APPOINTMENTS,
-  DOCTOR_BLANCO_SEPTEMBER_CONSULTATIONS,
-  DOCTOR_BLANCO_SEPTEMBER_INVOICES
-} from './doctorBlancoClinicalRecords';
+// C-07: doctorBlancoClinicalRecords desacoplado del bundle de producción (Vite)
+// para resguardo estricto de secreto médico y privacidad conforme a la Ley 25.326.
+// Los datos clínicos reales son servidos exclusivamente desde la base de datos cloud con RLS.
+const DOCTOR_BLANCO_PATIENTS = [];
+const DOCTOR_BLANCO_SEPTEMBER_APPOINTMENTS = [];
+const DOCTOR_BLANCO_SEPTEMBER_CONSULTATIONS = [];
+const DOCTOR_BLANCO_SEPTEMBER_INVOICES = [];
 
 export const INITIAL_CLINIC_INFO = {
   name: 'CITRA',

@@ -308,7 +308,7 @@ export const Navbar = () => {
               }}
             >
               <WhatsAppIcon size={17} color="#ffffff" />
-              <span>Sacar Turno</span>
+              <span>Turno por WhatsApp</span>
             </button>
           </div>
 

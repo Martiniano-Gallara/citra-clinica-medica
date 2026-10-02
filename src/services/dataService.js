@@ -102,10 +102,21 @@ export const dataService = {
     return null;
   },
 
-  // --- TURNOS (APPOINTMENTS) ---
-  async fetchAppointments(filterDoctorId = null) {
+  async updateUserPassword(newPassword) {
     if (isSupabaseConfigured && supabase) {
-      let query = supabase.from('appointments').select('*').order('date', { ascending: true });
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      if (error) throw error;
+      return data;
+    }
+    return null;
+  },
+
+  // --- TURNOS (APPOINTMENTS) ---
+  async fetchAppointments(filterDoctorId = null, limit = 500) {
+    if (isSupabaseConfigured && supabase) {
+      let query = supabase.from('appointments').select('*').order('date', { ascending: true }).limit(limit);
       if (filterDoctorId) {
         query = query.eq('doctor_id', filterDoctorId);
       }
@@ -151,7 +162,18 @@ export const dataService = {
         .insert([cleanPayload])
         .select()
         .single();
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505' && (
+          error.message?.includes('idx_no_duplicate_appointment') ||
+          error.message?.includes('idx_unique_active_appointment') ||
+          error.details?.includes('Key (doctor_id, date, time)')
+        )) {
+          const colError = new Error(`El profesional ya cuenta con un turno reservado para la fecha ${cleanPayload.date} a las ${cleanPayload.time}. Por favor elija otro horario.`);
+          colError.code = 'APPOINTMENT_COLLISION';
+          throw colError;
+        }
+        throw error;
+      }
       return toCamelCase(data);
     }
     return null;
@@ -192,25 +214,59 @@ export const dataService = {
     return null;
   },
 
+  async cancelAppointment(id, cancelReason = 'Cancelado') {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('appointments')
+        .update({
+          status: 'cancelado',
+          cancel_reason: cancelReason,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
   async deleteAppointment(id) {
     if (isSupabaseConfigured && supabase) {
-      const { error } = await supabase
-        .from('appointments')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
-      return true;
+      // Por auditoría clínica y restricciones FK (M-04), cancelar en vez de borrar si tiene historial
+      try {
+        const { data: cons } = await supabase
+          .from('consultations')
+          .select('id')
+          .eq('appointment_id', id)
+          .limit(1);
+        if (cons && cons.length > 0) {
+          return await this.cancelAppointment(id, 'Cancelado (preservado por consulta médica asociada)');
+        }
+        const { error } = await supabase
+          .from('appointments')
+          .delete()
+          .eq('id', id);
+        if (error) {
+          return await this.cancelAppointment(id, 'Cancelado');
+        }
+        return true;
+      } catch {
+        return await this.cancelAppointment(id, 'Cancelado tras excepción de integridad');
+      }
     }
     return false;
   },
 
   // --- HISTORIA CLÍNICA & CONSULTAS (CONSULTATIONS) ---
-  async fetchConsultations(patientId = null, doctorId = null) {
+  async fetchConsultations(patientId = null, doctorId = null, limit = 200) {
     if (isSupabaseConfigured && supabase) {
       let query = supabase
         .from('consultations')
         .select('*, adendas:consultation_adendas(*)')
-        .order('date', { ascending: false });
+        .order('date', { ascending: false })
+        .limit(limit);
       if (patientId) query = query.eq('patient_id', patientId);
       if (doctorId) query = query.eq('doctor_id', doctorId);
       const { data, error } = await query;
@@ -236,7 +292,7 @@ export const dataService = {
     return null;
   },
 
-  // Bundle transaccional atómico RPC: Consulta + Receta + Pedidos Diagnósticos
+  // Bundle transaccional atómico RPC: Consulta + Receta + Pedidos Diagnósticos (C-08)
   async createConsultationBundle(consultationData, prescriptionData = null, medicalOrders = null) {
     if (isSupabaseConfigured && supabase) {
       const { adendas, ...cleanConsultation } = consultationData;
@@ -246,8 +302,8 @@ export const dataService = {
         p_medical_orders: medicalOrders ? toSnakeCase(medicalOrders) : null
       });
       if (error) {
-        // Fallback a inserción secuencial si el RPC aún no fue desplegado en la instancia
-        return await this.createConsultation(consultationData);
+        console.error('Error al asentar paquete clínico transaccional en Supabase:', error);
+        throw new Error(error.message || 'Error al persistir consulta médica atómica');
       }
       return data;
     }
@@ -279,9 +335,9 @@ export const dataService = {
   },
 
   // --- RECETAS ELECTRÓNICAS (PRESCRIPTIONS) ---
-  async fetchPrescriptions(patientId = null, doctorId = null) {
+  async fetchPrescriptions(patientId = null, doctorId = null, limit = 200) {
     if (isSupabaseConfigured && supabase) {
-      let query = supabase.from('electronic_prescriptions').select('*').order('issue_date', { ascending: false });
+      let query = supabase.from('electronic_prescriptions').select('*').order('issue_date', { ascending: false }).limit(limit);
       if (patientId) query = query.eq('patient_id', patientId);
       if (doctorId) query = query.eq('doctor_id', doctorId);
       const { data, error } = await query;
@@ -302,7 +358,7 @@ export const dataService = {
         doctor_id: prescriptionData.doctorId,
         doctor_name: prescriptionData.doctorName,
         doctor_license: prescriptionData.doctorLicense,
-        sisa_refeps: prescriptionData.sisaRefeps || 'REFEPS-MN-114829',
+        sisa_refeps: prescriptionData.sisaRefeps || null,
         diagnosis_presuntivo: prescriptionData.diagnosisPresuntivo || 'Control clínico',
         medications: prescriptionData.medications || [],
         issue_date: prescriptionData.issueDate || new Date().toISOString().split('T')[0],
@@ -344,10 +400,25 @@ export const dataService = {
     return null;
   },
 
-  // --- PACIENTES (PATIENTS) ---
-  async fetchPatients() {
+  // Anulación formal de receta con trazabilidad legal (M-05)
+  async annulPrescription(prescriptionId, reason = 'Anulación formal') {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.from('patients').select('*').order('name', { ascending: true });
+      const { data, error } = await supabase.rpc('annul_prescription', {
+        p_prescription_id: prescriptionId,
+        p_reason: reason
+      });
+      if (error) {
+        return await this.updatePrescription(prescriptionId, { status: 'anulada' });
+      }
+      return data;
+    }
+    return null;
+  },
+
+  // --- PACIENTES (PATIENTS) ---
+  async fetchPatients(limit = 300) {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.from('patients').select('*').order('name', { ascending: true }).limit(limit);
       if (error) throw error;
       return toCamelCase(data);
     }
@@ -448,12 +519,15 @@ export const dataService = {
 
   async deletePatient(id) {
     if (isSupabaseConfigured && supabase) {
-      const { error } = await supabase
+      // Archivado lógico auditado (Ley 26.529 / T12): los antecedentes clínicos no se borran físicamente
+      const { data, error } = await supabase
         .from('patients')
-        .delete()
-        .eq('id', id);
+        .update({ is_active: false })
+        .eq('id', id)
+        .select()
+        .single();
       if (error) throw error;
-      return true;
+      return toCamelCase(data);
     }
     return false;
   },
@@ -703,26 +777,21 @@ export const dataService = {
     return null;
   },
 
-  // --- INFORMACIÓN INSTITUCIONAL DE LA CLÍNICA & CONFIGURACIÓN SAAS ---
+  // --- INFORMACIÓN INSTITUCIONAL DE LA CLÍNICA & CONFIGURACIÓN SAAS (C-09) ---
   async fetchClinicInfo() {
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase
-          .from('audit_logs')
+          .from('clinic_settings')
           .select('*')
-          .eq('action', 'UPDATE_CLINIC_INFO')
-          .order('timestamp', { ascending: false })
-          .limit(1);
+          .eq('id', 'main-clinic-config')
+          .maybeSingle();
         if (error) {
-          console.warn('Could not fetch clinic info from audit_logs:', error);
+          console.warn('Could not fetch clinic info from clinic_settings:', error);
           return null;
         }
-        if (data && data.length > 0 && data[0].details) {
-          try {
-            return JSON.parse(data[0].details);
-          } catch (e) {
-            console.warn('Failed to parse clinic info from details JSON:', e);
-          }
+        if (data) {
+          return toCamelCase(data);
         }
       } catch (err) {
         console.warn('Supabase fetchClinicInfo notice:', err);
@@ -735,20 +804,15 @@ export const dataService = {
     if (isSupabaseConfigured && supabase) {
       try {
         const payload = {
-          id: `audit-info-${Date.now()}`,
-          user_id: 'admin-settings',
-          user_name: 'Administración CITRA',
-          user_role: 'Secretaría / Administración',
-          action: 'UPDATE_CLINIC_INFO',
-          resource: 'Configuración Clínica',
-          target_dni: '-',
-          details: JSON.stringify(clinicInfo),
-          ip_address: typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1',
-          event_hash: generateSHA256Hash(JSON.stringify(clinicInfo))
+          ...toSnakeCase(clinicInfo),
+          id: 'main-clinic-config',
+          updated_at: new Date().toISOString()
         };
-        const { error } = await supabase.from('audit_logs').insert([payload]);
+        const { error } = await supabase
+          .from('clinic_settings')
+          .upsert([payload]);
         if (error) {
-          console.warn('Could not save clinic info to Supabase:', error);
+          console.warn('Could not save clinic info to Supabase clinic_settings:', error);
           return false;
         }
         return true;
@@ -943,18 +1007,160 @@ export const dataService = {
     return null;
   },
 
-  // --- AUDITORÍA INMUTABLE (AUDIT LOGS - LEY 25.326) ---
-  async fetchAuditLogs(limit = 100) {
+  // --- REHABILITACIÓN Y KINESIOLOGÍA (REHAB PLANS & SESSIONS - C05, T8) ---
+  async fetchRehabPlans(patientId = null, doctorId = null) {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('audit_logs')
-        .select('*')
-        .order('timestamp', { ascending: false })
-        .limit(limit);
+      let query = supabase.from('rehab_plans').select('*').order('created_at', { ascending: false });
+      if (patientId) query = query.eq('patient_id', patientId);
+      if (doctorId) query = query.eq('doctor_id', doctorId);
+      const { data, error } = await query;
       if (error) throw error;
       return toCamelCase(data);
     }
     return null;
+  },
+
+  async createRehabPlan(planData) {
+    if (isSupabaseConfigured && supabase) {
+      const payload = {
+        id: planData.id || `rhb-${Date.now()}`,
+        patient_id: planData.patientId,
+        patient_name: planData.patientName,
+        doctor_id: planData.doctorId || null,
+        prescribing_doctor: planData.prescribingDoctor || planData.doctorName || 'Médico Derivante',
+        diagnosis: planData.diagnosis,
+        target_sessions: planData.targetSessions || planData.prescribedSessions || 10,
+        completed_sessions: planData.completedSessions || 0,
+        start_date: planData.startDate || new Date().toISOString().split('T')[0],
+        status: planData.status || 'En curso',
+        goals: planData.goals || '',
+        exercises: planData.exercises || []
+      };
+      const { data, error } = await supabase.from('rehab_plans').insert([payload]).select().single();
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
+  async updateRehabPlan(id, updates) {
+    if (isSupabaseConfigured && supabase) {
+      const rawPayload = toSnakeCase(updates);
+      const allowedKeys = [
+        'prescribing_doctor', 'diagnosis', 'target_sessions', 'completed_sessions',
+        'start_date', 'status', 'goals', 'exercises', 'updated_at'
+      ];
+      const cleanPayload = {};
+      for (const [k, v] of Object.entries(rawPayload)) {
+        if (allowedKeys.includes(k) && v !== undefined) {
+          cleanPayload[k] = v;
+        }
+      }
+      cleanPayload.updated_at = new Date().toISOString();
+      const { data, error } = await supabase.from('rehab_plans').update(cleanPayload).eq('id', id).select().single();
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
+  async deleteRehabPlan(id) {
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.from('rehab_plans').delete().eq('id', id);
+      if (error) throw error;
+      return true;
+    }
+    return false;
+  },
+
+  async fetchRehabSessions(planId = null, patientId = null) {
+    if (isSupabaseConfigured && supabase) {
+      let query = supabase.from('rehab_sessions').select('*').order('date', { ascending: false });
+      if (planId) query = query.eq('plan_id', planId);
+      if (patientId) query = query.eq('patient_id', patientId);
+      const { data, error } = await query;
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
+  async createRehabSession(sessionData) {
+    if (isSupabaseConfigured && supabase) {
+      const payload = {
+        id: sessionData.id || `ses-${Date.now()}`,
+        plan_id: sessionData.planId || null,
+        patient_id: sessionData.patientId,
+        patient_name: sessionData.patientName,
+        therapist_id: sessionData.therapistId || sessionData.doctorId || 'doc-4',
+        therapist_name: sessionData.therapistName || sessionData.doctorName || 'Kinesiólogo Tratante',
+        session_number: Number(sessionData.sessionNumber) || 1,
+        date: sessionData.date || new Date().toISOString().split('T')[0],
+        time: sessionData.time || '09:00',
+        eva_score: sessionData.evaScore !== undefined ? Number(sessionData.evaScore) : null,
+        procedures: sessionData.procedures || [],
+        patient_tolerance: sessionData.patientTolerance || 'Buena',
+        next_session_planned: sessionData.nextSessionPlanned || null
+      };
+      const { data, error } = await supabase.from('rehab_sessions').insert([payload]).select().single();
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
+  async updateRehabSession(id, updates) {
+    if (isSupabaseConfigured && supabase) {
+      const rawPayload = toSnakeCase(updates);
+      const allowedKeys = [
+        'session_number', 'date', 'time', 'eva_score', 'procedures',
+        'patient_tolerance', 'next_session_planned'
+      ];
+      const cleanPayload = {};
+      for (const [k, v] of Object.entries(rawPayload)) {
+        if (allowedKeys.includes(k) && v !== undefined) {
+          cleanPayload[k] = v;
+        }
+      }
+      const { data, error } = await supabase.from('rehab_sessions').update(cleanPayload).eq('id', id).select().single();
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
+  async deleteRehabSession(id) {
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.from('rehab_sessions').delete().eq('id', id);
+      if (error) throw error;
+      return true;
+    }
+    return false;
+  },
+
+  // --- AUDITORÍA INMUTABLE (AUDIT LOGS - LEY 25.326 / M-06) ---
+  async fetchAuditLogs({ limit = 50, offset = 0, module = null, action = null } = {}) {
+    if (isSupabaseConfigured && supabase) {
+      let query = supabase
+        .from('audit_logs')
+        .select('*', { count: 'exact' })
+        .order('timestamp', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (module && module !== 'all') query = query.eq('module', module);
+      if (action && action !== 'all') query = query.eq('action', action);
+
+      const { data, count, error } = await query;
+      if (error) {
+        console.warn('Error fetching audit logs:', error);
+        return { logs: [], count: 0 };
+      }
+      return {
+        logs: (data || []).map(toCamelCase),
+        count: count || 0
+      };
+    }
+    return { logs: [], count: 0 };
   },
 
   async logAuditEvent(auditLogEntry) {
@@ -968,7 +1174,79 @@ export const dataService = {
     }
   },
 
-  // --- STORAGE / ARCHIVOS MÉDICOS ---
+  // --- CAJA & ARQUEOS TRANSACCIONALES (M-08) ---
+  async fetchCashShifts() {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('cash_shifts')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(30);
+      if (error) {
+        console.warn('fetchCashShifts error:', error);
+        return [];
+      }
+      return (data || []).map(toCamelCase);
+    }
+    return [];
+  },
+
+  async fetchCashMovements(shiftId = null) {
+    if (isSupabaseConfigured && supabase) {
+      let query = supabase
+        .from('cash_movements')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (shiftId) query = query.eq('shift_id', shiftId);
+      const { data, error } = await query;
+      if (error) {
+        console.warn('fetchCashMovements error:', error);
+        return [];
+      }
+      return (data || []).map(toCamelCase);
+    }
+    return [];
+  },
+
+  async addCashMovement(movementData) {
+    if (isSupabaseConfigured && supabase) {
+      const payload = {
+        id: movementData.id || `mov-${Date.now()}`,
+        shift_id: movementData.shiftId || 'shift-1',
+        type: movementData.type === 'expense' ? 'expense' : 'income',
+        amount: Number(movementData.amount) || 0,
+        concept: movementData.concept || 'Movimiento de caja',
+        payment_method: movementData.paymentMethod || movementData.method || 'Efectivo',
+        patient_id: movementData.patientId || null,
+        patient_name: movementData.patientName || null,
+        cashier_name: movementData.cashierName || 'Recepción',
+        created_at: new Date().toISOString()
+      };
+      const { data, error } = await supabase
+        .from('cash_movements')
+        .insert([payload])
+        .select()
+        .single();
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
+  async closeCashShift(shiftId, observations = '') {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.rpc('close_cash_shift_rpc', {
+        p_shift_id: shiftId,
+        p_observations: observations
+      });
+      if (error) throw error;
+      return data;
+    }
+    return null;
+  },
+
+  // --- STORAGE / ARCHIVOS MÉDICOS (A-09: Signed URLs) ---
   async uploadMedicalFile(bucketName, path, file) {
     if (isSupabaseConfigured && supabase) {
       const { error } = await supabase.storage.from(bucketName).upload(path, file, {
@@ -976,8 +1254,28 @@ export const dataService = {
         upsert: false
       });
       if (error) throw error;
+
+      // Generar URL firmada temporal de 1 hora para protección de datos personales
+      const { data: signedData } = await supabase.storage.from(bucketName).createSignedUrl(path, 3600);
+      if (signedData?.signedUrl) {
+        return signedData.signedUrl;
+      }
       const { data: publicUrlData } = supabase.storage.from(bucketName).getPublicUrl(path);
       return publicUrlData?.publicUrl || null;
+    }
+    return null;
+  },
+
+  async getSignedMedicalUrl(bucketName, path, expiresIn = 3600) {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .createSignedUrl(path, expiresIn);
+      if (error) {
+        console.warn('Error generating signed medical URL:', error);
+        return null;
+      }
+      return data?.signedUrl || null;
     }
     return null;
   },

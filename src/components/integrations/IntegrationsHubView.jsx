@@ -12,10 +12,11 @@ export const IntegrationsHubView = () => {
       id: 'renapdis',
       name: 'ReNaPDiS — Receta Electrónica Nacional',
       organism: 'Ministerio de Salud de la Nación (MSAL)',
-      normative: 'Homologación ReNaPDiS / MSAL',
-      status: 'Conectado & Homologado',
+      normative: 'Homologación ReNaPDiS / Ley 27.553',
+      status: 'Sandbox / Simulado',
+      isLive: false,
       endpoint: 'https://sisa.msal.gov.ar/ws/renapdis/v2',
-      details: `ID de Plataforma Homologada: ${clinicInfo.renapdisPlatformId}. Emisión de CUIR y validación de farmacias activa.`,
+      details: `Motor generador CUIR activo localmente con ID ${clinicInfo.renapdisPlatformId}. Conector SOAP en entorno de prueba / homologación.`,
       icon: 'Pill',
       color: '#076ABC'
     },
@@ -24,9 +25,10 @@ export const IntegrationsHubView = () => {
       name: 'ARCA — Facturación Electrónica WSFE v1',
       organism: 'Agencia de Recaudación y Control Aduanero (ex AFIP)',
       normative: 'RG 4291 / RG 4892 (QR Fiscal)',
-      status: 'Conectado & Autorizado',
+      status: 'Sandbox / Homologación',
+      isLive: false,
       endpoint: 'https://servicios1.afip.gov.ar/wsfev1/service.asmx',
-      details: `Punto de Venta N° ${clinicInfo.arcaPtoVta} habilitado para CUIT ${clinicInfo.cuit}. CAE en tiempo real.`,
+      details: `Generador de CAE y QR fiscal offline/testing habilitado para CUIT ${clinicInfo.cuit}. Certificados X.509 de producción pendientes de delegación.`,
       icon: 'Receipt',
       color: '#002182'
     },
@@ -35,9 +37,10 @@ export const IntegrationsHubView = () => {
       name: 'SISA — Registro Federal de Profesionales (REFEPS)',
       organism: 'Sistema de Información Sanitaria Argentino',
       normative: 'Resolución MSAL 1341/2013',
-      status: 'Sincronizado',
+      status: 'Catálogo Local / Simulado',
+      isLive: false,
       endpoint: 'https://sisa.msal.gov.ar/ws/refeps/v1',
-      details: `Establecimiento REFES: ${clinicInfo.sisaRefesCode}. Validación de matrículas nacionales y provinciales.`,
+      details: `Establecimiento REFES: ${clinicInfo.sisaRefesCode}. Validación de matrículas profesionales operando contra base local pre-cargada.`,
       icon: 'ShieldCheck',
       color: '#0d9488'
     },
@@ -46,9 +49,10 @@ export const IntegrationsHubView = () => {
       name: 'HL7® FHIR® Argentina Core',
       organism: 'Dirección Nacional de Sistemas de Información Sanitaria',
       normative: 'Estrategia Nacional de Salud Digital 2024-2030',
-      status: 'Preparado para Interoperabilidad',
+      status: 'Próximamente / En Desarrollo',
+      isLive: false,
       endpoint: 'https://fhir.salud.gob.ar/r4/citra',
-      details: 'Mapeo de recursos Patient, Encounter, Condition y MedicationRequest según perfil nacional FHIR.',
+      details: 'Esquema de recursos Patient, Encounter y MedicationRequest en diseño para futura interoperabilidad federada.',
       icon: 'Globe',
       color: '#257CE6'
     }
@@ -58,8 +62,8 @@ export const IntegrationsHubView = () => {
     setTestingService(id);
     setTimeout(() => {
       setTestingService(null);
-      addToast('Conexión Exitosa', `Servicio ${name} respondió con estado HTTP 200 OK (Latencia: 64ms).`, 'success');
-    }, 700);
+      addToast('Prueba de Conector Sandbox', `El conector ${name} responde satisfactoriamente en entorno de desarrollo/pruebas locales (Mock Sandbox).`, 'info');
+    }, 600);
   };
 
   return (
@@ -74,6 +78,15 @@ export const IntegrationsHubView = () => {
           <p>
             Conectores gubernamentales y normativos: ReNaPDiS, ARCA / AFIP, SISA / REFEPS y HL7 FHIR Core Argentina.
           </p>
+        </div>
+      </div>
+
+      {/* Regulatory Sandbox Disclaimer Banner */}
+      <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '10px', padding: '1rem 1.25rem', marginBottom: '1.75rem', display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+        <AlertCircle size={22} color="#1D4ED8" style={{ flexShrink: 0, marginTop: '2px' }} />
+        <div style={{ fontSize: '0.88rem', color: '#1E3A8A', lineHeight: 1.5 }}>
+          <strong>Aviso de Homologación & Transparencia Regulatoria (B-03):</strong>
+          <div>Los servicios expuestos a continuación operan bajo arquitectura <strong>Sandbox / Simulación Local</strong>. La emisión directa contra los Web Services gubernamentales en tiempo real requiere la adhesión formal de certificados fiscales delegados (AFIP/ARCA) y claves WS-Security de SISA provistas por el Ministerio de Salud.</div>
         </div>
       </div>
 
@@ -92,7 +105,7 @@ export const IntegrationsHubView = () => {
             }}
           >
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem', gap: '0.5rem' }}>
                 <div>
                   <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#002182' }}>
                     {item.name}
@@ -102,29 +115,30 @@ export const IntegrationsHubView = () => {
                   </div>
                 </div>
 
-                  <span
-                    style={{
-                      background: '#d1fae5',
-                      color: '#065f46',
-                      padding: '0.2rem 0.6rem',
-                      borderRadius: '6px',
-                      fontSize: '0.76rem',
-                      fontWeight: 800,
-                      whiteSpace: 'nowrap',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                  >
-                    <Check size={12} />
-                    <span>{item.status}</span>
-                  </span>
+                <span
+                  style={{
+                    background: '#FEF3C7',
+                    color: '#92400E',
+                    border: '1px solid #FDE68A',
+                    padding: '0.25rem 0.65rem',
+                    borderRadius: '6px',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    whiteSpace: 'nowrap',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px'
+                  }}
+                >
+                  <AlertCircle size={13} color="#D97706" />
+                  <span>{item.status}</span>
+                </span>
               </div>
 
               <div style={{ background: '#F5F8FE', border: '1px solid #D2E3FC', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.84rem', color: '#172A4A' }}>
                 {item.details}
                 <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#64748b', marginTop: '4px' }}>
-                  Endpoint: {item.endpoint}
+                  Endpoint configurado: {item.endpoint}
                 </div>
               </div>
             </div>
@@ -136,7 +150,7 @@ export const IntegrationsHubView = () => {
                 disabled={testingService === item.id}
               >
                 <RefreshCw size={14} className={testingService === item.id ? 'animate-spin' : ''} />
-                <span>{testingService === item.id ? 'Verificando...' : 'Probar WebService'}</span>
+                <span>{testingService === item.id ? 'Comprobando...' : 'Verificar Mock Sandbox'}</span>
               </button>
             </div>
           </div>

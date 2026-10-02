@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { getTodayArgentina } from '../../utils/dateUtils';
+import { dataService } from '../../services/dataService';
 
 // Admin Core Managers
 import { AppointmentsManager } from './AppointmentsManager';
@@ -153,6 +154,7 @@ import {
   UserCheck,
   Settings,
   ShieldAlert,
+  AlertTriangle,
   LogOut,
   ExternalLink,
   Lock,
@@ -783,6 +785,14 @@ export const AdminManagementHub = () => {
 
         {/* Content Body */}
         <main className="admin-main-content" style={{ padding: '1.75rem 2.25rem 3rem', flex: 1, width: '100%', boxSizing: 'border-box' }}>
+          {!dataService.isLive() && (
+            <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '12px', padding: '0.85rem 1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#92400E', fontSize: '0.86rem', boxShadow: '0 1px 3px rgba(217, 119, 6, 0.08)' }}>
+              <AlertTriangle size={20} color="#D97706" style={{ flexShrink: 0 }} />
+              <div>
+                <strong>Aviso de Persistencia (Modo Local / Offline):</strong> Supabase no está conectado o las variables de entorno están ausentes. Los cambios clínicos se mantendrán únicamente durante la sesión actual del navegador.
+              </div>
+            </div>
+          )}
           <AdminTabErrorBoundary tab={activeTab} onReset={() => setActiveTab('dashboard')}>
           {/* TAB 1: DASHBOARD & MÉTRICAS PARA DOCTOR (Dr. Blanco) */}
           {activeTab === 'dashboard' && isDoctor && (
@@ -1417,12 +1427,6 @@ export const AdminManagementHub = () => {
           {(activeTab === 'doctors' || activeTab === 'services' || activeTab === 'schedules' || activeTab === 'insurances' || activeTab === 'staff') && !isDoctor && (
             <DoctorsManager initialTab={activeTab} />
           )}
-
-          {/* TAB 10: ESTUDIOS & DOCUMENTACIÓN (Oculto) */}
-          {/* {activeTab === 'imaging' && isDoctor && <ImagingView />} */}
-
-          {/* TAB 11: RECETAS ELECTRÓNICAS (Exclusivo Médico - Oculto temporalmente) */}
-          {/* {activeTab === 'prescriptions' && isDoctor && <PrescriptionsManager />} */}
 
           {/* TAB 12: FACTURACIÓN / PAGOS / CAJA (Secretaría) */}
           {activeTab === 'billing' && !isDoctor && <BillingView />}

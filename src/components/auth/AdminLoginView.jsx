@@ -831,67 +831,11 @@ export const AdminLoginView = () => {
             </button>
           </form>
 
-          {/* Acceso Rápido de Demostración */}
-          <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid #e2e8f0' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '0.6rem', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Acceso Rápido de Prueba (Demo)
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('secretaria@citra.com.ar');
-                  setPassword('citra2026');
-                  setErrorMsg('');
-                }}
-                style={{
-                  padding: '0.55rem 0.85rem',
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  fontSize: '0.8rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                  color: '#1e293b',
-                  transition: 'background 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
-                onMouseLeave={(e) => e.currentTarget.style.background = '#f8fafc'}
-              >
-                <span style={{ fontWeight: 700 }}>Secretaría (Gestión y Administración)</span>
-                <span style={{ color: '#076abc', fontSize: '0.74rem' }}>secretaria@citra.com.ar</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('dr.blanco@citra.com.ar');
-                  setPassword('citra2026');
-                  setErrorMsg('');
-                }}
-                style={{
-                  padding: '0.55rem 0.85rem',
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  fontSize: '0.8rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                  color: '#1e293b',
-                  transition: 'background 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
-                onMouseLeave={(e) => e.currentTarget.style.background = '#f8fafc'}
-              >
-                <span style={{ fontWeight: 700 }}>Profesional (Dr. Alejandro Blanco)</span>
-                <span style={{ color: '#076abc', fontSize: '0.74rem' }}>dr.blanco@citra.com.ar</span>
-              </button>
-            </div>
-            <div style={{ textAlign: 'center', marginTop: '0.45rem', fontSize: '0.7rem', color: '#94a3b8' }}>
-              Contraseña predeterminada: <strong style={{ color: '#475569' }}>citra2026</strong>
+          {/* Security Notice Footer */}
+          <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.74rem', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+              <ShieldCheck size={14} color="#059669" />
+              <span>Portal protegido bajo estándar de cifrado TLS 1.3 y auditoría Ley 25.326</span>
             </div>
           </div>
 

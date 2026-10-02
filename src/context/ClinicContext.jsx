@@ -619,7 +619,9 @@ export const ClinicProvider = ({ children }) => {
           remoteRooms,
           remoteInsurances,
           remoteConsents,
-          remoteClinicInfo
+          remoteClinicInfo,
+          remoteRehabPlans,
+          remoteRehabSessions
         ] = await Promise.allSettled([
           dataService.fetchAppointments(),
           dataService.fetchPatients(),
@@ -634,7 +636,9 @@ export const ClinicProvider = ({ children }) => {
           dataService.fetchRooms(),
           dataService.fetchHealthInsurances(),
           dataService.fetchConsentForms(),
-          dataService.fetchClinicInfo()
+          dataService.fetchClinicInfo(),
+          dataService.fetchRehabPlans(),
+          dataService.fetchRehabSessions()
         ]);
 
         if (!isMounted) return;
@@ -706,8 +710,21 @@ export const ClinicProvider = ({ children }) => {
         if (remoteSchedule.status === 'fulfilled' && remoteSchedule.value) setClinicSchedule(remoteSchedule.value);
         if (remoteSpecs.status === 'fulfilled' && Array.isArray(remoteSpecs.value) && remoteSpecs.value.length > 0) setSpecialties(remoteSpecs.value);
         if (remoteRooms.status === 'fulfilled' && Array.isArray(remoteRooms.value) && remoteRooms.value.length > 0) setRooms(remoteRooms.value);
-        if (remoteInsurances.status === 'fulfilled' && Array.isArray(remoteInsurances.value) && remoteInsurances.value.length > 0) setHealthInsurances(remoteInsurances.value);
         if (remoteConsents.status === 'fulfilled' && Array.isArray(remoteConsents.value) && remoteConsents.value.length > 0) setConsentForms(remoteConsents.value);
+        if (remoteRehabPlans.status === 'fulfilled' && Array.isArray(remoteRehabPlans.value) && remoteRehabPlans.value.length > 0) {
+          setRehabPlans((prev) => {
+            const remoteMap = new Map(remoteRehabPlans.value.map((r) => [r.id, r]));
+            const localOnly = prev.filter((localR) => !remoteMap.has(localR.id));
+            return [...remoteRehabPlans.value, ...localOnly];
+          });
+        }
+        if (remoteRehabSessions.status === 'fulfilled' && Array.isArray(remoteRehabSessions.value) && remoteRehabSessions.value.length > 0) {
+          setRehabSessions((prev) => {
+            const remoteMap = new Map(remoteRehabSessions.value.map((s) => [s.id, s]));
+            const localOnly = prev.filter((localS) => !remoteMap.has(localS.id));
+            return [...remoteRehabSessions.value, ...localOnly];
+          });
+        }
       } catch (err) {
         console.warn('Supabase initial hydration notice:', err);
       }
@@ -1309,40 +1326,24 @@ export const ClinicProvider = ({ children }) => {
     const pat = patients.find((p) => p.id === patientId);
     if (!pat) return;
 
-    // Legal Protection: Ley 26.529 Art. 18 (custodia documental obligatoria por 10 años)
-    const hasConsultations = consultations.some((c) => c.patientId === patientId || c.patientDni === pat.dni);
-    const hasPrescriptions = electronicPrescriptions.some((rx) => rx.patientId === patientId || rx.patientDni === pat.dni);
-    const hasRehab = rehabPlans.some((r) => r.patientId === patientId);
-
-    if (hasConsultations || hasPrescriptions || hasRehab) {
-      // Soft delete: dar de baja y archivar para no vulnerar el historial clínico legal
-      setPatients((prev) =>
-        prev.map((p) =>
-          p.id === patientId
-            ? { ...p, active: false, archived: true, deletedAt: new Date().toISOString() }
-            : p
-        )
-      );
-      if (dataService.isLive()) {
-        dataService.updatePatient(patientId, { active: false, is_active: false }).catch(console.warn);
-      }
-      logAudit('ARCHIVE', 'Padrón de Pacientes', pat.dni, `Ficha archivada (preservación de historia clínica conforme Ley 26.529) para ${pat.name}`);
-      addToast('Ficha Archivada', `La ficha de ${pat.name} fue dada de baja administrativa. Sus antecedentes clínicos quedan preservados por Ley 26.529.`, 'info');
-      return;
-    }
-
-    // Si no cuenta con actos médicos históricos, remoción física
-    setPatients((prev) => prev.filter((p) => p.id !== patientId));
+    // Archivado lógico auditado conforme Ley 26.529 Art. 18 y T12 (custodia obligatoria de antecedentes)
+    setPatients((prev) =>
+      prev.map((p) =>
+        p.id === patientId
+          ? { ...p, active: false, isActive: false, is_active: false, archived: true, deletedAt: new Date().toISOString() }
+          : p
+      )
+    );
     if (dataService.isLive()) {
       dataService.deletePatient(patientId).catch(console.warn);
     }
-    logAudit('DELETE', 'Padrón de Pacientes', pat.dni, `Eliminación administrativa de ficha de paciente ${pat.name}`);
-    addToast('Paciente Eliminado', `El paciente ${pat.name} ha sido eliminado.`, 'success');
+    logAudit('ARCHIVE', 'Padrón de Pacientes', pat.dni || '-', `Ficha archivada lógicamente conforme Ley 26.529 para ${pat.name}`);
+    addToast('Ficha Archivada', `La ficha de ${pat.name} fue archivada lógicamente. Sus antecedentes clínicos quedan preservados por Ley 26.529.`, 'info');
   };
 
-  // --- REHABILITACIÓN & KINESIOLOGÍA ---
+  // --- REHABILITACIÓN & KINESIOLOGÍA (C05, T8) ---
   const addRehabPlan = (planData) => {
-    const newId = `rhb-${Date.now()}`;
+    const newId = planData.id || `rhb-${Date.now()}`;
     const newPlan = {
       id: newId,
       startDate: new Date().toISOString().split('T')[0],
@@ -1353,7 +1354,10 @@ export const ClinicProvider = ({ children }) => {
       ...planData
     };
     setRehabPlans((prev) => [newPlan, ...prev]);
-    logAudit('CREATE', 'Plan Kinesiología', planData.patientDni, `Inicio de plan de rehabilitación: ${planData.diagnosis}`);
+    if (dataService.isLive()) {
+      dataService.createRehabPlan(newPlan).catch(console.warn);
+    }
+    logAudit('CREATE', 'Plan Kinesiología', planData.patientDni || '-', `Inicio de plan de rehabilitación: ${planData.diagnosis}`);
     addToast('Plan de Kinesiología Creado', `Plan para ${planData.patientName} iniciado con éxito.`, 'success');
     return newPlan;
   };
@@ -1362,11 +1366,24 @@ export const ClinicProvider = ({ children }) => {
     setRehabPlans((prev) =>
       prev.map((p) => (p.id === id ? { ...p, ...updatedData } : p))
     );
+    if (dataService.isLive()) {
+      dataService.updateRehabPlan(id, updatedData).catch(console.warn);
+    }
+    logAudit('UPDATE', 'Plan Kinesiología', '-', `Modificación de plan de rehabilitación ${id}`);
     addToast('Plan de Kinesiología Actualizado', 'Modificaciones guardadas.', 'info');
   };
 
+  const deleteRehabPlan = (id) => {
+    setRehabPlans((prev) => prev.filter((p) => p.id !== id));
+    if (dataService.isLive()) {
+      dataService.deleteRehabPlan(id).catch(console.warn);
+    }
+    logAudit('DELETE', 'Plan Kinesiología', '-', `Baja de plan de rehabilitación ${id}`);
+    addToast('Plan Eliminado', 'El plan de rehabilitación fue dado de baja.', 'info');
+  };
+
   const addRehabSession = (sessionData) => {
-    const newId = `ses-${Date.now()}`;
+    const newId = sessionData.id || `ses-${Date.now()}`;
     const timestamp = new Date().toISOString();
     const newSession = {
       id: newId,
@@ -1378,6 +1395,9 @@ export const ClinicProvider = ({ children }) => {
     };
 
     setRehabSessions((prev) => [newSession, ...prev]);
+    if (dataService.isLive()) {
+      dataService.createRehabSession(newSession).catch(console.warn);
+    }
 
     // Update plan completed sessions and current EVA score
     if (sessionData.planId) {
@@ -1385,11 +1405,18 @@ export const ClinicProvider = ({ children }) => {
         prev.map((p) => {
           if (p.id === sessionData.planId) {
             const nextCompleted = (p.completedSessions || 0) + 1;
+            const updatedStatus = nextCompleted >= (p.prescribedSessions || p.targetSessions || 10) ? 'Finalizado' : 'En curso';
+            if (dataService.isLive()) {
+              dataService.updateRehabPlan(p.id, {
+                completedSessions: nextCompleted,
+                status: updatedStatus
+              }).catch(console.warn);
+            }
             return {
               ...p,
               completedSessions: nextCompleted,
               currentEvaScore: sessionData.evaScore,
-              status: nextCompleted >= p.prescribedSessions ? 'Finalizado' : 'En curso'
+              status: updatedStatus
             };
           }
           return p;
@@ -1400,6 +1427,26 @@ export const ClinicProvider = ({ children }) => {
     logAudit('CREATE', 'Sesión Kinesiología', '-', `Sesión N° ${sessionData.sessionNumber} registrada con EVA ${sessionData.evaScore}/10.`);
     addToast('Sesión de Kinesiología Asentada', `Evolución guardada y firmada digitalmente.`, 'success');
     return newSession;
+  };
+
+  const updateRehabSession = (id, updatedData) => {
+    setRehabSessions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...updatedData } : s))
+    );
+    if (dataService.isLive()) {
+      dataService.updateRehabSession(id, updatedData).catch(console.warn);
+    }
+    logAudit('UPDATE', 'Sesión Kinesiología', '-', `Modificación de evolución en sesión ${id}`);
+    addToast('Sesión Actualizada', 'Evolución modificada.', 'info');
+  };
+
+  const deleteRehabSession = (id) => {
+    setRehabSessions((prev) => prev.filter((s) => s.id !== id));
+    if (dataService.isLive()) {
+      dataService.deleteRehabSession(id).catch(console.warn);
+    }
+    logAudit('DELETE', 'Sesión Kinesiología', '-', `Baja de sesión ${id}`);
+    addToast('Sesión Eliminada', 'La sesión fue eliminada.', 'info');
   };
 
   // --- DIAGNÓSTICO POR IMÁGENES & PACS ---
@@ -1728,12 +1775,18 @@ export const ClinicProvider = ({ children }) => {
   };
 
   const deleteAppointment = (id) => {
-    setAppointments((prev) => prev.filter((app) => app.id !== id));
+    setAppointments((prev) =>
+      prev.map((app) =>
+        app.id === id
+          ? { ...app, status: 'cancelado', cancelReason: 'Cancelado y archivado por administración' }
+          : app
+      )
+    );
     if (dataService.isLive()) {
-      dataService.deleteAppointment(id).catch(console.warn);
+      dataService.cancelAppointment(id, 'Cancelado y archivado por administración').catch(console.warn);
     }
-    logAudit('DELETE', 'Turnos', '-', `Turno ${id} eliminado del sistema.`);
-    addToast('Turno Eliminado', 'El turno fue removido del sistema.', 'info');
+    logAudit('CANCEL_APPOINTMENT', 'Turnos', '-', `Turno ${id} cancelado y archivado por administración.`);
+    addToast('Turno Archivado', 'El turno ha sido cancelado y archivado conforme a la trazabilidad legal.', 'info');
   };
 
   // --- GESTIÓN DE PROFESIONALES / MÉDICOS ---
@@ -1759,7 +1812,7 @@ export const ClinicProvider = ({ children }) => {
       id: newUserId,
       name: newDoc.name,
       email: newDoc.email || `${newDoc.name.toLowerCase().replace(/[^a-z]/g, '')}@citra.com.ar`,
-      password: 'citra2026',
+      password: 'Citra.2026!',
       role: `Médico ${newDoc.specialty || 'Profesional'}`,
       adminType: 'doctor',
       doctorId: newDoc.id,
@@ -1929,8 +1982,15 @@ export const ClinicProvider = ({ children }) => {
     addToast('Perfil Actualizado', 'Tus datos profesionales y credenciales han sido guardados.', 'success');
   };
 
-  // --- GESTIÓN DE USUARIOS Y ROLES (Ley 25.326) ---
-  const updateUser = (userId, updatedData) => {
+  // --- GESTIÓN DE USUARIOS Y ROLES (Ley 25.326 / A-02) ---
+  const updateUser = async (userId, updatedData) => {
+    if (updatedData.password && dataService.isLive()) {
+      try {
+        await dataService.updateUserPassword(updatedData.password);
+      } catch (err) {
+        console.warn('Error al actualizar contraseña en Supabase Auth:', err);
+      }
+    }
     setUsers((prev) =>
       prev.map((u) => (u.id === userId ? { ...u, ...updatedData } : u))
     );
@@ -1938,8 +1998,8 @@ export const ClinicProvider = ({ children }) => {
       setAuthAdmin((prev) => ({ ...prev, ...updatedData }));
       setCurrentUser((prev) => ({ ...prev, ...updatedData }));
     }
-    logAudit('UPDATE', 'Usuarios & Roles', '-', `Modificación de permisos/rol para usuario ${updatedData.name || userId}`);
-    addToast('Usuario Actualizado', 'Los roles y permisos fueron actualizados correctamente.', 'success');
+    logAudit('UPDATE', 'Usuarios & Roles', '-', `Modificación de datos/permisos para usuario ${updatedData.name || userId}`);
+    addToast('Usuario Actualizado', 'Los datos y credenciales fueron actualizados correctamente.', 'success');
   };
 
   const addUser = (userData) => {
@@ -1949,7 +2009,7 @@ export const ClinicProvider = ({ children }) => {
       status: 'Activo',
       mfaEnabled: true,
       lastAccess: 'Nunca',
-      password: 'citra2026',
+      password: 'Citra.2026!',
       ...userData
     };
     setUsers((prev) => [...prev, newUser]);
@@ -1988,8 +2048,8 @@ export const ClinicProvider = ({ children }) => {
       return { success: false, message: 'Contraseña requerida' };
     }
 
-    const expectedPassword = foundPatient.password || 'demo1234';
-    if (password !== expectedPassword && password !== 'demo1234') {
+    const expectedPassword = foundPatient.password || 'Paciente.2026!';
+    if (password !== expectedPassword) {
       addToast('Contraseña Incorrecta', 'La contraseña ingresada no es válida.', 'error');
       return { success: false, message: 'Contraseña incorrecta' };
     }
@@ -2042,7 +2102,7 @@ export const ClinicProvider = ({ children }) => {
       return { success: false, message: 'Contraseña requerida' };
     }
 
-    // Si Supabase está en vivo, autenticar formalmente contra GoTrue
+    // Si Supabase está en vivo, autenticar formalmente contra GoTrue sin bypasses
     if (dataService.isLive()) {
       try {
         const { session, user } = await dataService.signInWithPassword(cleanEmail, password);
@@ -2051,16 +2111,14 @@ export const ClinicProvider = ({ children }) => {
           return { success: false, message: 'Fallo de autenticación GoTrue' };
         }
       } catch (err) {
-        const expectedPassword = adminUser.password || 'citra2026';
-        if (password !== expectedPassword && password !== 'citra2026') {
-          console.warn('Acceso administrativo denegado:', err?.message || 'Credenciales inválidas');
-          addToast('Acceso Denegado', 'Credenciales no autorizadas.', 'error');
-          return { success: false, message: 'Credenciales inválidas' };
-        }
+        console.warn('Acceso administrativo denegado en GoTrue:', err?.message || 'Credenciales inválidas');
+        addToast('Acceso Denegado', 'Credenciales no autorizadas en el servidor de autenticación.', 'error');
+        return { success: false, message: 'Credenciales inválidas en GoTrue' };
       }
     } else {
-      const expectedPassword = adminUser.password || 'citra2026';
-      if (password !== expectedPassword && password !== 'citra2026') {
+      // Modo local / offline: validar contra la contraseña guardada del usuario (sin comodín universal)
+      const expectedPassword = adminUser.password || 'Citra.2026!';
+      if (password !== expectedPassword) {
         addToast('Contraseña Incorrecta', 'La contraseña administrativa no es correcta.', 'error');
         return { success: false, message: 'Contraseña incorrecta' };
       }

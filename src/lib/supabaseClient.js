@@ -48,6 +48,15 @@ export const isSupabaseConfigured = Boolean(
   !supabaseUrl.includes('placeholder')
 );
 
+if (!isSupabaseConfigured) {
+  const errMsg = '[CITRA PERSISTENCIA ADVERTENCIA] Variables de entorno VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY ausentes o inválidas. El sistema opera en memoria local (Sandbox / Mock). Los registros clínicos no se persistirán en la base de datos cloud.';
+  if (import.meta.env.PROD) {
+    console.error(errMsg);
+  } else {
+    console.warn(errMsg);
+  }
+}
+
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey, {
       auth: {

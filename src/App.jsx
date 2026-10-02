@@ -18,83 +18,61 @@ import { AdminManagementHub } from './components/admin/AdminManagementHub';
 import './App.css';
 
 /**
- * Hook global que bloquea el scroll de fondo en absolutamente toda la web
- * siempre que exista cualquier ventana emergente, modal o popup abierto.
+ * Hook global ultra-optimizado que bloquea el scroll de fondo en absolutamente toda la web
+ * siempre que exista cualquier ventana emergente, modal o popup abierto, sin bucles de mutación.
  */
 const useGlobalModalScrollLock = () => {
   useEffect(() => {
-    const isModalElement = (el) => {
-      if (!el || el.nodeType !== 1) return false;
-      const className = typeof el.className === 'string' ? el.className : '';
-      if (
-        className.includes('modal-overlay') ||
-        className.includes('prescription-modal-overlay') ||
-        className.includes('legal-hce-overlay') ||
-        className.includes('consultation-print-overlay') ||
-        el.getAttribute('role') === 'dialog' ||
-        el.getAttribute('aria-modal') === 'true'
-      ) {
-        return true;
-      }
-
-      // Check inline styles of full-screen fixed modals
-      const pos = el.style?.position;
-      const zIndex = parseInt(el.style?.zIndex, 10);
-      if (pos === 'fixed' && (zIndex >= 100 || el.style?.zIndex === '9999' || el.style?.zIndex === '99999')) {
-        const inset = el.style?.inset;
-        const top = el.style?.top;
-        if (inset === '0' || inset === '0px' || top === '0' || top === '0px') {
-          return true;
-        }
-      }
-      return false;
-    };
+    let isUpdating = false;
 
     const checkAndLockScroll = () => {
-      const candidates = document.querySelectorAll(
-        '.modal-overlay, .prescription-modal-overlay, .legal-hce-overlay, .consultation-print-overlay, [role="dialog"], [aria-modal="true"], div[style*="position: fixed"], div[style*="position:fixed"]'
-      );
+      if (isUpdating) return;
+      isUpdating = true;
 
-      let hasModalOpen = false;
-      for (let i = 0; i < candidates.length; i++) {
-        if (isModalElement(candidates[i])) {
-          hasModalOpen = true;
-          break;
+      try {
+        const hasModalOpen = !!document.querySelector(
+          '.modal-overlay, .prescription-modal-overlay, .legal-hce-overlay, .consultation-print-overlay, [role="dialog"], [aria-modal="true"]'
+        );
+
+        const isCurrentlyLocked = document.body.classList.contains('modal-open');
+
+        if (hasModalOpen && !isCurrentlyLocked) {
+          document.body.classList.add('modal-open');
+          document.documentElement.classList.add('modal-open');
+        } else if (!hasModalOpen && isCurrentlyLocked) {
+          document.body.classList.remove('modal-open');
+          document.documentElement.classList.remove('modal-open');
         }
-      }
-
-      if (hasModalOpen) {
-        document.body.classList.add('modal-open');
-        document.documentElement.classList.add('modal-open');
-        document.body.style.overflow = 'hidden';
-        document.documentElement.style.overflow = 'hidden';
-        document.body.style.touchAction = 'none';
-      } else {
-        document.body.classList.remove('modal-open');
-        document.documentElement.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        document.documentElement.style.overflow = '';
-        document.body.style.touchAction = '';
+      } finally {
+        isUpdating = false;
       }
     };
 
     checkAndLockScroll();
 
-    const observer = new MutationObserver(() => {
-      checkAndLockScroll();
+    let rafId = null;
+    const observer = new MutationObserver((mutations) => {
+      // Ignorar mutaciones en el body o html para evitar bucles infinitos
+      const hasForeignMutation = mutations.some(
+        (m) => m.target !== document.body && m.target !== document.documentElement
+      );
+      if (!hasForeignMutation) return;
+
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        checkAndLockScroll();
+      });
     });
 
     observer.observe(document.body, {
       childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['style', 'class', 'role', 'aria-modal']
+      subtree: true
     });
 
     const handlePreventBackdropScroll = (e) => {
       if (document.body.classList.contains('modal-open')) {
         const target = e.target;
-        if (isModalElement(target)) {
+        if (target && target.classList && target.classList.contains('modal-overlay')) {
           e.preventDefault();
         }
       }
@@ -104,14 +82,12 @@ const useGlobalModalScrollLock = () => {
     window.addEventListener('touchmove', handlePreventBackdropScroll, { passive: false });
 
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
       observer.disconnect();
       window.removeEventListener('wheel', handlePreventBackdropScroll);
       window.removeEventListener('touchmove', handlePreventBackdropScroll);
       document.body.classList.remove('modal-open');
       document.documentElement.classList.remove('modal-open');
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-      document.body.style.touchAction = '';
     };
   }, []);
 };

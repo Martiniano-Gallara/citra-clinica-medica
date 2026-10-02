@@ -81,7 +81,7 @@ export const ReportsView = () => {
   };
 
   // ==============================================================
-  // DYNAMIC CLINICAL & FINANCIAL METRICS ENGINE (100% LINKED TO DB)
+  // DYNAMIC CLINICAL & FINANCIAL METRICS ENGINE (100% LINKED TO DB - M-07)
   // ==============================================================
   const activeDoctorData = useMemo(() => {
     const docFeePct = currentDoctor?.feePercentage || 75;
@@ -93,136 +93,138 @@ export const ReportsView = () => {
 
     let periodConsultations = [];
     let periodAppointments = [];
-    let periodLabel = 'Este Mes (Septiembre)';
-    let consultationsDelta = '+14.2% vs mes anterior';
-    let trendLabels = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4 (Actual)'];
-    let trendRevenue = [225000, 281250, 262500, 243750];
-    let trendConsultations = [12, 15, 14, 13];
+    let periodLabel = 'Historial Completo';
+    let consultationsDelta = '';
+    let trendLabels = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'];
+    let trendRevenue = [0, 0, 0, 0];
+    let trendConsultations = [0, 0, 0, 0];
 
     if (period === 'week') {
       periodLabel = 'Esta Semana';
-      consultationsDelta = '+7.1% vs semana anterior';
-      trendLabels = ['Lun 08/09', 'Mar (Qx)', 'Mié 10/09', 'Jue (Ext)', 'Vie 12/09'];
-      periodAppointments = allDocAppointments.filter(
-        (a) => a.date >= '2026-09-07' && a.date <= '2026-09-13'
-      );
-      periodConsultations = allDocConsultations.filter(
-        (c) => c.date >= '2026-09-07' && c.date <= '2026-09-13'
-      );
+      trendLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'];
+      // Últimos 7 días
+      const today = new Date();
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(today.getDate() - 7);
+      const minDate = sevenDaysAgo.toISOString().split('T')[0];
 
-      const lunCons = periodConsultations.filter((c) => c.date === '2026-09-07');
-      const mieCons = periodConsultations.filter((c) => c.date === '2026-09-09');
-      const vieCons = periodConsultations.filter((c) => c.date === '2026-09-11');
-      trendConsultations = [lunCons.length || 5, 0, mieCons.length || 6, 0, vieCons.length || 3];
+      periodAppointments = allDocAppointments.filter((a) => a.date >= minDate);
+      periodConsultations = allDocConsultations.filter((c) => c.date >= minDate);
 
-      const lunRev = lunCons.reduce((acc, c) => acc + (c.cost || 25000) * (docFeePct / 100), 0) || 93750;
-      const mieRev = mieCons.reduce((acc, c) => acc + (c.cost || 25000) * (docFeePct / 100), 0) || 112500;
-      const vieRev = vieCons.reduce((acc, c) => acc + (c.cost || 25000) * (docFeePct / 100), 0) || 56250;
-      trendRevenue = [lunRev, 0, mieRev, 0, vieRev];
+      trendConsultations = [0, 1, 2, 3, 4].map(dayOffset => {
+        const d = new Date();
+        d.setDate(today.getDate() - (4 - dayOffset));
+        const dateStr = d.toISOString().split('T')[0];
+        return periodConsultations.filter(c => c.date === dateStr).length;
+      });
+
+      trendRevenue = [0, 1, 2, 3, 4].map(dayOffset => {
+        const d = new Date();
+        d.setDate(today.getDate() - (4 - dayOffset));
+        const dateStr = d.toISOString().split('T')[0];
+        const dayCons = periodConsultations.filter(c => c.date === dateStr);
+        return dayCons.reduce((sum, c) => sum + Math.round((Number(c.cost) || 25000) * (docFeePct / 100)), 0);
+      });
     } else if (period === 'year') {
-      periodLabel = 'Año 2026 (Acumulado)';
-      consultationsDelta = '+21.5% interanual';
-      trendLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep (Act)'];
-      periodAppointments = allDocAppointments;
-      periodConsultations = allDocConsultations;
+      periodLabel = 'Año en Curso (Acumulado)';
+      trendLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      const currentYear = new Date().getFullYear().toString();
+      periodAppointments = allDocAppointments.filter((a) => a.date && a.date.startsWith(currentYear));
+      periodConsultations = allDocConsultations.filter((c) => c.date && c.date.startsWith(currentYear));
 
-      trendConsultations = [58, 62, 70, 74, 76, 72, 78, 80, periodConsultations.length || 54];
-      const septNet = periodConsultations.reduce(
-        (acc, c) => acc + Math.round((c.cost || 25000) * (docFeePct / 100)),
-        0
-      ) || 1012500;
-      trendRevenue = [1087500, 1162500, 1312500, 1387500, 1425000, 1350000, 1462500, 1500000, septNet];
+      trendConsultations = trendLabels.map((_, idx) => {
+        const monthPrefix = `${currentYear}-${String(idx + 1).padStart(2, '0')}`;
+        return periodConsultations.filter(c => c.date && c.date.startsWith(monthPrefix)).length;
+      });
+
+      trendRevenue = trendLabels.map((_, idx) => {
+        const monthPrefix = `${currentYear}-${String(idx + 1).padStart(2, '0')}`;
+        const monthCons = periodConsultations.filter(c => c.date && c.date.startsWith(monthPrefix));
+        return monthCons.reduce((sum, c) => sum + Math.round((Number(c.cost) || 25000) * (docFeePct / 100)), 0);
+      });
     } else {
-      // Month (default: September 2026)
-      periodLabel = 'Este Mes (Septiembre)';
-      consultationsDelta = '+14.2% vs mes anterior';
-      trendLabels = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4 (Actual)'];
-      periodAppointments = allDocAppointments.filter((a) => !a.date || a.date.startsWith('2026-09'));
-      periodConsultations = allDocConsultations.filter((c) => !c.date || c.date.startsWith('2026-09'));
+      // Month
+      periodLabel = 'Este Mes';
+      trendLabels = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'];
+      const currentMonthPrefix = new Date().toISOString().substring(0, 7);
+      periodAppointments = allDocAppointments.filter((a) => a.date && a.date.startsWith(currentMonthPrefix));
+      periodConsultations = allDocConsultations.filter((c) => c.date && c.date.startsWith(currentMonthPrefix));
 
-      const w1 = periodConsultations.filter((c) => c.date >= '2026-09-01' && c.date <= '2026-09-07');
-      const w2 = periodConsultations.filter((c) => c.date >= '2026-09-08' && c.date <= '2026-09-14');
-      const w3 = periodConsultations.filter((c) => c.date >= '2026-09-15' && c.date <= '2026-09-21');
-      const w4 = periodConsultations.filter((c) => c.date >= '2026-09-22');
-      trendConsultations = [w1.length || 12, w2.length || 15, w3.length || 14, w4.length || 13];
+      const w1 = periodConsultations.filter((c) => {
+        const day = parseInt((c.date || '').split('-')[2], 10);
+        return day >= 1 && day <= 7;
+      });
+      const w2 = periodConsultations.filter((c) => {
+        const day = parseInt((c.date || '').split('-')[2], 10);
+        return day >= 8 && day <= 14;
+      });
+      const w3 = periodConsultations.filter((c) => {
+        const day = parseInt((c.date || '').split('-')[2], 10);
+        return day >= 15 && day <= 21;
+      });
+      const w4 = periodConsultations.filter((c) => {
+        const day = parseInt((c.date || '').split('-')[2], 10);
+        return day >= 22;
+      });
+
+      trendConsultations = [w1.length, w2.length, w3.length, w4.length];
       trendRevenue = [
-        w1.reduce((sum, c) => sum + Math.round((c.cost || 25000) * (docFeePct / 100)), 0) || 225000,
-        w2.reduce((sum, c) => sum + Math.round((c.cost || 25000) * (docFeePct / 100)), 0) || 281250,
-        w3.reduce((sum, c) => sum + Math.round((c.cost || 25000) * (docFeePct / 100)), 0) || 262500,
-        w4.reduce((sum, c) => sum + Math.round((c.cost || 25000) * (docFeePct / 100)), 0) || 243750
+        w1.reduce((sum, c) => sum + Math.round((Number(c.cost) || 25000) * (docFeePct / 100)), 0),
+        w2.reduce((sum, c) => sum + Math.round((Number(c.cost) || 25000) * (docFeePct / 100)), 0),
+        w3.reduce((sum, c) => sum + Math.round((Number(c.cost) || 25000) * (docFeePct / 100)), 0),
+        w4.reduce((sum, c) => sum + Math.round((Number(c.cost) || 25000) * (docFeePct / 100)), 0)
       ];
     }
 
-    // Number of consultations
-    const consultationsCount =
-      periodConsultations.length || (period === 'year' ? 620 : period === 'week' ? 14 : 54);
+    // Number of consultations (100% real count)
+    const consultationsCount = periodConsultations.length;
 
-    // Appointments breakdown
+    // Appointments breakdown (100% real count)
     const completedApps = periodAppointments.filter((a) => a.status === 'atendido');
     const rescheduledApps = periodAppointments.filter((a) => a.status === 'reprogramado');
-    const completedCount = completedApps.length || (period === 'year' ? 620 : period === 'week' ? 14 : 54);
-    const rescheduledCount = rescheduledApps.length || (period === 'year' ? 28 : period === 'week' ? 1 : 2);
+    const completedCount = completedApps.length;
+    const rescheduledCount = rescheduledApps.length;
     const scheduledCount = completedCount + rescheduledCount;
     const attendanceRate =
-      scheduledCount > 0 ? +(completedCount / scheduledCount * 100).toFixed(1) : 96.4;
+      scheduledCount > 0 ? +(completedCount / scheduledCount * 100).toFixed(1) : (completedCount > 0 ? 100 : 0);
 
-    // Financial calculations
-    const grossTotal =
-      period === 'year'
-        ? 15500000 - 1350000 + periodConsultations.reduce((sum, c) => sum + (c.cost || 25000), 0)
-        : periodConsultations.reduce((sum, c) => sum + (c.cost || 25000), 0) ||
-          (period === 'week' ? 350000 : 1350000);
+    // Financial calculations from actual consultation costs
+    const grossTotal = periodConsultations.reduce((sum, c) => sum + (Number(c.cost) || 25000), 0);
     const netFee = Math.round(grossTotal * (docFeePct / 100));
     const retention = grossTotal - netFee;
 
-    // Unique patients in period consultations
+    // Unique patients in period consultations (100% real set)
     const patientIds = new Set(periodConsultations.map((c) => c.patientId));
-    const patientsCount =
-      period === 'year' ? 380 : patientIds.size || (period === 'week' ? 14 : 46);
+    const patientsCount = patientIds.size;
 
-    const newPatientsCount =
-      period === 'year'
-        ? 142
-        : allDocPatients.filter((p) => {
-            if (!patientIds.has(p.id) && period !== 'month') return false;
-            return p.registeredAt && p.registeredAt.startsWith('2026-09');
-          }).length || (period === 'week' ? 3 : 12);
+    const newPatientsCount = allDocPatients.filter((p) => {
+      if (!patientIds.has(p.id)) return false;
+      const regMonth = (p.registeredAt || '').substring(0, 7);
+      const currentMonth = new Date().toISOString().substring(0, 7);
+      return regMonth === currentMonth;
+    }).length;
     const recurringPatientsCount = Math.max(0, patientsCount - newPatientsCount);
 
     // Insurances aggregation directly from consultation records
     const insCountMap = {};
     periodConsultations.forEach((c) => {
-      const insName = c.insuranceName || 'Particular';
+      const insName = c.insuranceName || c.patientInsurance || 'Particular';
       insCountMap[insName] = (insCountMap[insName] || 0) + 1;
     });
 
-    const defaultInsurances = [
-      { name: 'OSDE', color: '#00529B', copayInfo: 'Sin copago (100% cubierto)', count: 19 },
-      { name: 'Swiss Medical', color: '#E11D48', copayInfo: 'Copago: $1.500', count: 13 },
-      { name: 'Galeno', color: '#2563EB', copayInfo: 'Copago: $2.000', count: 10 },
-      { name: 'Apross', color: '#00A896', copayInfo: 'Copago: $1.200', count: 7 },
-      { name: 'Particular', color: '#475569', copayInfo: 'Arancel base: $25.000', count: 5 }
-    ];
-
-    const totalInsConsultations = periodConsultations.length || 54;
-    const insurances = defaultInsurances.map((def) => {
-      const realCount =
-        insCountMap[def.name] !== undefined
-          ? insCountMap[def.name]
-          : period === 'year'
-          ? Math.round(def.count * 11.5)
-          : period === 'week'
-          ? Math.round(def.count * 0.26)
-          : def.count;
-      const pct = Math.round(
-        (realCount / (period === 'year' ? 620 : period === 'week' ? 14 : totalInsConsultations)) * 100
-      );
-      return {
-        ...def,
-        count: realCount,
-        pct: pct || def.pct
-      };
-    });
+    const totalInsConsultations = periodConsultations.length || 1;
+    const insurancesEntries = Object.entries(insCountMap);
+    const insurances = insurancesEntries.length > 0
+      ? insurancesEntries.map(([name, count]) => ({
+          name,
+          color: name === 'OSDE' ? '#00529B' : name === 'Swiss Medical' ? '#E11D48' : name === 'Galeno' ? '#2563EB' : name === 'Apross' ? '#00A896' : '#475569',
+          copayInfo: name === 'Particular' ? 'Arancel pleno' : 'Convenio prestacional',
+          count,
+          pct: Math.round((count / totalInsConsultations) * 100)
+        }))
+      : [
+          { name: 'Sin consultas registradas', color: '#94a3b8', copayInfo: '-', count: 0, pct: 0 }
+        ];
 
     // Practice items breakdown from consultation nomenclature
     const practiceMap = {};
