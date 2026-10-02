@@ -82,7 +82,7 @@ export const PrescriptionDigitalModal = () => {
         inset: 0,
         backgroundColor: 'rgba(0, 21, 86, 0.65)',
         backdropFilter: 'blur(6px)',
-        zIndex: 25000,
+        zIndex: 9999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

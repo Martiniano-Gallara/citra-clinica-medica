@@ -50,11 +50,10 @@ class AdminTabErrorBoundary extends React.Component {
     console.error('Error caught by AdminTabErrorBoundary:', error, errorInfo);
   }
 
-  static getDerivedStateFromProps(nextProps, prevState) {
-    if (nextProps.tab !== prevState.prevTab) {
-      return { hasError: false, error: null, prevTab: nextProps.tab };
+  componentDidUpdate(prevProps) {
+    if (prevProps.tab !== this.props.tab && this.state.hasError) {
+      this.setState({ hasError: false, error: null });
     }
-    return null;
   }
 
   render() {

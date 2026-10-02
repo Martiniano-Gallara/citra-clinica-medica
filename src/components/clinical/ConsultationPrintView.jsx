@@ -41,7 +41,7 @@ export const ConsultationPrintView = () => {
         inset: 0,
         backgroundColor: 'rgba(15, 23, 42, 0.75)',
         backdropFilter: 'blur(8px)',
-        zIndex: 25000,
+        zIndex: 9999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

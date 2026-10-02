@@ -192,7 +192,7 @@ export const MedicalCertificateModal = () => {
         inset: 0,
         backgroundColor: 'rgba(0, 21, 86, 0.75)',
         backdropFilter: 'blur(8px)',
-        zIndex: 25000,
+        zIndex: 9999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

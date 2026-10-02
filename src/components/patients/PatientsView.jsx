@@ -785,6 +785,25 @@ export const PatientsView = () => {
                                   </div>
 
                                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStartConsultation(pat)}
+                                      style={{
+                                        background: '#059669',
+                                        color: '#ffffff',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        padding: '0.35rem 0.65rem',
+                                        fontSize: '0.76rem',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}
+                                    >
+                                      <Stethoscope size={13} /> Iniciar Consulta
+                                    </button>
 
                                     <button
                                       type="button"

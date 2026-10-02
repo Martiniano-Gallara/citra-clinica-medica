@@ -263,6 +263,28 @@ export const Topbar = () => {
                 }}
                 className="dropdown-item"
                 onClick={() => {
+                  setConsultationPreloadData(null);
+                  setIsNewConsultationModalOpen(true);
+                  setShowQuickMenu(false);
+                }}
+              >
+                <Stethoscope size={18} color="#002182" />
+                <span>Nueva Consulta (HCE)</span>
+              </div>
+
+              <div
+                style={{
+                  padding: '0.65rem 0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.65rem',
+                  cursor: 'pointer',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '0.9rem',
+                  fontWeight: 600
+                }}
+                className="dropdown-item"
+                onClick={() => {
                   setArcaInvoicePreloadData(null);
                   setIsArcaInvoiceModalOpen(true);
                   setShowQuickMenu(false);
