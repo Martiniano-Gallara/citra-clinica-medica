@@ -203,7 +203,7 @@ export const PatientPortalView = () => {
                         {app.doctorName} — {app.specialtyName}
                       </div>
                       <div style={{ fontSize: '0.84rem', color: '#496386', marginTop: '2px' }}>
-                        Horario: {app.time} hs · Consultorio: {app.roomName}
+                        Horario: {app.time} hs
                       </div>
                       <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
                         Motivo: {app.reason}

@@ -626,7 +626,7 @@ export const PatientUnifiedPortal = () => {
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                             <MapPin size={15} color="#076ABC" />
-                            <span><strong>Lugar:</strong> {app.roomName || 'Consultorios CITRA'}</span>
+                            <span><strong>Sede:</strong> Sede Central CITRA</span>
                           </div>
                         </div>
                       </div>
@@ -703,7 +703,7 @@ export const PatientUnifiedPortal = () => {
                         {app.doctorName} · {app.doctorSpecialty}
                       </div>
                       <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>
-                        {app.date} a las {app.time} hs · {app.roomName || 'Consultorios CITRA'}
+                        {app.date} a las {app.time} hs · CITRA
                       </div>
                     </div>
                     <span
@@ -805,7 +805,6 @@ export const PatientUnifiedPortal = () => {
               <div><strong>Profesional:</strong> {selectedAppointmentForTicket.doctorName}</div>
               <div><strong>Especialidad:</strong> {selectedAppointmentForTicket.doctorSpecialty}</div>
               <div><strong>Fecha:</strong> {selectedAppointmentForTicket.date} a las {selectedAppointmentForTicket.time} hs</div>
-              <div><strong>Consultorio:</strong> {selectedAppointmentForTicket.roomName || 'Consultorio CITRA'}</div>
               <div><strong>Paciente:</strong> {selectedAppointmentForTicket.patientName} (DNI: {selectedAppointmentForTicket.patientDni})</div>
             </div>
 

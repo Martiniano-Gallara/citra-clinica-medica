@@ -312,7 +312,7 @@ export const UsersManager = () => {
                 <th style={{ padding: '0.95rem 1.25rem' }}>Usuario Institucional</th>
                 <th style={{ padding: '0.95rem 1.25rem' }}>Rol & Especialidad</th>
                 <th style={{ padding: '0.95rem 1.25rem' }}>Nivel de Acceso</th>
-                <th style={{ padding: '0.95rem 1.25rem' }}>Matrícula / SISA</th>
+                <th style={{ padding: '0.95rem 1.25rem' }}>Identificación / Perfil</th>
                 <th style={{ padding: '0.95rem 1.25rem' }}>Seguridad</th>
                 <th style={{ padding: '0.95rem 1.25rem', textAlign: 'center' }}>Acciones</th>
               </tr>
@@ -401,7 +401,7 @@ export const UsersManager = () => {
                                     borderRadius: '6px'
                                   }}
                                 >
-                                  {u.specialty?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : (u.specialty || 'Especialista')}
+                                  {u.specialty || 'Profesional Médico'}
                                 </span>
                               )}
                               {isCurrentLogged && (
@@ -652,7 +652,7 @@ export const UsersManager = () => {
 
                 <div>
                   <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155', display: 'block', marginBottom: '0.35rem' }}>
-                    Matrícula / SISA REFEPS
+                    Identificación / Código Interno
                   </label>
                   <input
                     type="text"
@@ -843,13 +843,13 @@ export const UsersManager = () => {
 
                 <div>
                   <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155', display: 'block', marginBottom: '0.35rem' }}>
-                    Matrícula / SISA REFEPS
+                    Identificación / Código Interno
                   </label>
                   <input
                     type="text"
                     value={newUserData.sisaLicense}
                     onChange={(e) => setNewUserData({ ...newUserData, sisaLicense: e.target.value })}
-                    placeholder="REFEPS-MP-XXXXX"
+                    placeholder="ID-PRO-XXXXX"
                     style={{
                       width: '100%',
                       padding: '0.65rem 0.85rem',

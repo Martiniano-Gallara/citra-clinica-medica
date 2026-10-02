@@ -236,9 +236,8 @@ export const AdminManagementHub = () => {
               label: 'Historial Clínico',
               icon: FileText,
               badge: pendingUrgentRequests > 0 ? `${pendingUrgentRequests} Urgente` : scopedConsultations.length
-            },
-            // { id: 'prescriptions', label: 'Mis Recetas (CUIR)', icon: Pill, badge: scopedElectronicPrescriptions.length },
-            { id: 'imaging', label: 'Estudios & Radiología', icon: Eye, badge: scopedImagingStudies.length }
+            }
+            // { id: 'prescriptions', label: 'Mis Recetas (CUIR)', icon: Pill, badge: scopedElectronicPrescriptions.length }
           ]
         },
         {
@@ -274,10 +273,7 @@ export const AdminManagementHub = () => {
       {
         title: 'ADMINISTRACIÓN Y FACTURACIÓN',
         items: [
-          { id: 'doctors', label: 'Cuerpo Médico', icon: Users, badge: activeDoctors },
-          { id: 'services', label: 'Especialidades & Servicios', icon: Stethoscope, badge: null },
-          { id: 'schedules', label: 'Horarios de Profesionales', icon: Clock, badge: null },
-          { id: 'insurances', label: 'Obras Sociales', icon: Shield, badge: healthInsurances.length },
+          { id: 'doctors', label: 'Cuerpo Médico & Servicios', icon: Users, badge: activeDoctors },
           { id: 'billing', label: 'Facturación / Caja', icon: CreditCard, badge: null },
           { id: 'reports', label: 'Métricas Operativas', icon: BarChart3, badge: null }
         ]
@@ -285,7 +281,6 @@ export const AdminManagementHub = () => {
       {
         title: 'GESTIÓN Y AUDITORÍA',
         items: [
-          { id: 'staff', label: 'Usuarios y Permisos', icon: UserCheck, badge: null },
           { id: 'audit', label: 'Auditoría', icon: ShieldAlert, badge: null }
         ]
       },
@@ -303,7 +298,13 @@ export const AdminManagementHub = () => {
   // RBAC Guard Effect: automatically redirect to dashboard if tab not permitted for current role
   React.useEffect(() => {
     if (authRole !== 'admin') return;
-    const allowedTabIds = navSections.flatMap((s) => s.items).map((i) => i.id);
+    const allowedTabIds = [
+      ...navSections.flatMap((s) => s.items).map((i) => i.id),
+      'services',
+      'schedules',
+      'insurances',
+      'staff'
+    ];
     if (!allowedTabIds.includes(activeTab)) {
       setActiveTab('dashboard');
     }
@@ -1241,175 +1242,9 @@ export const AdminManagementHub = () => {
                 </div>
               </div>
 
-              {/* Quick Actions & Recent Turnos */}
-              <div className="admin-shortcuts-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.75rem', marginBottom: '2rem' }}>
-                {/* Left: Atajos Rápidos de Administración */}
-                <div
-                  style={{
-                    background: '#ffffff',
-                    borderRadius: '18px',
-                    border: '1.5px solid #D2E3FC',
-                    padding: '1.75rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
-                  }}
-                >
-                  <h3 style={{ margin: '0 0 1.25rem', fontSize: '1.15rem', fontWeight: 800, color: '#002182' }}>
-                    Atajos Rápidos de Administración
-                  </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    <button
-                      onClick={() => setActiveTab('appointments')}
-                      style={{
-                        background: '#F5F8FE',
-                        border: '1px solid #D2E3FC',
-                        padding: '0.85rem 1rem',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontWeight: 700,
-                        color: '#002182',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#076ABC')}
-                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#D2E3FC')}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <CalendarCheck size={17} color="#076ABC" />
-                        Ver todos los turnos programados
-                      </span>
-                      <ChevronRight size={16} color="#7994B8" />
-                    </button>
-
-                    <button
-                      onClick={() => setActiveTab('patients')}
-                      style={{
-                        background: '#F5F8FE',
-                        border: '1px solid #D2E3FC',
-                        padding: '0.85rem 1rem',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontWeight: 700,
-                        color: '#002182',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#076ABC')}
-                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#D2E3FC')}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <Users size={17} color="#076ABC" />
-                        Padrón completo de pacientes
-                      </span>
-                      <ChevronRight size={16} color="#7994B8" />
-                    </button>
-
-                    <button
-                      onClick={() => setActiveTab('schedules')}
-                      style={{
-                        background: '#F5F8FE',
-                        border: '1px solid #D2E3FC',
-                        padding: '0.85rem 1rem',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontWeight: 700,
-                        color: '#002182',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#076ABC')}
-                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#D2E3FC')}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <Clock size={17} color="#076ABC" />
-                        Horarios y disponibilidad de médicos
-                      </span>
-                      <ChevronRight size={16} color="#7994B8" />
-                    </button>
-
-                    <button
-                      onClick={() => setActiveTab('insurances')}
-                      style={{
-                        background: '#F5F8FE',
-                        border: '1px solid #D2E3FC',
-                        padding: '0.85rem 1rem',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontWeight: 700,
-                        color: '#002182',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#076ABC')}
-                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#D2E3FC')}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <Shield size={17} color="#076ABC" />
-                        Obras sociales y convenios
-                      </span>
-                      <ChevronRight size={16} color="#7994B8" />
-                    </button>
-
-                    <button
-                      onClick={() => setActiveTab('billing')}
-                      style={{
-                        background: '#F5F8FE',
-                        border: '1px solid #D2E3FC',
-                        padding: '0.85rem 1rem',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontWeight: 700,
-                        color: '#002182',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#076ABC')}
-                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#D2E3FC')}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <CreditCard size={17} color="#076ABC" />
-                        Facturación y cobranza en caja
-                      </span>
-                      <ChevronRight size={16} color="#7994B8" />
-                    </button>
-
-                    <button
-                      onClick={() => setActiveTab('reports')}
-                      style={{
-                        background: '#F5F8FE',
-                        border: '1px solid #D2E3FC',
-                        padding: '0.85rem 1rem',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontWeight: 700,
-                        color: '#002182',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#076ABC')}
-                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#D2E3FC')}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <BarChart3 size={17} color="#076ABC" />
-                        Métricas y reportes de atención
-                      </span>
-                      <ChevronRight size={16} color="#7994B8" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Right: Últimos Turnos Registrados */}
+              {/* Últimos Turnos Registrados & Últimos Pacientes Registrados */}
+              <div className="admin-panels-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.75rem' }}>
+                {/* Left: Últimos Turnos Registrados */}
                 <div
                   style={{
                     background: '#ffffff',
@@ -1500,11 +1335,8 @@ export const AdminManagementHub = () => {
                     })}
                   </div>
                 </div>
-              </div>
 
-              {/* Pacientes Recientes & Consultorios Activos */}
-              <div className="admin-panels-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.75rem' }}>
-                {/* Pacientes Recientes */}
+                {/* Right: Últimos Pacientes Registrados */}
                 <div
                   style={{
                     background: '#ffffff',
@@ -1514,7 +1346,7 @@ export const AdminManagementHub = () => {
                     boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#002182' }}>
                       Últimos Pacientes Registrados
                     </h3>
@@ -1527,12 +1359,12 @@ export const AdminManagementHub = () => {
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                    {patients.slice(0, 4).map((p) => (
+                    {patients.slice(0, 5).map((p) => (
                       <div
                         key={p.id}
                         style={{
                           background: '#F5F8FE',
-                          padding: '0.8rem 1rem',
+                          padding: '0.85rem 1.1rem',
                           borderRadius: '12px',
                           display: 'flex',
                           alignItems: 'center',
@@ -1542,7 +1374,7 @@ export const AdminManagementHub = () => {
                       >
                         <div>
                           <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.88rem' }}>{p.name}</div>
-                          <div style={{ fontSize: '0.75rem', color: '#496386' }}>
+                          <div style={{ fontSize: '0.75rem', color: '#496386', marginTop: '2px' }}>
                             DNI {p.dni} • {p.insurance || 'Particular'}
                           </div>
                         </div>
@@ -1568,76 +1400,6 @@ export const AdminManagementHub = () => {
                     ))}
                   </div>
                 </div>
-
-                {/* Consultorios en Vivo */}
-                <div
-                  style={{
-                    background: '#ffffff',
-                    borderRadius: '18px',
-                    border: '1.5px solid #D2E3FC',
-                    padding: '1.75rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#002182' }}>
-                      Ocupación de Consultorios en Vivo
-                    </h3>
-                    <button
-                      onClick={() => setActiveTab('rooms')}
-                      style={{ background: 'none', border: 'none', color: '#076ABC', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}
-                    >
-                      Gestionar
-                    </button>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.65rem' }}>
-                    {(rooms || []).slice(0, 6).map((r) => {
-                      const isDisp = (r.status || 'Disponible') === 'Disponible';
-                      return (
-                        <div
-                          key={r.id}
-                          onClick={() => setActiveTab('rooms')}
-                          title={`Click para gestionar ${r.name}`}
-                          style={{
-                            background: '#F5F8FE',
-                            border: '1px solid #D2E3FC',
-                            borderRadius: '12px',
-                            padding: '0.75rem',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '0.25rem',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = '#076ABC';
-                            e.currentTarget.style.background = '#EBF3FD';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = '#D2E3FC';
-                            e.currentTarget.style.background = '#F5F8FE';
-                          }}
-                        >
-                          <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#002182' }}>
-                            {r.name.split('—')[0]}
-                          </div>
-                          <div style={{ fontSize: '0.72rem', color: '#496386' }}>{r.floor || 'Piso 1'}</div>
-                          <div
-                            style={{
-                              fontSize: '0.68rem',
-                              fontWeight: 800,
-                              color: isDisp ? '#065f46' : '#002182',
-                              marginTop: '0.2rem'
-                            }}
-                          >
-                            ● {r.status || 'Disponible'}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
               </div>
             </div>
           )}
@@ -1651,20 +1413,13 @@ export const AdminManagementHub = () => {
           {/* TAB 4: HISTORIAL CLÍNICO (Exclusivo Médico) */}
           {activeTab === 'clinical' && isDoctor && <ClinicalRecordsView />}
 
-          {/* TAB 5: PROFESIONALES (Secretaría) */}
-          {activeTab === 'doctors' && !isDoctor && <DoctorsManager />}
+          {/* TAB UNIFICADO: CUERPO MÉDICO, ESPECIALIDADES, OBRAS SOCIALES, HORARIOS Y PERMISOS (Secretaría) */}
+          {(activeTab === 'doctors' || activeTab === 'services' || activeTab === 'schedules' || activeTab === 'insurances' || activeTab === 'staff') && !isDoctor && (
+            <DoctorsManager initialTab={activeTab} />
+          )}
 
-          {/* TAB 6: ESPECIALIDADES (Secretaría) */}
-          {activeTab === 'services' && !isDoctor && <ServicesManager />}
-
-          {/* TAB 7: HORARIOS & DISPONIBILIDAD (Secretaría) */}
-          {activeTab === 'schedules' && !isDoctor && <SchedulesManager />}
-
-          {/* TAB 9: OBRAS SOCIALES (Secretaría) */}
-          {activeTab === 'insurances' && !isDoctor && <InsurancesView />}
-
-          {/* TAB 10: ESTUDIOS & DOCUMENTACIÓN (Exclusivo Médico) */}
-          {activeTab === 'imaging' && isDoctor && <ImagingView />}
+          {/* TAB 10: ESTUDIOS & DOCUMENTACIÓN (Oculto) */}
+          {/* {activeTab === 'imaging' && isDoctor && <ImagingView />} */}
 
           {/* TAB 11: RECETAS ELECTRÓNICAS (Exclusivo Médico - Oculto temporalmente) */}
           {/* {activeTab === 'prescriptions' && isDoctor && <PrescriptionsManager />} */}
@@ -1674,9 +1429,6 @@ export const AdminManagementHub = () => {
 
           {/* TAB 13: REPORTES & ESTADÍSTICAS */}
           {activeTab === 'reports' && <ReportsView />}
-
-          {/* TAB 15: USUARIOS Y PERMISOS (Secretaría) */}
-          {activeTab === 'staff' && !isDoctor && <UsersManager />}
 
           {/* TAB 16: CONFIGURACIÓN DE LA CLÍNICA / MI PERFIL */}
           {activeTab === 'settings' && <SettingsView />}

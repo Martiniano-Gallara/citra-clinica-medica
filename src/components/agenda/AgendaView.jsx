@@ -683,7 +683,7 @@ export const AgendaView = () => {
                             {app.doctorName}
                           </div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--c-primary)', fontWeight: 700 }}>
-                            {app.roomName} · {app.specialtyName?.split(' ')[0]}
+                            {app.specialtyName || 'Traumatología'}
                           </div>
                         </td>
 
@@ -868,7 +868,7 @@ export const AgendaView = () => {
                           {doc.name}
                         </div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--c-primary)', fontWeight: 600 }}>
-                          {(doc.specialtyName || doc.specialty)?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : (doc.specialtyName || doc.specialty)}
+                          {doc.specialtyName || doc.specialty || 'Especialidad'}
                         </div>
                       </div>
                     </div>
@@ -877,9 +877,6 @@ export const AgendaView = () => {
                       <span className="badge badge-teal" style={{ fontSize: '0.72rem' }}>
                         {docTodayApps.length} turnos
                       </span>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        {doc.roomName}
-                      </div>
                     </div>
                   </div>
                 );

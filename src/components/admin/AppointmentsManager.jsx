@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { getTodayArgentina, addDays } from '../../utils/dateUtils';
 import {
@@ -25,7 +25,8 @@ import {
   FileText,
   CreditCard,
   Shield,
-  Bell
+  Bell,
+  UserX
 } from 'lucide-react';
 import { Badge } from '../common/Badge';
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
@@ -48,7 +49,9 @@ export const AppointmentsManager = () => {
     setIsNewConsultationModalOpen,
     setConsultationPreloadData,
     sendWhatsAppReminder,
-    addToast
+    addToast,
+    setIsPatientFormModalOpen,
+    setPatientFormModalData
   } = useClinic();
 
   // Selected date (defaults to today's date dynamically, with full navigation)
@@ -67,12 +70,61 @@ export const AppointmentsManager = () => {
   // Manual appointment modal
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [manualDoctorId, setManualDoctorId] = useState(doctors[0]?.id || '');
+  const [manualPatientId, setManualPatientId] = useState('');
   const [manualPatientName, setManualPatientName] = useState('');
   const [manualPatientDni, setManualPatientDni] = useState('');
   const [manualPatientPhone, setManualPatientPhone] = useState('');
   const [manualPatientInsurance, setManualPatientInsurance] = useState('Particular');
   const [manualTime, setManualTime] = useState('09:00');
   const [manualReason, setManualReason] = useState('Consulta traumatológica');
+  const [patientSearchQuery, setPatientSearchQuery] = useState('');
+  const [isPatientDropdownOpen, setIsPatientDropdownOpen] = useState(false);
+
+  // Lock background scroll when manual appointment modal is open
+  useEffect(() => {
+    if (isManualModalOpen) {
+      const originalBodyOverflow = document.body.style.overflow;
+      const originalHtmlOverflow = document.documentElement.style.overflow;
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalBodyOverflow;
+        document.documentElement.style.overflow = originalHtmlOverflow;
+      };
+    }
+  }, [isManualModalOpen]);
+
+  // Filtered patients for dropdown selection (only already registered patients)
+  const availablePatients = useMemo(() => {
+    if (!patientSearchQuery.trim()) return (patients || []).slice(0, 15);
+    const q = patientSearchQuery.toLowerCase().trim();
+    return (patients || []).filter(
+      (p) =>
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.dni && p.dni.includes(q))
+    ).slice(0, 30);
+  }, [patients, patientSearchQuery]);
+
+  const handleSelectPatient = (p) => {
+    setManualPatientId(p.id);
+    setManualPatientName(p.name);
+    setManualPatientDni(p.dni || '');
+    setManualPatientPhone(p.phone || '');
+    setManualPatientInsurance(p.insuranceName || p.insurance || 'Particular');
+    setIsPatientDropdownOpen(false);
+    setPatientSearchQuery('');
+  };
+
+  const handleCloseManualModal = () => {
+    setIsManualModalOpen(false);
+    setManualPatientId('');
+    setManualPatientName('');
+    setManualPatientDni('');
+    setManualPatientPhone('');
+    setManualPatientInsurance('Particular');
+    setPatientSearchQuery('');
+    setIsPatientDropdownOpen(false);
+  };
 
   // Strict data scoping: Doctor ONLY sees their own appointments, Administrative sees all or filtered by doctor
   const effectiveAppointments = useMemo(() => {
@@ -98,14 +150,16 @@ export const AppointmentsManager = () => {
   // Operational KPIs for the selected date
   const totalCount = dateAppointments.length;
   const attendedCount = dateAppointments.filter((a) => a.status === 'atendido').length;
-  const pendingCount = dateAppointments.filter((a) => a.status !== 'atendido' && a.status !== 'cancelado').length;
+  const absentCount = dateAppointments.filter((a) => a.status === 'ausente').length;
+  const pendingCount = dateAppointments.filter((a) => a.status !== 'atendido' && a.status !== 'cancelado' && a.status !== 'ausente').length;
 
   // Filtered appointments based on search and status pill
   const filteredAppointments = useMemo(() => {
     return dateAppointments.filter((app) => {
       // Status pill match
-      if (statusFilter === 'pendientes' && (app.status === 'atendido' || app.status === 'cancelado')) return false;
+      if (statusFilter === 'pendientes' && (app.status === 'atendido' || app.status === 'cancelado' || app.status === 'ausente')) return false;
       if (statusFilter === 'atendidos' && app.status !== 'atendido') return false;
+      if (statusFilter === 'ausentes' && app.status !== 'ausente') return false;
 
       // Search query match
       if (searchQuery.trim() !== '') {
@@ -238,8 +292,8 @@ export const AppointmentsManager = () => {
   // Create manual appointment
   const handleCreateManualAppointment = (e) => {
     e.preventDefault();
-    if (!manualPatientName.trim() || !manualPatientDni.trim()) {
-      addToast('Datos incompletos', 'Ingrese nombre y DNI del paciente.', 'warning');
+    if (!manualPatientId || !manualPatientName.trim()) {
+      addToast('Paciente Requerido', 'Seleccione un paciente existente o cárguelo con el botón "+ Cargar nuevo paciente".', 'warning');
       return;
     }
 
@@ -271,7 +325,7 @@ export const AppointmentsManager = () => {
     }
 
     addAppointment({
-      patientId: `pat-${Date.now()}`,
+      patientId: manualPatientId,
       patientName: manualPatientName.trim(),
       patientDni: manualPatientDni.trim(),
       patientPhone: manualPatientPhone.trim(),
@@ -279,7 +333,7 @@ export const AppointmentsManager = () => {
       doctorId: assignedDoc.id,
       doctorName: assignedDoc.name,
       specialtyName: assignedDoc.specialty,
-      roomName: assignedDoc.roomName || 'Consultorio 101',
+      roomName: assignedDoc.roomName || 'CITRA',
       date: selectedDate,
       time: manualTime,
       duration,
@@ -290,10 +344,7 @@ export const AppointmentsManager = () => {
       isPaid: false
     });
 
-    setIsManualModalOpen(false);
-    setManualPatientName('');
-    setManualPatientDni('');
-    setManualPatientPhone('');
+    handleCloseManualModal();
     addToast('Turno Agendado', `Turno registrado con ${assignedDoc.name} para el ${selectedDate} a las ${manualTime} hs.`, 'success');
   };
 
@@ -302,19 +353,39 @@ export const AppointmentsManager = () => {
       return (
         <span
           style={{
-            background: '#f8fafc',
-            color: '#334155',
-            border: '1px solid #cbd5e1',
+            background: '#ecfdf5',
+            color: '#065f46',
+            border: '1px solid #a7f3d0',
             padding: '0.25rem 0.65rem',
             borderRadius: '100px',
             fontSize: '0.74rem',
-            fontWeight: 700,
+            fontWeight: 800,
             display: 'inline-flex',
             alignItems: 'center',
             gap: '4px'
           }}
         >
           <CheckCircle2 size={12} color="#059669" /> Atendido
+        </span>
+      );
+    }
+    if (status === 'ausente') {
+      return (
+        <span
+          style={{
+            background: '#fef2f2',
+            color: '#991b1b',
+            border: '1px solid #fecaca',
+            padding: '0.25rem 0.65rem',
+            borderRadius: '100px',
+            fontSize: '0.74rem',
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+        >
+          <X size={12} color="#dc2626" /> Ausente
         </span>
       );
     }
@@ -387,11 +458,11 @@ export const AppointmentsManager = () => {
         )}
       </div>
 
-      {/* 2. OPERATIONAL KPI STRIP: SOLO PENDIENTES DE HOY Y ATENDIDOS */}
+      {/* 2. OPERATIONAL KPI STRIP: PENDIENTES, ATENDIDOS Y AUSENTES */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
           gap: '1.25rem'
         }}
       >
@@ -446,6 +517,33 @@ export const AppointmentsManager = () => {
           </div>
           <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '0.45rem', fontWeight: 600 }}>
             Consultas completadas con éxito
+          </div>
+        </div>
+
+        {/* KPI 3: Ausentes */}
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            border: '1.5px solid #D2E3FC',
+            borderLeft: '4px solid #ef4444',
+            padding: '1.25rem 1.5rem',
+            boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Ausentes
+            </span>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <UserX size={18} />
+            </div>
+          </div>
+          <div style={{ fontSize: '2.1rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
+            {absentCount}
+          </div>
+          <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '0.45rem', fontWeight: 600 }}>
+            Pacientes que no asistieron al turno
           </div>
         </div>
       </div>
@@ -649,6 +747,22 @@ export const AppointmentsManager = () => {
             >
               Atendidos ({attendedCount})
             </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('ausentes')}
+              style={{
+                background: statusFilter === 'ausentes' ? '#002182' : 'transparent',
+                color: statusFilter === 'ausentes' ? '#ffffff' : '#475569',
+                border: 'none',
+                borderRadius: '7px',
+                padding: '0.35rem 0.75rem',
+                fontSize: '0.76rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              Ausentes ({absentCount})
+            </button>
           </div>
         </div>
       </div>
@@ -774,37 +888,133 @@ export const AppointmentsManager = () => {
                           >
                             {/* Actions for Administrative vs Doctor */}
                             {!isDoctor ? (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', justifyContent: 'flex-end' }}>
                                 {isAtendido ? (
-                                  <span
-                                    style={{
-                                      fontSize: '0.74rem',
-                                      fontWeight: 700,
-                                      color: '#64748b',
-                                      background: '#f1f5f9',
-                                      padding: '0.35rem 0.65rem',
-                                      borderRadius: '8px'
-                                    }}
-                                  >
-                                    Atendido
-                                  </span>
+                                  <>
+                                    <span
+                                      style={{
+                                        fontSize: '0.74rem',
+                                        fontWeight: 800,
+                                        color: '#065f46',
+                                        background: '#ecfdf5',
+                                        border: '1px solid #a7f3d0',
+                                        padding: '0.3rem 0.65rem',
+                                        borderRadius: '7px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}
+                                    >
+                                      <CheckCircle2 size={12} color="#059669" /> Atendido
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        updateAppointmentStatus(app.id, 'ausente');
+                                        addToast('Turno Ausente', `${app.patientName} marcado como ausente.`, 'warning');
+                                      }}
+                                      style={{
+                                        background: '#f8fafc',
+                                        color: '#64748b',
+                                        border: '1px solid #cbd5e1',
+                                        padding: '0.32rem 0.55rem',
+                                        borderRadius: '7px',
+                                        fontSize: '0.72rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer'
+                                      }}
+                                      title="Cambiar a Ausente"
+                                    >
+                                      Marcar Ausente
+                                    </button>
+                                  </>
+                                ) : app.status === 'ausente' ? (
+                                  <>
+                                    <span
+                                      style={{
+                                        fontSize: '0.74rem',
+                                        fontWeight: 800,
+                                        color: '#991b1b',
+                                        background: '#fef2f2',
+                                        border: '1px solid #fecaca',
+                                        padding: '0.3rem 0.65rem',
+                                        borderRadius: '7px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}
+                                    >
+                                      <X size={12} color="#dc2626" /> Ausente
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        updateAppointmentStatus(app.id, 'atendido');
+                                        addToast('Turno Atendido', `${app.patientName} marcado como atendido.`, 'success');
+                                      }}
+                                      style={{
+                                        background: '#ecfdf5',
+                                        color: '#065f46',
+                                        border: '1px solid #a7f3d0',
+                                        padding: '0.32rem 0.55rem',
+                                        borderRadius: '7px',
+                                        fontSize: '0.72rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer'
+                                      }}
+                                      title="Cambiar a Atendido"
+                                    >
+                                      Marcar Atendido
+                                    </button>
+                                  </>
                                 ) : (
-                                  <span
-                                    style={{
-                                      fontSize: '0.74rem',
-                                      fontWeight: 800,
-                                      color: '#b45309',
-                                      background: '#fef3c7',
-                                      border: '1px solid #fde68a',
-                                      padding: '0.35rem 0.65rem',
-                                      borderRadius: '8px',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '4px'
-                                    }}
-                                  >
-                                    Por Atender
-                                  </span>
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        updateAppointmentStatus(app.id, 'atendido');
+                                        addToast('Paciente Atendido', `${app.patientName} marcado como atendido.`, 'success');
+                                      }}
+                                      style={{
+                                        background: '#059669',
+                                        color: '#ffffff',
+                                        border: 'none',
+                                        padding: '0.35rem 0.65rem',
+                                        borderRadius: '7px',
+                                        fontSize: '0.74rem',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        boxShadow: '0 2px 5px rgba(5,150,105,0.2)'
+                                      }}
+                                    >
+                                      <CheckCircle2 size={12} /> Atendido
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        updateAppointmentStatus(app.id, 'ausente');
+                                        addToast('Paciente Ausente', `${app.patientName} marcado como ausente.`, 'warning');
+                                      }}
+                                      style={{
+                                        background: '#f8fafc',
+                                        color: '#64748b',
+                                        border: '1px solid #cbd5e1',
+                                        padding: '0.35rem 0.6rem',
+                                        borderRadius: '7px',
+                                        fontSize: '0.74rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '3px'
+                                      }}
+                                    >
+                                      <UserX size={12} /> Ausente
+                                    </button>
+                                  </>
                                 )}
                               </div>
                             ) : (
@@ -1083,14 +1293,14 @@ export const AppointmentsManager = () => {
             justifyContent: 'center',
             padding: '1.25rem'
           }}
-          onClick={() => setIsManualModalOpen(false)}
+          onClick={handleCloseManualModal}
         >
           <div
             style={{
               background: '#ffffff',
               borderRadius: '20px',
               width: '100%',
-              maxWidth: '500px',
+              maxWidth: '520px',
               boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
               overflow: 'hidden'
             }}
@@ -1111,24 +1321,25 @@ export const AppointmentsManager = () => {
                   {isDoctor ? 'Nuevo Turno Médico' : 'Asignar Turno a Profesional'}
                 </h3>
                 <div style={{ fontSize: '0.78rem', color: '#D2E3FC', marginTop: '2px' }}>
-                  {isDoctor ? (currentDoctor?.roomName || 'Consultorio') : 'Recepción CITRA'} · {selectedDate}
+                  {isDoctor ? (currentDoctor?.specialty || 'Staff Médico') : 'Recepción CITRA'} · {selectedDate}
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => setIsManualModalOpen(false)}
+                onClick={handleCloseManualModal}
                 style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer' }}
+                title="Cerrar ventana"
               >
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleCreateManualAppointment} style={{ padding: '1.5rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {/* Doctor Selector for Receptionist */}
                 {!isDoctor && (
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.35rem' }}>
                       Profesional / Médico Asignado *
                     </label>
                     <select
@@ -1150,33 +1361,200 @@ export const AppointmentsManager = () => {
                     >
                       {doctors.map((d) => (
                         <option key={d.id} value={d.id}>
-                          {d.name} — {d.specialty} ({d.roomName || 'Consultorio'})
+                          {d.name} — {d.specialty}
                         </option>
                       ))}
                     </select>
                   </div>
                 )}
 
+                {/* Patient Selector (Only registered patients) + 'Cargar nuevo paciente' */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                    Nombre y Apellido del Paciente *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={manualPatientName}
-                    onChange={(e) => setManualPatientName(e.target.value)}
-                    placeholder="Ej: Marcelo Delgado"
-                    style={{
-                      width: '100%',
-                      padding: '0.65rem 0.75rem',
-                      borderRadius: '8px',
-                      border: '1.5px solid #D2E3FC',
-                      fontSize: '0.85rem',
-                      outline: 'none',
-                      boxSizing: 'border-box'
-                    }}
-                  />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#002182' }}>
+                      Nombre y Apellido del Paciente *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (setPatientFormModalData) setPatientFormModalData(null);
+                        if (setIsPatientFormModalOpen) setIsPatientFormModalOpen(true);
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#076ABC',
+                        fontSize: '0.78rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        transition: 'background 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = '#eff6ff')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                    >
+                      <Plus size={13} strokeWidth={2.5} />
+                      <span>Cargar nuevo paciente</span>
+                    </button>
+                  </div>
+
+                  {manualPatientId ? (
+                    /* Patient selected state */
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.65rem 0.95rem',
+                        borderRadius: '10px',
+                        border: '1.5px solid #bfdbfe',
+                        background: '#f8fafc',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                        <div
+                          style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '50%',
+                            background: '#002182',
+                            color: '#ffffff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 800,
+                            fontSize: '0.82rem',
+                            flexShrink: 0
+                          }}
+                        >
+                          {manualPatientName.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a' }}>
+                            {manualPatientName}
+                          </div>
+                          <div style={{ fontSize: '0.76rem', color: '#64748b', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <span>DNI: <strong style={{ color: '#002182' }}>{manualPatientDni || '-'}</strong></span>
+                            <span>•</span>
+                            <span style={{ color: '#076ABC', fontWeight: 600 }}>{manualPatientInsurance || 'Particular'}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setManualPatientId('');
+                          setManualPatientName('');
+                          setManualPatientDni('');
+                          setManualPatientPhone('');
+                          setPatientSearchQuery('');
+                          setIsPatientDropdownOpen(true);
+                        }}
+                        style={{
+                          background: '#eff6ff',
+                          color: '#076ABC',
+                          border: '1px solid #bfdbfe',
+                          borderRadius: '6px',
+                          padding: '4px 10px',
+                          fontSize: '0.76rem',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Cambiar
+                      </button>
+                    </div>
+                  ) : (
+                    /* Search input with live dropdown of registered patients */
+                    <div style={{ position: 'relative' }}>
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          type="text"
+                          value={patientSearchQuery}
+                          onChange={(e) => {
+                            setPatientSearchQuery(e.target.value);
+                            setIsPatientDropdownOpen(true);
+                          }}
+                          onFocus={() => setIsPatientDropdownOpen(true)}
+                          placeholder="Buscar paciente existente por nombre o DNI..."
+                          style={{
+                            width: '100%',
+                            padding: '0.65rem 0.75rem 0.65rem 2.2rem',
+                            borderRadius: '8px',
+                            border: '1.5px solid #D2E3FC',
+                            fontSize: '0.85rem',
+                            outline: 'none',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                        <Search
+                          size={15}
+                          color="#7994B8"
+                          style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}
+                        />
+                      </div>
+
+                      {isPatientDropdownOpen && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            background: '#ffffff',
+                            borderRadius: '10px',
+                            border: '1.5px solid #D2E3FC',
+                            boxShadow: '0 10px 25px rgba(0, 33, 130, 0.15)',
+                            maxHeight: '200px',
+                            overflowY: 'auto',
+                            zIndex: 100,
+                            marginTop: '4px'
+                          }}
+                        >
+                          {availablePatients.length === 0 ? (
+                            <div style={{ padding: '0.85rem 1rem', textAlign: 'center', color: '#64748b', fontSize: '0.82rem' }}>
+                              No se encontraron pacientes registrados con ese nombre o DNI.
+                            </div>
+                          ) : (
+                            availablePatients.map((pat) => (
+                              <div
+                                key={pat.id}
+                                onClick={() => handleSelectPatient(pat)}
+                                style={{
+                                  padding: '0.65rem 0.95rem',
+                                  borderBottom: '1px solid #f1f5f9',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  transition: 'background 0.15s ease'
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = '#F5F8FE')}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+                              >
+                                <div>
+                                  <div style={{ fontWeight: 800, fontSize: '0.86rem', color: '#002182' }}>
+                                    {pat.name}
+                                  </div>
+                                  <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
+                                    DNI: {pat.dni || '-'} · {pat.insurance || pat.insuranceName || 'Particular'}
+                                  </div>
+                                </div>
+                                <span style={{ fontSize: '0.72rem', color: '#076ABC', fontWeight: 700 }}>
+                                  Seleccionar
+                                </span>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
@@ -1186,10 +1564,10 @@ export const AppointmentsManager = () => {
                     </label>
                     <input
                       type="text"
-                      required
+                      readOnly={Boolean(manualPatientId)}
                       value={manualPatientDni}
                       onChange={(e) => setManualPatientDni(e.target.value)}
-                      placeholder="Ej: 36.190.283"
+                      placeholder="Seleccione paciente"
                       style={{
                         width: '100%',
                         padding: '0.65rem 0.75rem',
@@ -1197,7 +1575,9 @@ export const AppointmentsManager = () => {
                         border: '1.5px solid #D2E3FC',
                         fontSize: '0.85rem',
                         outline: 'none',
-                        boxSizing: 'border-box'
+                        boxSizing: 'border-box',
+                        background: manualPatientId ? '#f8fafc' : '#ffffff',
+                        color: manualPatientId ? '#334155' : '#0f172a'
                       }}
                     />
                   </div>
@@ -1248,10 +1628,11 @@ export const AppointmentsManager = () => {
 
                   <div>
                     <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                      Horario
+                      Horario *
                     </label>
                     <input
                       type="time"
+                      required
                       value={manualTime}
                       onChange={(e) => setManualTime(e.target.value)}
                       style={{
@@ -1275,7 +1656,7 @@ export const AppointmentsManager = () => {
                     type="text"
                     value={manualReason}
                     onChange={(e) => setManualReason(e.target.value)}
-                    placeholder="Ej: Dolor articular en hombro derecho"
+                    placeholder="Dolor articular en hombro derecho"
                     style={{
                       width: '100%',
                       padding: '0.65rem 0.75rem',
@@ -1292,7 +1673,7 @@ export const AppointmentsManager = () => {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
                 <button
                   type="button"
-                  onClick={() => setIsManualModalOpen(false)}
+                  onClick={handleCloseManualModal}
                   style={{
                     background: '#f1f5f9',
                     border: '1px solid #cbd5e1',
@@ -1308,15 +1689,17 @@ export const AppointmentsManager = () => {
                 </button>
                 <button
                   type="submit"
+                  disabled={!manualPatientId}
                   style={{
-                    background: '#076ABC',
+                    background: manualPatientId ? '#076ABC' : '#94a3b8',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '8px',
                     padding: '0.6rem 1.2rem',
                     fontSize: '0.84rem',
                     fontWeight: 800,
-                    cursor: 'pointer'
+                    cursor: manualPatientId ? 'pointer' : 'not-allowed',
+                    transition: 'all 0.15s ease'
                   }}
                 >
                   Confirmar y Agendar

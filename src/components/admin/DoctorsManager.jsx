@@ -1,391 +1,1470 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import {
+  Users,
   Stethoscope,
+  Shield,
+  Clock,
   Plus,
   Edit2,
   Trash2,
-  Clock,
-  MapPin,
-  Award,
-  Star,
+  KeyRound,
   CheckCircle2,
   X,
-  User,
+  Lock,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  UserCheck,
+  ShieldCheck,
   DollarSign,
-  KeyRound,
-  Lock
+  Calendar,
+  Check,
+  ExternalLink,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 
-export const DoctorsManager = () => {
+export const DoctorsManager = ({ initialTab }) => {
   const {
-    doctors,
+    doctors = [],
     addDoctor,
     updateDoctor,
     deleteDoctor,
-    specialties,
+    specialties = [],
+    addSpecialty,
+    updateSpecialty,
+    deleteSpecialty,
+    healthInsurances = [],
+    addHealthInsurance,
+    updateHealthInsurance,
+    deleteHealthInsurance,
     users = [],
-    setUsers,
+    addUser,
     updateUser,
+    deleteUser,
     addToast,
     logAudit
   } = useClinic();
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // --- CABECERA: ESPECIALIDADES & OBRAS SOCIALES (SEPARADAS POR PESTAÑAS) ---
+  const determineInitialCabeceraTab = () => {
+    if (initialTab === 'services') return 'specialties';
+    if (initialTab === 'insurances') return 'insurances';
+    if (initialTab === 'staff') return 'adminUsers';
+    return 'specialties';
+  };
+
+  const [cabeceraTab, setCabeceraTab] = useState(determineInitialCabeceraTab);
+  const [isCabeceraCollapsed, setIsCabeceraCollapsed] = useState(false);
+
+  // --- FILTROS DE CUERPO MÉDICO ---
+  const [searchDocTerm, setSearchDocTerm] = useState('');
+  const [selectedSpecialtyFilter, setSelectedSpecialtyFilter] = useState('all');
+
+  // --- MODAL CUERPO MÉDICO (UNIFICADO: DATOS, HORARIOS, PERMISOS, OBRAS SOCIALES) ---
+  const [isDoctorModalOpen, setIsDoctorModalOpen] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState(null);
+  const [doctorModalTab, setDoctorModalTab] = useState('perfil'); // 'perfil' | 'horarios' | 'acceso' | 'coberturas'
 
-  // Password reset modal states (Secretaría puede cambiar contraseñas si alguno se olvida)
+  // Campos del formulario médico
+  const [docName, setDocName] = useState('');
+  const [docSpecialty, setDocSpecialty] = useState(specialties[0]?.name || 'Traumatología');
+  const [isCustomDocSpecialty, setIsCustomDocSpecialty] = useState(false);
+  const [customDocSpecialty, setCustomDocSpecialty] = useState('');
+  const [docPriceConsultation, setDocPriceConsultation] = useState(25000);
+  const [docActive, setDocActive] = useState(true);
+
+  // Horarios del médico
+  const [docWorkingDays, setDocWorkingDays] = useState(['Lunes', 'Miércoles', 'Viernes']);
+  const [docScheduleStart, setDocScheduleStart] = useState('08:30');
+  const [docScheduleEnd, setDocScheduleEnd] = useState('17:00');
+  const [docSlotDuration, setDocSlotDuration] = useState(30);
+  const [docScheduleDisplay, setDocScheduleDisplay] = useState('Consultar en secretaría');
+
+  // Acceso y Permisos del médico
+  const [docEmail, setDocEmail] = useState('');
+  const [docPassword, setDocPassword] = useState('citra2026');
+  const [docRole, setDocRole] = useState('Médico / Especialista');
+
+  // Obras sociales aceptadas por el médico
+  const [docAcceptedInsurances, setDocAcceptedInsurances] = useState([]);
+
+  // --- MODAL DE CONTRASEÑA RÁPIDA (RESET SECRETARÍA) ---
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [passwordDoctor, setPasswordDoctor] = useState(null);
-  const [newPasswordValue, setNewPasswordValue] = useState('citra2026');
+  const [passwordTargetDoctor, setPasswordTargetDoctor] = useState(null);
+  const [quickPasswordValue, setQuickPasswordValue] = useState('citra2026');
 
-  // Form states
-  const [name, setName] = useState('');
-  const [specialty, setSpecialty] = useState(specialties[0]?.name || 'Traumatología');
-  const [license, setLicense] = useState('');
-  const [roomName, setRoomName] = useState('Consultorio 101');
-  const [scheduleStart, setScheduleStart] = useState('08:30');
-  const [scheduleEnd, setScheduleEnd] = useState('17:00');
-  const [slotDuration, setSlotDuration] = useState(30);
-  const [priceConsultation, setPriceConsultation] = useState(25000);
-  const [selectedDays, setSelectedDays] = useState(['Lunes', 'Miércoles', 'Viernes']);
-  const [scheduleDisplay, setScheduleDisplay] = useState('');
+  // --- MODAL DE ESPECIALIDAD (CABECERA) ---
+  const [isSpecialtyModalOpen, setIsSpecialtyModalOpen] = useState(false);
+  const [editingSpecialty, setEditingSpecialty] = useState(null);
+  const [specialtyName, setSpecialtyName] = useState('');
+  const [specialtySelectedDocIds, setSpecialtySelectedDocIds] = useState([]);
+
+  // --- MODAL DE OBRA SOCIAL (CABECERA) ---
+  const [isInsuranceModalOpen, setIsInsuranceModalOpen] = useState(false);
+  const [editingInsurance, setEditingInsurance] = useState(null);
+  const [insuranceName, setInsuranceName] = useState('');
+  const [insuranceCopay, setInsuranceCopay] = useState(0);
+  const [insurancePlansInput, setInsurancePlansInput] = useState('');
+  const [insuranceStatus, setInsuranceStatus] = useState('Activa');
+
+  // --- MODAL DE USUARIO ADMINISTRATIVO (CABECERA) ---
+  const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
+  const [editingStaffUser, setEditingStaffUser] = useState(null);
+  const [staffName, setStaffName] = useState('');
+  const [staffEmail, setStaffEmail] = useState('');
+  const [staffRole, setStaffRole] = useState('Secretaría / Recepción');
+  const [staffPassword, setStaffPassword] = useState('citra2026');
 
   const allDays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-  const toggleDay = (day) => {
-    if (selectedDays.includes(day)) {
-      setSelectedDays(selectedDays.filter((d) => d !== day));
-    } else {
-      setSelectedDays([...selectedDays, day]);
+  // Universal background scroll lock
+  const isAnyModalOpen =
+    isDoctorModalOpen ||
+    isPasswordModalOpen ||
+    isSpecialtyModalOpen ||
+    isInsuranceModalOpen ||
+    isStaffModalOpen;
+
+  useEffect(() => {
+    if (isAnyModalOpen) {
+      const prevBody = document.body.style.overflow;
+      const prevHtml = document.documentElement.style.overflow;
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevBody;
+        document.documentElement.style.overflow = prevHtml;
+      };
     }
+  }, [isAnyModalOpen]);
+
+  // Sincronizar tab de cabecera si el prop cambia
+  useEffect(() => {
+    if (initialTab === 'services') setCabeceraTab('specialties');
+    if (initialTab === 'insurances') setCabeceraTab('insurances');
+    if (initialTab === 'staff') setCabeceraTab('adminUsers');
+  }, [initialTab]);
+
+  // Helper: Obtener doctores vinculados a una especialidad
+  const getDoctorsForSpecialty = (spec) => {
+    const sName = (spec.name || '').trim().toLowerCase();
+    return doctors.filter((d) => {
+      if (d.specialtyId && d.specialtyId === spec.id) return true;
+      if (Array.isArray(d.specialtyIds) && d.specialtyIds.includes(spec.id)) return true;
+      const docSpec = (d.specialty || '').trim().toLowerCase();
+      const docSpecName = (d.specialtyName || '').trim().toLowerCase();
+      if (docSpec && docSpec === sName) return true;
+      if (docSpecName && docSpecName === sName) return true;
+      return false;
+    });
   };
 
-  const handleChangeDoctorPassword = (e) => {
+  // Helper: Encontrar usuario asociado a un doctor
+  const getDoctorUser = (doc) => {
+    if (!doc) return null;
+    return (
+      users.find(
+        (u) =>
+          u.doctorId === doc.id ||
+          (u.email && doc.email && u.email.toLowerCase().trim() === doc.email.toLowerCase().trim()) ||
+          (u.name && doc.name && u.name.toLowerCase().trim() === doc.name.toLowerCase().trim())
+      ) || null
+    );
+  };
+
+  // Doctores filtrados
+  const filteredDoctors = useMemo(() => {
+    return doctors.filter((doc) => {
+      const cleanTerm = searchDocTerm.toLowerCase().trim();
+      const matchesSearch =
+        cleanTerm === '' ||
+        (doc.name || '').toLowerCase().includes(cleanTerm) ||
+        (doc.specialty || '').toLowerCase().includes(cleanTerm) ||
+        (doc.specialtyName || '').toLowerCase().includes(cleanTerm) ||
+        (doc.email || '').toLowerCase().includes(cleanTerm);
+
+      const matchesSpec =
+        selectedSpecialtyFilter === 'all' ||
+        (doc.specialty || '').toLowerCase() === selectedSpecialtyFilter.toLowerCase() ||
+        (doc.specialtyName || '').toLowerCase() === selectedSpecialtyFilter.toLowerCase() ||
+        doc.specialtyId === selectedSpecialtyFilter;
+
+      return matchesSearch && matchesSpec;
+    });
+  }, [doctors, searchDocTerm, selectedSpecialtyFilter]);
+
+  // Cuentas de usuarios administrativos (no médicos)
+  const adminUsersList = useMemo(() => {
+    return users.filter(
+      (u) => u.adminType === 'administrative' || u.adminType === 'superadmin' || !u.doctorId
+    );
+  }, [users]);
+
+  // --- HANDLERS: CUERPO MÉDICO ---
+  const handleOpenAddDoctor = () => {
+    setEditingDoctor(null);
+    setDoctorModalTab('perfil');
+    setDocName('');
+    setDocSpecialty(specialties[0]?.name || 'Traumatología');
+    setIsCustomDocSpecialty(false);
+    setCustomDocSpecialty('');
+    setDocPriceConsultation(25000);
+    setDocActive(true);
+    setDocWorkingDays(['Lunes', 'Miércoles', 'Viernes']);
+    setDocScheduleStart('08:30');
+    setDocScheduleEnd('17:00');
+    setDocSlotDuration(30);
+    setDocScheduleDisplay('Consultar en secretaría');
+    setDocEmail('');
+    setDocPassword('citra2026');
+    setDocRole('Médico / Especialista');
+    setDocAcceptedInsurances(healthInsurances.map((h) => h.id));
+    setIsDoctorModalOpen(true);
+  };
+
+  const handleOpenEditDoctor = (doc) => {
+    setEditingDoctor(doc);
+    setDoctorModalTab('perfil');
+    setDocName(doc.name || '');
+
+    const existingSpec = specialties.find(
+      (s) => s.name.toLowerCase() === (doc.specialty || doc.specialtyName || '').toLowerCase()
+    );
+    if (existingSpec) {
+      setDocSpecialty(existingSpec.name);
+      setIsCustomDocSpecialty(false);
+      setCustomDocSpecialty('');
+    } else {
+      setIsCustomDocSpecialty(true);
+      setCustomDocSpecialty(doc.specialty || doc.specialtyName || '');
+      setDocSpecialty(specialties[0]?.name || 'Traumatología');
+    }
+
+    setDocPriceConsultation(doc.priceConsultation || 25000);
+    setDocActive(doc.active !== false);
+    setDocWorkingDays(doc.workingDays || ['Lunes', 'Miércoles', 'Viernes']);
+    setDocScheduleStart(doc.scheduleStart || '08:30');
+    setDocScheduleEnd(doc.scheduleEnd || '17:00');
+    setDocSlotDuration(doc.slotDuration || 30);
+    setDocScheduleDisplay(doc.scheduleDisplay || 'Consultar en secretaría');
+
+    const matchedUser = getDoctorUser(doc);
+    setDocEmail(matchedUser?.email || doc.email || `${(doc.name || 'doctor').toLowerCase().replace(/[^a-z]/g, '')}@citra.com.ar`);
+    setDocPassword(matchedUser?.password || 'citra2026');
+    setDocRole(matchedUser?.role || `Médico ${doc.specialty || 'Profesional'}`);
+    setDocAcceptedInsurances(doc.acceptedInsurances || healthInsurances.map((h) => h.id));
+    setIsDoctorModalOpen(true);
+  };
+
+  const toggleDocWorkingDay = (day) => {
+    setDocWorkingDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  };
+
+  const toggleDocAcceptedInsurance = (insId) => {
+    setDocAcceptedInsurances((prev) =>
+      prev.includes(insId) ? prev.filter((id) => id !== insId) : [...prev, insId]
+    );
+  };
+
+  const handleSaveDoctor = (e) => {
     e.preventDefault();
-    if (!passwordDoctor) return;
-    const newPwd = newPasswordValue.trim() || 'citra2026';
+    if (!docName.trim()) {
+      addToast('Nombre Requerido', 'Ingrese el nombre del profesional.', 'warning');
+      return;
+    }
+
+    const finalSpecialty = isCustomDocSpecialty ? customDocSpecialty.trim() : docSpecialty;
+    if (!finalSpecialty) return;
+
+    // Verificar si la especialidad existe en el catálogo o crearla
+    let matchedSpec = specialties.find(
+      (s) => s.name.toLowerCase() === finalSpecialty.toLowerCase()
+    );
+    if (!matchedSpec) {
+      const newSpecId = `esp-${Date.now()}`;
+      matchedSpec = {
+        id: newSpecId,
+        name: finalSpecialty,
+        color: '#076ABC',
+        category: 'Especialidades',
+        defaultDuration: Number(docSlotDuration) || 30
+      };
+      if (typeof addSpecialty === 'function') {
+        addSpecialty(matchedSpec);
+      }
+    }
+
+    const payload = {
+      name: docName.trim(),
+      specialty: finalSpecialty,
+      specialtyName: finalSpecialty,
+      specialtyId: matchedSpec?.id || 'esp-1',
+      priceConsultation: Number(docPriceConsultation),
+      active: docActive,
+      workingDays: docWorkingDays,
+      scheduleStart: docScheduleStart,
+      scheduleEnd: docScheduleEnd,
+      slotDuration: Number(docSlotDuration),
+      scheduleDisplay: docScheduleDisplay.trim() || undefined,
+      email: docEmail.trim(),
+      acceptedInsurances: docAcceptedInsurances,
+      license: '',
+      roomName: ''
+    };
+
+    let targetDoctorId = editingDoctor ? editingDoctor.id : null;
+
+    if (editingDoctor) {
+      updateDoctor(editingDoctor.id, payload);
+    } else {
+      const created = addDoctor(payload);
+      targetDoctorId = created?.id;
+    }
+
+    // Sincronizar cuenta de usuario y contraseña
+    const cleanEmail = docEmail.trim() || `${docName.toLowerCase().replace(/[^a-z]/g, '')}@citra.com.ar`;
+    const cleanPassword = docPassword.trim() || 'citra2026';
+    const effectiveDocId = editingDoctor ? editingDoctor.id : targetDoctorId;
 
     const matchedUser = users.find(
       (u) =>
-        u.doctorId === passwordDoctor.id ||
-        (u.email && passwordDoctor.email && u.email.toLowerCase() === passwordDoctor.email.toLowerCase()) ||
-        (u.name && passwordDoctor.name && u.name.toLowerCase() === passwordDoctor.name.toLowerCase())
+        (effectiveDocId && u.doctorId === effectiveDocId) ||
+        (u.email && u.email.toLowerCase() === cleanEmail.toLowerCase())
     );
 
-    if (matchedUser && typeof updateUser === 'function') {
-      updateUser(matchedUser.id, { password: newPwd });
-    } else if (setUsers) {
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.doctorId === passwordDoctor.id || (u.name && u.name.includes(passwordDoctor.name))
-            ? { ...u, password: newPwd }
-            : u
-        )
-      );
+    if (matchedUser) {
+      updateUser(matchedUser.id, {
+        name: docName.trim(),
+        email: cleanEmail,
+        password: cleanPassword,
+        role: docRole.trim() || `Médico ${finalSpecialty}`,
+        specialty: finalSpecialty,
+        doctorId: effectiveDocId,
+        status: docActive ? 'Activo' : 'Inactivo'
+      });
+    } else if (addUser) {
+      addUser({
+        name: docName.trim(),
+        fullName: docName.trim(),
+        email: cleanEmail,
+        password: cleanPassword,
+        role: docRole.trim() || `Médico ${finalSpecialty}`,
+        adminType: 'doctor',
+        doctorId: effectiveDocId,
+        specialty: finalSpecialty,
+        status: docActive ? 'Activo' : 'Inactivo'
+      });
     }
 
-    if (updateDoctor) {
-      updateDoctor(passwordDoctor.id, { password: newPwd });
-    }
+    addToast(
+      editingDoctor ? 'Profesional Actualizado' : 'Profesional Registrado',
+      `Ficha, horarios, permisos y accesos de ${docName} guardados con éxito.`,
+      'success'
+    );
 
-    if (addToast) {
-      addToast('Contraseña Actualizada', `Nueva clave asignada al ${passwordDoctor.name}.`, 'success');
-    }
-    if (logAudit) {
-      logAudit('UPDATE_PASSWORD', 'Cuerpo Médico', passwordDoctor.email || passwordDoctor.name, `Secretaría actualizó la contraseña de acceso para ${passwordDoctor.name}.`);
-    }
-
-    setIsPasswordModalOpen(false);
-    setPasswordDoctor(null);
-    setNewPasswordValue('citra2026');
+    setIsDoctorModalOpen(false);
   };
 
-  const handleOpenAdd = () => {
-    setEditingDoctor(null);
-    setName('');
-    setSpecialty(specialties[0]?.name || 'Traumatología');
-    setLicense('');
-    setRoomName('Consultorio 101');
-    setScheduleStart('08:30');
-    setScheduleEnd('17:00');
-    setSlotDuration(30);
-    setPriceConsultation(25000);
-    setSelectedDays(['Lunes', 'Miércoles', 'Viernes']);
-    setScheduleDisplay('Consultar en secretaría');
-    setIsModalOpen(true);
+  const handleDeleteDoctor = () => {
+    if (!editingDoctor) return;
+    if (window.confirm(`¿Está seguro de dar de baja al profesional ${editingDoctor.name}?`)) {
+      deleteDoctor(editingDoctor.id);
+      setIsDoctorModalOpen(false);
+    }
   };
 
-  const handleOpenEdit = (doc) => {
-    setEditingDoctor(doc);
-    setName(doc.name);
-    setSpecialty(doc.specialty);
-    setLicense(doc.license || '');
-    setRoomName(doc.roomName || 'Consultorio 101');
-    setScheduleStart(doc.scheduleStart || '08:30');
-    setScheduleEnd(doc.scheduleEnd || '17:00');
-    setSlotDuration(doc.slotDuration || 30);
-    setPriceConsultation(doc.priceConsultation || 25000);
-    setSelectedDays(doc.workingDays || ['Lunes', 'Miércoles', 'Viernes']);
-    setScheduleDisplay(doc.scheduleDisplay || '');
-    setIsModalOpen(true);
+  // --- HANDLERS: CONTRASEÑA RÁPIDA ---
+  const handleOpenQuickPassword = (doc) => {
+    setPasswordTargetDoctor(doc);
+    const matched = getDoctorUser(doc);
+    setQuickPasswordValue(matched?.password || 'citra2026');
+    setIsPasswordModalOpen(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSaveQuickPassword = (e) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!passwordTargetDoctor) return;
+    const newPwd = quickPasswordValue.trim() || 'citra2026';
+    const matched = getDoctorUser(passwordTargetDoctor);
 
-    const matchedSpec = specialties.find((s) => s.name === specialty);
-
-    if (editingDoctor) {
-      updateDoctor(editingDoctor.id, {
-        name: name.trim(),
-        specialty,
-        specialtyId: matchedSpec?.id || 'spec-1',
-        license: license.trim(),
-        roomName,
-        scheduleStart,
-        scheduleEnd,
-        slotDuration: Number(slotDuration),
-        priceConsultation: Number(priceConsultation),
-        workingDays: selectedDays,
-        scheduleDisplay: scheduleDisplay.trim() || undefined
-      });
-    } else {
-      addDoctor({
-        name: name.trim(),
-        specialty,
-        specialtyId: matchedSpec?.id || 'spec-1',
-        license: license.trim() || 'MN 114829',
-        roomName,
-        scheduleStart,
-        scheduleEnd,
-        slotDuration: Number(slotDuration),
-        priceConsultation: Number(priceConsultation),
-        workingDays: selectedDays,
-        scheduleDisplay: scheduleDisplay.trim() || undefined
+    if (matched && typeof updateUser === 'function') {
+      updateUser(matched.id, { password: newPwd });
+    } else if (typeof addUser === 'function') {
+      addUser({
+        name: passwordTargetDoctor.name,
+        email: passwordTargetDoctor.email || `${passwordTargetDoctor.name.toLowerCase().replace(/[^a-z]/g, '')}@citra.com.ar`,
+        password: newPwd,
+        adminType: 'doctor',
+        doctorId: passwordTargetDoctor.id,
+        role: `Médico ${passwordTargetDoctor.specialty || 'Profesional'}`
       });
     }
 
-    setIsModalOpen(false);
+    if (typeof updateDoctor === 'function') {
+      updateDoctor(passwordTargetDoctor.id, { password: newPwd });
+    }
+
+    addToast('Contraseña Actualizada', `Nueva clave asignada a ${passwordTargetDoctor.name}.`, 'success');
+    setIsPasswordModalOpen(false);
+    setPasswordTargetDoctor(null);
+  };
+
+  // --- HANDLERS: ESPECIALIDADES EN CABECERA ---
+  const handleOpenAddSpecialty = () => {
+    setEditingSpecialty(null);
+    setSpecialtyName('');
+    setSpecialtySelectedDocIds([]);
+    setIsSpecialtyModalOpen(true);
+  };
+
+  const handleOpenEditSpecialty = (spec) => {
+    setEditingSpecialty(spec);
+    setSpecialtyName(spec.name || '');
+    const assigned = getDoctorsForSpecialty(spec).map((d) => d.id);
+    setSpecialtySelectedDocIds(assigned);
+    setIsSpecialtyModalOpen(true);
+  };
+
+  const toggleSpecialtyDoc = (docId) => {
+    setSpecialtySelectedDocIds((prev) =>
+      prev.includes(docId) ? prev.filter((id) => id !== docId) : [...prev, docId]
+    );
+  };
+
+  const handleSaveSpecialty = (e) => {
+    e.preventDefault();
+    const clean = specialtyName.trim();
+    if (!clean) return;
+
+    let targetSpecId = editingSpecialty ? editingSpecialty.id : `esp-${Date.now()}`;
+
+    if (editingSpecialty) {
+      updateSpecialty(editingSpecialty.id, { name: clean });
+    } else {
+      addSpecialty({
+        id: targetSpecId,
+        name: clean,
+        color: '#076ABC',
+        category: 'Especialidades',
+        defaultDuration: 30
+      });
+    }
+
+    // Vincular / desvincular doctores
+    if (typeof updateDoctor === 'function') {
+      const oldName = editingSpecialty ? editingSpecialty.name.trim().toLowerCase() : '';
+      doctors.forEach((doc) => {
+        const isSelected = specialtySelectedDocIds.includes(doc.id);
+        const matchesOld =
+          doc.specialtyId === targetSpecId ||
+          (oldName && (
+            (doc.specialty && doc.specialty.trim().toLowerCase() === oldName) ||
+            (doc.specialtyName && doc.specialtyName.trim().toLowerCase() === oldName)
+          ));
+
+        if (isSelected) {
+          updateDoctor(doc.id, {
+            specialty: clean,
+            specialtyName: clean,
+            specialtyId: targetSpecId
+          });
+        } else if (!isSelected && matchesOld) {
+          updateDoctor(doc.id, {
+            specialty: 'Medicina General',
+            specialtyName: 'Medicina General',
+            specialtyId: 'spec-general'
+          });
+        }
+      });
+    }
+
+    setIsSpecialtyModalOpen(false);
+  };
+
+  const handleDeleteSpecialtyAction = () => {
+    if (!editingSpecialty) return;
+    if (window.confirm(`¿Está seguro de eliminar la especialidad "${editingSpecialty.name}"?`)) {
+      deleteSpecialty(editingSpecialty.id);
+      setIsSpecialtyModalOpen(false);
+    }
+  };
+
+  // --- HANDLERS: OBRAS SOCIALES EN CABECERA ---
+  const handleOpenAddInsurance = () => {
+    setEditingInsurance(null);
+    setInsuranceName('');
+    setInsuranceCopay(0);
+    setInsurancePlansInput('Planes Generales');
+    setInsuranceStatus('Activa');
+    setIsInsuranceModalOpen(true);
+  };
+
+  const handleOpenEditInsurance = (hi) => {
+    setEditingInsurance(hi);
+    setInsuranceName(hi.name || '');
+    setInsuranceCopay(hi.copay || 0);
+    setInsurancePlansInput((hi.plans || []).join(', '));
+    setInsuranceStatus(hi.status || 'Activa');
+    setIsInsuranceModalOpen(true);
+  };
+
+  const handleSaveInsurance = (e) => {
+    e.preventDefault();
+    const cleanName = insuranceName.trim();
+    if (!cleanName) return;
+
+    const plansArray = insurancePlansInput
+      .split(',')
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    const payload = {
+      name: cleanName,
+      copay: Number(insuranceCopay) || 0,
+      plans: plansArray.length > 0 ? plansArray : ['General'],
+      status: insuranceStatus
+    };
+
+    if (editingInsurance) {
+      updateHealthInsurance(editingInsurance.id, payload);
+    } else {
+      addHealthInsurance(payload);
+    }
+
+    setIsInsuranceModalOpen(false);
+  };
+
+  const handleDeleteInsuranceAction = () => {
+    if (!editingInsurance) return;
+    if (window.confirm(`¿Está seguro de eliminar la obra social "${editingInsurance.name}"?`)) {
+      deleteHealthInsurance(editingInsurance.id);
+      setIsInsuranceModalOpen(false);
+    }
+  };
+
+  // --- HANDLERS: USUARIOS ADMINISTRATIVOS (CABECERA) ---
+  const handleOpenAddStaff = () => {
+    setEditingStaffUser(null);
+    setStaffName('');
+    setStaffEmail('');
+    setStaffRole('Secretaría / Recepción');
+    setStaffPassword('citra2026');
+    setIsStaffModalOpen(true);
+  };
+
+  const handleOpenEditStaff = (user) => {
+    setEditingStaffUser(user);
+    setStaffName(user.name || '');
+    setStaffEmail(user.email || '');
+    setStaffRole(user.role || 'Secretaría / Recepción');
+    setStaffPassword(user.password || 'citra2026');
+    setIsStaffModalOpen(true);
+  };
+
+  const handleSaveStaffUser = (e) => {
+    e.preventDefault();
+    if (!staffName.trim() || !staffEmail.trim()) {
+      addToast('Campos Requeridos', 'Ingrese nombre y correo electrónico.', 'warning');
+      return;
+    }
+
+    const payload = {
+      name: staffName.trim(),
+      fullName: staffName.trim(),
+      email: staffEmail.trim().toLowerCase(),
+      role: staffRole.trim(),
+      adminType: 'administrative',
+      password: staffPassword.trim() || 'citra2026',
+      status: 'Activo'
+    };
+
+    if (editingStaffUser) {
+      updateUser(editingStaffUser.id, payload);
+      addToast('Usuario Actualizado', `Datos de ${staffName} guardados.`, 'success');
+    } else if (addUser) {
+      addUser(payload);
+      addToast('Usuario Creado', `Cuenta de ${staffName} habilitada.`, 'success');
+    }
+
+    setIsStaffModalOpen(false);
   };
 
   return (
-    <div>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#002182', margin: '0 0 0.25rem' }}>
-            Gestión de Profesionales Médicos
-          </h2>
-          <p style={{ margin: 0, fontSize: '0.85rem', color: '#496386' }}>
-            Alta de profesionales, asignación de consultorios, matrículas y disponibilidad horaria.
-          </p>
-        </div>
-
-        <button
-          onClick={handleOpenAdd}
-          style={{
-            background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
-            color: '#ffffff',
-            border: 'none',
-            padding: '0.65rem 1.25rem',
-            borderRadius: '10px',
-            fontSize: '0.88rem',
-            fontWeight: 800,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.45rem',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)'
-          }}
-        >
-          <Plus size={18} />
-          Nuevo Profesional
-        </button>
-      </div>
-
-      {/* Grid of Doctors */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%' }}>
+      {/* ========================================================================= */}
+      {/* 1. CABECERA UNIFICADA: ESPECIALIDADES & OBRAS SOCIALES (SEPARADAS POR PESTAÑAS) */}
+      {/* ========================================================================= */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-          gap: '1.5rem'
+          background: '#ffffff',
+          borderRadius: '16px',
+          border: '1.5px solid #D2E3FC',
+          padding: '1.25rem',
+          boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)',
+          transition: 'all 0.2s ease'
         }}
       >
-        {doctors.map((doc) => (
+        {/* Cabecera Top Bar: Título y Selector de Pestañas */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '1rem',
+            borderBottom: isCabeceraCollapsed ? 'none' : '1px solid #EDF3FD',
+            paddingBottom: isCabeceraCollapsed ? 0 : '1rem'
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#002182', margin: 0 }}>
+                Catálogo Institucional & Prestaciones
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsCabeceraCollapsed(!isCabeceraCollapsed)}
+                style={{
+                  background: '#F0F5FF',
+                  border: '1px solid #D2E3FC',
+                  color: '#076ABC',
+                  padding: '0.2rem 0.6rem',
+                  borderRadius: '6px',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem'
+                }}
+              >
+                {isCabeceraCollapsed ? (
+                  <>
+                    <ChevronDown size={14} /> Ver Catálogo
+                  </>
+                ) : (
+                  <>
+                    <ChevronUp size={14} /> Minimizar
+                  </>
+                )}
+              </button>
+            </div>
+            <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', color: '#496386' }}>
+              Gestión centralizada de especialidades médicas, convenios con obras sociales y cuentas administrativas.
+            </p>
+          </div>
+
+          {/* Pestañas de Cabecera */}
           <div
-            key={doc.id}
             style={{
-              background: '#ffffff',
-              borderRadius: '18px',
-              border: '1.5px solid #D2E3FC',
-              padding: '1.5rem',
-              boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)',
               display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between'
+              background: '#F5F8FE',
+              padding: '0.3rem',
+              borderRadius: '10px',
+              border: '1px solid #D2E3FC',
+              gap: '0.35rem'
             }}
           >
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setCabeceraTab('specialties');
+                setIsCabeceraCollapsed(false);
+              }}
+              style={{
+                background: cabeceraTab === 'specialties' ? '#002182' : 'transparent',
+                color: cabeceraTab === 'specialties' ? '#ffffff' : '#002182',
+                border: 'none',
+                padding: '0.45rem 0.85rem',
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <Stethoscope size={15} />
+              Especialidades ({specialties.length})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setCabeceraTab('insurances');
+                setIsCabeceraCollapsed(false);
+              }}
+              style={{
+                background: cabeceraTab === 'insurances' ? '#002182' : 'transparent',
+                color: cabeceraTab === 'insurances' ? '#ffffff' : '#002182',
+                border: 'none',
+                padding: '0.45rem 0.85rem',
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <Shield size={15} />
+              Obras Sociales ({healthInsurances.length})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setCabeceraTab('adminUsers');
+                setIsCabeceraCollapsed(false);
+              }}
+              style={{
+                background: cabeceraTab === 'adminUsers' ? '#002182' : 'transparent',
+                color: cabeceraTab === 'adminUsers' ? '#ffffff' : '#002182',
+                border: 'none',
+                padding: '0.45rem 0.85rem',
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <UserCheck size={15} />
+              Cuentas Secretaría ({adminUsersList.length})
+            </button>
+          </div>
+        </div>
+
+        {/* Contenido Desplegable de la Cabecera */}
+        {!isCabeceraCollapsed && (
+          <div style={{ marginTop: '1rem' }}>
+            {/* SUB-PESTAÑA 1: ESPECIALIDADES MÉDICAS (ULTRA COMPRIMIDAS) */}
+            {cabeceraTab === 'specialties' && (
+              <div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '0.85rem',
+                    flexWrap: 'wrap',
+                    gap: '0.5rem'
+                  }}
+                >
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#076ABC' }}>
+                    Catálogo de Especialidades vinculadas con profesionales:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleOpenAddSpecialty}
+                    style={{
+                      background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '0.45rem 0.9rem',
+                      borderRadius: '8px',
+                      fontSize: '0.78rem',
+                      fontWeight: 800,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Plus size={15} /> Nueva Especialidad
+                  </button>
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
+                    gap: '0.75rem',
+                    maxHeight: '260px',
+                    overflowY: 'auto',
+                    paddingRight: '0.25rem'
+                  }}
+                >
+                  {specialties.map((spec) => {
+                    const assigned = getDoctorsForSpecialty(spec);
+                    const count = assigned.length;
+                    return (
+                      <div
+                        key={spec.id}
+                        style={{
+                          background: '#F9FAFE',
+                          borderRadius: '10px',
+                          border: '1.5px solid #D2E3FC',
+                          padding: '0.75rem 0.85rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          gap: '0.6rem'
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '0.5rem'
+                          }}
+                        >
+                          <h4
+                            style={{
+                              margin: 0,
+                              fontSize: '0.88rem',
+                              fontWeight: 800,
+                              color: '#002182',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}
+                            title={spec.name}
+                          >
+                            {spec.name}
+                          </h4>
+                          <span
+                            style={{
+                              fontSize: '0.66rem',
+                              fontWeight: 800,
+                              padding: '0.12rem 0.45rem',
+                              borderRadius: '100px',
+                              background: count > 0 ? '#EBF3FD' : '#F1F5F9',
+                              color: count > 0 ? '#002182' : '#64748B',
+                              border: count > 0 ? '1px solid #BFDBFE' : '1px solid #E2E8F0',
+                              flexShrink: 0
+                            }}
+                          >
+                            {count} {count === 1 ? 'profesional' : 'profesionales'}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditSpecialty(spec)}
+                          style={{
+                            width: '100%',
+                            background: '#ffffff',
+                            border: '1px solid #D2E3FC',
+                            color: '#002182',
+                            padding: '0.38rem',
+                            borderRadius: '6px',
+                            fontWeight: 700,
+                            fontSize: '0.78rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#076ABC';
+                            e.currentTarget.style.color = '#ffffff';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#ffffff';
+                            e.currentTarget.style.color = '#002182';
+                          }}
+                        >
+                          Editar
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* SUB-PESTAÑA 2: OBRAS SOCIALES & PREPAGAS */}
+            {cabeceraTab === 'insurances' && (
+              <div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '0.85rem',
+                    flexWrap: 'wrap',
+                    gap: '0.5rem'
+                  }}
+                >
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#076ABC' }}>
+                    Convenios activos con obras sociales y sistemas de salud:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleOpenAddInsurance}
+                    style={{
+                      background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '0.45rem 0.9rem',
+                      borderRadius: '8px',
+                      fontSize: '0.78rem',
+                      fontWeight: 800,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Plus size={15} /> Nueva Obra Social
+                  </button>
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                    gap: '0.75rem',
+                    maxHeight: '260px',
+                    overflowY: 'auto',
+                    paddingRight: '0.25rem'
+                  }}
+                >
+                  {healthInsurances.map((hi) => {
+                    const docsAccepting = doctors.filter((d) =>
+                      (d.acceptedInsurances || []).includes(hi.id)
+                    ).length;
+
+                    return (
+                      <div
+                        key={hi.id}
+                        style={{
+                          background: '#F9FAFE',
+                          borderRadius: '10px',
+                          border: '1.5px solid #D2E3FC',
+                          padding: '0.75rem 0.85rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          gap: '0.6rem'
+                        }}
+                      >
+                        <div>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '0.5rem',
+                              marginBottom: '0.35rem'
+                            }}
+                          >
+                            <h4
+                              style={{
+                                margin: 0,
+                                fontSize: '0.9rem',
+                                fontWeight: 800,
+                                color: '#002182',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                              }}
+                            >
+                              {hi.name}
+                            </h4>
+                            <span
+                              style={{
+                                fontSize: '0.64rem',
+                                fontWeight: 800,
+                                padding: '0.12rem 0.45rem',
+                                borderRadius: '100px',
+                                background: hi.status !== 'Inactiva' ? '#d1fae5' : '#fee2e2',
+                                color: hi.status !== 'Inactiva' ? '#065f46' : '#991b1b'
+                              }}
+                            >
+                              {hi.status || 'Activa'}
+                            </span>
+                          </div>
+
+                          <div style={{ fontSize: '0.74rem', color: '#496386', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                            <span>
+                              <strong>Copago:</strong> {hi.copay > 0 ? `$${hi.copay.toLocaleString('es-AR')}` : 'Sin copago / Directo'}
+                            </span>
+                            <span>
+                              <strong>Atienden:</strong> {docsAccepting} profesionales
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditInsurance(hi)}
+                          style={{
+                            width: '100%',
+                            background: '#ffffff',
+                            border: '1px solid #D2E3FC',
+                            color: '#002182',
+                            padding: '0.38rem',
+                            borderRadius: '6px',
+                            fontWeight: 700,
+                            fontSize: '0.78rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#076ABC';
+                            e.currentTarget.style.color = '#ffffff';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#ffffff';
+                            e.currentTarget.style.color = '#002182';
+                          }}
+                        >
+                          Configurar Cobertura
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* SUB-PESTAÑA 3: CUENTAS ADMINISTRATIVAS Y MESA DE ENTRADA */}
+            {cabeceraTab === 'adminUsers' && (
+              <div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '0.85rem',
+                    flexWrap: 'wrap',
+                    gap: '0.5rem'
+                  }}
+                >
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#076ABC' }}>
+                    Personal con credenciales administrativas (Recepción / Secretaría / Dirección):
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleOpenAddStaff}
+                    style={{
+                      background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '0.45rem 0.9rem',
+                      borderRadius: '8px',
+                      fontSize: '0.78rem',
+                      fontWeight: 800,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Plus size={15} /> Nuevo Usuario Administrativo
+                  </button>
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                    gap: '0.75rem',
+                    maxHeight: '260px',
+                    overflowY: 'auto'
+                  }}
+                >
+                  {adminUsersList.map((user) => (
+                    <div
+                      key={user.id}
+                      style={{
+                        background: '#F9FAFE',
+                        borderRadius: '10px',
+                        border: '1.5px solid #D2E3FC',
+                        padding: '0.75rem 0.85rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: '0.5rem'
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                          <h4 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 800, color: '#002182' }}>
+                            {user.name}
+                          </h4>
+                          <span
+                            style={{
+                              fontSize: '0.64rem',
+                              fontWeight: 800,
+                              padding: '0.12rem 0.45rem',
+                              borderRadius: '100px',
+                              background: '#e0f2fe',
+                              color: '#0369a1'
+                            }}
+                          >
+                            {user.role || 'Secretaría'}
+                          </span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '0.74rem', color: '#496386' }}>
+                          {user.email}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditStaff(user)}
+                        style={{
+                          width: '100%',
+                          background: '#ffffff',
+                          border: '1px solid #D2E3FC',
+                          color: '#002182',
+                          padding: '0.38rem',
+                          borderRadius: '6px',
+                          fontWeight: 700,
+                          fontSize: '0.78rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.3rem'
+                        }}
+                      >
+                        <KeyRound size={13} />
+                        Editar / Clave
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 2. CUERPO MÉDICO: GESTIÓN INTEGRAL DE PROFESIONALES, HORARIOS Y PERMISOS  */}
+      {/* ========================================================================= */}
+      <div
+        style={{
+          background: '#ffffff',
+          borderRadius: '16px',
+          border: '1.5px solid #D2E3FC',
+          padding: '1.25rem',
+          boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+        }}
+      >
+        {/* Cabecera de Cuerpo Médico con Filtros */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '1rem',
+            flexWrap: 'wrap',
+            gap: '1rem'
+          }}
+        >
+          <div>
+            <h3 style={{ fontSize: '1.28rem', fontWeight: 900, color: '#002182', margin: '0 0 0.2rem' }}>
+              Cuerpo Médico CITRA ({doctors.length} profesionales)
+            </h3>
+            <p style={{ margin: 0, fontSize: '0.82rem', color: '#496386' }}>
+              Edición unificada de especialidad, horarios semanales, cuenta de acceso y obras sociales habilitadas.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+            {/* Buscador */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                background: '#F5F8FE',
+                border: '1.5px solid #D2E3FC',
+                borderRadius: '8px',
+                padding: '0.35rem 0.65rem',
+                gap: '0.4rem',
+                minWidth: '220px'
+              }}
+            >
+              <Search size={15} color="#076ABC" />
+              <input
+                type="text"
+                value={searchDocTerm}
+                onChange={(e) => setSearchDocTerm(e.target.value)}
+                placeholder="Buscar médico o especialidad..."
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  outline: 'none',
+                  fontSize: '0.82rem',
+                  color: '#002182',
+                  width: '100%'
+                }}
+              />
+            </div>
+
+            {/* Filtro por Especialidad */}
+            <select
+              value={selectedSpecialtyFilter}
+              onChange={(e) => setSelectedSpecialtyFilter(e.target.value)}
+              style={{
+                background: '#F5F8FE',
+                border: '1.5px solid #D2E3FC',
+                borderRadius: '8px',
+                padding: '0.45rem 0.65rem',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                color: '#002182',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="all">Todas las especialidades</option>
+              {specialties.map((s) => (
+                <option key={s.id} value={s.name}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Botón Nuevo Profesional */}
+            <button
+              onClick={handleOpenAddDoctor}
+              style={{
+                background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                color: '#ffffff',
+                border: 'none',
+                padding: '0.55rem 1.15rem',
+                borderRadius: '10px',
+                fontSize: '0.84rem',
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)'
+              }}
+            >
+              <Plus size={16} />
+              Nuevo Profesional
+            </button>
+          </div>
+        </div>
+
+        {/* Cuadrícula de Profesionales: Ultra Comprimidas con Información Clave */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+            gap: '0.85rem'
+          }}
+        >
+          {filteredDoctors.map((doc) => {
+            const userObj = getDoctorUser(doc);
+            const workingDaysSummary = (doc.workingDays || ['Lunes', 'Miércoles', 'Viernes'])
+              .slice(0, 3)
+              .map((d) => d.slice(0, 3))
+              .join(', ');
+
+            return (
+              <div
+                key={doc.id}
+                style={{
+                  background: '#ffffff',
+                  borderRadius: '12px',
+                  border: '1.5px solid #D2E3FC',
+                  padding: '0.85rem 1rem',
+                  boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '0.75rem',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <div>
+                  {/* Fila 1: Nombre y Estado */}
                   <div
                     style={{
-                      width: '46px',
-                      height: '46px',
-                      borderRadius: '12px',
-                      background: 'rgba(7, 106, 188, 0.1)',
-                      border: '1.5px solid #BFDBFE',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '0.5rem',
+                      marginBottom: '0.3rem'
+                    }}
+                  >
+                    <h4
+                      style={{
+                        margin: 0,
+                        fontSize: '0.96rem',
+                        fontWeight: 800,
+                        color: '#002182',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}
+                      title={doc.name}
+                    >
+                      {doc.name}
+                    </h4>
+                    <span
+                      onClick={() => updateDoctor(doc.id, { active: !doc.active })}
+                      style={{
+                        cursor: 'pointer',
+                        fontSize: '0.66rem',
+                        fontWeight: 800,
+                        padding: '0.12rem 0.45rem',
+                        borderRadius: '100px',
+                        background: doc.active !== false ? '#d1fae5' : '#fee2e2',
+                        color: doc.active !== false ? '#065f46' : '#991b1b',
+                        flexShrink: 0
+                      }}
+                      title="Clic para alternar activo/inactivo"
+                    >
+                      {doc.active !== false ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </div>
+
+                  {/* Fila 2: Especialidad */}
+                  <div style={{ marginBottom: '0.45rem' }}>
+                    <span
+                      style={{
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        color: '#076ABC',
+                        background: '#EFF6FF',
+                        border: '1px solid #BFDBFE',
+                        padding: '0.14rem 0.5rem',
+                        borderRadius: '6px',
+                        display: 'inline-block'
+                      }}
+                    >
+                      {doc.specialty || doc.specialtyName || 'Especialidad médica'}
+                    </span>
+                  </div>
+
+                  {/* Fila 3: Micro-datos de Horarios, Acceso y Obras Sociales */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.25rem',
+                      fontSize: '0.72rem',
+                      color: '#496386',
+                      background: '#F8FAFE',
+                      padding: '0.45rem 0.6rem',
+                      borderRadius: '8px',
+                      border: '1px solid #EDF3FD'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Clock size={12} color="#076ABC" />
+                      <span>
+                        {workingDaysSummary}... ({doc.scheduleStart || '08:30'} a {doc.scheduleEnd || '17:00'})
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <KeyRound size={12} color="#076ABC" />
+                      <span
+                        style={{
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          maxWidth: '190px'
+                        }}
+                        title={userObj?.email || doc.email || 'Acceso por configurar'}
+                      >
+                        {userObj?.email || doc.email || 'Acceso CITRA'}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Shield size={12} color="#076ABC" />
+                      <span>
+                        {(doc.acceptedInsurances || []).length} obras sociales habilitadas
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Acciones de la Tarjeta */}
+                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditDoctor(doc)}
+                    style={{
+                      flex: 1,
+                      background: '#F5F8FE',
+                      border: '1.5px solid #D2E3FC',
+                      color: '#002182',
+                      padding: '0.42rem 0.65rem',
+                      borderRadius: '8px',
+                      fontWeight: 700,
+                      fontSize: '0.8rem',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: '#002182',
-                      flexShrink: 0
-                    }}
-                    title="Profesional Médico CITRA"
-                  >
-                    <Stethoscope size={22} />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#002182' }}>
-                        {doc.name}
-                      </h3>
-                      <span
-                        style={{
-                          fontSize: '0.72rem',
-                          fontWeight: 800,
-                          background: '#EFF6FF',
-                          color: '#076ABC',
-                          border: '1px solid #BFDBFE',
-                          padding: '0.12rem 0.55rem',
-                          borderRadius: '6px'
-                        }}
-                      >
-                        {doc.specialty?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : (doc.specialty || 'Especialista')}
-                      </span>
-                    </div>
-                    {doc.license && (
-                      <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '2px' }}>
-                        {doc.license}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <span
-                    onClick={() => updateDoctor(doc.id, { active: !doc.active })}
-                    style={{
+                      gap: '0.35rem',
                       cursor: 'pointer',
-                      fontSize: '0.7rem',
-                      fontWeight: 800,
-                      padding: '0.2rem 0.6rem',
-                      borderRadius: '100px',
-                      background: doc.active !== false ? '#d1fae5' : '#fee2e2',
-                      color: doc.active !== false ? '#065f46' : '#991b1b'
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#002182';
+                      e.currentTarget.style.color = '#ffffff';
+                      e.currentTarget.style.borderColor = '#002182';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#F5F8FE';
+                      e.currentTarget.style.color = '#002182';
+                      e.currentTarget.style.borderColor = '#D2E3FC';
                     }}
                   >
-                    {doc.active !== false ? 'Activo' : 'Inactivo'}
-                  </span>
+                    <Edit2 size={13} />
+                    Editar Ficha
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenQuickPassword(doc)}
+                    style={{
+                      background: '#F0F5FF',
+                      border: '1.5px solid #D2E3FC',
+                      color: '#076ABC',
+                      padding: '0.42rem 0.6rem',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="Resetear o cambiar contraseña de acceso"
+                  >
+                    <KeyRound size={14} />
+                  </button>
                 </div>
               </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.82rem', color: '#496386', background: '#F5F8FE', padding: '0.85rem', borderRadius: '12px', border: '1px solid #D2E3FC', marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Award size={14} color="#076ABC" />
-                  <span>Matrícula: <strong>{doc.license || 'MN 114829'}</strong></span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <MapPin size={14} color="#076ABC" />
-                  <span>{doc.roomName || 'Consultorio Principal'}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Clock size={14} color="#076ABC" />
-                  <span>{doc.scheduleStart || '08:30'} a {doc.scheduleEnd || '17:00'} hs ({doc.slotDuration || 30} min)</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <DollarSign size={14} color="#076ABC" />
-                  <span>Arancel Privado: <strong>${(doc.priceConsultation || 25000).toLocaleString('es-AR')}</strong></span>
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#076ABC', marginTop: '2px', fontWeight: 700 }}>
-                  Horario Web: {doc.scheduleDisplay || (doc.workingDays ? doc.workingDays.join(', ') : 'Consultar en secretaría')}
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '0.5rem', borderTop: '1px solid #EDF3FD', paddingTop: '1rem' }}>
-              <button
-                onClick={() => handleOpenEdit(doc)}
-                style={{
-                  flex: 1,
-                  background: '#F5F8FE',
-                  border: '1px solid #D2E3FC',
-                  color: '#002182',
-                  padding: '0.5rem',
-                  borderRadius: '8px',
-                  fontWeight: 700,
-                  fontSize: '0.8rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.35rem',
-                  cursor: 'pointer'
-                }}
-              >
-                <Edit2 size={14} />
-                Editar
-              </button>
-
-              <button
-                onClick={() => {
-                  setPasswordDoctor(doc);
-                  setNewPasswordValue('citra2026');
-                  setIsPasswordModalOpen(true);
-                }}
-                style={{
-                  background: '#f8fafc',
-                  border: '1px solid #cbd5e1',
-                  color: '#334155',
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: '8px',
-                  fontWeight: 700,
-                  fontSize: '0.8rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.35rem',
-                  cursor: 'pointer'
-                }}
-                title="Cambiar o blanquear contraseña del médico"
-              >
-                <KeyRound size={14} />
-                Clave
-              </button>
-
-              <button
-                onClick={() => deleteDoctor(doc.id)}
-                style={{
-                  background: '#fff1f2',
-                  border: '1px solid #fecdd3',
-                  color: '#e11d48',
-                  padding: '0.5rem 0.8rem',
-                  borderRadius: '8px',
-                  fontSize: '0.8rem',
-                  cursor: 'pointer'
-                }}
-              >
-                <Trash2 size={14} />
-              </button>
-            </div>
-          </div>
-        ))}
+            );
+          })}
+        </div>
       </div>
 
-      {/* Modal Doctor Add/Edit */}
-      {isModalOpen && (
+      {/* ========================================================================= */}
+      {/* 3. MODAL UNIFICADO: EDITAR / REGISTRAR PROFESIONAL COMPLETO               */}
+      {/* ========================================================================= */}
+      {isDoctorModalOpen && (
         <div
+          className="modal-overlay"
           style={{
             position: 'fixed',
             inset: 0,
@@ -395,331 +1474,731 @@ export const DoctorsManager = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '1.25rem'
+            padding: '1.25rem',
+            overscrollBehavior: 'contain'
           }}
-          onClick={() => setIsModalOpen(false)}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onClick={() => setIsDoctorModalOpen(false)}
         >
           <div
             style={{
               background: '#ffffff',
               borderRadius: '20px',
               width: '100%',
-              maxWidth: '560px',
+              maxWidth: '640px',
               maxHeight: '92vh',
-              overflowY: 'auto',
-              boxShadow: '0 25px 50px rgba(0,0,0,0.25)'
+              boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column'
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ background: '#002182', color: '#ffffff', padding: '1.5rem 1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>
-                {editingDoctor ? 'Editar Profesional Médico' : 'Agregar Nuevo Profesional'}
-              </h3>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer' }}>
+            {/* Header del Modal */}
+            <div
+              style={{
+                background: '#002182',
+                color: '#ffffff',
+                padding: '1.25rem 1.5rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900 }}>
+                  {editingDoctor ? `Ficha Integral: ${editingDoctor.name}` : 'Alta de Nuevo Profesional'}
+                </h3>
+                <p style={{ margin: '0.15rem 0 0', fontSize: '0.78rem', color: '#BFDBFE' }}>
+                  Datos clínicos, horarios semanales, credenciales y obras sociales.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDoctorModalOpen(false)}
+                style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: 4 }}
+              >
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} style={{ padding: '1.75rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                    Nombre del Médico *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Dr. Fernando Peralta"
-                    style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none' }}
-                  />
-                </div>
+            {/* Pestañas de Navegación dentro del Modal (Organizado y Cero Abrumador) */}
+            <div
+              style={{
+                display: 'flex',
+                background: '#F5F8FE',
+                borderBottom: '1.5px solid #D2E3FC',
+                padding: '0.4rem 1rem',
+                gap: '0.5rem',
+                overflowX: 'auto'
+              }}
+            >
+              {[
+                { id: 'perfil', label: '1. Perfil & Especialidad', icon: Stethoscope },
+                { id: 'horarios', label: '2. Horarios & Días', icon: Clock },
+                { id: 'acceso', label: '3. Usuario & Clave', icon: KeyRound },
+                { id: 'coberturas', label: '4. Obras Sociales', icon: Shield }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setDoctorModalTab(tab.id)}
+                  style={{
+                    background: doctorModalTab === tab.id ? '#002182' : 'transparent',
+                    color: doctorModalTab === tab.id ? '#ffffff' : '#002182',
+                    border: 'none',
+                    padding: '0.45rem 0.75rem',
+                    borderRadius: '8px',
+                    fontSize: '0.78rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <tab.icon size={13} />
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                    Especialidad *
-                  </label>
-                  <select
-                    value={specialty}
-                    onChange={(e) => setSpecialty(e.target.value)}
-                    style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', background: '#ffffff' }}
-                  >
-                    {specialties.map((s) => (
-                      <option key={s.id} value={s.name}>{s.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                    Consultorio Asignado
-                  </label>
-                  <input
-                    type="text"
-                    value={roomName}
-                    onChange={(e) => setRoomName(e.target.value)}
-                    placeholder="Consultorio 204"
-                    style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                    Arancel Consulta Privada ($)
-                  </label>
-                  <input
-                    type="number"
-                    value={priceConsultation}
-                    onChange={(e) => setPriceConsultation(Number(e.target.value))}
-                    placeholder="25000"
-                    style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none' }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.85rem', marginBottom: '1.25rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                    Hora Inicio
-                  </label>
-                  <input
-                    type="time"
-                    value={scheduleStart}
-                    onChange={(e) => setScheduleStart(e.target.value)}
-                    style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                    Hora Fin
-                  </label>
-                  <input
-                    type="time"
-                    value={scheduleEnd}
-                    onChange={(e) => setScheduleEnd(e.target.value)}
-                    style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                    Intervalo (min)
-                  </label>
-                  <select
-                    value={slotDuration}
-                    onChange={(e) => setSlotDuration(e.target.value)}
-                    style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', background: '#ffffff' }}
-                  >
-                    <option value={15}>15 min</option>
-                    <option value={20}>20 min</option>
-                    <option value={30}>30 min</option>
-                    <option value={45}>45 min</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Working Days selector */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.4rem' }}>
-                  Días de Atención
-                </label>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  {allDays.map((d) => {
-                    const isSelected = selectedDays.includes(d);
-                    return (
-                      <button
-                        key={d}
-                        type="button"
-                        onClick={() => toggleDay(d)}
+            {/* Contenido del Formulario */}
+            <form onSubmit={handleSaveDoctor} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }}>
+                {/* TAB 1: PERFIL & ESPECIALIDAD */}
+                {doctorModalTab === 'perfil' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                        Nombre y Apellido del Profesional *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={docName}
+                        onChange={(e) => setDocName(e.target.value)}
+                        placeholder="Ej: Dr. Fernando Peralta"
                         style={{
-                          background: isSelected ? '#002182' : '#F5F8FE',
-                          color: isSelected ? '#ffffff' : '#002182',
-                          border: isSelected ? '1.5px solid #002182' : '1.5px solid #D2E3FC',
-                          padding: '0.4rem 0.75rem',
+                          width: '100%',
+                          padding: '0.65rem 0.75rem',
                           borderRadius: '8px',
-                          fontSize: '0.78rem',
-                          fontWeight: 700,
-                          cursor: 'pointer'
+                          border: '1.5px solid #D2E3FC',
+                          fontSize: '0.85rem',
+                          outline: 'none',
+                          boxSizing: 'border-box'
                         }}
-                      >
-                        {d}
-                      </button>
-                    );
-                  })}
-                </div>
+                      />
+                    </div>
+
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                        <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#002182', margin: 0 }}>
+                          Especialidad Principal *
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCustomDocSpecialty(!isCustomDocSpecialty);
+                            if (!isCustomDocSpecialty) setCustomDocSpecialty('');
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#076ABC',
+                            fontSize: '0.74rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            padding: 0,
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          {isCustomDocSpecialty ? '← Elegir del catálogo' : '+ Nueva especialidad'}
+                        </button>
+                      </div>
+
+                      {isCustomDocSpecialty ? (
+                        <input
+                          type="text"
+                          required
+                          value={customDocSpecialty}
+                          onChange={(e) => setCustomDocSpecialty(e.target.value)}
+                          placeholder="Escriba nueva especialidad (ej: Flebología, Cardiología...)"
+                          style={{
+                            width: '100%',
+                            padding: '0.65rem 0.75rem',
+                            borderRadius: '8px',
+                            border: '1.5px solid #076ABC',
+                            fontSize: '0.85rem',
+                            outline: 'none',
+                            background: '#F8FAFE',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      ) : (
+                        <select
+                          value={docSpecialty}
+                          onChange={(e) => {
+                            if (e.target.value === '__NEW__') {
+                              setIsCustomDocSpecialty(true);
+                              setCustomDocSpecialty('');
+                            } else {
+                              setDocSpecialty(e.target.value);
+                            }
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '0.65rem 0.75rem',
+                            borderRadius: '8px',
+                            border: '1.5px solid #D2E3FC',
+                            fontSize: '0.85rem',
+                            outline: 'none',
+                            background: '#ffffff',
+                            boxSizing: 'border-box'
+                          }}
+                        >
+                          {specialties.map((s) => (
+                            <option key={s.id} value={s.name}>
+                              {s.name}
+                            </option>
+                          ))}
+                          <option value="__NEW__">+ Agregar otra especialidad...</option>
+                        </select>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                          Arancel Consulta Particular ($ ARS)
+                        </label>
+                        <input
+                          type="number"
+                          value={docPriceConsultation}
+                          onChange={(e) => setDocPriceConsultation(Number(e.target.value))}
+                          placeholder="25000"
+                          style={{
+                            width: '100%',
+                            padding: '0.65rem 0.75rem',
+                            borderRadius: '8px',
+                            border: '1.5px solid #D2E3FC',
+                            fontSize: '0.85rem',
+                            outline: 'none',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                          Estado en la Clínica
+                        </label>
+                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.2rem' }}>
+                          <button
+                            type="button"
+                            onClick={() => setDocActive(true)}
+                            style={{
+                              flex: 1,
+                              background: docActive ? '#d1fae5' : '#F5F8FE',
+                              color: docActive ? '#065f46' : '#64748B',
+                              border: docActive ? '1.5px solid #10b981' : '1px solid #D2E3FC',
+                              padding: '0.55rem',
+                              borderRadius: '8px',
+                              fontWeight: 800,
+                              fontSize: '0.8rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Activo
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDocActive(false)}
+                            style={{
+                              flex: 1,
+                              background: !docActive ? '#fee2e2' : '#F5F8FE',
+                              color: !docActive ? '#991b1b' : '#64748B',
+                              border: !docActive ? '1.5px solid #ef4444' : '1px solid #D2E3FC',
+                              padding: '0.55rem',
+                              borderRadius: '8px',
+                              fontWeight: 800,
+                              fontSize: '0.8rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Inactivo
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 2: HORARIOS & DISPONIBILIDAD */}
+                {doctorModalTab === 'horarios' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.4rem' }}>
+                        Días de Atención Semanal
+                      </label>
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        {allDays.map((d) => {
+                          const isSel = docWorkingDays.includes(d);
+                          return (
+                            <button
+                              key={d}
+                              type="button"
+                              onClick={() => toggleDocWorkingDay(d)}
+                              style={{
+                                background: isSel ? '#002182' : '#F5F8FE',
+                                color: isSel ? '#ffffff' : '#002182',
+                                border: isSel ? '1.5px solid #002182' : '1.5px solid #D2E3FC',
+                                padding: '0.4rem 0.75rem',
+                                borderRadius: '8px',
+                                fontSize: '0.78rem',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {d}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.85rem' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                          Hora Inicio
+                        </label>
+                        <input
+                          type="time"
+                          value={docScheduleStart}
+                          onChange={(e) => setDocScheduleStart(e.target.value)}
+                          style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem' }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                          Hora Fin
+                        </label>
+                        <input
+                          type="time"
+                          value={docScheduleEnd}
+                          onChange={(e) => setDocScheduleEnd(e.target.value)}
+                          style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem' }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                          Intervalo Turnos
+                        </label>
+                        <select
+                          value={docSlotDuration}
+                          onChange={(e) => setDocSlotDuration(Number(e.target.value))}
+                          style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', background: '#ffffff' }}
+                        >
+                          <option value={15}>15 min</option>
+                          <option value={20}>20 min</option>
+                          <option value={30}>30 min</option>
+                          <option value={40}>40 min</option>
+                          <option value={45}>45 min</option>
+                          <option value={60}>60 min</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                        Leyenda de Turnos para Pacientes (Opcional)
+                      </label>
+                      <input
+                        type="text"
+                        value={docScheduleDisplay}
+                        onChange={(e) => setDocScheduleDisplay(e.target.value)}
+                        placeholder="Ej: Turnos cada 30 min / Consultar en secretaría"
+                        style={{
+                          width: '100%',
+                          padding: '0.65rem 0.75rem',
+                          borderRadius: '8px',
+                          border: '1.5px solid #D2E3FC',
+                          fontSize: '0.85rem',
+                          outline: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 3: USUARIO, ACCESO & PERMISOS */}
+                {doctorModalTab === 'acceso' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '0.75rem 1rem', borderRadius: '10px' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#002182', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <ShieldCheck size={16} color="#076ABC" />
+                        Acceso Médico Seguro (Ley 25.326)
+                      </span>
+                      <p style={{ margin: '0.25rem 0 0', fontSize: '0.75rem', color: '#1e40af', lineHeight: 1.4 }}>
+                        El médico podrá ingresar al Panel Médico para consultar su agenda de turnos, asentar historias clínicas y emitir recetas electrónicas.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                        Email Institucional de Ingreso *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={docEmail}
+                        onChange={(e) => setDocEmail(e.target.value)}
+                        placeholder="nombre.apellido@citra.com.ar"
+                        style={{
+                          width: '100%',
+                          padding: '0.65rem 0.75rem',
+                          borderRadius: '8px',
+                          border: '1.5px solid #D2E3FC',
+                          fontSize: '0.85rem',
+                          outline: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                        Contraseña de Acceso
+                      </label>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <input
+                          type="text"
+                          required
+                          value={docPassword}
+                          onChange={(e) => setDocPassword(e.target.value)}
+                          placeholder="citra2026"
+                          style={{
+                            flex: 1,
+                            padding: '0.65rem 0.75rem',
+                            borderRadius: '8px',
+                            border: '1.5px solid #D2E3FC',
+                            fontSize: '0.85rem',
+                            outline: 'none',
+                            fontFamily: 'monospace'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setDocPassword('citra2026')}
+                          style={{
+                            background: '#F0F5FF',
+                            border: '1px solid #D2E3FC',
+                            color: '#076ABC',
+                            padding: '0 0.85rem',
+                            borderRadius: '8px',
+                            fontWeight: 700,
+                            fontSize: '0.75rem',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Reset citra2026
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                        Rol de Seguridad Asignado
+                      </label>
+                      <input
+                        type="text"
+                        value={docRole}
+                        onChange={(e) => setDocRole(e.target.value)}
+                        placeholder="Médico / Especialista"
+                        style={{
+                          width: '100%',
+                          padding: '0.65rem 0.75rem',
+                          borderRadius: '8px',
+                          border: '1.5px solid #D2E3FC',
+                          fontSize: '0.85rem',
+                          outline: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 4: OBRAS SOCIALES ACEPTADAS */}
+                {doctorModalTab === 'coberturas' && (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#002182', margin: 0 }}>
+                        Coberturas Médicas que atiende este profesional:
+                      </label>
+                      <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        <button
+                          type="button"
+                          onClick={() => setDocAcceptedInsurances(healthInsurances.map((h) => h.id))}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#076ABC',
+                            fontSize: '0.73rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          Habilitar todas
+                        </button>
+                        <span style={{ color: '#94a3b8' }}>|</span>
+                        <button
+                          type="button"
+                          onClick={() => setDocAcceptedInsurances(['hi-7'])}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#076ABC',
+                            fontSize: '0.73rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          Solo Particular
+                        </button>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                        gap: '0.5rem',
+                        maxHeight: '260px',
+                        overflowY: 'auto',
+                        padding: '0.4rem',
+                        background: '#F8FAFE',
+                        borderRadius: '10px',
+                        border: '1.5px solid #D2E3FC'
+                      }}
+                    >
+                      {healthInsurances.map((hi) => {
+                        const isAccepted = docAcceptedInsurances.includes(hi.id);
+                        return (
+                          <label
+                            key={hi.id}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              padding: '0.5rem 0.65rem',
+                              borderRadius: '8px',
+                              background: isAccepted ? '#EFF6FF' : '#ffffff',
+                              border: isAccepted ? '1.5px solid #BFDBFE' : '1px solid #E2E8F0',
+                              cursor: 'pointer',
+                              fontSize: '0.8rem',
+                              fontWeight: isAccepted ? 800 : 600,
+                              color: isAccepted ? '#002182' : '#496386',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isAccepted}
+                              onChange={() => toggleDocAcceptedInsurance(hi.id)}
+                              style={{ accentColor: '#076ABC', cursor: 'pointer' }}
+                            />
+                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {hi.name}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Texto de Días y Horarios para la Web */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                  Texto de Días y Horarios para la Web (Visible al paciente)
-                </label>
-                <input
-                  type="text"
-                  value={scheduleDisplay}
-                  onChange={(e) => setScheduleDisplay(e.target.value)}
-                  placeholder="ej: Consultar en secretaría / Martes y jueves por la tarde"
-                  style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
-                />
-                <span style={{ fontSize: '0.73rem', color: '#64748b', marginTop: '3px', display: 'block' }}>
-                  Texto que verán los pacientes en la página de CITRA. Podés cambiarlo cada mes si varían las fechas de atención.
-                </span>
-              </div>
-
-              <button
-                type="submit"
+              {/* Footer con Acciones */}
+              <div
                 style={{
-                  width: '100%',
-                  background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '0.85rem',
-                  borderRadius: '10px',
-                  fontWeight: 800,
-                  fontSize: '0.92rem',
-                  cursor: 'pointer'
+                  padding: '1rem 1.5rem',
+                  borderTop: '1px solid #EDF3FD',
+                  background: '#F8FAFE',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '0.75rem'
                 }}
               >
-                {editingDoctor ? 'Guardar Cambios' : 'Registrar Profesional'}
-              </button>
+                {editingDoctor ? (
+                  <button
+                    type="button"
+                    onClick={handleDeleteDoctor}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#e11d48',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      cursor: 'pointer',
+                      padding: 0
+                    }}
+                  >
+                    <Trash2 size={14} />
+                    Dar de baja
+                  </button>
+                ) : (
+                  <span />
+                )}
+
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsDoctorModalOpen(false)}
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid #D2E3FC',
+                      color: '#496386',
+                      padding: '0.55rem 1rem',
+                      borderRadius: '8px',
+                      fontWeight: 700,
+                      fontSize: '0.82rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="submit"
+                    style={{
+                      background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '0.55rem 1.25rem',
+                      borderRadius: '8px',
+                      fontWeight: 800,
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px rgba(7, 106, 188, 0.25)'
+                    }}
+                  >
+                    {editingDoctor ? 'Guardar Cambios' : 'Registrar Profesional'}
+                  </button>
+                </div>
+              </div>
             </form>
           </div>
         </div>
       )}
-      {/* Modal Cambio de Contraseña por Secretaría */}
-      {isPasswordModalOpen && passwordDoctor && (
+
+      {/* ========================================================================= */}
+      {/* 4. MODAL RÁPIDO: RESET / CAMBIO DE CONTRASEÑA DE ACCESO MÉDICO            */}
+      {/* ========================================================================= */}
+      {isPasswordModalOpen && passwordTargetDoctor && (
         <div
+          className="modal-overlay"
           style={{
             position: 'fixed',
             inset: 0,
             backgroundColor: 'rgba(0, 33, 130, 0.65)',
             backdropFilter: 'blur(5px)',
+            zIndex: 9999,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 1050,
-            padding: '1rem'
+            padding: '1.25rem',
+            overscrollBehavior: 'contain'
           }}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onClick={() => setIsPasswordModalOpen(false)}
         >
           <div
             style={{
               background: '#ffffff',
               borderRadius: '20px',
-              maxWidth: '460px',
               width: '100%',
-              padding: '2rem',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
-              position: 'relative'
+              maxWidth: '440px',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+              overflow: 'hidden'
             }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <button
-              onClick={() => {
-                setIsPasswordModalOpen(false);
-                setPasswordDoctor(null);
-              }}
+            <div
               style={{
-                position: 'absolute',
-                top: '1.25rem',
-                right: '1.25rem',
-                background: '#F1F5F9',
-                border: 'none',
-                borderRadius: '50%',
-                width: '32px',
-                height: '32px',
+                background: '#002182',
+                color: '#ffffff',
+                padding: '1.25rem 1.5rem',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: '#64748B'
+                justifyContent: 'space-between',
+                alignItems: 'center'
               }}
             >
-              <X size={18} />
-            </button>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-              <div
-                style={{
-                  width: '42px',
-                  height: '42px',
-                  borderRadius: '10px',
-                  background: '#EFF6FF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#002182'
-                }}
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <KeyRound size={18} />
+                Contraseña de {passwordTargetDoctor.name}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsPasswordModalOpen(false)}
+                style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: 4 }}
               >
-                <KeyRound size={22} />
-              </div>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#002182' }}>
-                  Blanquear / Cambiar Clave
-                </h3>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748B' }}>
-                  {passwordDoctor.name} · {passwordDoctor.specialty}
-                </p>
-              </div>
+                <X size={20} />
+              </button>
             </div>
 
-            <p style={{ fontSize: '0.83rem', color: '#475569', marginBottom: '1.25rem', lineHeight: 1.5 }}>
-              Como secretaría podés resetear la contraseña del profesional si la olvidó. El médico podrá luego iniciar sesión y cambiarla desde su módulo de Configuración.
-            </p>
+            <form onSubmit={handleSaveQuickPassword} style={{ padding: '1.5rem' }}>
+              <p style={{ margin: '0 0 1rem', fontSize: '0.82rem', color: '#496386', lineHeight: 1.5 }}>
+                Establezca la clave para que el profesional inicie sesión en el sistema.
+              </p>
 
-            <form onSubmit={handleChangeDoctorPassword} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#1E293B', marginBottom: '0.35rem' }}>
-                  Nueva Contraseña para el Profesional
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.35rem' }}>
+                  Nueva Contraseña
                 </label>
-                <div style={{ position: 'relative' }}>
-                  <Lock size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                  <input
-                    type="text"
-                    value={newPasswordValue}
-                    onChange={(e) => setNewPasswordValue(e.target.value)}
-                    required
-                    placeholder="ej: citra2026"
-                    style={{
-                      width: '100%',
-                      padding: '0.65rem 0.75rem 0.65rem 2.4rem',
-                      borderRadius: '8px',
-                      border: '1.5px solid #D2E3FC',
-                      fontSize: '0.88rem',
-                      outline: 'none',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                </div>
-                <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setNewPasswordValue('citra2026')}
-                    style={{ fontSize: '0.72rem', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 8px', cursor: 'pointer', color: '#475569' }}
-                  >
-                    Usar por defecto: citra2026
-                  </button>
-                </div>
+                <input
+                  type="text"
+                  required
+                  value={quickPasswordValue}
+                  onChange={(e) => setQuickPasswordValue(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.75rem',
+                    borderRadius: '8px',
+                    border: '1.5px solid #D2E3FC',
+                    fontSize: '0.9rem',
+                    outline: 'none',
+                    fontFamily: 'monospace',
+                    boxSizing: 'border-box'
+                  }}
+                />
               </div>
 
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsPasswordModalOpen(false);
-                    setPasswordDoctor(null);
-                  }}
+                  onClick={() => setIsPasswordModalOpen(false)}
                   style={{
-                    flex: 1,
-                    background: '#F1F5F9',
-                    border: '1px solid #CBD5E1',
-                    color: '#475569',
-                    padding: '0.75rem',
-                    borderRadius: '10px',
+                    background: '#ffffff',
+                    border: '1px solid #D2E3FC',
+                    color: '#496386',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '8px',
                     fontWeight: 700,
-                    fontSize: '0.88rem',
+                    fontSize: '0.82rem',
                     cursor: 'pointer'
                   }}
                 >
@@ -728,18 +2207,474 @@ export const DoctorsManager = () => {
                 <button
                   type="submit"
                   style={{
-                    flex: 2,
                     background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
                     color: '#ffffff',
                     border: 'none',
-                    padding: '0.75rem',
-                    borderRadius: '10px',
+                    padding: '0.5rem 1.25rem',
+                    borderRadius: '8px',
                     fontWeight: 800,
-                    fontSize: '0.88rem',
+                    fontSize: '0.82rem',
                     cursor: 'pointer'
                   }}
                 >
-                  Guardar Contraseña
+                  Guardar Clave
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 5. MODAL DE ESPECIALIDAD (CABECERA)                                       */}
+      {/* ========================================================================= */}
+      {isSpecialtyModalOpen && (
+        <div
+          className="modal-overlay"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 33, 130, 0.65)',
+            backdropFilter: 'blur(5px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.25rem',
+            overscrollBehavior: 'contain'
+          }}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onClick={() => setIsSpecialtyModalOpen(false)}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '20px',
+              width: '100%',
+              maxWidth: '480px',
+              maxHeight: '90vh',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                background: '#002182',
+                color: '#ffffff',
+                padding: '1.25rem 1.5rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>
+                {editingSpecialty ? 'Editar Especialidad' : 'Nueva Especialidad'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsSpecialtyModalOpen(false)}
+                style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: 4 }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSpecialty} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }}>
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#002182', marginBottom: '0.35rem' }}>
+                    Nombre de la Especialidad *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={specialtyName}
+                    onChange={(e) => setSpecialtyName(e.target.value)}
+                    placeholder="Ej: Cirugía de Cadera, Neurología..."
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.75rem',
+                      borderRadius: '8px',
+                      border: '1.5px solid #D2E3FC',
+                      fontSize: '0.88rem',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#002182', marginBottom: '0.35rem' }}>
+                    Profesionales Asignados ({specialtySelectedDocIds.length})
+                  </label>
+                  <div
+                    style={{
+                      border: '1.5px solid #D2E3FC',
+                      borderRadius: '10px',
+                      padding: '0.6rem',
+                      maxHeight: '180px',
+                      overflowY: 'auto',
+                      background: '#F8FAFE',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.4rem'
+                    }}
+                  >
+                    {doctors.map((d) => {
+                      const isSel = specialtySelectedDocIds.includes(d.id);
+                      return (
+                        <label
+                          key={d.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '0.45rem 0.65rem',
+                            borderRadius: '6px',
+                            background: isSel ? '#EFF6FF' : '#ffffff',
+                            border: isSel ? '1px solid #BFDBFE' : '1px solid #E2E8F0',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <input
+                              type="checkbox"
+                              checked={isSel}
+                              onChange={() => toggleSpecialtyDoc(d.id)}
+                              style={{ accentColor: '#076ABC', cursor: 'pointer' }}
+                            />
+                            <span style={{ fontSize: '0.82rem', fontWeight: isSel ? 800 : 600, color: '#002182' }}>
+                              {d.name}
+                            </span>
+                          </div>
+                          <span style={{ fontSize: '0.7rem', color: '#64748B' }}>
+                            {d.specialty || d.specialtyName || 'Sin especialidad'}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: '1rem 1.5rem',
+                  borderTop: '1px solid #EDF3FD',
+                  background: '#F8FAFE',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                {editingSpecialty ? (
+                  <button
+                    type="button"
+                    onClick={handleDeleteSpecialtyAction}
+                    style={{ background: 'none', border: 'none', color: '#e11d48', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                  >
+                    Eliminar
+                  </button>
+                ) : (
+                  <span />
+                )}
+
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsSpecialtyModalOpen(false)}
+                    style={{ background: '#ffffff', border: '1px solid #D2E3FC', color: '#496386', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    style={{ background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)', color: '#ffffff', border: 'none', padding: '0.5rem 1.25rem', borderRadius: '8px', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer' }}
+                  >
+                    {editingSpecialty ? 'Guardar Cambios' : 'Crear'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 6. MODAL DE OBRA SOCIAL (CABECERA)                                        */}
+      {/* ========================================================================= */}
+      {isInsuranceModalOpen && (
+        <div
+          className="modal-overlay"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 33, 130, 0.65)',
+            backdropFilter: 'blur(5px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.25rem',
+            overscrollBehavior: 'contain'
+          }}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onClick={() => setIsInsuranceModalOpen(false)}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '20px',
+              width: '100%',
+              maxWidth: '460px',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+              overflow: 'hidden'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                background: '#002182',
+                color: '#ffffff',
+                padding: '1.25rem 1.5rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>
+                {editingInsurance ? 'Configurar Obra Social' : 'Nueva Obra Social'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsInsuranceModalOpen(false)}
+                style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: 4 }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveInsurance} style={{ padding: '1.5rem' }}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                  Nombre de la Cobertura *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={insuranceName}
+                  onChange={(e) => setInsuranceName(e.target.value)}
+                  placeholder="Ej: OSDE, Swiss Medical..."
+                  style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                    Copago ($ ARS)
+                  </label>
+                  <input
+                    type="number"
+                    value={insuranceCopay}
+                    onChange={(e) => setInsuranceCopay(e.target.value)}
+                    placeholder="0"
+                    style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                    Estado
+                  </label>
+                  <select
+                    value={insuranceStatus}
+                    onChange={(e) => setInsuranceStatus(e.target.value)}
+                    style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', background: '#ffffff', boxSizing: 'border-box' }}
+                  >
+                    <option value="Activa">Activa</option>
+                    <option value="Inactiva">Inactiva</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                  Planes Aceptados (Separados por coma)
+                </label>
+                <input
+                  type="text"
+                  value={insurancePlansInput}
+                  onChange={(e) => setInsurancePlansInput(e.target.value)}
+                  placeholder="210, 310, 410, 510"
+                  style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {editingInsurance ? (
+                  <button
+                    type="button"
+                    onClick={handleDeleteInsuranceAction}
+                    style={{ background: 'none', border: 'none', color: '#e11d48', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                  >
+                    Eliminar
+                  </button>
+                ) : (
+                  <span />
+                )}
+
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsInsuranceModalOpen(false)}
+                    style={{ background: '#ffffff', border: '1px solid #D2E3FC', color: '#496386', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    style={{ background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)', color: '#ffffff', border: 'none', padding: '0.5rem 1.25rem', borderRadius: '8px', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer' }}
+                  >
+                    {editingInsurance ? 'Guardar Cambios' : 'Crear'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 7. MODAL DE USUARIO ADMINISTRATIVO (CABECERA)                             */}
+      {/* ========================================================================= */}
+      {isStaffModalOpen && (
+        <div
+          className="modal-overlay"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 33, 130, 0.65)',
+            backdropFilter: 'blur(5px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.25rem',
+            overscrollBehavior: 'contain'
+          }}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onClick={() => setIsStaffModalOpen(false)}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '20px',
+              width: '100%',
+              maxWidth: '460px',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+              overflow: 'hidden'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                background: '#002182',
+                color: '#ffffff',
+                padding: '1.25rem 1.5rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>
+                {editingStaffUser ? 'Editar Cuenta Administrativa' : 'Nueva Cuenta de Secretaría'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsStaffModalOpen(false)}
+                style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: 4 }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveStaffUser} style={{ padding: '1.5rem' }}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                  Nombre y Apellido *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={staffName}
+                  onChange={(e) => setStaffName(e.target.value)}
+                  placeholder="Ej: Valeria Rossi"
+                  style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                  Email de Ingreso *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={staffEmail}
+                  onChange={(e) => setStaffEmail(e.target.value)}
+                  placeholder="recepcion@citra.com.ar"
+                  style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.85rem', marginBottom: '1.25rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                    Rol Institucional
+                  </label>
+                  <input
+                    type="text"
+                    value={staffRole}
+                    onChange={(e) => setStaffRole(e.target.value)}
+                    placeholder="Secretaría / Recepción"
+                    style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                    Contraseña
+                  </label>
+                  <input
+                    type="text"
+                    value={staffPassword}
+                    onChange={(e) => setStaffPassword(e.target.value)}
+                    placeholder="citra2026"
+                    style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsStaffModalOpen(false)}
+                  style={{ background: '#ffffff', border: '1px solid #D2E3FC', color: '#496386', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  style={{ background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)', color: '#ffffff', border: 'none', padding: '0.5rem 1.25rem', borderRadius: '8px', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer' }}
+                >
+                  {editingStaffUser ? 'Guardar Cambios' : 'Crear Usuario'}
                 </button>
               </div>
             </form>

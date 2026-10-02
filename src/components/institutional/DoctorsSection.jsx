@@ -158,12 +158,8 @@ export const DoctorsSection = () => {
                         borderRadius: '6px'
                       }}
                     >
-                      {doc.specialty?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : doc.specialty}
+                      {doc.specialty || doc.specialtyName || 'Especialidad'}
                     </span>
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: '#7994B8', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <Award size={14} color="#076ABC" />
-                    Matrícula: {doc.license || 'MN 114829 / MP 33490'}
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.8rem', color: '#496386', marginBottom: '1.25rem' }}>
@@ -172,10 +168,6 @@ export const DoctorsSection = () => {
                       <span style={{ fontWeight: 700, color: '#002182', lineHeight: 1.35 }}>
                         {doc.scheduleDisplay || (doc.workingDays ? doc.workingDays.join(', ') : 'Consultar en secretaría')}
                       </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                      <MapPin size={15} color="#076ABC" style={{ flexShrink: 0 }} />
-                      <span>{doc.roomName || 'Consultorio Principal'}</span>
                     </div>
                   </div>
                 </div>

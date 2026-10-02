@@ -450,10 +450,6 @@ export const PrescriptionDigitalModal = () => {
                   <span style={{ color: '#475569', fontWeight: 600 }}>Especialidad: </span>
                   <span style={{ color: '#0f172a', fontWeight: 700 }}>{rx.doctorSpecialty || 'Traumatología y Ortopedia'}</span>
                 </div>
-                <div>
-                  <span style={{ color: '#475569', fontWeight: 600 }}>Matrícula Profesional: </span>
-                  <strong style={{ color: '#0f172a' }}>{effectiveDoctorLicense}</strong>
-                </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
                   <span style={{ color: '#475569', fontWeight: 600 }}>Estado: </span>
                   <span
@@ -697,10 +693,7 @@ export const PrescriptionDigitalModal = () => {
                     {effectiveDoctorName}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: '#334155', fontWeight: 700 }}>
-                    {rx.doctorSpecialty || 'Especialista en Traumatología y Ortopedia'}
-                  </div>
-                  <div style={{ fontSize: '0.74rem', color: '#002182', fontWeight: 800, marginTop: '1px' }}>
-                    {effectiveDoctorLicense}
+                    {rx.doctorSpecialty || 'Traumatología y Ortopedia'}
                   </div>
                   <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600, marginTop: '2px' }}>
                     CITRA Centro Integral de Traumatología

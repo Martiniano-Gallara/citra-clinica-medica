@@ -56,7 +56,7 @@ export const DoctorsView = () => {
             <UserCheck size={28} color="#2563eb" />
             <span>Cuerpo Médico & Profesionales</span>
           </h1>
-          <p>Directorio de especialistas, matrículas, asignación de consultorios y disponibilidad horaria</p>
+          <p>Directorio de profesionales médicos y especialidades de CITRA</p>
         </div>
 
         <div className="page-actions-group">
@@ -80,7 +80,7 @@ export const DoctorsView = () => {
           <input
             type="text"
             className="form-control"
-            placeholder="Buscar profesional por nombre, matrícula o especialidad..."
+            placeholder="Buscar profesional por nombre o especialidad..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -158,21 +158,14 @@ export const DoctorsView = () => {
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '2px' }}>
                       <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#2563eb' }}>
-                        {(doc.specialtyName || doc.specialty)?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : (doc.specialtyName || doc.specialty)}
+                        {doc.specialtyName || doc.specialty || 'Especialidad médica'}
                       </span>
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
-                      {doc.license}
                     </div>
                   </div>
                 </div>
 
                 {/* Info List */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.82rem', color: '#334155', background: '#f8fafc', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <MapPin size={15} color="#64748b" />
-                    <span>{doc.roomName || 'Consultorio 101'}</span>
-                  </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Clock size={15} color="#64748b" />
                     <span>{doc.workingDays?.join(', ')} ({doc.scheduleStart} - {doc.scheduleEnd} hs)</span>

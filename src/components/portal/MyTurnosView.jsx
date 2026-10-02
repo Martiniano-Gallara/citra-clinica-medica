@@ -531,7 +531,7 @@ export const MyTurnosView = () => {
                   No tenés turnos programados
                 </h3>
                 <p style={{ fontSize: '0.85rem', color: '#496386', margin: '0 0 1.25rem', lineHeight: 1.4 }}>
-                  Podés solicitar un turno online de forma inmediata para cualquiera de nuestros consultorios y especialistas.
+                  Podés solicitar un turno online de forma inmediata para cualquiera de nuestros profesionales médicos.
                 </p>
                 <button
                   onClick={() => setCurrentView('booking')}
@@ -672,7 +672,7 @@ export const MyTurnosView = () => {
                           }}
                         >
                           <MapPin size={12} color="#076ABC" />
-                          {app.roomName || 'Consultorio CITRA'}
+                          Sede Central CITRA
                         </span>
                       </div>
 
@@ -1082,7 +1082,7 @@ export const MyTurnosView = () => {
                     </div>
                     <div>
                       <span style={{ color: '#64748B' }}>Ubicación: </span>
-                      <span>{selectedAppointmentForTicket.roomName || 'Consultorio CITRA'}</span>
+                      <span>Sede Central CITRA</span>
                     </div>
                   </div>
 

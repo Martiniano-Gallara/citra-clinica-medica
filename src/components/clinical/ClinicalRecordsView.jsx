@@ -774,217 +774,176 @@ export const ClinicalRecordsView = () => {
                     </div>
                   </div>
 
-                  {/* Accordion Body: TODAS LAS VECES QUE FUE A CITRA */}
+                  {/* Accordion Body: Historial de Atenciones */}
                   {isExpanded && (
-                    <div style={{ borderTop: '1.5px solid #e2e8f0', background: '#fafafa', padding: '1.25rem 1.4rem' }}>
-                      <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                        <div>
-                          <h4 style={{ margin: '0 0 2px', fontSize: '0.92rem', fontWeight: 900, color: '#002182', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                            Expediente Cronológico · Todas las Atenciones en CITRA
-                          </h4>
-                          <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
-                            {patientConsultations.length} atenciones registradas en el historial de {patient.name}.
-                          </span>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setTargetPatientForExport(patient);
-                            setIsLegalHceModalOpen(true);
-                          }}
-                          style={{
-                            background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
-                            color: '#ffffff',
-                            border: 'none',
-                            padding: '0.5rem 1rem',
-                            borderRadius: '9px',
-                            fontSize: '0.82rem',
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            boxShadow: '0 3px 10px rgba(7, 106, 188, 0.25)'
-                          }}
-                          title={`Exportar historia clínica completa o seleccionada de ${patient.name}`}
-                        >
-                          <Download size={15} />
-                          <span>Exportar Historia Clínica Completa / Selectiva</span>
-                        </button>
-                      </div>
-
+                    <div style={{ borderTop: '1px solid #e2e8f0', background: '#f8fafc', padding: '0.85rem 1.15rem' }}>
                       {patientConsultations.length === 0 ? (
-                        <div style={{ background: '#ffffff', padding: '2rem', borderRadius: '12px', textAlign: 'center', color: '#64748b', border: '1px solid #e2e8f0' }}>
-                          <FileText size={32} style={{ color: '#cbd5e1', marginBottom: '0.5rem' }} />
-                          <div style={{ fontWeight: 700, color: '#1e293b' }}>Sin evoluciones clínicas registradas aún</div>
-                          <div style={{ fontSize: '0.8rem' }}>Las historias clínicas no son opcionales ni manuales; se registran automáticamente al finalizar cada turno médico desde la agenda.</div>
+                        <div style={{ background: '#ffffff', padding: '1.5rem', borderRadius: '10px', textAlign: 'center', color: '#64748b', border: '1px solid #e2e8f0' }}>
+                          <FileText size={28} style={{ color: '#cbd5e1', marginBottom: '0.4rem' }} />
+                          <div style={{ fontWeight: 700, color: '#334155', fontSize: '0.88rem' }}>Sin atenciones registradas aún</div>
+                          <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>Las atenciones se registran automáticamente desde la agenda al finalizar una consulta.</div>
                         </div>
                       ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                          {patientConsultations.map((cons, index) => {
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                          {patientConsultations.map((cons) => {
                             const isConsExpanded = expandedConsultationId === cons.id;
                             const permission = canDoctorViewConsultation(cons);
                             const hasAdendas = cons.adendas && cons.adendas.length > 0;
+                            const hasVitals = cons.vitals && (
+                              cons.vitals.bpSystolic || 
+                              cons.vitals.heartRate || 
+                              cons.vitals.temperature || 
+                              cons.vitals.weight || 
+                              cons.vitals.height
+                            );
 
                             return (
                               <div
                                 key={cons.id}
                                 style={{
                                   background: '#ffffff',
-                                  borderRadius: '14px',
-                                  border: permission.allowed ? '1px solid #cbd5e1' : '1.5px dashed #f59e0b',
-                                  boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-                                  overflow: 'hidden'
+                                  borderRadius: '10px',
+                                  border: '1px solid ' + (permission.allowed ? (isConsExpanded ? '#93c5fd' : '#e2e8f0') : '#fed7aa'),
+                                  overflow: 'hidden',
+                                  transition: 'all 0.15s ease',
+                                  boxShadow: isConsExpanded ? '0 3px 10px rgba(0,0,0,0.04)' : '0 1px 2px rgba(0,0,0,0.02)'
                                 }}
                               >
-                                {/* Consultation Header Strip */}
+                                {/* Compact Consultation Bar */}
                                 <div
+                                  onClick={() => permission.allowed && toggleExpandConsultation(cons.id)}
                                   style={{
-                                    padding: '0.9rem 1.15rem',
+                                    padding: '0.65rem 0.95rem',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
-                                    flexWrap: 'wrap',
                                     gap: '0.75rem',
-                                    background: permission.allowed ? '#f8fafc' : '#fffbeb',
-                                    borderBottom: isConsExpanded ? '1px solid #e2e8f0' : 'none'
+                                    background: isConsExpanded ? '#eff6ff' : '#ffffff',
+                                    cursor: permission.allowed ? 'pointer' : 'default',
+                                    userSelect: 'none'
                                   }}
                                 >
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                                    <div style={{ fontWeight: 900, color: '#002182', fontSize: '0.95rem' }}>
-                                      {cons.date} · {cons.time} hs
+                                  {/* Left: Date, Doctor, Diagnosis, Motivo */}
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
+                                    {/* Date & Time */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}>
+                                      <Calendar size={13} color="#076ABC" />
+                                      <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.84rem' }}>
+                                        {cons.date}
+                                      </span>
+                                      <span style={{ color: '#64748b', fontSize: '0.78rem' }}>
+                                        {cons.time} hs
+                                      </span>
                                     </div>
-                                    <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
-                                      Folio #{index + 1}
-                                    </span>
-                                    <span
-                                      style={{
-                                        background: '#EBF3FD',
-                                        color: '#076ABC',
-                                        padding: '2px 8px',
-                                        borderRadius: '6px',
-                                        fontSize: '0.74rem',
-                                        fontWeight: 800
-                                      }}
-                                    >
-                                      {cons.doctorName || 'Dr. Asignado'} ({cons.specialtyName || 'Consultorio'})
+
+                                    <span style={{ color: '#cbd5e1' }}>•</span>
+
+                                    {/* Doctor */}
+                                    <span style={{ fontSize: '0.82rem', color: '#1e293b', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                      {cons.doctorName || 'Dr. Asignado'}
                                     </span>
 
-                                    {/* Permission Badge */}
-                                    {isDoctorBlanco ? (
-                                      <span
-                                        style={{
-                                          background: '#eff6ff',
-                                          color: '#1e40af',
-                                          border: '1px solid #bfdbfe',
-                                          padding: '2px 7px',
-                                          borderRadius: '6px',
-                                          fontSize: '0.7rem',
-                                          fontWeight: 800
-                                        }}
-                                      >
-                                        Acceso Total
-                                      </span>
-                                    ) : permission.reason === 'author' ? (
+                                    <span style={{ color: '#cbd5e1' }}>•</span>
+
+                                    {/* Diagnosis Pill */}
+                                    {cons.diagnosis && (
                                       <span
                                         style={{
                                           background: '#ecfdf5',
                                           color: '#065f46',
                                           border: '1px solid #a7f3d0',
-                                          padding: '2px 7px',
+                                          padding: '2px 8px',
                                           borderRadius: '6px',
-                                          fontSize: '0.7rem',
-                                          fontWeight: 800
+                                          fontSize: '0.75rem',
+                                          fontWeight: 700,
+                                          maxWidth: '260px',
+                                          whiteSpace: 'nowrap',
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis'
                                         }}
+                                        title={cons.diagnosis}
                                       >
-                                        Atención Propia
+                                        {cons.diagnosis}
                                       </span>
-                                    ) : permission.allowed && permission.reason === 'approved_request' ? (
+                                    )}
+
+                                    {/* Reason (Motivo) preview */}
+                                    {cons.reason && (
                                       <span
                                         style={{
-                                          background: '#ecfdf5',
-                                          color: '#065f46',
-                                          border: '1px solid #a7f3d0',
-                                          padding: '2px 7px',
-                                          borderRadius: '6px',
-                                          fontSize: '0.7rem',
-                                          fontWeight: 800
+                                          fontSize: '0.8rem',
+                                          color: '#64748b',
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis',
+                                          whiteSpace: 'nowrap',
+                                          flex: '1 1 180px',
+                                          minWidth: 0
                                         }}
+                                        title={cons.reason}
                                       >
-                                        Acceso Autorizado por {cons.doctorName}
+                                        — {cons.reason}
                                       </span>
-                                    ) : permission.reason === 'pending_request' ? (
+                                    )}
+
+                                    {/* Restricted access label */}
+                                    {!permission.allowed && (
                                       <span
                                         style={{
-                                          background: '#fef3c7',
-                                          color: '#92400e',
-                                          border: '1px solid #fde68a',
-                                          padding: '2px 7px',
-                                          borderRadius: '6px',
-                                          fontSize: '0.7rem',
-                                          fontWeight: 800
-                                        }}
-                                      >
-                                        Solicitud Pendiente de Autorización
-                                      </span>
-                                    ) : (
-                                      <span
-                                        style={{
-                                          background: '#fee2e2',
+                                          background: '#fef2f2',
                                           color: '#991b1b',
                                           border: '1px solid #fecaca',
                                           padding: '2px 7px',
                                           borderRadius: '6px',
-                                          fontSize: '0.7rem',
-                                          fontWeight: 800
+                                          fontSize: '0.72rem',
+                                          fontWeight: 700
                                         }}
                                       >
-                                        Consulta de Otro Profesional · Acceso Restringido
+                                        {permission.reason === 'pending_request' ? 'Solicitud pendiente' : 'Acceso restringido'}
                                       </span>
                                     )}
                                   </div>
 
-                                  {/* Actions */}
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                  {/* Right: Actions */}
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
                                     {permission.allowed ? (
                                       <>
                                         <button
                                           type="button"
                                           onClick={() => setSelectedConsultationForPrint(cons)}
-                                          title="Imprimir informe oficial de esta consulta"
+                                          title="Imprimir informe de consulta"
                                           style={{
-                                            background: '#f8fafc',
+                                            background: '#ffffff',
                                             border: '1px solid #cbd5e1',
-                                            color: '#334155',
+                                            color: '#475569',
                                             borderRadius: '7px',
-                                            padding: '0.35rem 0.6rem',
+                                            padding: '0.3rem 0.55rem',
                                             cursor: 'pointer',
                                             display: 'flex',
                                             alignItems: 'center'
                                           }}
                                         >
-                                          <Printer size={14} />
+                                          <Printer size={13} />
                                         </button>
+
                                         <button
                                           type="button"
                                           onClick={() => toggleExpandConsultation(cons.id)}
                                           style={{
                                             background: isConsExpanded ? '#002182' : '#ffffff',
                                             color: isConsExpanded ? '#ffffff' : '#002182',
-                                            border: '1px solid #002182',
+                                            border: '1px solid ' + (isConsExpanded ? '#002182' : '#cbd5e1'),
                                             borderRadius: '7px',
-                                            padding: '0.35rem 0.75rem',
-                                            fontSize: '0.78rem',
-                                            fontWeight: 800,
+                                            padding: '0.3rem 0.65rem',
+                                            fontSize: '0.76rem',
+                                            fontWeight: 700,
                                             cursor: 'pointer',
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: '4px'
                                           }}
                                         >
-                                          <span>{isConsExpanded ? 'Ocultar Ficha' : 'Ver Ficha Completa'}</span>
-                                          {isConsExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                          <span>{isConsExpanded ? 'Ocultar' : 'Ver Detalle'}</span>
+                                          {isConsExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                                         </button>
                                       </>
                                     ) : (
@@ -995,208 +954,215 @@ export const ClinicalRecordsView = () => {
                                           background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
                                           color: '#ffffff',
                                           border: 'none',
-                                          borderRadius: '8px',
-                                          padding: '0.45rem 0.95rem',
-                                          fontSize: '0.8rem',
-                                          fontWeight: 800,
+                                          borderRadius: '7px',
+                                          padding: '0.35rem 0.75rem',
+                                          fontSize: '0.76rem',
+                                          fontWeight: 700,
                                           cursor: 'pointer',
                                           display: 'flex',
                                           alignItems: 'center',
-                                          gap: '6px',
-                                          boxShadow: '0 2px 8px rgba(7, 106, 188, 0.25)'
+                                          gap: '5px'
                                         }}
                                       >
-                                        <Lock size={14} />
-                                        <span>Solicitar Acceso a {cons.doctorName}</span>
+                                        <Lock size={13} />
+                                        <span>Solicitar Acceso</span>
                                       </button>
                                     )}
                                   </div>
                                 </div>
 
-                                {/* Summary preview row */}
-                                <div style={{ padding: '0.9rem 1.15rem' }}>
-                                  {permission.allowed ? (
-                                    <div>
-                                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-                                        <div>
-                                          <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase' }}>
-                                            Motivo de Consulta
-                                          </div>
-                                          <div style={{ fontSize: '0.86rem', color: '#1e293b', fontWeight: 600, marginTop: '2px' }}>
-                                            {cons.reason || 'Consulta médica programada'}
-                                          </div>
+                                {/* Expanded Details Drawer */}
+                                {isConsExpanded && permission.allowed && (
+                                  <div
+                                    style={{
+                                      borderTop: '1px solid #e2e8f0',
+                                      background: '#fafbfc',
+                                      padding: '0.85rem 1rem 1rem',
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '0.85rem'
+                                    }}
+                                  >
+                                    {/* Detailed Reason & Diagnosis */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem' }}>
+                                      <div>
+                                        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                                          Motivo de Consulta
                                         </div>
-
-                                        <div>
-                                          <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase' }}>
-                                            Diagnóstico CIE-10
-                                          </div>
-                                          <div style={{ fontSize: '0.86rem', color: '#0f172a', fontWeight: 700, marginTop: '2px' }}>
-                                            {cons.diagnosis || 'Consulta ambulatoria'}
-                                          </div>
+                                        <div style={{ fontSize: '0.84rem', color: '#1e293b', fontWeight: 600, marginTop: '2px' }}>
+                                          {cons.reason || 'Consulta médica programada'}
                                         </div>
                                       </div>
-
-                                      {/* Full details when accordion opened */}
-                                      {isConsExpanded && (
-                                        <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                          {/* Vitals */}
-                                          {cons.vitals && (
-                                            <div
-                                              style={{
-                                                display: 'flex',
-                                                gap: '1.25rem',
-                                                background: '#f8fafc',
-                                                border: '1px solid #e2e8f0',
-                                                padding: '0.55rem 0.85rem',
-                                                borderRadius: '8px',
-                                                fontSize: '0.78rem',
-                                                color: '#0f172a',
-                                                flexWrap: 'wrap'
-                                              }}
-                                            >
-                                              <span><strong>Tensión Arterial:</strong> {cons.vitals.bpSystolic}/{cons.vitals.bpDiastolic} mmHg</span>
-                                              <span><strong>Frec. Cardíaca:</strong> {cons.vitals.heartRate} lpm</span>
-                                              <span><strong>Temp:</strong> {cons.vitals.temperature} °C</span>
-                                              <span><strong>Peso:</strong> {cons.vitals.weight} kg</span>
-                                              <span><strong>Altura:</strong> {cons.vitals.height} m</span>
-                                            </div>
-                                          )}
-
-                                          {/* Clinical Evolution */}
-                                          <div>
-                                            <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#002182', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
-                                              Evolución Médica & Examen Físico
-                                            </div>
-                                            <p style={{ fontSize: '0.84rem', color: '#1e293b', margin: 0, lineHeight: 1.5 }}>
-                                              {cons.evolution || cons.physicalExam || 'Evolución clínica sin particularidades.'}
-                                            </p>
-                                          </div>
-
-                                          {/* Prescriptions */}
-                                          {cons.prescriptions && cons.prescriptions.length > 0 && (
-                                            <div>
-                                              <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
-                                                Prescripción Digital Rp/
-                                              </div>
-                                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                {cons.prescriptions.map((rx, rIdx) => (
-                                                  <div key={rIdx} style={{ fontSize: '0.8rem', background: '#ecfdf5', padding: '4px 8px', borderRadius: '6px', border: '1px solid #a7f3d0' }}>
-                                                    <strong>{rx.medication || rx.name || rx.drugName}</strong> — {rx.dosage || rx.presentation}
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            </div>
-                                          )}
-
-                                          {/* Indications */}
-                                          {cons.indications && (
-                                            <div>
-                                              <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
-                                                Indicaciones y Pautas Terapéuticas
-                                              </div>
-                                              <p style={{ fontSize: '0.82rem', color: '#334155', margin: 0 }}>
-                                                {cons.indications}
-                                              </p>
-                                            </div>
-                                          )}
-
-                                          {/* Adendas */}
-                                          {hasAdendas && (
-                                            <div style={{ background: '#fefce8', border: '1px solid #fef08a', borderRadius: '8px', padding: '0.75rem' }}>
-                                              <div style={{ fontSize: '0.76rem', fontWeight: 900, color: '#854d0e', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
-                                                Adendas Médicas Fechadas (Art. 13 Ley 26.529)
-                                              </div>
-                                              {cons.adendas.map((ad, aIdx) => (
-                                                <div key={aIdx} style={{ fontSize: '0.8rem', color: '#713f12' }}>
-                                                  <strong>Adenda #{aIdx + 1} ({ad.date} {ad.time}):</strong> {ad.adendaText}
-                                                </div>
-                                              ))}
-                                            </div>
-                                          )}
-
-                                          {/* Footer Action */}
-                                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #f1f5f9' }}>
-                                            <button
-                                              type="button"
-                                              className="btn btn-outline btn-sm"
-                                              onClick={() => {
-                                                setAdendaTargetConsultation(cons);
-                                                setIsAdendaModalOpen(true);
-                                              }}
-                                              style={{ fontSize: '0.76rem', fontWeight: 800 }}
-                                            >
-                                              <FileEdit size={13} />
-                                              <span>+ Asentar Adenda</span>
-                                            </button>
-                                          </div>
+                                      <div>
+                                        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                                          Diagnóstico
                                         </div>
-                                      )}
+                                        <div style={{ fontSize: '0.84rem', color: '#0f172a', fontWeight: 700, marginTop: '2px' }}>
+                                          {cons.diagnosis || 'Consulta ambulatoria'}
+                                        </div>
+                                      </div>
                                     </div>
-                                  ) : (
-                                    /* Restricted View Block */
-                                    <div
-                                      style={{
-                                        background: '#fffbeb',
-                                        border: '1px solid #fde68a',
-                                        borderRadius: '10px',
-                                        padding: '1rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        flexWrap: 'wrap',
-                                        gap: '1rem'
-                                      }}
-                                    >
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                        <div
-                                          style={{
-                                            width: '36px',
-                                            height: '36px',
-                                            borderRadius: '10px',
-                                            background: '#fef3c7',
-                                            color: '#92400e',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            flexShrink: 0
-                                          }}
-                                        >
-                                          <Lock size={18} />
-                                        </div>
-                                        <div>
-                                          <div style={{ fontWeight: 800, color: '#92400e', fontSize: '0.88rem' }}>
-                                            Registro Clínico Reservado · Titular: {cons.doctorName}
-                                          </div>
-                                          <div style={{ fontSize: '0.78rem', color: '#78350f', marginTop: '2px' }}>
-                                            Conforme a las normas de secreto médico y Ley 26.529, para visualizar este registro debe solicitar autorización a su profesional tratante mediante justificación médica.
-                                          </div>
-                                        </div>
-                                      </div>
 
-                                      <button
-                                        type="button"
-                                        onClick={() => handleOpenRequestAccess(cons, patient)}
+                                    {/* Vitals Bar (only if filled) */}
+                                    {hasVitals && (
+                                      <div
                                         style={{
-                                          background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
-                                          color: '#ffffff',
-                                          border: 'none',
-                                          padding: '0.55rem 1rem',
-                                          borderRadius: '8px',
-                                          fontSize: '0.82rem',
-                                          fontWeight: 800,
-                                          cursor: 'pointer',
                                           display: 'flex',
-                                          alignItems: 'center',
-                                          gap: '6px'
+                                          gap: '1rem',
+                                          background: '#ffffff',
+                                          border: '1px solid #e2e8f0',
+                                          padding: '0.45rem 0.75rem',
+                                          borderRadius: '7px',
+                                          fontSize: '0.78rem',
+                                          color: '#334155',
+                                          flexWrap: 'wrap',
+                                          alignItems: 'center'
                                         }}
                                       >
-                                        <Lock size={14} />
-                                        <span>Solicitar Acceso Urgente</span>
+                                        <span style={{ fontWeight: 700, color: '#002182', fontSize: '0.72rem', textTransform: 'uppercase' }}>Signos Vitales:</span>
+                                        {cons.vitals.bpSystolic && <span><strong>TA:</strong> {cons.vitals.bpSystolic}/{cons.vitals.bpDiastolic} mmHg</span>}
+                                        {cons.vitals.heartRate && <span><strong>FC:</strong> {cons.vitals.heartRate} lpm</span>}
+                                        {cons.vitals.temperature && <span><strong>Temp:</strong> {cons.vitals.temperature} °C</span>}
+                                        {cons.vitals.weight && <span><strong>Peso:</strong> {cons.vitals.weight} kg</span>}
+                                        {cons.vitals.height && <span><strong>Talla:</strong> {cons.vitals.height} m</span>}
+                                      </div>
+                                    )}
+
+                                    {/* Clinical Evolution */}
+                                    <div>
+                                      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.02em', marginBottom: '0.25rem' }}>
+                                        Evolución Médica & Examen Físico
+                                      </div>
+                                      <div
+                                        style={{
+                                          fontSize: '0.84rem',
+                                          color: '#1e293b',
+                                          lineHeight: 1.5,
+                                          background: '#ffffff',
+                                          padding: '0.65rem 0.85rem',
+                                          borderRadius: '7px',
+                                          border: '1px solid #e2e8f0',
+                                          whiteSpace: 'pre-wrap'
+                                        }}
+                                      >
+                                        {cons.evolution || cons.physicalExam || 'Evolución clínica sin particularidades.'}
+                                      </div>
+                                    </div>
+
+                                    {/* Prescriptions */}
+                                    {cons.prescriptions && cons.prescriptions.length > 0 && (
+                                      <div>
+                                        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.02em', marginBottom: '0.25rem' }}>
+                                          Prescripción Rp/
+                                        </div>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                          {cons.prescriptions.map((rx, rIdx) => (
+                                            <div
+                                              key={rIdx}
+                                              style={{
+                                                fontSize: '0.78rem',
+                                                background: '#ecfdf5',
+                                                color: '#065f46',
+                                                padding: '4px 9px',
+                                                borderRadius: '6px',
+                                                border: '1px solid #a7f3d0'
+                                              }}
+                                            >
+                                              <strong>{rx.medication || rx.name || rx.drugName}</strong> {rx.dosage || rx.presentation ? `— ${rx.dosage || rx.presentation}` : ''}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Indications */}
+                                    {cons.indications && (
+                                      <div>
+                                        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.02em', marginBottom: '0.25rem' }}>
+                                          Indicaciones
+                                        </div>
+                                        <div
+                                          style={{
+                                            fontSize: '0.82rem',
+                                            color: '#334155',
+                                            background: '#ffffff',
+                                            padding: '0.5rem 0.75rem',
+                                            borderRadius: '7px',
+                                            border: '1px solid #e2e8f0'
+                                          }}
+                                        >
+                                          {cons.indications}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Adendas */}
+                                    {hasAdendas && (
+                                      <div style={{ background: '#fefce8', border: '1px solid #fef08a', borderRadius: '7px', padding: '0.65rem 0.85rem' }}>
+                                        <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#854d0e', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
+                                          Adendas Médicas Fechadas (Ley 26.529)
+                                        </div>
+                                        {cons.adendas.map((ad, aIdx) => (
+                                          <div key={aIdx} style={{ fontSize: '0.78rem', color: '#713f12', marginTop: aIdx > 0 ? '4px' : '0' }}>
+                                            <strong>Adenda #{aIdx + 1} ({ad.date} {ad.time}):</strong> {ad.adendaText}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    {/* Action Footer */}
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '0.3rem' }}>
+                                      <button
+                                        type="button"
+                                        className="btn btn-outline btn-sm"
+                                        onClick={() => {
+                                          setAdendaTargetConsultation(cons);
+                                          setIsAdendaModalOpen(true);
+                                        }}
+                                        style={{ fontSize: '0.76rem', fontWeight: 700, padding: '0.3rem 0.7rem' }}
+                                      >
+                                        <FileEdit size={13} />
+                                        <span>+ Asentar Adenda</span>
                                       </button>
                                     </div>
-                                  )}
-                                </div>
+                                  </div>
+                                )}
+
+                                {/* Restricted Access View */}
+                                {!permission.allowed && (
+                                  <div
+                                    style={{
+                                      padding: '0.75rem 1rem',
+                                      background: '#fffbeb',
+                                      borderTop: '1px solid #fde68a',
+                                      fontSize: '0.78rem',
+                                      color: '#92400e',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      gap: '0.75rem',
+                                      flexWrap: 'wrap'
+                                    }}
+                                  >
+                                    <span>Registro reservado del profesional tratante ({cons.doctorName}). Requiere solicitud de acceso bajo secreto médico.</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenRequestAccess(cons, patient)}
+                                      style={{
+                                        background: '#92400e',
+                                        color: '#ffffff',
+                                        border: 'none',
+                                        padding: '0.3rem 0.7rem',
+                                        borderRadius: '6px',
+                                        fontSize: '0.74rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      Solicitar Acceso
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}

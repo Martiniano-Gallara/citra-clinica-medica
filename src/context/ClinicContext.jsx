@@ -64,10 +64,12 @@ export const ClinicProvider = ({ children }) => {
   const [healthInsurances, setHealthInsurances] = useState(() => loadStorage('healthInsurances', INITIAL_HEALTH_INSURANCES));
   const [doctors, setDoctors] = useState(() => {
     const loaded = loadStorage('doctors', null);
-    if (!loaded || !Array.isArray(loaded)) {
-      return INITIAL_DOCTORS;
+    let list = (!loaded || !Array.isArray(loaded)) ? INITIAL_DOCTORS : loaded;
+    const otrosDoc = INITIAL_DOCTORS.find((d) => d.id === 'doc-otros');
+    if (otrosDoc && !list.some((d) => d.id === 'doc-otros' || d.name === 'Otros Profesionales')) {
+      list = [...list, otrosDoc];
     }
-    return loaded;
+    return list.map((d) => ({ ...d, license: '', roomName: '' }));
   });
   // Clinical & Sensitive Records (Kept in runtime memory; synced via dataService backend, not unencrypted localStorage)
   const [patients, setPatients] = useState(() => INITIAL_PATIENTS);
@@ -944,7 +946,7 @@ export const ClinicProvider = ({ children }) => {
   }) => {
     const effectiveRequesterId = currentDoctor?.id || 'doc-2';
     const effectiveRequesterName = currentDoctor?.name || 'Dr. Solicitante';
-    const effectiveRequesterSpecialty = currentDoctor?.specialty || 'Especialista';
+    const effectiveRequesterSpecialty = currentDoctor?.specialty || 'Traumatología';
 
     const newReq = {
       id: `req-${Date.now()}`,
@@ -1758,7 +1760,7 @@ export const ClinicProvider = ({ children }) => {
       name: newDoc.name,
       email: newDoc.email || `${newDoc.name.toLowerCase().replace(/[^a-z]/g, '')}@citra.com.ar`,
       password: 'citra2026',
-      role: `Médico ${newDoc.specialty || 'Especialista'}`,
+      role: `Médico ${newDoc.specialty || 'Profesional'}`,
       adminType: 'doctor',
       doctorId: newDoc.id,
       specialty: newDoc.specialty,
@@ -1835,18 +1837,65 @@ export const ClinicProvider = ({ children }) => {
   };
 
   const updateSpecialty = (id, updatedData) => {
+    const targetSpec = specialties.find((s) => s.id === id);
+    const oldName = targetSpec?.name;
+    const newName = updatedData.name?.trim();
+
     setSpecialties((prev) =>
       prev.map((s) => (s.id === id ? { ...s, ...updatedData } : s))
     );
+
+    // Sincronización bidireccional directa con los profesionales
+    if (newName && oldName && oldName.toLowerCase() !== newName.toLowerCase()) {
+      setDoctors((prev) =>
+        prev.map((doc) => {
+          const matchId = doc.specialtyId === id;
+          const matchName =
+            (doc.specialty && doc.specialty.trim().toLowerCase() === oldName.trim().toLowerCase()) ||
+            (doc.specialtyName && doc.specialtyName.trim().toLowerCase() === oldName.trim().toLowerCase());
+          if (matchId || matchName) {
+            return {
+              ...doc,
+              specialty: newName,
+              specialtyName: newName,
+              specialtyId: id
+            };
+          }
+          return doc;
+        })
+      );
+    }
+
     if (dataService.isLive()) {
       dataService.updateSpecialty(id, updatedData).catch(console.warn);
     }
-    logAudit('UPDATE', 'Especialidades', '-', `Modificación de especialidad ID ${id}`);
+    logAudit('UPDATE', 'Especialidades', '-', `Modificación de especialidad ID ${id}: ${newName || oldName || ''}`);
     addToast('Especialidad Actualizada', 'Cambios guardados con éxito.', 'success');
   };
 
   const deleteSpecialty = (id) => {
+    const targetSpec = specialties.find((s) => s.id === id);
+    const specName = targetSpec?.name;
     setSpecialties((prev) => prev.filter((s) => s.id !== id));
+    if (specName) {
+      setDoctors((prev) =>
+        prev.map((doc) => {
+          const matchId = doc.specialtyId === id;
+          const matchName =
+            (doc.specialty && doc.specialty.trim().toLowerCase() === specName.trim().toLowerCase()) ||
+            (doc.specialtyName && doc.specialtyName.trim().toLowerCase() === specName.trim().toLowerCase());
+          if (matchId || matchName) {
+            return {
+              ...doc,
+              specialty: 'Medicina General',
+              specialtyName: 'Medicina General',
+              specialtyId: 'spec-general'
+            };
+          }
+          return doc;
+        })
+      );
+    }
     if (dataService.isLive()) {
       dataService.deleteSpecialty(id).catch(console.warn);
     }

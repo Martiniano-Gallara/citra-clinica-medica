@@ -729,7 +729,7 @@ export const PatientDetailModal = () => {
                   <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0', color: '#475569', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     <th style={{ padding: '0.85rem 1.15rem', width: '150px' }}>Fecha & Hora</th>
                     <th style={{ padding: '0.85rem 1.15rem', width: '170px' }}>Profesional</th>
-                    <th style={{ padding: '0.85rem 1.15rem', width: '130px' }}>Consultorio</th>
+                    <th style={{ padding: '0.85rem 1.15rem', width: '140px' }}>Especialidad</th>
                     <th style={{ padding: '0.85rem 1.15rem' }}>Motivo de Consulta</th>
                     <th style={{ padding: '0.85rem 1.15rem', width: '130px' }}>Copago</th>
                     <th style={{ padding: '0.85rem 1.15rem', width: '120px', textAlign: 'center' }}>Estado</th>
@@ -754,7 +754,7 @@ export const PatientDetailModal = () => {
                         </td>
                         <td style={{ padding: '0.9rem 1.15rem' }}>
                           <span style={{ background: '#EFF6FF', color: '#1D4ED8', padding: '3px 8px', borderRadius: '6px', fontSize: '0.76rem', fontWeight: 700 }}>
-                            {app.roomName || 'Consultorio 101'}
+                            {app.specialtyName || app.doctorSpecialty || 'Traumatología'}
                           </span>
                         </td>
                         <td style={{ padding: '0.9rem 1.15rem', color: '#334155', maxWidth: '300px', lineHeight: 1.4 }}>

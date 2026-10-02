@@ -323,7 +323,6 @@ export const ConsultationPrintView = () => {
                 </div>
                 <div><strong>Médico:</strong> {cons.doctorName}</div>
                 <div><strong>Especialidad:</strong> {cons.specialtyName || 'Traumatología y Ortopedia'}</div>
-                <div><strong>Matrícula:</strong> {cons.doctorLicense || '—'}</div>
                 {cons.sisaRefeps && <div><strong>Registro:</strong> {cons.sisaRefeps}</div>}
               </div>
             </div>
@@ -585,9 +584,6 @@ export const ConsultationPrintView = () => {
                   </div>
                   <div style={{ fontSize: '0.76rem', color: '#475569' }}>
                     {cons.specialtyName || 'Traumatología y Ortopedia'}
-                  </div>
-                  <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                    {cons.doctorLicense || 'Matrícula Profesional Verificada'}
                   </div>
                   <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
                     <CheckCircle2 size={12} color="#059669" /> Firma Electrónica Médica Certificada

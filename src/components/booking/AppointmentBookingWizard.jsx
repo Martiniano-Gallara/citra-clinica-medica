@@ -1392,7 +1392,7 @@ export const AppointmentBookingWizard = () => {
                       </div>
                       <div>
                         <span style={{ color: '#7994B8' }}>Ubicación: </span>
-                        <span>{confirmedAppointment.roomName} · Sede Central</span>
+                        <span>Sede Central CITRA</span>
                       </div>
                       <div>
                         <span style={{ color: '#7994B8' }}>Cobertura: </span>

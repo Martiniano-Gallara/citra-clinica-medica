@@ -140,8 +140,8 @@ export const DigitalSignatureModal = () => {
               <div style={{ fontWeight: 700, color: '#002182' }}>{selectedDoc.digitalSignatureStatus}</div>
             </div>
             <div>
-              <span style={{ color: '#496386' }}>Matrícula Certificada:</span>
-              <div style={{ fontWeight: 700, color: '#002182' }}>{selectedDoc.license}</div>
+              <span style={{ color: '#496386' }}>Especialidad Certificada:</span>
+              <div style={{ fontWeight: 700, color: '#002182' }}>{selectedDoc.specialty || selectedDoc.specialtyName || 'Traumatología y Ortopedia'}</div>
             </div>
             <div>
               <span style={{ color: '#496386' }}>Vencimiento del Certificado:</span>

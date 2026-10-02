@@ -9,11 +9,15 @@ export const DoctorModal = () => {
     setIsDoctorModalOpen,
     doctorModalData,
     specialties,
+    addSpecialty,
     rooms,
     addDoctor,
     updateDoctor,
     addToast
   } = useClinic();
+
+  const [isCustomSpecialty, setIsCustomSpecialty] = useState(false);
+  const [customSpecialty, setCustomSpecialty] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -85,15 +89,47 @@ export const DoctorModal = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.license) {
-      addToast('Error', 'Nombre y Matrícula son obligatorios.', 'error');
+    if (!formData.name) {
+      addToast('Error', 'El nombre es obligatorio.', 'error');
       return;
     }
 
+    let finalSpecialtyName = isCustomSpecialty ? customSpecialty.trim() : formData.specialtyName;
+    if (!finalSpecialtyName) {
+      finalSpecialtyName = specialties[0]?.name || 'Traumatología';
+    }
+
+    let matchedSpec = specialties.find(
+      (s) => s.name.toLowerCase() === finalSpecialtyName.toLowerCase()
+    );
+
+    if (!matchedSpec) {
+      const newSpecId = `esp-${Date.now()}`;
+      matchedSpec = {
+        id: newSpecId,
+        name: finalSpecialtyName,
+        color: '#076ABC',
+        category: 'Especialidades',
+        defaultDuration: Number(formData.slotDuration) || 30
+      };
+      if (typeof addSpecialty === 'function') {
+        addSpecialty(matchedSpec);
+      }
+    }
+
+    const payload = {
+      ...formData,
+      specialty: finalSpecialtyName,
+      specialtyName: finalSpecialtyName,
+      specialtyId: matchedSpec?.id || 'spec-1',
+      license: '',
+      roomName: ''
+    };
+
     if (doctorModalData) {
-      updateDoctor(doctorModalData.id, formData);
+      updateDoctor(doctorModalData.id, payload);
     } else {
-      addDoctor(formData);
+      addDoctor(payload);
     }
     setIsDoctorModalOpen(false);
   };
@@ -121,7 +157,7 @@ export const DoctorModal = () => {
     >
       <form onSubmit={handleSubmit}>
         <div className="form-row">
-          <div className="form-group" style={{ gridColumn: 'span 2' }}>
+          <div className="form-group">
             <label className="form-label">Nombre y Apellido *</label>
             <input
               type="text"
@@ -134,50 +170,57 @@ export const DoctorModal = () => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Matrícula (MN / MP) *</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Ej: MN 145.890 / MP 50.120"
-              value={formData.license}
-              onChange={(e) => setFormData({ ...formData, license: e.target.value })}
-              required
-            />
-          </div>
-        </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+              <label className="form-label" style={{ margin: 0 }}>Especialidad Principal *</label>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCustomSpecialty(!isCustomSpecialty);
+                  if (!isCustomSpecialty) setCustomSpecialty('');
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#076ABC',
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  padding: 0,
+                  textDecoration: 'underline'
+                }}
+              >
+                {isCustomSpecialty ? '← Elegir de la lista' : '+ Nueva especialidad'}
+              </button>
+            </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">Especialidad Principal *</label>
-            <select
-              className="form-control"
-              value={formData.specialtyId}
-              onChange={handleSpecialtyChange}
-            >
-              {specialties.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Consultorio Habitual</label>
-            <select
-              className="form-control"
-              value={formData.roomId}
-              onChange={(e) => {
-                const r = rooms.find((rm) => rm.id === e.target.value);
-                setFormData((prev) => ({
-                  ...prev,
-                  roomId: e.target.value,
-                  roomName: r ? r.name : prev.roomName
-                }));
-              }}
-            >
-              {rooms.map((room) => (
-                <option key={room.id} value={room.id}>{room.name} ({room.floor})</option>
-              ))}
-            </select>
+            {isCustomSpecialty ? (
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Escriba nueva especialidad (ej: Flebología)"
+                value={customSpecialty}
+                onChange={(e) => setCustomSpecialty(e.target.value)}
+                required
+              />
+            ) : (
+              <select
+                className="form-control"
+                value={formData.specialtyId}
+                onChange={(e) => {
+                  if (e.target.value === '__NEW__') {
+                    setIsCustomSpecialty(true);
+                    setCustomSpecialty('');
+                  } else {
+                    handleSpecialtyChange(e);
+                  }
+                }}
+              >
+                {specialties.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+                <option value="__NEW__">+ Agregar otra especialidad...</option>
+              </select>
+            )}
           </div>
         </div>
 

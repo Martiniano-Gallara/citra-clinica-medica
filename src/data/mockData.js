@@ -47,7 +47,7 @@ export const INITIAL_CLINIC_INFO = {
       name: 'CITRA Clínica Médica — Sede Arroyito',
       address: 'Av. Carlos Pontin 556, Arroyito, Córdoba (CP 2434)',
       details: 'Fácil acceso y estacionamiento',
-      consultorios: 8,
+      salas: 8,
       phone: '3576 450214',
       schedule: 'Lunes a Viernes 8 a 20 hs',
       scheduleHelp: '¡Estamos para ayudarte!'
@@ -71,13 +71,13 @@ export const INITIAL_SPECIALTIES = [
 ];
 
 export const INITIAL_ROOMS = [
-  { id: 'room-101', name: 'Consultorio 101 — Traumatología', floor: 'Piso 1', branchId: 'branch-1', specialty: 'Traumatología' },
-  { id: 'room-102', name: 'Consultorio 102 — Kinesiología & Fisioterapia', floor: 'Piso 1', branchId: 'branch-1', specialty: 'Kinesiología' },
-  { id: 'room-103', name: 'Consultorio 103 — Neurología & Reumatología', floor: 'Piso 1', branchId: 'branch-1', specialty: 'Neurología' },
-  { id: 'room-201', name: 'Consultorio 201 — Nutrición & Piso Pélvico', floor: 'Piso 2', branchId: 'branch-1', specialty: 'Nutrición' },
-  { id: 'room-202', name: 'Consultorio 202 — Osteopatía & ATM', floor: 'Piso 2', branchId: 'branch-1', specialty: 'Osteopatía' },
-  { id: 'room-203', name: 'Gabinete de Ozonoterapia & Medicina Estética', floor: 'Piso 2', branchId: 'branch-1', specialty: 'Ozonoterapia' },
-  { id: 'room-204', name: 'Sala de Radiología Digital & Estudio de la Pisada', floor: 'PB', branchId: 'branch-1', specialty: 'Radiología' }
+  { id: 'room-101', name: 'Sala 1', floor: 'Piso 1', branchId: 'branch-1', specialty: 'Traumatología' },
+  { id: 'room-102', name: 'Sala 2', floor: 'Piso 1', branchId: 'branch-1', specialty: 'Kinesiología' },
+  { id: 'room-103', name: 'Sala 3', floor: 'Piso 1', branchId: 'branch-1', specialty: 'Neurología' },
+  { id: 'room-201', name: 'Sala 4', floor: 'Piso 2', branchId: 'branch-1', specialty: 'Nutrición' },
+  { id: 'room-202', name: 'Sala 5', floor: 'Piso 2', branchId: 'branch-1', specialty: 'Osteopatía' },
+  { id: 'room-203', name: 'Sala 6', floor: 'Piso 2', branchId: 'branch-1', specialty: 'Ozonoterapia' },
+  { id: 'room-204', name: 'Sala 7', floor: 'PB', branchId: 'branch-1', specialty: 'Radiología' }
 ];
 
 export const INITIAL_HEALTH_INSURANCES = [
@@ -123,6 +123,38 @@ export const INITIAL_DOCTORS = [
     experience: '15+ años de experiencia',
     bio: 'Especialista en traumatología y ortopedia, patología articular y lesiones deportivas.',
     stats: { patientsAttended: 620, occupationRate: 96, rating: 4.9 }
+  },
+  {
+    id: 'doc-otros',
+    name: 'Otros Profesionales',
+    fullName: 'Otros Profesionales',
+    specialty: 'Atención Médica General / Otras Especialidades',
+    specialtyId: 'esp-14',
+    specialtyName: 'Atención Médica General / Otras Especialidades',
+    specialtyIds: ['esp-1', 'esp-2', 'esp-3', 'esp-4'],
+    license: 'Staff Rotativo CITRA',
+    sisaRefeps: 'CITRA-EXT-01',
+    digitalSignatureStatus: 'Secretaría / Recepción',
+    certExpiration: '2030-01-01',
+    email: 'otros.profesionales@citra.com.ar',
+    phone: '3576 450214',
+    roomId: 'room-103',
+    roomName: 'Consultorios Externos',
+    color: '#076ABC',
+    avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&auto=format&fit=crop&q=80',
+    photo: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&auto=format&fit=crop&q=80',
+    scheduleDisplay: 'Lunes a Viernes 08:00 a 20:00 hs',
+    workingDays: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+    scheduleStart: '08:00',
+    scheduleEnd: '20:00',
+    slotDuration: 30,
+    priceConsultation: 25000,
+    feePercentage: 75,
+    acceptedInsurances: ['hi-1', 'hi-2', 'hi-3', 'hi-4', 'hi-5', 'hi-6', 'hi-7'],
+    active: true,
+    experience: 'Equipo Médico Multidisciplinario',
+    bio: 'Atención médica general y especialidades externas de CITRA.',
+    stats: { patientsAttended: 320, occupationRate: 90, rating: 4.8 }
   },
   {
     id: 'doc-2',
@@ -2183,7 +2215,7 @@ export const INITIAL_INVENTORY_ITEMS = [
     stock: 3,
     minStock: 6,
     unitPrice: 62000,
-    location: 'Consultorio 101 Traumatología',
+    location: 'Depósito Central Traumatología',
     lotNumber: 'FR-8812',
     expirationDate: 'N/A',
     supplierId: 'sup-1',
@@ -2278,7 +2310,7 @@ export const INITIAL_COMMUNICATION_LOGS = [
     phone: '+54 9 3576 44-5588',
     type: 'WhatsApp Automatizado',
     template: 'recordatorio_turno_citra',
-    message: 'Hola Juan Ignacio, te recordamos tu turno en CITRA para hoy 08:30 con Dr. Blanco (Consultorio 101). Respondé 1 para Confirmar o 2 para Reprogramar.',
+    message: 'Hola Juan Ignacio, te recordamos tu turno en CITRA para hoy 08:30 con Dr. Blanco. Respondé 1 para Confirmar o 2 para Reprogramar.',
     sentAt: '2026-08-27 18:00',
     status: 'Confirmado por Paciente', // 'Enviado', 'Entregado', 'Leído', 'Confirmado por Paciente', 'Cancelado por Paciente'
     responseReceived: '1 - Confirmado, muchas gracias!'

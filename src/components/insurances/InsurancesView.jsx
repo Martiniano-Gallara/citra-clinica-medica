@@ -809,11 +809,10 @@ export const InsurancesView = () => {
                           borderRadius: '6px'
                         }}
                       >
-                        {selectedDoctor.specialty?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : selectedDoctor.specialty}
+                        {selectedDoctor.specialty || 'Especialidad'}
                       </span>
                     </div>
                     <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
-                      Consultorio: <strong style={{ color: '#0f172a' }}>{selectedDoctor.room || 'Consultorio 1 - PB'}</strong> · 
                       Arancel Privado: <strong style={{ color: '#0f172a' }}>${(selectedDoctor.priceConsultation || 25000).toLocaleString('es-AR')}</strong> · 
                       Honorarios: <strong style={{ color: '#0f172a' }}>{selectedDoctor.feePercentage || 75}%</strong>
                     </p>

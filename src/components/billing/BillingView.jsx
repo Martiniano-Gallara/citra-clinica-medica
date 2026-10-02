@@ -417,7 +417,7 @@ export const BillingView = () => {
                   <div>
                     <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#002182' }}>{doc.name}</h3>
                     <div style={{ fontSize: '0.78rem', color: '#076ABC', fontWeight: 700 }}>
-                      {(doc.specialtyName || doc.specialty)?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : (doc.specialtyName || doc.specialty)} · {doc.license}
+                      {doc.specialtyName || doc.specialty || 'Especialidad médica'}
                     </div>
                   </div>
                 </div>

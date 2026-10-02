@@ -59,9 +59,9 @@ export const GlobalSearchModal = () => {
   const matchedDoctors = cleanQ
     ? doctors.filter(
         (d) =>
-          d.name.toLowerCase().includes(cleanQ) ||
-          d.specialtyName.toLowerCase().includes(cleanQ) ||
-          d.license.toLowerCase().includes(cleanQ)
+          (d.name && d.name.toLowerCase().includes(cleanQ)) ||
+          (d.specialtyName && d.specialtyName.toLowerCase().includes(cleanQ)) ||
+          (d.specialty && d.specialty.toLowerCase().includes(cleanQ))
       )
     : [];
 
@@ -263,7 +263,7 @@ export const GlobalSearchModal = () => {
                           {doc.name}
                         </div>
                         <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                          {(doc.specialtyName || doc.specialty)?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : (doc.specialtyName || doc.specialty)} · {doc.license} · {doc.roomName}
+                          {doc.specialtyName || doc.specialty || 'Especialidad'}
                         </div>
                       </div>
                     </div>

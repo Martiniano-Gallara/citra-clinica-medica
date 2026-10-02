@@ -578,7 +578,7 @@ export const PrescriptionsManager = () => {
                         {p.doctorName}
                       </div>
                       <div style={{ fontSize: '0.74rem', color: '#496386' }}>
-                        {p.doctorSpecialty || 'Especialista'} ({p.doctorMatricula || 'MP-34982'})
+                        {p.doctorSpecialty || 'Traumatología'}
                       </div>
                     </td>
 

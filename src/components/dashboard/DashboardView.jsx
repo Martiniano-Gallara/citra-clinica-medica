@@ -194,7 +194,7 @@ export const DashboardView = () => {
               {isDoctor ? `Panel Médico — ${currentDoctor?.fullName || currentDoctor?.name || 'Dr. Alejandro Blanco'}` : 'Centro Integral de Traumatología & Rehabilitación'}
             </h1>
             <p style={{ fontSize: '0.86rem', color: '#D2E3FC', margin: 0, opacity: 0.95 }}>
-              {isDoctor ? 'Especialista en Traumatología y Ortopedia · Consultorio 101' : 'Panel de control médico centralizado · Gestión de consultas, rehabilitación y flujo asistencial'}
+              {isDoctor ? 'Traumatología y Ortopedia · Staff Médico' : 'Panel de control médico centralizado · Gestión de consultas, rehabilitación y flujo asistencial'}
             </p>
           </div>
 
@@ -580,7 +580,7 @@ export const DashboardView = () => {
                             {app.doctorName}
                           </div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--c-primary)', fontWeight: 600 }}>
-                            {app.roomName}
+                            {app.specialtyName || 'Traumatología'}
                           </div>
                         </td>
 
