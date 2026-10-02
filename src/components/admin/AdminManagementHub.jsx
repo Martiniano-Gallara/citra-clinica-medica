@@ -242,10 +242,11 @@ export const AdminManagementHub = () => {
               label: 'Historial Clínico',
               icon: FileText,
               badge: pendingUrgentRequests > 0 ? `${pendingUrgentRequests} Urgente` : scopedConsultations.length
-            },
-            { id: 'prescriptions', label: 'Mis Recetas (CUIR)', icon: Pill, badge: scopedElectronicPrescriptions.length },
-            { id: 'imaging', label: 'Estudios & PACS', icon: Eye, badge: scopedImagingStudies.length },
-            { id: 'kinesio', label: 'Kinesiología & Rehab', icon: Activity, badge: null }
+            }
+            // Temporalmente ocultos a pedido del usuario:
+            // { id: 'prescriptions', label: 'Mis Recetas (CUIR)', icon: Pill, badge: scopedElectronicPrescriptions.length },
+            // { id: 'imaging', label: 'Estudios & PACS', icon: Eye, badge: scopedImagingStudies.length },
+            // { id: 'kinesio', label: 'Kinesiología & Rehab', icon: Activity, badge: null }
           ]
         },
         {
@@ -275,10 +276,11 @@ export const AdminManagementHub = () => {
         title: 'GESTIÓN DE ATENCIÓN',
         items: [
           { id: 'appointments', label: 'Gestión de Turnos', icon: CalendarCheck, badge: appointments.length },
-          { id: 'patients', label: 'Pacientes', icon: Users, badge: patients.length },
-          { id: 'prescriptions', label: 'Recetas (CUIR)', icon: Pill, badge: (electronicPrescriptions || []).length },
-          { id: 'imaging', label: 'Estudios & PACS', icon: Eye, badge: (imagingStudies || []).length },
-          { id: 'kinesio', label: 'Kinesiología & Rehab', icon: Activity, badge: null }
+          { id: 'patients', label: 'Pacientes', icon: Users, badge: patients.length }
+          // Temporalmente ocultos a pedido del usuario:
+          // { id: 'prescriptions', label: 'Recetas (CUIR)', icon: Pill, badge: (electronicPrescriptions || []).length },
+          // { id: 'imaging', label: 'Estudios & PACS', icon: Eye, badge: (imagingStudies || []).length },
+          // { id: 'kinesio', label: 'Kinesiología & Rehab', icon: Activity, badge: null }
         ]
       },
       {
