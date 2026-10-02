@@ -65,7 +65,7 @@ export const ClinicalAdendaModal = () => {
         inset: 0,
         backgroundColor: 'rgba(0, 18, 66, 0.78)',
         backdropFilter: 'blur(10px)',
-        zIndex: 9999,
+        zIndex: 25000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

@@ -346,18 +346,6 @@ export const DashboardView = () => {
             <Plus size={16} />
             + Nuevo Turno
           </button>
-
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => {
-              setConsultationPreloadData(null);
-              setIsNewConsultationModalOpen(true);
-            }}
-          >
-            <Stethoscope size={16} />
-            + Nueva Consulta HCE
-          </button>
         </div>
       </div>
 
