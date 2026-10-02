@@ -787,62 +787,23 @@ export const PatientsView = () => {
                                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                     <button
                                       type="button"
-                                      onClick={() => handleStartConsultation(pat)}
-                                      style={{
-                                        background: '#059669',
-                                        color: '#ffffff',
-                                        border: 'none',
-                                        borderRadius: '6px',
-                                        padding: '0.35rem 0.65rem',
-                                        fontSize: '0.76rem',
-                                        fontWeight: 800,
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '4px'
-                                      }}
-                                    >
-                                      <Stethoscope size={13} /> Iniciar Consulta
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => handleBookAppointment(pat)}
+                                      onClick={() => setSelectedPatientForDetail(pat)}
                                       style={{
                                         background: '#076ABC',
                                         color: '#ffffff',
                                         border: 'none',
-                                        borderRadius: '6px',
-                                        padding: '0.35rem 0.65rem',
-                                        fontSize: '0.76rem',
+                                        borderRadius: '8px',
+                                        padding: '0.45rem 0.85rem',
+                                        fontSize: '0.8rem',
                                         fontWeight: 800,
                                         cursor: 'pointer',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '4px'
+                                        gap: '5px',
+                                        boxShadow: '0 2px 8px rgba(7, 106, 188, 0.25)'
                                       }}
                                     >
-                                      <CalendarPlus size={13} /> Agendar Turno
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => setSelectedPatientForDetail(pat)}
-                                      style={{
-                                        background: '#f1f5f9',
-                                        color: '#334155',
-                                        border: '1px solid #cbd5e1',
-                                        borderRadius: '6px',
-                                        padding: '0.35rem 0.65rem',
-                                        fontSize: '0.76rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '4px'
-                                      }}
-                                    >
-                                      <FileText size={13} /> Historial Completo
+                                      <FileText size={14} /> Ver Ficha / Historial Completo
                                     </button>
                                   </div>
                                 </div>

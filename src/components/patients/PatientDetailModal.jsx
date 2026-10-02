@@ -231,25 +231,7 @@ export const PatientDetailModal = () => {
               </button>
             )}
 
-            {isDoctor ? (
-              <button
-                type="button"
-                className="btn btn-primary"
-                style={{ background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                onClick={() => {
-                  setConsultationPreloadData({
-                    patientId: patient.id,
-                    patientName: patient.name,
-                    patientDni: patient.dni,
-                    patientInsurance: patient.insuranceName
-                  });
-                  setIsNewConsultationModalOpen(true);
-                }}
-              >
-                <Stethoscope size={16} />
-                <span>+ Nueva Consulta HCE</span>
-              </button>
-            ) : (
+            {!isDoctor && (
               <button
                 type="button"
                 className="btn btn-primary"
