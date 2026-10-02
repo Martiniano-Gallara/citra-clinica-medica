@@ -825,7 +825,9 @@ export const dataService = {
           .eq('id', 'main-clinic-config')
           .maybeSingle();
         if (error) {
-          console.warn('Could not fetch clinic info from clinic_settings:', error);
+          if (error.code !== 'PGRST205') {
+            console.warn('Could not fetch clinic info from clinic_settings:', error);
+          }
           return null;
         }
         if (data) {
@@ -1238,7 +1240,9 @@ export const dataService = {
         .order('created_at', { ascending: false })
         .limit(30);
       if (error) {
-        console.warn('fetchCashShifts error:', error);
+        if (error.code !== 'PGRST205') {
+          console.warn('fetchCashShifts error:', error);
+        }
         return [];
       }
       return (data || []).map(toCamelCase);
