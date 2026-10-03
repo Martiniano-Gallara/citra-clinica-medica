@@ -423,7 +423,18 @@ export const AdminManagementHub = () => {
   })();
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', backgroundImage: 'radial-gradient(at 0% 0%, rgba(224, 231, 255, 0.45) 0px, transparent 45%), radial-gradient(at 100% 0%, rgba(219, 234, 254, 0.35) 0px, transparent 40%)', width: '100%' }}>
+    <div
+      className="admin-management-hub"
+      style={{
+        display: 'flex',
+        height: '100vh',
+        maxHeight: '100vh',
+        overflow: 'hidden',
+        background: '#f8fafc',
+        backgroundImage: 'radial-gradient(at 0% 0%, rgba(224, 231, 255, 0.45) 0px, transparent 45%), radial-gradient(at 100% 0%, rgba(219, 234, 254, 0.35) 0px, transparent 40%)',
+        width: '100%'
+      }}
+    >
       {/* 0. BACKDROP OVERLAY PARA SIDEBAR MÓVIL */}
       {isMobileSidebarOpen && (
         <div
@@ -683,8 +694,23 @@ export const AdminManagementHub = () => {
         </div>
       </aside>
 
-      {/* 2. ÁREA DE CONTENIDO PRINCIPAL A LA DERECHA */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: '100vh', width: '100%' }}>
+      {/* 2. ÁREA DE CONTENIDO PRINCIPAL A LA DERECHA (DESLIZABLE) */}
+      <div
+        className="admin-content-scroll-area"
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minWidth: 0,
+          height: '100vh',
+          maxHeight: '100vh',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          width: '100%',
+          WebkitOverflowScrolling: 'touch',
+          scrollBehavior: 'smooth'
+        }}
+      >
         {/* Topbar del Área de Contenido */}
         <header
           className="admin-topbar"
@@ -701,7 +727,8 @@ export const AdminManagementHub = () => {
             justifyContent: 'space-between',
             position: 'sticky',
             top: 0,
-            zIndex: 900
+            zIndex: 900,
+            flexShrink: 0
           }}
         >
           {/* Left: Mobile Menu Toggle & Title */}
@@ -1620,6 +1647,21 @@ export const AdminManagementHub = () => {
         }
         .admin-sidebar > div::-webkit-scrollbar-thumb:hover {
           background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Custom Elegant Scrollbar for Admin Content Scroll Area */
+        .admin-content-scroll-area::-webkit-scrollbar {
+          width: 7px;
+        }
+        .admin-content-scroll-area::-webkit-scrollbar-track {
+          background: #f1f5f9;
+        }
+        .admin-content-scroll-area::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 10px;
+        }
+        .admin-content-scroll-area::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
         }
 
         /* 0. Mobile Drawer Backdrop */

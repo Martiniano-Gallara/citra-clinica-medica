@@ -912,12 +912,7 @@ body.modal-open,
 html:has(.modal-overlay),
 body:has(.modal-overlay),
 html:has(.prescription-modal-overlay),
-body:has(.prescription-modal-overlay),
-html:has([style*="position: fixed"][style*="inset: 0"]),
-body:has([style*="position: fixed"][style*="inset: 0"]),
-html:has([style*="position: fixed"][style*="inset:0"]),
-body:has([style*="position: fixed"][style*="inset:0"]),
-html:has([style*="position:fixed"][style*="inset:0"]) {
+body:has(.prescription-modal-overlay) {
   overflow: hidden !important;
   touch-action: none !important;
   overscroll-behavior: none !important;
