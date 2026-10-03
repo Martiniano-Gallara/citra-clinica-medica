@@ -58,6 +58,7 @@ export const DoctorsManager = ({ initialTab }) => {
 
   const [cabeceraTab, setCabeceraTab] = useState(determineInitialCabeceraTab);
   const [isCabeceraCollapsed, setIsCabeceraCollapsed] = useState(false);
+  const [isCuerpoMedicoCollapsed, setIsCuerpoMedicoCollapsed] = useState(false);
 
   // --- FILTROS DE CUERPO MÉDICO ---
   const [searchDocTerm, setSearchDocTerm] = useState('');
@@ -1366,33 +1367,65 @@ export const DoctorsManager = ({ initialTab }) => {
       <div
         style={{
           background: '#ffffff',
-          borderRadius: '16px',
+          borderRadius: '13px',
           border: '1.5px solid #D2E3FC',
-          padding: '1.25rem',
-          boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+          padding: '0.75rem 1rem',
+          boxShadow: '0 2px 8px rgba(0, 33, 130, 0.03)',
+          transition: 'all 0.2s ease'
         }}
       >
-        {/* Cabecera de Cuerpo Médico con Filtros */}
+        {/* Cabecera de Cuerpo Médico con Acordeón y Filtros */}
         <div
           style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '1rem',
+            marginBottom: isCuerpoMedicoCollapsed ? 0 : '0.65rem',
             flexWrap: 'wrap',
-            gap: '1rem'
+            gap: '0.65rem',
+            borderBottom: isCuerpoMedicoCollapsed ? 'none' : '1px solid #EDF3FD',
+            paddingBottom: isCuerpoMedicoCollapsed ? 0 : '0.55rem'
           }}
         >
           <div>
-            <h3 style={{ fontSize: '1.28rem', fontWeight: 900, color: '#002182', margin: '0 0 0.2rem' }}>
-              Cuerpo Médico CITRA ({doctors.length} profesionales)
-            </h3>
-            <p style={{ margin: 0, fontSize: '0.82rem', color: '#496386' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#002182', margin: 0 }}>
+                Cuerpo Médico CITRA ({doctors.length} profesionales)
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsCuerpoMedicoCollapsed(!isCuerpoMedicoCollapsed)}
+                style={{
+                  background: '#F0F5FF',
+                  border: '1px solid #D2E3FC',
+                  color: '#076ABC',
+                  padding: '0.18rem 0.5rem',
+                  borderRadius: '6px',
+                  fontSize: '0.70rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.2rem'
+                }}
+              >
+                {isCuerpoMedicoCollapsed ? (
+                  <>
+                    <ChevronDown size={13} /> Ver Profesionales ({doctors.length})
+                  </>
+                ) : (
+                  <>
+                    <ChevronUp size={13} /> Minimizar
+                  </>
+                )}
+              </button>
+            </div>
+            <p style={{ margin: '0.1rem 0 0', fontSize: '0.76rem', color: '#496386' }}>
               Edición unificada de especialidad, horarios semanales, cuenta de acceso y obras sociales habilitadas.
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             {/* Buscador */}
             <div
               style={{
@@ -1401,22 +1434,25 @@ export const DoctorsManager = ({ initialTab }) => {
                 background: '#F5F8FE',
                 border: '1.5px solid #D2E3FC',
                 borderRadius: '8px',
-                padding: '0.35rem 0.65rem',
-                gap: '0.4rem',
-                minWidth: '240px'
+                padding: '0.28rem 0.55rem',
+                gap: '0.35rem',
+                minWidth: '200px'
               }}
             >
-              <Search size={15} color="#076ABC" />
+              <Search size={14} color="#076ABC" />
               <input
                 type="text"
                 value={searchDocTerm}
-                onChange={(e) => setSearchDocTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchDocTerm(e.target.value);
+                  if (isCuerpoMedicoCollapsed) setIsCuerpoMedicoCollapsed(false);
+                }}
                 placeholder="Buscar médico o especialidad..."
                 style={{
                   border: 'none',
                   background: 'transparent',
                   outline: 'none',
-                  fontSize: '0.82rem',
+                  fontSize: '0.78rem',
                   color: '#002182',
                   width: '100%'
                 }}
@@ -1436,7 +1472,7 @@ export const DoctorsManager = ({ initialTab }) => {
                   }}
                   title="Limpiar búsqueda"
                 >
-                  <X size={14} />
+                  <X size={13} />
                 </button>
               )}
             </div>
@@ -1444,13 +1480,16 @@ export const DoctorsManager = ({ initialTab }) => {
             {/* Filtro por Especialidad */}
             <select
               value={selectedSpecialtyFilter}
-              onChange={(e) => setSelectedSpecialtyFilter(e.target.value)}
+              onChange={(e) => {
+                setSelectedSpecialtyFilter(e.target.value);
+                if (isCuerpoMedicoCollapsed) setIsCuerpoMedicoCollapsed(false);
+              }}
               style={{
                 background: '#F5F8FE',
                 border: '1.5px solid #D2E3FC',
                 borderRadius: '8px',
-                padding: '0.45rem 0.65rem',
-                fontSize: '0.82rem',
+                padding: '0.32rem 0.55rem',
+                fontSize: '0.78rem',
                 fontWeight: 700,
                 color: '#002182',
                 outline: 'none',
@@ -1472,317 +1511,318 @@ export const DoctorsManager = ({ initialTab }) => {
                 background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
                 color: '#ffffff',
                 border: 'none',
-                padding: '0.55rem 1.15rem',
-                borderRadius: '10px',
-                fontSize: '0.84rem',
+                padding: '0.35rem 0.85rem',
+                borderRadius: '8px',
+                fontSize: '0.78rem',
                 fontWeight: 800,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.4rem',
+                gap: '0.35rem',
                 cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)'
+                boxShadow: '0 2px 6px rgba(7, 106, 188, 0.2)'
               }}
             >
-              <Plus size={16} />
+              <Plus size={14} />
               Nuevo Profesional
             </button>
           </div>
         </div>
 
-        {/* Cuadrícula de Profesionales: Ultra Comprimidas con Información Clave */}
-        {filteredDoctors.length > 0 ? (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(285px, 1fr))',
-              gap: '0.85rem',
-              alignItems: 'stretch'
-            }}
-          >
-            {filteredDoctors.map((doc) => {
-              const userObj = getDoctorUser(doc);
-              const daysLabel = formatDaysSummary(doc.workingDays);
-              const timeLabel = `${formatCleanTime(doc.scheduleStart, '08:30')} a ${formatCleanTime(doc.scheduleEnd, '17:00')} hs`;
-              const docEmailDisplay = userObj?.email || doc.email || 'Acceso por configurar';
-              const cleanDocName = (doc.name || '')
-                .replace(/^Dr\.\s*|^Dra\.\s*|^Lic\.\s*/i, '')
-                .trim();
-              const initials = cleanDocName
-                .split(' ')
-                .filter(Boolean)
-                .map((n) => n[0])
-                .slice(0, 2)
-                .join('')
-                .toUpperCase() || 'DR';
+        {/* Cuadrícula de Profesionales: Ultra Comprimidas con Acordeón Desplegable */}
+        {!isCuerpoMedicoCollapsed && (
+          filteredDoctors.length > 0 ? (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                gap: '0.55rem',
+                alignItems: 'stretch'
+              }}
+            >
+              {filteredDoctors.map((doc) => {
+                const userObj = getDoctorUser(doc);
+                const daysLabel = formatDaysSummary(doc.workingDays);
+                const timeLabel = `${formatCleanTime(doc.scheduleStart, '08:30')} a ${formatCleanTime(doc.scheduleEnd, '17:00')} hs`;
+                const docEmailDisplay = userObj?.email || doc.email || 'Sin acceso';
+                const cleanDocName = (doc.name || '')
+                  .replace(/^Dr\.\s*|^Dra\.\s*|^Lic\.\s*/i, '')
+                  .trim();
+                const initials = cleanDocName
+                  .split(' ')
+                  .filter(Boolean)
+                  .map((n) => n[0])
+                  .slice(0, 2)
+                  .join('')
+                  .toUpperCase() || 'DR';
 
-              return (
-                <div
-                  key={doc.id}
-                  style={{
-                    background: '#ffffff',
-                    borderRadius: '14px',
-                    border: '1.5px solid #D2E3FC',
-                    padding: '0.95rem 1rem',
-                    boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    gap: '0.65rem',
-                    height: '100%',
-                    boxSizing: 'border-box',
-                    transition: 'all 0.18s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 6px 18px rgba(0, 33, 130, 0.07)';
-                    e.currentTarget.style.borderColor = '#BFDBFE';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 33, 130, 0.03)';
-                    e.currentTarget.style.borderColor = '#D2E3FC';
-                  }}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-                    {/* Fila 1: Avatar, Nombre & Especialidad, y Switch Activo */}
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
-                        <div
-                          style={{
-                            width: '38px',
-                            height: '38px',
-                            borderRadius: '10px',
-                            background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
-                            color: '#ffffff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '0.85rem',
-                            fontWeight: 800,
-                            flexShrink: 0,
-                            boxShadow: '0 2px 6px rgba(7, 106, 188, 0.2)'
-                          }}
-                        >
-                          {initials}
-                        </div>
-                        <div style={{ minWidth: 0 }}>
-                          <h4
+                return (
+                  <div
+                    key={doc.id}
+                    style={{
+                      background: '#ffffff',
+                      borderRadius: '10px',
+                      border: '1.5px solid #D2E3FC',
+                      padding: '0.65rem 0.8rem',
+                      boxShadow: '0 1px 3px rgba(0, 33, 130, 0.02)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      gap: '0.45rem',
+                      height: '100%',
+                      boxSizing: 'border-box',
+                      transition: 'all 0.18s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 33, 130, 0.06)';
+                      e.currentTarget.style.borderColor = '#BFDBFE';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 33, 130, 0.02)';
+                      e.currentTarget.style.borderColor = '#D2E3FC';
+                    }}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1 }}>
+                      {/* Fila 1: Avatar, Nombre & Especialidad, y Switch Activo */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.45rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, flex: 1 }}>
+                          <div
                             style={{
-                              margin: 0,
-                              fontSize: '0.94rem',
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '8px',
+                              background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                              color: '#ffffff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '0.76rem',
                               fontWeight: 800,
-                              color: '#002182',
-                              lineHeight: 1.2,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis'
+                              flexShrink: 0
                             }}
-                            title={doc.name}
                           >
-                            {doc.name}
-                          </h4>
-                          <span
-                            style={{
-                              fontSize: '0.73rem',
-                              fontWeight: 700,
-                              color: '#076ABC',
-                              display: 'block',
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis'
-                            }}
-                            title={doc.specialty || doc.specialtyName || 'Especialidad'}
-                          >
-                            {doc.specialty || doc.specialtyName || 'Especialidad médica'}
-                          </span>
+                            {initials}
+                          </div>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <h4
+                              style={{
+                                margin: 0,
+                                fontSize: '0.86rem',
+                                fontWeight: 800,
+                                color: '#002182',
+                                lineHeight: 1.2,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                              }}
+                              title={doc.name}
+                            >
+                              {doc.name}
+                            </h4>
+                            <span
+                              style={{
+                                fontSize: '0.70rem',
+                                fontWeight: 700,
+                                color: '#076ABC',
+                                display: 'block',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                              }}
+                              title={doc.specialty || doc.specialtyName || 'Especialidad'}
+                            >
+                              {doc.specialty || doc.specialtyName || 'Especialidad médica'}
+                            </span>
+                          </div>
                         </div>
-                      </div>
 
-                      <span
-                        onClick={() => {
-                          if (isDoctor) {
-                            addToast('Acceso Denegado (T11)', 'Solo la Dirección Administrativa puede modificar la habilitación institucional de un profesional.', 'warning');
-                            return;
-                          }
-                          updateDoctor(doc.id, { active: !doc.active });
-                        }}
-                        style={{
-                          cursor: isDoctor ? 'default' : 'pointer',
-                          fontSize: '0.66rem',
-                          fontWeight: 800,
-                          padding: '0.14rem 0.5rem',
-                          borderRadius: '100px',
-                          background: doc.active !== false ? '#ecfdf5' : '#fee2e2',
-                          color: doc.active !== false ? '#065f46' : '#991b1b',
-                          border: doc.active !== false ? '1px solid #a7f3d0' : '1px solid #fecaca',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          flexShrink: 0
-                        }}
-                        title={isDoctor ? 'Habilitación gestionada por Secretaría' : 'Clic para alternar activo/inactivo'}
-                      >
-                        <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: doc.active !== false ? '#10b981' : '#ef4444' }} />
-                        {doc.active !== false ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </div>
-
-                    {/* Fila 2: Resumen Limpio de Horarios & Obras Sociales */}
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.35rem',
-                        fontSize: '0.73rem',
-                        color: '#496386',
-                        background: '#F8FAFE',
-                        padding: '0.5rem 0.65rem',
-                        borderRadius: '8px',
-                        border: '1px solid #EDF3FD'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                        <Clock size={13} color="#076ABC" style={{ flexShrink: 0 }} />
-                        <span style={{ fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {daysLabel} · <span style={{ color: '#496386', fontWeight: 500 }}>{timeLabel}</span>
+                        <span
+                          onClick={() => {
+                            if (isDoctor) {
+                              addToast('Acceso Denegado (T11)', 'Solo la Dirección Administrativa puede modificar la habilitación institucional de un profesional.', 'warning');
+                              return;
+                            }
+                            updateDoctor(doc.id, { active: !doc.active });
+                          }}
+                          style={{
+                            cursor: isDoctor ? 'default' : 'pointer',
+                            fontSize: '0.62rem',
+                            fontWeight: 800,
+                            padding: '0.1rem 0.4rem',
+                            borderRadius: '100px',
+                            background: doc.active !== false ? '#ecfdf5' : '#fee2e2',
+                            color: doc.active !== false ? '#065f46' : '#991b1b',
+                            border: doc.active !== false ? '1px solid #a7f3d0' : '1px solid #fecaca',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            flexShrink: 0
+                          }}
+                          title={isDoctor ? 'Habilitación gestionada por Secretaría' : 'Clic para alternar activo/inactivo'}
+                        >
+                          <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: doc.active !== false ? '#10b981' : '#ef4444' }} />
+                          {doc.active !== false ? 'Activo' : 'Inactivo'}
                         </span>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', minWidth: 0 }}>
-                          <Shield size={12} color="#076ABC" style={{ flexShrink: 0 }} />
-                          <span style={{ fontSize: '0.71rem', color: '#002182', fontWeight: 700 }}>
-                            {(doc.acceptedInsurances || []).length} O.S. habilitadas
+                      {/* Fila 2: Resumen Limpio de Horarios & Obras Sociales */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.22rem',
+                          fontSize: '0.70rem',
+                          color: '#496386',
+                          background: '#F8FAFE',
+                          padding: '0.35rem 0.55rem',
+                          borderRadius: '6px',
+                          border: '1px solid #EDF3FD'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <Clock size={12} color="#076ABC" style={{ flexShrink: 0 }} />
+                          <span style={{ fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {daysLabel} · <span style={{ color: '#496386', fontWeight: 500 }}>{timeLabel}</span>
                           </span>
                         </div>
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.3rem',
-                            fontSize: '0.7rem',
-                            color: '#64748B',
-                            maxWidth: '120px',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }}
-                          title={docEmailDisplay}
-                        >
-                          <Mail size={11} color="#7994B8" style={{ flexShrink: 0 }} />
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{docEmailDisplay}</span>
+
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', minWidth: 0 }}>
+                            <Shield size={11} color="#076ABC" style={{ flexShrink: 0 }} />
+                            <span style={{ fontSize: '0.69rem', color: '#002182', fontWeight: 700 }}>
+                              {(doc.acceptedInsurances || []).length} O.S. habilitadas
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              fontSize: '0.67rem',
+                              color: '#64748B',
+                              maxWidth: '110px',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}
+                            title={docEmailDisplay}
+                          >
+                            <Mail size={10} color="#7994B8" style={{ flexShrink: 0 }} />
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{docEmailDisplay}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Acciones de la Tarjeta */}
-                  <div style={{ display: 'flex', gap: '0.4rem', marginTop: 'auto' }}>
-                    <button
-                      type="button"
-                      onClick={() => handleOpenEditDoctor(doc)}
-                      style={{
-                        flex: 1,
-                        background: '#F5F8FE',
-                        border: '1.5px solid #D2E3FC',
-                        color: '#002182',
-                        padding: '0.42rem 0.65rem',
-                        borderRadius: '8px',
-                        fontWeight: 700,
-                        fontSize: '0.78rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.35rem',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#002182';
-                        e.currentTarget.style.color = '#ffffff';
-                        e.currentTarget.style.borderColor = '#002182';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = '#F5F8FE';
-                        e.currentTarget.style.color = '#002182';
-                        e.currentTarget.style.borderColor = '#D2E3FC';
-                      }}
-                    >
-                      <Edit2 size={13} />
-                      Editar Ficha
-                    </button>
+                    {/* Acciones de la Tarjeta */}
+                    <div style={{ display: 'flex', gap: '0.35rem', marginTop: 'auto' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditDoctor(doc)}
+                        style={{
+                          flex: 1,
+                          background: '#F5F8FE',
+                          border: '1.5px solid #D2E3FC',
+                          color: '#002182',
+                          padding: '0.30rem 0.55rem',
+                          borderRadius: '6px',
+                          fontWeight: 700,
+                          fontSize: '0.74rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.3rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#002182';
+                          e.currentTarget.style.color = '#ffffff';
+                          e.currentTarget.style.borderColor = '#002182';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = '#F5F8FE';
+                          e.currentTarget.style.color = '#002182';
+                          e.currentTarget.style.borderColor = '#D2E3FC';
+                        }}
+                      >
+                        <Edit2 size={11} />
+                        Editar Ficha
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={() => handleOpenQuickPassword(doc)}
-                      style={{
-                        background: '#F0F5FF',
-                        border: '1.5px solid #D2E3FC',
-                        color: '#076ABC',
-                        padding: '0.42rem 0.65rem',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.15s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#076ABC';
-                        e.currentTarget.style.color = '#ffffff';
-                        e.currentTarget.style.borderColor = '#076ABC';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = '#F0F5FF';
-                        e.currentTarget.style.color = '#076ABC';
-                        e.currentTarget.style.borderColor = '#D2E3FC';
-                      }}
-                      title="Resetear o cambiar contraseña de acceso"
-                    >
-                      <KeyRound size={14} />
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenQuickPassword(doc)}
+                        style={{
+                          background: '#F0F5FF',
+                          border: '1.5px solid #D2E3FC',
+                          color: '#076ABC',
+                          padding: '0.30rem 0.5rem',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#076ABC';
+                          e.currentTarget.style.color = '#ffffff';
+                          e.currentTarget.style.borderColor = '#076ABC';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = '#F0F5FF';
+                          e.currentTarget.style.color = '#076ABC';
+                          e.currentTarget.style.borderColor = '#D2E3FC';
+                        }}
+                        title="Resetear o cambiar contraseña de acceso"
+                      >
+                        <KeyRound size={12} />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div
-            style={{
-              padding: '3rem 1.5rem',
-              textAlign: 'center',
-              background: '#F8FAFE',
-              borderRadius: '12px',
-              border: '1.5px dashed #D2E3FC'
-            }}
-          >
-            <Users size={36} color="#076ABC" style={{ margin: '0 auto 0.75rem', opacity: 0.7 }} />
-            <h4 style={{ margin: '0 0 0.4rem', fontSize: '1rem', fontWeight: 800, color: '#002182' }}>
-              No se encontraron profesionales
-            </h4>
-            <p style={{ margin: '0 0 1rem', fontSize: '0.82rem', color: '#496386' }}>
-              Intente con otro término de búsqueda o seleccione otra especialidad médica.
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setSearchDocTerm('');
-                setSelectedSpecialtyFilter('all');
-              }}
+                );
+              })}
+            </div>
+          ) : (
+            <div
               style={{
-                background: '#076ABC',
-                color: '#ffffff',
-                border: 'none',
-                padding: '0.45rem 1rem',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                cursor: 'pointer'
+                padding: '2rem 1.5rem',
+                textAlign: 'center',
+                background: '#F8FAFE',
+                borderRadius: '10px',
+                border: '1.5px dashed #D2E3FC'
               }}
             >
-              Restablecer Filtros
-            </button>
-          </div>
+              <Users size={32} color="#076ABC" style={{ margin: '0 auto 0.5rem', opacity: 0.7 }} />
+              <h4 style={{ margin: '0 0 0.3rem', fontSize: '0.92rem', fontWeight: 800, color: '#002182' }}>
+                No se encontraron profesionales
+              </h4>
+              <p style={{ margin: '0 0 0.75rem', fontSize: '0.78rem', color: '#496386' }}>
+                Intente con otro término de búsqueda o seleccione otra especialidad médica.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchDocTerm('');
+                  setSelectedSpecialtyFilter('all');
+                }}
+                style={{
+                  background: '#076ABC',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '0.35rem 0.85rem',
+                  borderRadius: '6px',
+                  fontSize: '0.76rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Restablecer Filtros
+              </button>
+            </div>
+          )
         )}
       </div>
 
