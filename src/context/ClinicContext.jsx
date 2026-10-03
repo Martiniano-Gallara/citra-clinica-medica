@@ -332,8 +332,15 @@ export const ClinicProvider = ({ children }) => {
       (!isDoctor && authAdmin.adminType !== 'doctor'))
   );
 
-  // Unificación oficial: el rol superadmin se unifica en Secretaría (todo el personal administrativo tiene acceso administrativo integral)
-  const isSuperAdmin = isAdministrative;
+  // ALTA-02: Separación estricta de privilegios: superadmin restringido a Dirección Médica / Propietario
+  const isSuperAdmin = Boolean(
+    authAdmin &&
+    (authAdmin.adminType === 'superadmin' ||
+      authAdmin.role?.toLowerCase().includes('superadmin') ||
+      authAdmin.role?.toLowerCase().includes('dirección médica') ||
+      authAdmin.role?.toLowerCase().includes('director') ||
+      authAdmin.role?.toLowerCase().includes('propietario'))
+  );
 
   // Resolve current doctor ONLY if authenticated user is a physician
   const currentDoctor = React.useMemo(() => {
@@ -678,7 +685,7 @@ export const ClinicProvider = ({ children }) => {
 
     hydrateFromSupabase();
 
-    // Suscripción Realtime para sincronización instantánea inter-paneles
+    // Suscripción Realtime multipropósito para sincronización instantánea inter-paneles (ALTA-06)
     const unsubscribeApps = dataService.subscribeToTable(
       'appointments',
       (newApp) => setAppointments((prev) => [newApp, ...prev.filter((a) => a.id !== newApp.id)]),
@@ -686,11 +693,43 @@ export const ClinicProvider = ({ children }) => {
       (delApp) => setAppointments((prev) => prev.filter((a) => a.id !== delApp.id))
     );
 
+    const unsubscribePatients = dataService.subscribeToTable(
+      'patients',
+      (newPat) => setPatients((prev) => [newPat, ...prev.filter((p) => p.id !== newPat.id)]),
+      (updPat) => setPatients((prev) => prev.map((p) => (p.id === updPat.id ? { ...p, ...updPat } : p))),
+      (delPat) => setPatients((prev) => prev.filter((p) => p.id !== delPat.id))
+    );
+
+    const unsubscribeCons = dataService.subscribeToTable(
+      'consultations',
+      (newCons) => setConsultations((prev) => [newCons, ...prev.filter((c) => c.id !== newCons.id)]),
+      (updCons) => setConsultations((prev) => prev.map((c) => (c.id === updCons.id ? { ...c, ...updCons } : c))),
+      (delCons) => setConsultations((prev) => prev.filter((c) => c.id !== delCons.id))
+    );
+
+    const unsubscribeRxs = dataService.subscribeToTable(
+      'electronic_prescriptions',
+      (newRx) => setElectronicPrescriptions((prev) => [newRx, ...prev.filter((r) => r.id !== newRx.id)]),
+      (updRx) => setElectronicPrescriptions((prev) => prev.map((r) => (r.id === updRx.id ? { ...r, ...updRx } : r))),
+      (delRx) => setElectronicPrescriptions((prev) => prev.filter((r) => r.id !== delRx.id))
+    );
+
+    const unsubscribeImgs = dataService.subscribeToTable(
+      'imaging_studies',
+      (newImg) => setImagingStudies((prev) => [newImg, ...prev.filter((i) => i.id !== newImg.id)]),
+      (updImg) => setImagingStudies((prev) => prev.map((i) => (i.id === updImg.id ? { ...i, ...updImg } : i))),
+      (delImg) => setImagingStudies((prev) => prev.filter((i) => i.id !== delImg.id))
+    );
+
     return () => {
       isMounted = false;
-      unsubscribeApps();
+      if (typeof unsubscribeApps === 'function') unsubscribeApps();
+      if (typeof unsubscribePatients === 'function') unsubscribePatients();
+      if (typeof unsubscribeCons === 'function') unsubscribeCons();
+      if (typeof unsubscribeRxs === 'function') unsubscribeRxs();
+      if (typeof unsubscribeImgs === 'function') unsubscribeImgs();
     };
-  }, []);
+  }, [authAdmin?.id]);
 
   const addToast = (title, message, type = 'success') => {
     const id = Date.now() + Math.random();
@@ -1308,13 +1347,20 @@ export const ClinicProvider = ({ children }) => {
     setAppointments((prev) => [newApp, ...prev]);
     if (dataService.isLive()) {
       try {
-        await dataService.createAppointment(newApp);
+        if (appData.bookedOnline && !authAdmin) {
+          const bookingRes = await dataService.createPublicBooking(newApp);
+          if (bookingRes?.bookingCode) newApp.bookingCode = bookingRes.bookingCode;
+          if (bookingRes?.appointmentId) newApp.id = bookingRes.appointmentId;
+          if (bookingRes?.patientId) newApp.patientId = bookingRes.patientId;
+        } else {
+          await dataService.createAppointment(newApp);
+        }
       } catch (err) {
-        console.error('Error al persistir turno en Supabase (A-03):', err);
+        console.error('Error al persistir turno en Supabase (A-03 / ALTA-07):', err);
         setAppointments((prev) => prev.filter((a) => a.id !== newId));
         addToast(
           'Conflicto de Turno',
-          err.message?.includes('Conflicto') || err.message?.includes('solapamiento')
+          err.message?.includes('Conflicto') || err.message?.includes('solapamiento') || err.message?.includes('reservado')
             ? 'El turno no se pudo reservar: el profesional ya posee un turno confirmado en esa fecha y horario.'
             : 'No se pudo reservar el turno en la base de datos central: ' + (err.message || ''),
           'error'
@@ -2427,17 +2473,20 @@ export const ClinicProvider = ({ children }) => {
       }
     }
 
+    // ALTA-08: Nunca almacenar contraseñas en memoria de sesión ni en localStorage
+    const { password: _discardedPassword, ...safeAdminUser } = adminUser;
+
     setAuthRole('admin');
-    setAuthAdmin(adminUser);
-    setCurrentUser(adminUser);
+    setAuthAdmin(safeAdminUser);
+    setCurrentUser(safeAdminUser);
     setCurrentView('admin-panel');
     try {
-      localStorage.setItem('citra_authAdmin', JSON.stringify(adminUser));
-      localStorage.setItem('citra_currentUser', JSON.stringify(adminUser));
+      localStorage.setItem('citra_authAdmin', JSON.stringify(safeAdminUser));
+      localStorage.setItem('citra_currentUser', JSON.stringify(safeAdminUser));
     } catch (e) {}
-    logAudit('LOGIN', 'Panel de Administración', '-', `Acceso administrativo de ${adminUser.name} (${adminUser.role})`, adminUser);
-    addToast('Acceso Administrativo Concedido', `Bienvenido/a, ${adminUser.name}.`, 'success');
-    return { success: true, user: adminUser };
+    logAudit('LOGIN', 'Panel de Administración', '-', `Acceso administrativo de ${safeAdminUser.name} (${safeAdminUser.role})`, safeAdminUser);
+    addToast('Acceso Administrativo Concedido', `Bienvenido/a, ${safeAdminUser.name}.`, 'success');
+    return { success: true, user: safeAdminUser };
   };
 
   const logoutAdmin = () => {

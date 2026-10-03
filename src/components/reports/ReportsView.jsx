@@ -57,6 +57,7 @@ export const ReportsView = () => {
   const {
     clinicInfo,
     appointments,
+    patients,
     invoices,
     doctors,
     specialties,
@@ -202,8 +203,8 @@ export const ReportsView = () => {
     const attendanceRate =
       scheduledCount > 0 ? +(completedCount / scheduledCount * 100).toFixed(1) : (completedCount > 0 ? 100 : 0);
 
-    // Financial calculations from actual consultation costs
-    const grossTotal = periodConsultations.reduce((sum, c) => sum + (Number(c.cost) || 25000), 0);
+    // Financial calculations from actual consultation costs without invented fallbacks (ALTA-10)
+    const grossTotal = periodConsultations.reduce((sum, c) => sum + Number(c.cost || c.copayAmount || selectedDoctor?.priceConsultation || 0), 0);
     const netFee = Math.round(grossTotal * (docFeePct / 100));
     const retention = grossTotal - netFee;
 
@@ -387,66 +388,128 @@ export const ReportsView = () => {
 
   // ==============================================================
   // CLINIC GLOBAL METRICS (ADMINISTRATIVE / SUPERADMIN SCOPE)
-  // ==============================================================
-  const revenueTrendData = {
-    labels: ['Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto (Actual)'],
-    datasets: [
-      {
-        fill: true,
-        label: 'Facturación Total ($)',
-        data: [1420000, 1680000, 1890000, 2100000, 2450000, 2890000],
-        borderColor: '#076ABC',
-        backgroundColor: 'rgba(7, 106, 188, 0.15)',
-        tension: 0.35
-      }
-    ]
-  };
+  // Dynamic revenue trend from actual invoices (ALTA-10)
+  const revenueTrendData = useMemo(() => {
+    const months = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({
+        key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+        label: d.toLocaleDateString('es-AR', { month: 'short' })
+      });
+    }
 
-  const specialtyDistributionData = {
-    labels: ['Traumatología', 'Kinesiología', 'Rehabilitación', 'Clínica Médica', 'Cardiología', 'Dermatología'],
-    datasets: [
-      {
-        label: 'Turnos',
-        data: [54, 48, 39, 35, 28, 24],
-        backgroundColor: [
-          '#002182',
-          '#076ABC',
-          '#257CE6',
-          '#0d9488',
-          '#14b8a6',
-          '#99f6e4'
-        ],
-        borderRadius: 6
-      }
-    ]
-  };
+    const monthlyData = months.map(m => {
+      const sumInvoices = (invoices || [])
+        .filter(inv => (inv.date || '').startsWith(m.key))
+        .reduce((sum, inv) => sum + Number(inv.total || inv.amount || 0), 0);
+      return sumInvoices;
+    });
 
-  const insuranceDoughnutData = {
-    labels: ['OSDE (38%)', 'Swiss Medical (24%)', 'Galeno (16%)', 'Apross / PAMI (12%)', 'Particular (10%)'],
-    datasets: [
-      {
-        data: [38, 24, 16, 12, 10],
-        backgroundColor: ['#002182', '#076ABC', '#257CE6', '#14b8a6', '#496386'],
-        borderWidth: 0
-      }
-    ]
-  };
+    return {
+      labels: months.map(m => m.label),
+      datasets: [
+        {
+          fill: true,
+          label: 'Facturación Total ($)',
+          data: monthlyData,
+          borderColor: '#076ABC',
+          backgroundColor: 'rgba(7, 106, 188, 0.15)',
+          tension: 0.35
+        }
+      ]
+    };
+  }, [invoices]);
 
-  const patientRetentionData = {
-    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'],
-    datasets: [
-      {
-        label: 'Pacientes Recurrentes',
-        data: [18, 22, 19, 25, 28],
-        backgroundColor: '#076ABC'
-      },
-      {
-        label: 'Pacientes Nuevos (1ra vez)',
-        data: [6, 8, 5, 9, 7],
-        backgroundColor: '#257CE6'
+  const specialtyDistributionData = useMemo(() => {
+    const counts = {};
+    (appointments || []).forEach(a => {
+      const spec = a.doctorSpecialty || a.specialtyName || 'General';
+      counts[spec] = (counts[spec] || 0) + 1;
+    });
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const labels = sorted.length > 0 ? sorted.map(([k]) => k) : ['Traumatología', 'Kinesiología'];
+    const data = sorted.length > 0 ? sorted.map(([, v]) => v) : [0, 0];
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Turnos',
+          data,
+          backgroundColor: [
+            '#002182',
+            '#076ABC',
+            '#257CE6',
+            '#0d9488',
+            '#14b8a6',
+            '#99f6e4'
+          ],
+          borderRadius: 6
+        }
+      ]
+    };
+  }, [appointments]);
+
+  const insuranceDoughnutData = useMemo(() => {
+    const counts = {};
+    (appointments || []).forEach(a => {
+      const ins = a.patientInsurance || a.insuranceName || 'Particular';
+      counts[ins] = (counts[ins] || 0) + 1;
+    });
+    const total = Object.values(counts).reduce((s, v) => s + v, 0);
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const labels = sorted.map(([k, v]) => total > 0 ? `${k} (${Math.round((v / total) * 100)}%)` : k);
+    const data = sorted.map(([, v]) => v);
+
+    return {
+      labels: labels.length > 0 ? labels : ['Particular (100%)'],
+      datasets: [
+        {
+          data: data.length > 0 ? data : [1],
+          backgroundColor: ['#002182', '#076ABC', '#257CE6', '#14b8a6', '#496386'],
+          borderWidth: 0
+        }
+      ]
+    };
+  }, [appointments]);
+
+  const patientRetentionData = useMemo(() => {
+    const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'];
+    const recurringByDay = [0, 0, 0, 0, 0];
+    const newByDay = [0, 0, 0, 0, 0];
+
+    (appointments || []).forEach(app => {
+      if (!app.date) return;
+      const d = new Date(app.date + 'T12:00:00');
+      const dayIdx = d.getDay() - 1;
+      if (dayIdx >= 0 && dayIdx <= 4) {
+        const isNew = (patients || []).some(p => p.id === app.patientId && (p.registeredAt || '').startsWith((app.date || '').substring(0, 7)));
+        if (isNew) {
+          newByDay[dayIdx]++;
+        } else {
+          recurringByDay[dayIdx]++;
+        }
       }
-    ]
-  };
+    });
+
+    return {
+      labels: days,
+      datasets: [
+        {
+          label: 'Pacientes Recurrentes',
+          data: recurringByDay,
+          backgroundColor: '#076ABC'
+        },
+        {
+          label: 'Pacientes Nuevos (1ra vez)',
+          data: newByDay,
+          backgroundColor: '#257CE6'
+        }
+      ]
+    };
+  }, [appointments, patients]);
 
   // ==============================================================
   // RENDER: DOCTOR VIEW (ESTADÍSTICAS REALES, ÚTILES Y CLÍNICAS)

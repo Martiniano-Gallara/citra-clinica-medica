@@ -164,8 +164,7 @@ export const BackupAndSecurityView = () => {
         <div style={{ fontSize: '0.88rem', color: '#172A4A', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
           <div><strong>Infraestructura Cloud (PostgreSQL / Supabase):</strong> Respaldos continuos automáticos a nivel motor relacional mediante WAL archiving y PITR (Point-in-Time Recovery) cada 24 horas con georredundancia activa.</div>
           <div><strong>RPO (Recovery Point Objective):</strong> Menor a 15 minutos (Snapshots transaccionales continuos).</div>
-          <div><strong>RTO (Recovery Time Objective):</strong> Menor a 1 hora en contingencia crítica de infraestructura.</div>
-          <div><strong>Retención Legal de Historias Clínicas:</strong> 10 años corridos con firmas hash SHA-256 e inmutabilidad garantizada (Ley 26.529).</div>
+          <div><strong>Retención Legal de Historias Clínicas:</strong> 15 años corridos obligatorios conforme Ley 26.529 Art. 18, protegidos por triggers a nivel base de datos que bloquean borrados físicos, bajas lógicas con timestamp auditable y firmas SHA-256.</div>
           <div><strong>Respaldo Manual Cifrado:</strong> El snapshot descargable en este panel opera exclusivamente como copia fuera de banda (cold storage) para auditoría legal.</div>
         </div>
       </div>

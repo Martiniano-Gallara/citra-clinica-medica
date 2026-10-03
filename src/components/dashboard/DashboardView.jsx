@@ -60,6 +60,7 @@ ChartJS.register(
 
 export const DashboardView = () => {
   const {
+    consultations,
     appointments,
     patients,
     doctors,
@@ -124,6 +125,11 @@ export const DashboardView = () => {
   const pendingCount = baseAppointments.filter((a) => a.date === filterDate && (a.status === 'pendiente' || a.status === 'confirmado')).length;
 
   const progressPercentage = totalAppointmentsToday > 0 ? Math.round((attendedCount / totalAppointmentsToday) * 100) : 0;
+
+  // Cálculo real del porcentaje de consultas firmadas digitalmente (ALTA-10)
+  const signedConsultationsRatio = consultations && consultations.length > 0
+    ? Math.round((consultations.filter((c) => c.signed || c.signatureTimestamp).length / consultations.length) * 100)
+    : 100;
 
   // Chart data: cálculo dinámico sobre turnos reales de la clínica (M-07)
   const specialtyDistributionData = useMemo(() => {
@@ -452,7 +458,7 @@ export const DashboardView = () => {
             </div>
           </div>
           <div>
-            <div className="stat-card-value" style={{ color: '#065f46' }}>100%</div>
+            <div className="stat-card-value" style={{ color: '#065f46' }}>{signedConsultationsRatio}%</div>
             <div className="stat-card-meta" style={{ color: '#065f46', marginTop: '4px' }}>
               <CheckCircle2 size={14} />
               <span>Consultas firmadas digitalmente</span>

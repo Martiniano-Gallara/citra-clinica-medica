@@ -613,11 +613,11 @@ DROP POLICY IF EXISTS "doctors_public_select" ON public.doctors;
 CREATE POLICY "doctors_public_select" ON public.doctors
 FOR SELECT USING (auth.role() = 'authenticated');
 
--- Audit logs insert con usuario autenticado verificado (M01)
+-- Audit logs insert con usuario autenticado verificado (M01 / ALTA-04)
 DROP POLICY IF EXISTS "audit_logs_insert_policy" ON public.audit_logs;
 CREATE POLICY "audit_logs_insert_policy" ON public.audit_logs
 FOR INSERT WITH CHECK (
-    auth.uid() IS NOT NULL AND (user_id IS NULL OR user_id = auth.uid())
+    auth.uid() IS NOT NULL AND (user_id IS NULL OR user_id = auth.uid()::text)
 );
 
 -- Recetas electrónicas: permitir anulación trazable (M05)

@@ -116,7 +116,7 @@ export const dataService = {
   // --- TURNOS (APPOINTMENTS) ---
   async fetchAppointments(filterDoctorId = null, limit = 500) {
     if (isSupabaseConfigured && supabase) {
-      let query = supabase.from('appointments').select('*').order('date', { ascending: true }).limit(limit);
+      let query = supabase.from('appointments').select('*').order('date', { ascending: false }).limit(limit);
       if (filterDoctorId) {
         query = query.eq('doctor_id', filterDoctorId);
       }
@@ -250,6 +250,32 @@ export const dataService = {
       return toCamelCase(data);
     }
     return true;
+  },
+
+  // Reserva pública de turnos segura (ALTA-07)
+  async createPublicBooking(bookingData) {
+    if (isSupabaseConfigured && supabase) {
+      const payload = {
+        patient_dni: bookingData.patientDni,
+        patient_name: bookingData.patientName,
+        patient_phone: bookingData.patientPhone || null,
+        patient_email: bookingData.patientEmail || null,
+        patient_insurance: bookingData.patientInsurance || bookingData.insuranceName || null,
+        patient_insurance_number: bookingData.patientInsuranceNumber || bookingData.insuranceNumber || null,
+        doctor_id: bookingData.doctorId,
+        date: bookingData.date,
+        time: bookingData.time,
+        duration: bookingData.duration || 30,
+        reason: bookingData.reason || 'Reserva online de turno',
+        copay_amount: bookingData.copayAmount || 0
+      };
+      const { data, error } = await supabase.rpc('create_public_booking', {
+        p_booking: payload
+      });
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return null;
   },
 
   // --- HISTORIA CLÍNICA & CONSULTAS (CONSULTATIONS) ---
@@ -407,25 +433,28 @@ export const dataService = {
     return null;
   },
 
-  // Anulación formal de receta con trazabilidad legal (M-05)
+  // Anulación formal de receta con trazabilidad legal (M-05 / ALTA-01)
   async annulPrescription(prescriptionId, reason = 'Anulación formal') {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase.rpc('annul_prescription', {
         p_prescription_id: prescriptionId,
         p_reason: reason
       });
-      if (error) {
-        return await this.updatePrescription(prescriptionId, { status: 'anulada' });
-      }
+      if (error) throw error;
       return data;
     }
     return null;
   },
 
-  // --- PACIENTES (PATIENTS / Soporte de paginación) ---
-  async fetchPatients(options = 300) {
+  // --- PACIENTES (PATIENTS / Soporte de paginación y búsqueda en servidor - ALTA-06) ---
+  async fetchPatients(options = 300, searchTerm = null) {
     if (isSupabaseConfigured && supabase) {
-      let query = supabase.from('patients').select('*', { count: 'exact' }).order('name', { ascending: true });
+      let query = supabase.from('patients').select('*', { count: 'exact' });
+      if (searchTerm && typeof searchTerm === 'string' && searchTerm.trim()) {
+        const term = searchTerm.trim();
+        query = query.or(`name.ilike.%${term}%,dni.ilike.%${term}%,email.ilike.%${term}%`);
+      }
+      query = query.order('name', { ascending: true });
       if (typeof options === 'object' && options !== null) {
         const { page = 1, limit = 15 } = options;
         const from = (page - 1) * limit;
@@ -1352,7 +1381,7 @@ export const dataService = {
     return null;
   },
 
-  // --- STORAGE / ARCHIVOS MÉDICOS (A-09: Signed URLs) ---
+  // --- STORAGE / ARCHIVOS MÉDICOS (A-09 / ALTA-09: Signed URLs estrictas sin fallback público) ---
   async uploadMedicalFile(bucketName, path, file) {
     if (isSupabaseConfigured && supabase) {
       const { error } = await supabase.storage.from(bucketName).upload(path, file, {
@@ -1361,13 +1390,13 @@ export const dataService = {
       });
       if (error) throw error;
 
-      // Generar URL firmada temporal de 1 hora para protección de datos personales
-      const { data: signedData } = await supabase.storage.from(bucketName).createSignedUrl(path, 3600);
-      if (signedData?.signedUrl) {
-        return signedData.signedUrl;
+      // Generar URL firmada temporal de 1 hora para protección de secreto médico (Ley 25.326)
+      const { data: signedData, error: signError } = await supabase.storage.from(bucketName).createSignedUrl(path, 3600);
+      if (signError) {
+        console.warn('Advertencia al generar URL firmada inmediata:', signError);
+        return path;
       }
-      const { data: publicUrlData } = supabase.storage.from(bucketName).getPublicUrl(path);
-      return publicUrlData?.publicUrl || null;
+      return signedData?.signedUrl || path;
     }
     return null;
   },
