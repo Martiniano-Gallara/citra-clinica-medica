@@ -703,9 +703,17 @@ export const ClinicProvider = ({ children }) => {
   };
 
   // Helper de Auditoría Inmutable (Ley 25.326)
-  const logAudit = (action, resource, targetDni, details) => {
+  const logAudit = (action, resource, targetDni, details, explicitUser = null) => {
+    const activeUser =
+      explicitUser ||
+      authAdmin ||
+      currentUser ||
+      (isPatientPortalMode && currentPortalPatient
+        ? { name: currentPortalPatient.name, role: 'Paciente', id: currentPortalPatient.id }
+        : null);
+
     const entry = createAuditLog(
-      isPatientPortalMode ? { name: currentPortalPatient.name, role: 'Paciente', id: currentPortalPatient.id } : currentUser,
+      activeUser,
       action,
       resource,
       targetDni,
@@ -2343,12 +2351,16 @@ export const ClinicProvider = ({ children }) => {
       localStorage.setItem('citra_authAdmin', JSON.stringify(adminUser));
       localStorage.setItem('citra_currentUser', JSON.stringify(adminUser));
     } catch (e) {}
-    logAudit('LOGIN', 'Panel de Administración', '-', `Acceso administrativo de ${adminUser.name} (${adminUser.role})`);
+    logAudit('LOGIN', 'Panel de Administración', '-', `Acceso administrativo de ${adminUser.name} (${adminUser.role})`, adminUser);
     addToast('Acceso Administrativo Concedido', `Bienvenido/a, ${adminUser.name}.`, 'success');
     return { success: true, user: adminUser };
   };
 
   const logoutAdmin = () => {
+    const loggingOutUser = authAdmin || currentUser;
+    if (loggingOutUser) {
+      logAudit('LOGOUT', 'Panel de Administración', '-', `Cierre de sesión de ${loggingOutUser.name} (${loggingOutUser.role})`, loggingOutUser);
+    }
     setAuthRole('guest');
     setAuthAdmin(null);
     setCurrentUser(null);

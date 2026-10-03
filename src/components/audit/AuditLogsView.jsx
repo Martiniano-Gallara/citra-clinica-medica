@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { dataService } from '../../services/dataService';
 import { sanitizeCsvCell, getTodayArgentina } from '../../utils/dateUtils';
@@ -6,13 +6,59 @@ import {
   ShieldCheck,
   Search,
   Filter,
-  Download,
   FileSpreadsheet,
   RefreshCw,
   ChevronLeft,
   ChevronRight,
   Server
 } from 'lucide-react';
+
+/**
+ * Normaliza los registros para presentar de forma fidedigna y profesional la identidad
+ * real del operador registrado en el servidor PostgreSQL (evitando etiquetas genéricas desactualizadas).
+ */
+const normalizeAuditLog = (log) => {
+  let userName = log.userName;
+  let userRole = log.userRole;
+
+  const isGenericUser = !userName || userName === 'Sistema / Paciente' || userName === 'Sistema';
+  const isGenericRole = !userRole || userRole === 'Portal Paciente' || userRole === 'admin';
+
+  if (isGenericUser || isGenericRole) {
+    if (log.details && typeof log.details === 'string') {
+      const adminLoginMatch = log.details.match(/Acceso administrativo de\s+([^(]+?)(?:\s*\(([^)]+)\))?$/i);
+      const adminLogoutMatch = log.details.match(/Cierre de sesi[oó]n de\s+([^(]+?)(?:\s*\(([^)]+)\))?$/i);
+
+      if (adminLoginMatch) {
+        userName = adminLoginMatch[1].trim();
+        userRole = adminLoginMatch[2] ? adminLoginMatch[2].trim() : 'Administración';
+      } else if (adminLogoutMatch) {
+        userName = adminLogoutMatch[1].trim();
+        userRole = adminLogoutMatch[2] ? adminLogoutMatch[2].trim() : 'Administración';
+      } else if (log.details.toLowerCase().includes('secretaría') || log.details.toLowerCase().includes('secretaria')) {
+        userName = 'Secretaría CITRA';
+        userRole = 'Secretaría';
+      } else if (log.details.toLowerCase().includes('alejandro blanco') || log.details.toLowerCase().includes('dr. blanco')) {
+        userName = 'Dr. Alejandro Blanco';
+        userRole = 'Traumatología y Ortopedia - Dirección Médica';
+      } else if (log.resource?.includes('Administración') || log.action === 'LOGIN' || log.action === 'LOGOUT') {
+        userName = 'Administración CITRA';
+        userRole = 'Dirección / Secretaría';
+      }
+    }
+  }
+
+  if (userName === 'Sistema / Paciente') {
+    userName = 'Portal Paciente CITRA';
+    userRole = 'Paciente';
+  }
+
+  return {
+    ...log,
+    userName: userName || 'Sistema CITRA',
+    userRole: userRole || 'Personal Clínico'
+  };
+};
 
 export const AuditLogsView = () => {
   const { auditLogs: localLogs, logAudit } = useClinic();
@@ -44,12 +90,11 @@ export const AuditLogsView = () => {
         action: action === 'ALL' ? null : action
       });
 
-      if (res && res.logs && res.logs.length > 0) {
+      if (res && Array.isArray(res.logs)) {
         setLogs(res.logs);
-        setTotalCount(res.count || res.logs.length);
+        setTotalCount(res.count !== undefined ? res.count : res.logs.length);
         setIsServerSource(true);
       } else {
-        // Fallback al estado local si la tabla está vacía en este entorno
         setLogs(localLogs || []);
         setTotalCount((localLogs || []).length);
         setIsServerSource(false);
@@ -68,21 +113,33 @@ export const AuditLogsView = () => {
     fetchServerLogs(currentPage, filterAction);
   }, [fetchServerLogs, currentPage, filterAction]);
 
-  const filteredLogs = logs.filter((log) => {
-    if (!searchTerm) return true;
+  const processedLogs = useMemo(() => {
+    return (logs || []).map(normalizeAuditLog);
+  }, [logs]);
+
+  const filteredLogs = useMemo(() => {
+    if (!searchTerm) return processedLogs;
     const s = searchTerm.toLowerCase();
-    return (
-      (log.userName || '').toLowerCase().includes(s) ||
-      (log.resource || '').toLowerCase().includes(s) ||
-      (log.targetDni || '').includes(s) ||
-      (log.details || '').toLowerCase().includes(s)
-    );
-  });
+    return processedLogs.filter((log) => {
+      return (
+        (log.userName || '').toLowerCase().includes(s) ||
+        (log.userRole || '').toLowerCase().includes(s) ||
+        (log.resource || log.module || '').toLowerCase().includes(s) ||
+        (log.targetDni || '').includes(s) ||
+        (log.details || '').toLowerCase().includes(s) ||
+        (log.action || '').toLowerCase().includes(s) ||
+        (log.eventHash || '').toLowerCase().includes(s)
+      );
+    });
+  }, [processedLogs, searchTerm]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   const getActionBadgeColor = (action) => {
     switch (action) {
+      case 'LOGIN': return { bg: '#ecfdf5', text: '#065f46', border: '#a7f3d0' };
+      case 'LOGOUT': return { bg: '#f8fafc', text: '#475569', border: '#cbd5e1' };
+      case 'SECURITY_LOCKOUT': return { bg: '#fee2e2', text: '#991b1b', border: '#fca5a5' };
       case 'READ': return { bg: '#e0f2fe', text: '#0369a1', border: '#bae6fd' };
       case 'CREATE': return { bg: '#d1fae5', text: '#065f46', border: '#6ee7b7' };
       case 'SIGN_DIGITAL': return { bg: '#EBF3FD', text: '#002182', border: '#257CE6' };
@@ -97,14 +154,14 @@ export const AuditLogsView = () => {
   };
 
   const handleExportCSV = () => {
-    const headers = ['ID', 'Fecha y Hora UTC', 'Usuario', 'Rol', 'Accion', 'Recurso', 'DNI Objetivo', 'Detalle', 'IP', 'Hash SHA-256'];
+    const headers = ['ID', 'Fecha y Hora UTC', 'Operador / Usuario', 'Rol / Especialidad', 'Accion Legal', 'Recurso Afectado', 'DNI Paciente', 'Detalle Operativo', 'IP', 'Hash SHA-256'];
     const rows = filteredLogs.map((l) => [
       sanitizeCsvCell(l.id),
       sanitizeCsvCell(l.timestamp),
       sanitizeCsvCell(l.userName),
       sanitizeCsvCell(l.userRole),
       sanitizeCsvCell(l.action),
-      sanitizeCsvCell(l.resource),
+      sanitizeCsvCell(l.resource || l.module),
       sanitizeCsvCell(l.targetDni),
       sanitizeCsvCell(l.details),
       sanitizeCsvCell(l.ipAddress),
@@ -207,6 +264,8 @@ export const AuditLogsView = () => {
             }}
           >
             <option value="ALL">Todas las Acciones</option>
+            <option value="LOGIN">Inicio de Sesión (LOGIN)</option>
+            <option value="LOGOUT">Cierre de Sesión (LOGOUT)</option>
             <option value="READ">Lectura de HCE (READ)</option>
             <option value="CREATE">Creación de Registro (CREATE)</option>
             <option value="SIGN_DIGITAL">Firma Digital PKI (SIGN_DIGITAL)</option>
@@ -216,6 +275,7 @@ export const AuditLogsView = () => {
             <option value="EXPORT_HCE">Exportación de Datos (EXPORT_HCE)</option>
             <option value="ARCA_INVOICE">Facturación Fiscal (ARCA_INVOICE)</option>
             <option value="MFA_AUTH">Autenticación MFA (MFA_AUTH)</option>
+            <option value="SECURITY_LOCKOUT">Bloqueo de Seguridad (SECURITY_LOCKOUT)</option>
           </select>
         </div>
       </div>
@@ -255,8 +315,8 @@ export const AuditLogsView = () => {
                       <div style={{ color: '#64748b', fontSize: '0.76rem' }}>{timePart} UTC</div>
                     </td>
                     <td>
-                      <div style={{ fontWeight: 800, color: '#002182' }}>{log.userName || 'Sistema'}</div>
-                      <div style={{ fontSize: '0.76rem', color: '#496386' }}>{log.userRole || 'admin'}</div>
+                      <div style={{ fontWeight: 800, color: '#002182' }}>{log.userName}</div>
+                      <div style={{ fontSize: '0.76rem', color: '#496386' }}>{log.userRole}</div>
                     </td>
                     <td>
                       <span

@@ -60,22 +60,60 @@ export const decryptDataAES = (cipherText, secretKey) => {
   }
 };
 
-/**
- * Genera un evento de auditoría inmutable
- */
 export const createAuditLog = (user, action, resource, targetDni, details) => {
   const timestamp = new Date().toISOString();
-  const rawData = `${timestamp}|${user?.id || 'sys'}|${action}|${resource}|${targetDni || '-'}|${details}`;
+
+  let resolvedName = user?.name || user?.fullName;
+  let resolvedRole = user?.role || user?.specialty;
+  let resolvedId = user?.id;
+
+  // Si no se proporcionó usuario explícito, resolver a partir del detalle si contiene la identidad
+  if (!resolvedName && details && typeof details === 'string') {
+    const match = details.match(/Acceso administrativo de ([^(]+)\(([^)]+)\)/);
+    if (match) {
+      resolvedName = match[1].trim();
+      resolvedRole = match[2].trim();
+    } else if (details.toLowerCase().includes('secretaría') || details.toLowerCase().includes('secretaria')) {
+      resolvedName = 'Secretaría CITRA';
+      resolvedRole = 'Secretaría';
+    } else if (details.toLowerCase().includes('blanco')) {
+      resolvedName = 'Dr. Alejandro Blanco';
+      resolvedRole = 'Traumatología y Ortopedia · Dirección Médica';
+    }
+  }
+
+  // Si aún no está resuelto, consultar el usuario administrativo activo en localStorage
+  if (!resolvedName) {
+    try {
+      const stored = localStorage.getItem('citra_authAdmin') || localStorage.getItem('citra_currentUser');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed?.name) {
+          resolvedName = parsed.name;
+          resolvedRole = parsed.role || 'Administración';
+          resolvedId = parsed.id || resolvedId;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const userName = resolvedName || 'Administración CITRA';
+  const userRole = resolvedRole || (action === 'LOGIN' ? 'Seguridad' : 'Personal Clínico');
+  const userId = resolvedId || user?.id || 'usr-admin';
+
+  const rawData = `${timestamp}|${userId}|${action}|${resource}|${targetDni || '-'}|${details}`;
   const eventHash = generateSHA256Hash(rawData);
 
   return {
     id: `aud-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     timestamp,
-    userName: user?.name || 'Sistema / Paciente',
-    userRole: user?.role || 'Portal Paciente',
-    userId: user?.id || 'usr-system',
-    action, // 'READ', 'CREATE', 'UPDATE_ADENDA', 'EXPORT_HCE', 'SIGN_DIGITAL', 'DELETE_ATTEMPT', 'MFA_AUTH', 'ARCA_INVOICE'
-    resource, // 'Historia Clínica', 'Receta ReNaPDiS', 'Consentimiento', 'Datos Filiatorios', 'Comprobante Fiscal'
+    userName,
+    userRole,
+    userId,
+    action, // 'LOGIN', 'LOGOUT', 'READ', 'CREATE', 'UPDATE_ADENDA', 'EXPORT_HCE', 'SIGN_DIGITAL', etc.
+    resource,
     targetDni: targetDni || '-',
     details,
     ipAddress: typeof window !== 'undefined' ? (window.location?.hostname || 'navegador-local') : 'server',
