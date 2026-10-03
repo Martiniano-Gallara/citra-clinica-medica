@@ -1269,90 +1269,144 @@ export const AdminManagementHub = () => {
                   style={{
                     background: '#ffffff',
                     borderRadius: '18px',
-                    border: '1.5px solid #D2E3FC',
-                    padding: '1.75rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+                    border: '1.5px solid #C5DCFA',
+                    overflow: 'hidden',
+                    boxShadow: '0 6px 18px rgba(0, 33, 130, 0.06)',
+                    display: 'flex',
+                    flexDirection: 'column'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#002182' }}>
-                      Últimos Turnos Registrados
-                    </h3>
+                  {/* Encabezado Invertido: Fondo Azul y Letra Blanca */}
+                  <div
+                    style={{
+                      background: 'linear-gradient(135deg, #002182 0%, #0746a6 100%)',
+                      padding: '1.1rem 1.5rem',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.12)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                      <div
+                        style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          background: 'rgba(255, 255, 255, 0.16)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#ffffff'
+                        }}
+                      >
+                        <CalendarCheck size={18} />
+                      </div>
+                      <h3 style={{ margin: 0, fontSize: '1.08rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.01em' }}>
+                        Últimos Turnos Registrados
+                      </h3>
+                    </div>
                     <button
                       onClick={() => setActiveTab('appointments')}
-                      style={{ background: 'none', border: 'none', color: '#076ABC', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.16)',
+                        border: '1px solid rgba(255, 255, 255, 0.28)',
+                        color: '#ffffff',
+                        padding: '0.35rem 0.85rem',
+                        borderRadius: '8px',
+                        fontWeight: 700,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.28)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.16)';
+                      }}
                     >
                       Ver todos
+                      <ChevronRight size={14} />
                     </button>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                    {appointments.slice(0, 5).map((a) => {
-                      const isAtendido = a.status === 'atendido';
+                  <div style={{ padding: '1.35rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.65rem', flex: 1 }}>
+                    {appointments.length === 0 ? (
+                      <div style={{ padding: '2rem 1rem', textAlign: 'center', color: '#64748b', fontSize: '0.88rem' }}>
+                        No hay turnos registrados recientemente.
+                      </div>
+                    ) : (
+                      appointments.slice(0, 5).map((a) => {
+                        const isAtendido = a.status === 'atendido';
 
-                      return (
-                        <div
-                          key={a.id}
-                          onClick={() => {
-                            if (typeof setAppointmentModalData === 'function') {
-                              setAppointmentModalData(a);
-                            }
-                            if (typeof setIsAppointmentModalOpen === 'function') {
-                              setIsAppointmentModalOpen(true);
-                            }
-                          }}
-                          title="Click para ver o editar turno"
-                          style={{
-                            background: '#F5F8FE',
-                            padding: '0.85rem 1.1rem',
-                            borderRadius: '12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            border: '1px solid #EDF3FD',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#EBF3FD';
-                            e.currentTarget.style.borderColor = '#076ABC';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#F5F8FE';
-                            e.currentTarget.style.borderColor = '#EDF3FD';
-                          }}
-                        >
-                          <div>
-                            <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.92rem' }}>
-                              {a.patientName}
+                        return (
+                          <div
+                            key={a.id}
+                            onClick={() => {
+                              if (typeof setAppointmentModalData === 'function') {
+                                setAppointmentModalData(a);
+                              }
+                              if (typeof setIsAppointmentModalOpen === 'function') {
+                                setIsAppointmentModalOpen(true);
+                              }
+                            }}
+                            title="Click para ver o editar turno"
+                            style={{
+                              background: '#F5F8FE',
+                              padding: '0.85rem 1.1rem',
+                              borderRadius: '12px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              border: '1px solid #EDF3FD',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = '#EBF3FD';
+                              e.currentTarget.style.borderColor = '#076ABC';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = '#F5F8FE';
+                              e.currentTarget.style.borderColor = '#EDF3FD';
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.92rem' }}>
+                                {a.patientName}
+                              </div>
+                              <div style={{ fontSize: '0.76rem', color: '#496386', marginTop: '2px' }}>
+                                {a.doctorSpecialty || a.specialtyName} · {a.doctorName}
+                              </div>
                             </div>
-                            <div style={{ fontSize: '0.76rem', color: '#496386', marginTop: '2px' }}>
-                              {a.doctorSpecialty || a.specialtyName} · {a.doctorName}
+
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.84rem' }}>
+                                {a.date} - {a.time} hs
+                              </div>
+                              <span
+                                style={{
+                                  display: 'inline-block',
+                                  marginTop: '3px',
+                                  padding: '0.15rem 0.6rem',
+                                  borderRadius: '100px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 800,
+                                  background: isAtendido ? '#d1fae5' : '#fef3c7',
+                                  color: isAtendido ? '#065f46' : '#92400e'
+                                }}
+                              >
+                                {isAtendido ? 'Atendido' : 'Por Atender'}
+                              </span>
                             </div>
                           </div>
-
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.84rem' }}>
-                              {a.date} - {a.time} hs
-                            </div>
-                            <span
-                              style={{
-                                display: 'inline-block',
-                                marginTop: '3px',
-                                padding: '0.15rem 0.6rem',
-                                borderRadius: '100px',
-                                fontSize: '0.72rem',
-                                fontWeight: 800,
-                                background: isAtendido ? '#d1fae5' : '#fef3c7',
-                                color: isAtendido ? '#065f46' : '#92400e'
-                              }}
-                            >
-                              {isAtendido ? 'Atendido' : 'Por Atender'}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 
@@ -1361,63 +1415,117 @@ export const AdminManagementHub = () => {
                   style={{
                     background: '#ffffff',
                     borderRadius: '18px',
-                    border: '1.5px solid #D2E3FC',
-                    padding: '1.75rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+                    border: '1.5px solid #C5DCFA',
+                    overflow: 'hidden',
+                    boxShadow: '0 6px 18px rgba(0, 33, 130, 0.06)',
+                    display: 'flex',
+                    flexDirection: 'column'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#002182' }}>
-                      Últimos Pacientes Registrados
-                    </h3>
+                  {/* Encabezado Invertido: Fondo Azul y Letra Blanca */}
+                  <div
+                    style={{
+                      background: 'linear-gradient(135deg, #002182 0%, #0746a6 100%)',
+                      padding: '1.1rem 1.5rem',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.12)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                      <div
+                        style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          background: 'rgba(255, 255, 255, 0.16)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#ffffff'
+                        }}
+                      >
+                        <Users size={18} />
+                      </div>
+                      <h3 style={{ margin: 0, fontSize: '1.08rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.01em' }}>
+                        Últimos Pacientes Registrados
+                      </h3>
+                    </div>
                     <button
                       onClick={() => setActiveTab('patients')}
-                      style={{ background: 'none', border: 'none', color: '#076ABC', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.16)',
+                        border: '1px solid rgba(255, 255, 255, 0.28)',
+                        color: '#ffffff',
+                        padding: '0.35rem 0.85rem',
+                        borderRadius: '8px',
+                        fontWeight: 700,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.28)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.16)';
+                      }}
                     >
                       Ver Padrón
+                      <ChevronRight size={14} />
                     </button>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                    {patients.slice(0, 5).map((p) => (
-                      <div
-                        key={p.id}
-                        style={{
-                          background: '#F5F8FE',
-                          padding: '0.85rem 1.1rem',
-                          borderRadius: '12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          border: '1px solid #EDF3FD'
-                        }}
-                      >
-                        <div>
-                          <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.88rem' }}>{p.name}</div>
-                          <div style={{ fontSize: '0.75rem', color: '#496386', marginTop: '2px' }}>
-                            DNI {p.dni} • {p.insurance || 'Particular'}
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={() => {
-                            setSelectedPatientForDetail(p);
-                          }}
+                  <div style={{ padding: '1.35rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.65rem', flex: 1 }}>
+                    {patients.length === 0 ? (
+                      <div style={{ padding: '2rem 1rem', textAlign: 'center', color: '#64748b', fontSize: '0.88rem' }}>
+                        No hay pacientes registrados en el padrón.
+                      </div>
+                    ) : (
+                      patients.slice(0, 5).map((p) => (
+                        <div
+                          key={p.id}
                           style={{
-                            background: '#ffffff',
-                            border: '1px solid #D2E3FC',
-                            color: '#076ABC',
-                            padding: '0.35rem 0.75rem',
-                            borderRadius: '8px',
-                            fontSize: '0.78rem',
-                            fontWeight: 700,
-                            cursor: 'pointer'
+                            background: '#F5F8FE',
+                            padding: '0.85rem 1.1rem',
+                            borderRadius: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            border: '1px solid #EDF3FD'
                           }}
                         >
-                          Ver Ficha
-                        </button>
-                      </div>
-                    ))}
+                          <div>
+                            <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.88rem' }}>{p.name}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#496386', marginTop: '2px' }}>
+                              DNI {p.dni} • {p.insurance || 'Particular'}
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              setSelectedPatientForDetail(p);
+                            }}
+                            style={{
+                              background: '#ffffff',
+                              border: '1px solid #D2E3FC',
+                              color: '#076ABC',
+                              padding: '0.35rem 0.75rem',
+                              borderRadius: '8px',
+                              fontSize: '0.78rem',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Ver Ficha
+                          </button>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
