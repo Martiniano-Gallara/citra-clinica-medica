@@ -116,18 +116,22 @@ REVOKE EXECUTE ON FUNCTION public.get_current_patient_id() FROM anon;
 REVOKE EXECUTE ON FUNCTION public.doctor_treats_patient(VARCHAR, VARCHAR) FROM anon, public;
 GRANT EXECUTE ON FUNCTION public.doctor_treats_patient(VARCHAR, VARCHAR) TO authenticated;
 
--- T9: Vista segura de catálogo público de profesionales (oculta datos confidenciales y honorarios)
 CREATE OR REPLACE VIEW public.public_doctors AS
 SELECT 
     id,
     name,
-    specialty,
     specialty_id,
+    specialty_name,
+    room_id,
+    room_name,
     working_days,
     schedule_start,
     schedule_end,
     slot_duration,
-    avatar,
+    accepted_insurances,
+    experience,
+    bio,
+    avatar_url,
     is_active
 FROM public.doctors
 WHERE is_active = true;
@@ -478,21 +482,23 @@ CREATE POLICY "clinic_settings_select_policy" ON clinic_settings FOR SELECT USIN
 DROP POLICY IF EXISTS "clinic_settings_admin_all" ON clinic_settings;
 CREATE POLICY "clinic_settings_admin_all" ON clinic_settings FOR ALL USING (public.is_administrative());
 
+-- ALTA-02: Políticas granulares para caja y facturación
 DROP POLICY IF EXISTS "cash_shifts_admin_all" ON cash_shifts;
-CREATE POLICY "cash_shifts_admin_all" ON cash_shifts FOR ALL USING (public.is_administrative());
+CREATE POLICY "cash_shifts_select_policy" ON cash_shifts FOR SELECT USING (public.is_administrative());
+CREATE POLICY "cash_shifts_insert_policy" ON cash_shifts FOR INSERT WITH CHECK (public.is_administrative());
+CREATE POLICY "cash_shifts_update_policy" ON cash_shifts FOR UPDATE USING (public.is_administrative());
+CREATE POLICY "cash_shifts_delete_policy" ON cash_shifts FOR DELETE USING (public.is_superadmin());
 
 DROP POLICY IF EXISTS "cash_movements_admin_all" ON cash_movements;
-CREATE POLICY "cash_movements_admin_all" ON cash_movements FOR ALL USING (public.is_administrative());
+CREATE POLICY "cash_movements_select_policy" ON cash_movements FOR SELECT USING (public.is_administrative());
+CREATE POLICY "cash_movements_insert_policy" ON cash_movements FOR INSERT WITH CHECK (public.is_administrative());
+CREATE POLICY "cash_movements_update_policy" ON cash_movements FOR UPDATE USING (public.is_superadmin());
+CREATE POLICY "cash_movements_delete_policy" ON cash_movements FOR DELETE USING (public.is_superadmin());
 
--- ====================================================================
--- 16. VISTA SEGURA DE PROFESIONALES (A01)
--- ====================================================================
-CREATE OR REPLACE VIEW public.public_doctors AS
-SELECT
-    id, name, specialty_id, specialty_name, room_id, room_name,
-    working_days, schedule_start, schedule_end, slot_duration,
-    accepted_insurances, experience, bio, avatar_url, is_active
-FROM public.doctors
-WHERE is_active = TRUE;
-
-GRANT SELECT ON public.public_doctors TO anon, authenticated;
+ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "invoices_admin_all" ON invoices;
+DROP POLICY IF EXISTS "invoices_select_policy" ON invoices;
+CREATE POLICY "invoices_select_policy" ON invoices FOR SELECT USING (patient_id = public.get_current_patient_id() OR public.is_administrative());
+CREATE POLICY "invoices_insert_policy" ON invoices FOR INSERT WITH CHECK (public.is_administrative());
+CREATE POLICY "invoices_update_policy" ON invoices FOR UPDATE USING (public.is_superadmin());
+-- Inmutabilidad fiscal: Las facturas emitidas no tienen DELETE permitido para ningún rol (se anulan con nota de crédito)

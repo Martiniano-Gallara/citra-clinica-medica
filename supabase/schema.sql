@@ -464,7 +464,29 @@ CREATE TABLE IF NOT EXISTS cash_movements (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 21. Índices de Alto Rendimiento para Producción (M09)
+-- 21. Facturación y Comprobantes Fiscales ARCA (A-04)
+CREATE TABLE IF NOT EXISTS invoices (
+    id VARCHAR(50) PRIMARY KEY,
+    invoice_number VARCHAR(50) NOT NULL,
+    cae VARCHAR(30) NOT NULL,
+    cae_vto DATE NOT NULL,
+    pto_vta INTEGER NOT NULL DEFAULT 1,
+    tipo_cmp INTEGER NOT NULL DEFAULT 6,
+    date DATE NOT NULL DEFAULT CURRENT_DATE,
+    patient_id VARCHAR(50) REFERENCES patients(id) ON DELETE SET NULL,
+    patient_name VARCHAR(200) NOT NULL,
+    dni VARCHAR(20) NOT NULL,
+    total NUMERIC(12,2) NOT NULL DEFAULT 0,
+    subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
+    concept VARCHAR(200) NOT NULL,
+    payment_method VARCHAR(50) NOT NULL DEFAULT 'Efectivo',
+    status VARCHAR(30) NOT NULL DEFAULT 'Cobrado',
+    arca_validated BOOLEAN NOT NULL DEFAULT true,
+    receipt_number VARCHAR(50),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 22. Índices de Alto Rendimiento para Producción (M09)
 CREATE INDEX IF NOT EXISTS idx_appointments_patient_id ON appointments(patient_id);
 CREATE INDEX IF NOT EXISTS idx_appointments_doctor_id ON appointments(doctor_id);
 CREATE INDEX IF NOT EXISTS idx_appointments_doctor_date ON appointments(doctor_id, date);
@@ -582,20 +604,18 @@ CREATE OR REPLACE VIEW public.public_doctors AS
 SELECT 
     id,
     name,
-    license,
     specialty_id,
     specialty_name,
     room_id,
     room_name,
-    color,
-    avatar_url,
-    experience,
-    bio,
     working_days,
     schedule_start,
     schedule_end,
     slot_duration,
     accepted_insurances,
+    experience,
+    bio,
+    avatar_url,
     is_active
 FROM public.doctors
 WHERE is_active = TRUE;
@@ -636,34 +656,6 @@ DROP TRIGGER IF EXISTS trg_no_hard_delete_rehab_sessions ON public.rehab_session
 CREATE TRIGGER trg_no_hard_delete_rehab_sessions BEFORE DELETE ON public.rehab_sessions FOR EACH ROW EXECUTE FUNCTION public.prevent_medical_record_hard_delete();
 
 GRANT SELECT ON public.public_doctors TO anon, authenticated;
-
--- 26. Facturación y Comprobantes Fiscales ARCA (A-04)
-CREATE TABLE IF NOT EXISTS invoices (
-    id VARCHAR(50) PRIMARY KEY,
-    invoice_number VARCHAR(50) NOT NULL,
-    cae VARCHAR(30) NOT NULL,
-    cae_vto DATE NOT NULL,
-    pto_vta INTEGER NOT NULL DEFAULT 1,
-    tipo_cmp INTEGER NOT NULL DEFAULT 6,
-    date DATE NOT NULL DEFAULT CURRENT_DATE,
-    patient_id VARCHAR(50) REFERENCES patients(id) ON DELETE SET NULL,
-    patient_name VARCHAR(200) NOT NULL,
-    dni VARCHAR(20) NOT NULL,
-    total NUMERIC(12,2) NOT NULL DEFAULT 0,
-    subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
-    concept VARCHAR(200) NOT NULL,
-    payment_method VARCHAR(50) NOT NULL DEFAULT 'Efectivo',
-    status VARCHAR(30) NOT NULL DEFAULT 'Cobrado',
-    arca_validated BOOLEAN NOT NULL DEFAULT true,
-    receipt_number VARCHAR(50),
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "invoices_select_policy" ON invoices FOR SELECT USING (patient_id = public.get_current_patient_id() OR public.is_administrative());
-CREATE POLICY "invoices_admin_all" ON invoices FOR ALL USING (public.is_administrative());
-CREATE INDEX IF NOT EXISTS idx_invoices_patient ON invoices (patient_id);
-CREATE INDEX IF NOT EXISTS idx_invoices_date ON invoices (date);
 
 -- ====================================================================
 -- 21. FUNCIONES AUXILIARES DE ROL Y VISTA PÚBLICA (T9, T16)
@@ -743,38 +735,9 @@ REVOKE EXECUTE ON FUNCTION public.get_current_doctor_id() FROM anon;
 REVOKE EXECUTE ON FUNCTION public.get_current_patient_id() FROM anon;
 REVOKE EXECUTE ON FUNCTION public.doctor_treats_patient(VARCHAR, VARCHAR) FROM anon, public;
 GRANT EXECUTE ON FUNCTION public.doctor_treats_patient(VARCHAR, VARCHAR) TO authenticated;
-
--- T9: Catálogo público seguro sin exponer honorarios ni datos confidenciales
-CREATE OR REPLACE VIEW public.public_doctors AS
-SELECT 
-    id,
-    name,
-    specialty_name,
-    specialty_id,
-    room_id,
-    room_name,
-    working_days,
-    schedule_start,
-    schedule_end,
-    slot_duration,
-    accepted_insurances,
-    experience,
-    bio,
-    avatar_url,
-    is_active
-FROM public.doctors
-WHERE is_active = true;
-
-GRANT SELECT ON public.public_doctors TO anon, authenticated;
-
 -- ====================================================================
--- POLÍTICAS DE BORRADO Y TRIGGERS DE SEGURIDAD (C-04, T7, T10, T11, T12)
+-- POLÍTICAS Y TRIGGERS DE SEGURIDAD (C-04, T7, T10, T11, T12)
 -- ====================================================================
-DROP POLICY IF EXISTS "patients_delete_policy" ON patients;
-CREATE POLICY "patients_delete_policy" ON patients FOR DELETE USING (public.is_administrative() OR public.is_superadmin());
-
-DROP POLICY IF EXISTS "appointments_delete_policy" ON appointments;
-CREATE POLICY "appointments_delete_policy" ON appointments FOR DELETE USING (public.is_administrative() OR public.is_superadmin());
 
 -- 1. Protección contra auto-escalado en Doctors (C-04, T6, T11)
 CREATE OR REPLACE FUNCTION public.protect_doctor_fields()
