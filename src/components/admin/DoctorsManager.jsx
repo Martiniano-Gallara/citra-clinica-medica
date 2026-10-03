@@ -712,10 +712,10 @@ export const DoctorsManager = ({ initialTab }) => {
       <div
         style={{
           background: '#ffffff',
-          borderRadius: '16px',
+          borderRadius: '13px',
           border: '1.5px solid #D2E3FC',
-          padding: '1.25rem',
-          boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)',
+          padding: '0.75rem 1rem',
+          boxShadow: '0 2px 8px rgba(0, 33, 130, 0.03)',
           transition: 'all 0.2s ease'
         }}
       >
@@ -726,14 +726,14 @@ export const DoctorsManager = ({ initialTab }) => {
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '1rem',
+            gap: '0.65rem',
             borderBottom: isCabeceraCollapsed ? 'none' : '1px solid #EDF3FD',
-            paddingBottom: isCabeceraCollapsed ? 0 : '1rem'
+            paddingBottom: isCabeceraCollapsed ? 0 : '0.55rem'
           }}
         >
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <h2 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#002182', margin: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#002182', margin: 0 }}>
                 Catálogo Institucional & Prestaciones
               </h2>
               <button
@@ -743,28 +743,28 @@ export const DoctorsManager = ({ initialTab }) => {
                   background: '#F0F5FF',
                   border: '1px solid #D2E3FC',
                   color: '#076ABC',
-                  padding: '0.2rem 0.6rem',
+                  padding: '0.18rem 0.5rem',
                   borderRadius: '6px',
-                  fontSize: '0.72rem',
+                  fontSize: '0.70rem',
                   fontWeight: 700,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.25rem'
+                  gap: '0.2rem'
                 }}
               >
                 {isCabeceraCollapsed ? (
                   <>
-                    <ChevronDown size={14} /> Ver Catálogo
+                    <ChevronDown size={13} /> Ver Catálogo
                   </>
                 ) : (
                   <>
-                    <ChevronUp size={14} /> Minimizar
+                    <ChevronUp size={13} /> Minimizar
                   </>
                 )}
               </button>
             </div>
-            <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', color: '#496386' }}>
+            <p style={{ margin: '0.1rem 0 0', fontSize: '0.76rem', color: '#496386' }}>
               Gestión centralizada de especialidades médicas, convenios con obras sociales y cuentas administrativas.
             </p>
           </div>
@@ -774,10 +774,10 @@ export const DoctorsManager = ({ initialTab }) => {
             style={{
               display: 'flex',
               background: '#F5F8FE',
-              padding: '0.3rem',
-              borderRadius: '10px',
+              padding: '0.2rem',
+              borderRadius: '8px',
               border: '1px solid #D2E3FC',
-              gap: '0.35rem'
+              gap: '0.25rem'
             }}
           >
             <button
@@ -790,18 +790,18 @@ export const DoctorsManager = ({ initialTab }) => {
                 background: cabeceraTab === 'specialties' ? '#002182' : 'transparent',
                 color: cabeceraTab === 'specialties' ? '#ffffff' : '#002182',
                 border: 'none',
-                padding: '0.45rem 0.85rem',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
+                padding: '0.35rem 0.7rem',
+                borderRadius: '6px',
+                fontSize: '0.76rem',
                 fontWeight: 800,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.4rem',
+                gap: '0.35rem',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease'
               }}
             >
-              <Stethoscope size={15} />
+              <Stethoscope size={14} />
               Especialidades ({specialties.length})
             </button>
 
@@ -815,18 +815,18 @@ export const DoctorsManager = ({ initialTab }) => {
                 background: cabeceraTab === 'insurances' ? '#002182' : 'transparent',
                 color: cabeceraTab === 'insurances' ? '#ffffff' : '#002182',
                 border: 'none',
-                padding: '0.45rem 0.85rem',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
+                padding: '0.35rem 0.7rem',
+                borderRadius: '6px',
+                fontSize: '0.76rem',
                 fontWeight: 800,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.4rem',
+                gap: '0.35rem',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease'
               }}
             >
-              <Shield size={15} />
+              <Shield size={14} />
               Obras Sociales ({healthInsurances.length})
             </button>
 
@@ -840,18 +840,18 @@ export const DoctorsManager = ({ initialTab }) => {
                 background: cabeceraTab === 'adminUsers' ? '#002182' : 'transparent',
                 color: cabeceraTab === 'adminUsers' ? '#ffffff' : '#002182',
                 border: 'none',
-                padding: '0.45rem 0.85rem',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
+                padding: '0.35rem 0.7rem',
+                borderRadius: '6px',
+                fontSize: '0.76rem',
                 fontWeight: 800,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.4rem',
+                gap: '0.35rem',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease'
               }}
             >
-              <UserCheck size={15} />
+              <UserCheck size={14} />
               Cuentas Secretaría ({adminUsersList.length})
             </button>
           </div>
@@ -859,7 +859,7 @@ export const DoctorsManager = ({ initialTab }) => {
 
         {/* Contenido Desplegable de la Cabecera */}
         {!isCabeceraCollapsed && (
-          <div style={{ marginTop: '1rem' }}>
+          <div style={{ marginTop: '0.55rem' }}>
             {/* SUB-PESTAÑA 1: ESPECIALIDADES MÉDICAS (ULTRA COMPRIMIDAS) */}
             {cabeceraTab === 'specialties' && (
               <div>
@@ -868,12 +868,12 @@ export const DoctorsManager = ({ initialTab }) => {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: '0.85rem',
+                    marginBottom: '0.45rem',
                     flexWrap: 'wrap',
-                    gap: '0.5rem'
+                    gap: '0.4rem'
                   }}
                 >
-                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#076ABC' }}>
+                  <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#076ABC' }}>
                     Catálogo de Especialidades vinculadas con profesionales:
                   </span>
                   <button
@@ -883,26 +883,26 @@ export const DoctorsManager = ({ initialTab }) => {
                       background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
                       color: '#ffffff',
                       border: 'none',
-                      padding: '0.45rem 0.9rem',
-                      borderRadius: '8px',
-                      fontSize: '0.78rem',
+                      padding: '0.32rem 0.75rem',
+                      borderRadius: '7px',
+                      fontSize: '0.74rem',
                       fontWeight: 800,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.35rem',
+                      gap: '0.3rem',
                       cursor: 'pointer'
                     }}
                   >
-                    <Plus size={15} /> Nueva Especialidad
+                    <Plus size={13} /> Nueva Especialidad
                   </button>
                 </div>
 
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(235px, 1fr))',
-                    gap: '0.75rem',
-                    maxHeight: '270px',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
+                    gap: '0.45rem',
+                    maxHeight: '210px',
                     overflowY: 'auto',
                     paddingRight: '0.35rem'
                   }}
@@ -915,37 +915,36 @@ export const DoctorsManager = ({ initialTab }) => {
                         key={spec.id}
                         style={{
                           background: '#F9FAFE',
-                          borderRadius: '10px',
+                          borderRadius: '8px',
                           border: '1.5px solid #D2E3FC',
-                          padding: '0.75rem 0.85rem',
+                          padding: '0.4rem 0.65rem',
                           display: 'flex',
-                          flexDirection: 'column',
+                          alignItems: 'center',
                           justifyContent: 'space-between',
-                          gap: '0.6rem',
+                          gap: '0.45rem',
                           transition: 'all 0.15s ease',
-                          boxShadow: '0 2px 4px rgba(0, 33, 130, 0.02)'
+                          boxShadow: '0 1px 3px rgba(0, 33, 130, 0.02)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = '#076ABC';
+                          e.currentTarget.style.background = '#FFFFFF';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = '#D2E3FC';
+                          e.currentTarget.style.background = '#F9FAFE';
                         }}
                       >
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            justifyContent: 'space-between',
-                            gap: '0.5rem'
-                          }}
-                        >
+                        <div style={{ minWidth: 0, flex: 1 }}>
                           <h4
                             style={{
                               margin: 0,
-                              fontSize: '0.86rem',
+                              fontSize: '0.80rem',
                               fontWeight: 800,
                               color: '#002182',
-                              lineHeight: 1.25,
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
+                              whiteSpace: 'nowrap',
                               overflow: 'hidden',
-                              minHeight: '2.2em'
+                              textOverflow: 'ellipsis',
+                              lineHeight: 1.2
                             }}
                             title={spec.name}
                           >
@@ -954,14 +953,10 @@ export const DoctorsManager = ({ initialTab }) => {
                           <span
                             style={{
                               fontSize: '0.66rem',
-                              fontWeight: 800,
-                              padding: '0.14rem 0.45rem',
-                              borderRadius: '100px',
-                              background: count > 0 ? '#EBF3FD' : '#F1F5F9',
-                              color: count > 0 ? '#002182' : '#64748B',
-                              border: count > 0 ? '1px solid #BFDBFE' : '1px solid #E2E8F0',
-                              flexShrink: 0,
-                              whiteSpace: 'nowrap'
+                              fontWeight: 700,
+                              color: count > 0 ? '#076ABC' : '#94A3B8',
+                              display: 'block',
+                              marginTop: '2px'
                             }}
                           >
                             {count} {count === 1 ? 'profesional' : 'profesionales'}
@@ -971,20 +966,20 @@ export const DoctorsManager = ({ initialTab }) => {
                         <button
                           type="button"
                           onClick={() => handleOpenEditSpecialty(spec)}
+                          title={`Editar ${spec.name}`}
                           style={{
-                            width: '100%',
                             background: '#ffffff',
                             border: '1px solid #D2E3FC',
                             color: '#002182',
-                            padding: '0.38rem',
-                            borderRadius: '6px',
+                            padding: '0.24rem 0.5rem',
+                            borderRadius: '5px',
                             fontWeight: 700,
-                            fontSize: '0.78rem',
+                            fontSize: '0.72rem',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.35rem',
+                            gap: '0.25rem',
+                            flexShrink: 0,
                             transition: 'all 0.15s ease'
                           }}
                           onMouseEnter={(e) => {
@@ -998,8 +993,8 @@ export const DoctorsManager = ({ initialTab }) => {
                             e.currentTarget.style.borderColor = '#D2E3FC';
                           }}
                         >
-                          <Edit2 size={12} />
-                          Editar
+                          <Edit2 size={11} />
+                          <span>Editar</span>
                         </button>
                       </div>
                     );
@@ -1016,12 +1011,12 @@ export const DoctorsManager = ({ initialTab }) => {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: '0.85rem',
+                    marginBottom: '0.45rem',
                     flexWrap: 'wrap',
-                    gap: '0.5rem'
+                    gap: '0.4rem'
                   }}
                 >
-                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#076ABC' }}>
+                  <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#076ABC' }}>
                     Convenios activos con obras sociales y sistemas de salud:
                   </span>
                   <button
@@ -1031,26 +1026,26 @@ export const DoctorsManager = ({ initialTab }) => {
                       background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
                       color: '#ffffff',
                       border: 'none',
-                      padding: '0.45rem 0.9rem',
-                      borderRadius: '8px',
-                      fontSize: '0.78rem',
+                      padding: '0.32rem 0.75rem',
+                      borderRadius: '7px',
+                      fontSize: '0.74rem',
                       fontWeight: 800,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.35rem',
+                      gap: '0.3rem',
                       cursor: 'pointer'
                     }}
                   >
-                    <Plus size={15} /> Nueva Obra Social
+                    <Plus size={13} /> Nueva Obra Social
                   </button>
                 </div>
 
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(235px, 1fr))',
-                    gap: '0.75rem',
-                    maxHeight: '270px',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                    gap: '0.45rem',
+                    maxHeight: '210px',
                     overflowY: 'auto',
                     paddingRight: '0.35rem'
                   }}
@@ -1065,39 +1060,42 @@ export const DoctorsManager = ({ initialTab }) => {
                         key={hi.id}
                         style={{
                           background: '#F9FAFE',
-                          borderRadius: '10px',
+                          borderRadius: '8px',
                           border: '1.5px solid #D2E3FC',
-                          padding: '0.75rem 0.85rem',
+                          padding: '0.4rem 0.65rem',
                           display: 'flex',
-                          flexDirection: 'column',
+                          alignItems: 'center',
                           justifyContent: 'space-between',
-                          gap: '0.6rem',
+                          gap: '0.45rem',
                           transition: 'all 0.15s ease',
-                          boxShadow: '0 2px 4px rgba(0, 33, 130, 0.02)'
+                          boxShadow: '0 1px 3px rgba(0, 33, 130, 0.02)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = '#076ABC';
+                          e.currentTarget.style.background = '#FFFFFF';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = '#D2E3FC';
+                          e.currentTarget.style.background = '#F9FAFE';
                         }}
                       >
-                        <div>
+                        <div style={{ minWidth: 0, flex: 1 }}>
                           <div
                             style={{
                               display: 'flex',
-                              alignItems: 'flex-start',
-                              justifyContent: 'space-between',
-                              gap: '0.5rem',
-                              marginBottom: '0.35rem'
+                              alignItems: 'center',
+                              gap: '0.35rem'
                             }}
                           >
                             <h4
                               style={{
                                 margin: 0,
-                                fontSize: '0.88rem',
+                                fontSize: '0.80rem',
                                 fontWeight: 800,
                                 color: '#002182',
-                                lineHeight: 1.25,
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
+                                whiteSpace: 'nowrap',
                                 overflow: 'hidden',
-                                minHeight: '2.2em'
+                                textOverflow: 'ellipsis'
                               }}
                               title={hi.name}
                             >
@@ -1105,9 +1103,9 @@ export const DoctorsManager = ({ initialTab }) => {
                             </h4>
                             <span
                               style={{
-                                fontSize: '0.64rem',
+                                fontSize: '0.60rem',
                                 fontWeight: 800,
-                                padding: '0.12rem 0.45rem',
+                                padding: '0.08rem 0.35rem',
                                 borderRadius: '100px',
                                 background: hi.status !== 'Inactiva' ? '#d1fae5' : '#fee2e2',
                                 color: hi.status !== 'Inactiva' ? '#065f46' : '#991b1b',
@@ -1118,12 +1116,12 @@ export const DoctorsManager = ({ initialTab }) => {
                             </span>
                           </div>
 
-                          <div style={{ fontSize: '0.74rem', color: '#496386', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                          <div style={{ fontSize: '0.66rem', color: '#496386', display: 'flex', gap: '0.5rem', marginTop: '2px' }}>
                             <span>
-                              <strong>Copago:</strong> {hi.copay > 0 ? `$${hi.copay.toLocaleString('es-AR')}` : 'Sin copago / Directo'}
+                              <strong>Copago:</strong> {hi.copay > 0 ? `$${hi.copay.toLocaleString('es-AR')}` : 'Sin copago'}
                             </span>
                             <span>
-                              <strong>Atienden:</strong> {docsAccepting} profesionales
+                              <strong>Atienden:</strong> {docsAccepting} prof.
                             </span>
                           </div>
                         </div>
@@ -1131,20 +1129,20 @@ export const DoctorsManager = ({ initialTab }) => {
                         <button
                           type="button"
                           onClick={() => handleOpenEditInsurance(hi)}
+                          title={`Configurar cobertura ${hi.name}`}
                           style={{
-                            width: '100%',
                             background: '#ffffff',
                             border: '1px solid #D2E3FC',
                             color: '#002182',
-                            padding: '0.38rem',
-                            borderRadius: '6px',
+                            padding: '0.24rem 0.5rem',
+                            borderRadius: '5px',
                             fontWeight: 700,
-                            fontSize: '0.78rem',
+                            fontSize: '0.72rem',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.35rem',
+                            gap: '0.25rem',
+                            flexShrink: 0,
                             transition: 'all 0.15s ease'
                           }}
                           onMouseEnter={(e) => {
@@ -1158,8 +1156,8 @@ export const DoctorsManager = ({ initialTab }) => {
                             e.currentTarget.style.borderColor = '#D2E3FC';
                           }}
                         >
-                          <Shield size={12} />
-                          Configurar Cobertura
+                          <Shield size={11} />
+                          <span>Configurar</span>
                         </button>
                       </div>
                     );
@@ -1176,12 +1174,12 @@ export const DoctorsManager = ({ initialTab }) => {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: '0.85rem',
+                    marginBottom: '0.45rem',
                     flexWrap: 'wrap',
-                    gap: '0.5rem'
+                    gap: '0.4rem'
                   }}
                 >
-                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#076ABC' }}>
+                  <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#076ABC' }}>
                     Personal con credenciales administrativas (Recepción / Secretaría / Dirección):
                   </span>
                   <button
@@ -1191,26 +1189,26 @@ export const DoctorsManager = ({ initialTab }) => {
                       background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
                       color: '#ffffff',
                       border: 'none',
-                      padding: '0.45rem 0.9rem',
-                      borderRadius: '8px',
-                      fontSize: '0.78rem',
+                      padding: '0.32rem 0.75rem',
+                      borderRadius: '7px',
+                      fontSize: '0.74rem',
                       fontWeight: 800,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.35rem',
+                      gap: '0.3rem',
                       cursor: 'pointer'
                     }}
                   >
-                    <Plus size={15} /> Nuevo Usuario Administrativo
+                    <Plus size={13} /> Nuevo Usuario Administrativo
                   </button>
                 </div>
 
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-                    gap: '0.85rem',
-                    maxHeight: '290px',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
+                    gap: '0.45rem',
+                    maxHeight: '210px',
                     overflowY: 'auto',
                     paddingRight: '0.35rem'
                   }}
@@ -1229,124 +1227,113 @@ export const DoctorsManager = ({ initialTab }) => {
                         key={user.id}
                         style={{
                           background: '#ffffff',
-                          borderRadius: '12px',
+                          borderRadius: '8px',
                           border: '1.5px solid #D2E3FC',
-                          padding: '0.85rem 0.95rem',
+                          padding: '0.45rem 0.65rem',
                           display: 'flex',
-                          flexDirection: 'column',
+                          alignItems: 'center',
                           justifyContent: 'space-between',
-                          gap: '0.65rem',
-                          transition: 'all 0.18s ease',
-                          boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)'
+                          gap: '0.45rem',
+                          transition: 'all 0.15s ease',
+                          boxShadow: '0 1px 3px rgba(0, 33, 130, 0.02)'
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-2px)';
-                          e.currentTarget.style.borderColor = '#BFDBFE';
-                          e.currentTarget.style.boxShadow = '0 6px 14px rgba(0, 33, 130, 0.08)';
+                          e.currentTarget.style.borderColor = '#076ABC';
+                          e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 33, 130, 0.06)';
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)';
                           e.currentTarget.style.borderColor = '#D2E3FC';
-                          e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 33, 130, 0.03)';
+                          e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 33, 130, 0.02)';
                         }}
                       >
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem', marginBottom: '0.45rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
-                              <div
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0, flex: 1 }}>
+                          <div
+                            style={{
+                              width: '26px',
+                              height: '26px',
+                              borderRadius: '6px',
+                              background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                              color: '#ffffff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '0.70rem',
+                              fontWeight: 800,
+                              flexShrink: 0
+                            }}
+                          >
+                            {initials}
+                          </div>
+
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                              <h4
                                 style={{
-                                  width: '32px',
-                                  height: '32px',
-                                  borderRadius: '8px',
-                                  background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
-                                  color: '#ffffff',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  fontSize: '0.78rem',
+                                  margin: 0,
+                                  fontSize: '0.80rem',
                                   fontWeight: 800,
-                                  flexShrink: 0
+                                  color: '#002182',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  lineHeight: 1.2
                                 }}
+                                title={user.name}
                               >
-                                {initials}
-                              </div>
+                                {user.name}
+                              </h4>
                               <span
                                 style={{
-                                  fontSize: '0.66rem',
+                                  fontSize: '0.58rem',
                                   fontWeight: 800,
-                                  padding: '0.12rem 0.5rem',
+                                  padding: '0.08rem 0.35rem',
                                   borderRadius: '100px',
                                   background: '#EFF6FF',
                                   color: '#076ABC',
-                                  border: '1px solid #BFDBFE'
+                                  border: '1px solid #BFDBFE',
+                                  flexShrink: 0
                                 }}
                               >
                                 {user.role || 'Secretaría'}
                               </span>
                             </div>
-                            <span
+
+                            <div
                               style={{
-                                width: '7px',
-                                height: '7px',
-                                borderRadius: '50%',
-                                background: '#10B981',
-                                display: 'inline-block',
-                                flexShrink: 0
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                fontSize: '0.67rem',
+                                color: '#64748B',
+                                marginTop: '1px'
                               }}
-                              title="Activo"
-                            />
-                          </div>
-
-                          <h4
-                            style={{
-                              margin: '0 0 0.2rem',
-                              fontSize: '0.88rem',
-                              fontWeight: 800,
-                              color: '#002182',
-                              lineHeight: 1.25,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis'
-                            }}
-                            title={user.name}
-                          >
-                            {user.name}
-                          </h4>
-
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.35rem',
-                              fontSize: '0.74rem',
-                              color: '#64748B'
-                            }}
-                            title={user.email}
-                          >
-                            <Mail size={12} color="#7994B8" style={{ flexShrink: 0 }} />
-                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {user.email}
-                            </span>
+                              title={user.email}
+                            >
+                              <Mail size={10} color="#7994B8" style={{ flexShrink: 0 }} />
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {user.email}
+                              </span>
+                            </div>
                           </div>
                         </div>
 
                         <button
                           type="button"
                           onClick={() => handleOpenEditStaff(user)}
+                          title="Gestionar clave / rol"
                           style={{
-                            width: '100%',
                             background: '#F5F8FE',
-                            border: '1.5px solid #D2E3FC',
+                            border: '1px solid #D2E3FC',
                             color: '#002182',
-                            padding: '0.42rem',
-                            borderRadius: '8px',
+                            padding: '0.24rem 0.5rem',
+                            borderRadius: '5px',
                             fontWeight: 700,
-                            fontSize: '0.78rem',
+                            fontSize: '0.72rem',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.4rem',
+                            gap: '0.25rem',
+                            flexShrink: 0,
                             transition: 'all 0.15s ease'
                           }}
                           onMouseEnter={(e) => {
@@ -1360,8 +1347,8 @@ export const DoctorsManager = ({ initialTab }) => {
                             e.currentTarget.style.borderColor = '#D2E3FC';
                           }}
                         >
-                          <KeyRound size={13} />
-                          Gestionar Clave / Rol
+                          <KeyRound size={11} />
+                          <span>Gestionar</span>
                         </button>
                       </div>
                     );
