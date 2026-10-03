@@ -26,7 +26,9 @@ import {
   CreditCard,
   Shield,
   Bell,
-  UserX
+  UserX,
+  CalendarPlus,
+  Check
 } from 'lucide-react';
 import { Badge } from '../common/Badge';
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
@@ -1299,11 +1301,13 @@ export const AppointmentsManager = () => {
               borderRadius: '20px',
               width: '100%',
               maxWidth: '520px',
-              boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
-              overflow: 'hidden'
+              boxShadow: '0 25px 50px -12px rgba(0, 33, 130, 0.35)',
+              overflow: 'hidden',
+              animation: 'scaleUp 0.18s ease-out'
             }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Luminous Header */}
             <div
               style={{
                 background: 'linear-gradient(135deg, #002182 0%, #076ABC 100%)',
@@ -1314,63 +1318,98 @@ export const AppointmentsManager = () => {
                 justifyContent: 'space-between'
               }}
             >
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>
-                  {isDoctor ? 'Nuevo Turno Médico' : 'Asignar Turno a Profesional'}
-                </h3>
-                <div style={{ fontSize: '0.78rem', color: '#D2E3FC', marginTop: '2px' }}>
-                  {isDoctor ? (currentDoctor?.specialty || 'Staff Médico') : 'Recepción CITRA'} · {selectedDate}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '10px',
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backdropFilter: 'blur(4px)'
+                  }}
+                >
+                  <CalendarPlus size={20} color="#ffffff" />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.12rem', fontWeight: 800 }}>
+                    {isDoctor ? 'Nuevo Turno Médico' : 'Asignar Turno a Profesional'}
+                  </h3>
+                  <div style={{ fontSize: '0.76rem', color: '#D2E3FC', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>{isDoctor ? (currentDoctor?.specialty || 'Staff Médico') : 'Mesa de Entrada CITRA'}</span>
+                    <span>•</span>
+                    <span style={{ fontWeight: 700, color: '#ffffff' }}>{selectedDate}</span>
+                  </div>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={handleCloseManualModal}
-                style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer' }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: 'none',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'background 0.15s ease'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
                 title="Cerrar ventana"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleCreateManualAppointment} style={{ padding: '1.5rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleCreateManualAppointment} style={{ padding: '1.4rem 1.5rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
                 {/* Doctor Selector for Receptionist */}
                 {!isDoctor && (
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.35rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
                       Profesional / Médico Asignado *
                     </label>
-                    <select
-                      value={manualDoctorId}
-                      onChange={(e) => setManualDoctorId(e.target.value)}
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '0.65rem 0.75rem',
-                        borderRadius: '8px',
-                        border: '1.5px solid #D2E3FC',
-                        fontSize: '0.85rem',
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                        background: '#ffffff',
-                        fontWeight: 700,
-                        color: '#002182'
-                      }}
-                    >
-                      {doctors.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.name} — {d.specialty}
-                        </option>
-                      ))}
-                    </select>
+                    <div style={{ position: 'relative' }}>
+                      <Stethoscope size={14} color="#7994B8" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+                      <select
+                        value={manualDoctorId}
+                        onChange={(e) => setManualDoctorId(e.target.value)}
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '0.6rem 0.75rem 0.6rem 2.1rem',
+                          borderRadius: '8px',
+                          border: '1.5px solid #D2E3FC',
+                          fontSize: '0.86rem',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                          background: '#ffffff',
+                          fontWeight: 700,
+                          color: '#002182'
+                        }}
+                      >
+                        {doctors.map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.name} — {d.specialty}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 )}
 
-                {/* Patient Selector (Only registered patients) + 'Cargar nuevo paciente' */}
+                {/* Patient Selector */}
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#002182' }}>
-                      Nombre y Apellido del Paciente *
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                    <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#002182' }}>
+                      Paciente *
                     </label>
                     <button
                       type="button"
@@ -1382,21 +1421,18 @@ export const AppointmentsManager = () => {
                         background: 'none',
                         border: 'none',
                         color: '#076ABC',
-                        fontSize: '0.78rem',
+                        fontSize: '0.75rem',
                         fontWeight: 800,
                         cursor: 'pointer',
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '4px',
+                        gap: '3px',
                         padding: '2px 6px',
-                        borderRadius: '4px',
-                        transition: 'background 0.15s ease'
+                        borderRadius: '4px'
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = '#eff6ff')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
                     >
-                      <Plus size={13} strokeWidth={2.5} />
-                      <span>Cargar nuevo paciente</span>
+                      <Plus size={12} strokeWidth={2.5} />
+                      <span>+ Cargar nuevo paciente</span>
                     </button>
                   </div>
 
@@ -1407,36 +1443,35 @@ export const AppointmentsManager = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        padding: '0.65rem 0.95rem',
+                        padding: '0.6rem 0.85rem',
                         borderRadius: '10px',
-                        border: '1.5px solid #bfdbfe',
-                        background: '#f8fafc',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                        border: '1.5px solid #BFDBFE',
+                        background: '#F8FAFE'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                         <div
                           style={{
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '50%',
-                            background: '#002182',
+                            width: '34px',
+                            height: '34px',
+                            borderRadius: '8px',
+                            background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
                             color: '#ffffff',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             fontWeight: 800,
-                            fontSize: '0.82rem',
+                            fontSize: '0.78rem',
                             flexShrink: 0
                           }}
                         >
-                          {manualPatientName.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                          {manualPatientName.split(' ').filter(Boolean).map((n) => n[0]).slice(0, 2).join('').toUpperCase()}
                         </div>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a' }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#002182', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {manualPatientName}
                           </div>
-                          <div style={{ fontSize: '0.76rem', color: '#64748b', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <div style={{ fontSize: '0.73rem', color: '#64748B', display: 'flex', gap: '6px', alignItems: 'center' }}>
                             <span>DNI: <strong style={{ color: '#002182' }}>{manualPatientDni || '-'}</strong></span>
                             <span>•</span>
                             <span style={{ color: '#076ABC', fontWeight: 600 }}>{manualPatientInsurance || 'Particular'}</span>
@@ -1454,12 +1489,12 @@ export const AppointmentsManager = () => {
                           setIsPatientDropdownOpen(true);
                         }}
                         style={{
-                          background: '#eff6ff',
+                          background: '#ffffff',
                           color: '#076ABC',
-                          border: '1px solid #bfdbfe',
+                          border: '1px solid #BFDBFE',
                           borderRadius: '6px',
-                          padding: '4px 10px',
-                          fontSize: '0.76rem',
+                          padding: '3px 8px',
+                          fontSize: '0.74rem',
                           fontWeight: 700,
                           cursor: 'pointer'
                         }}
@@ -1471,6 +1506,11 @@ export const AppointmentsManager = () => {
                     /* Search input with live dropdown of registered patients */
                     <div style={{ position: 'relative' }}>
                       <div style={{ position: 'relative' }}>
+                        <Search
+                          size={14}
+                          color="#7994B8"
+                          style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}
+                        />
                         <input
                           type="text"
                           value={patientSearchQuery}
@@ -1479,21 +1519,16 @@ export const AppointmentsManager = () => {
                             setIsPatientDropdownOpen(true);
                           }}
                           onFocus={() => setIsPatientDropdownOpen(true)}
-                          placeholder="Buscar paciente existente por nombre o DNI..."
+                          placeholder="Buscar por Nombre o DNI..."
                           style={{
                             width: '100%',
-                            padding: '0.65rem 0.75rem 0.65rem 2.2rem',
+                            padding: '0.6rem 0.75rem 0.6rem 2.1rem',
                             borderRadius: '8px',
                             border: '1.5px solid #D2E3FC',
                             fontSize: '0.85rem',
                             outline: 'none',
                             boxSizing: 'border-box'
                           }}
-                        />
-                        <Search
-                          size={15}
-                          color="#7994B8"
-                          style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}
                         />
                       </div>
 
@@ -1508,7 +1543,7 @@ export const AppointmentsManager = () => {
                             borderRadius: '10px',
                             border: '1.5px solid #D2E3FC',
                             boxShadow: '0 10px 25px rgba(0, 33, 130, 0.15)',
-                            maxHeight: '200px',
+                            maxHeight: '190px',
                             overflowY: 'auto',
                             zIndex: 100,
                             marginTop: '4px'
@@ -1524,7 +1559,7 @@ export const AppointmentsManager = () => {
                                 key={pat.id}
                                 onClick={() => handleSelectPatient(pat)}
                                 style={{
-                                  padding: '0.65rem 0.95rem',
+                                  padding: '0.6rem 0.85rem',
                                   borderBottom: '1px solid #f1f5f9',
                                   cursor: 'pointer',
                                   display: 'flex',
@@ -1555,109 +1590,72 @@ export const AppointmentsManager = () => {
                   )}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+                {/* 2-Column Row: Horario & Obra Social */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                      DNI *
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#002182', marginBottom: '0.25rem' }}>
+                      Horario del Turno *
                     </label>
-                    <input
-                      type="text"
-                      readOnly={Boolean(manualPatientId)}
-                      value={manualPatientDni}
-                      onChange={(e) => setManualPatientDni(e.target.value)}
-                      placeholder="Seleccione paciente"
-                      style={{
-                        width: '100%',
-                        padding: '0.65rem 0.75rem',
-                        borderRadius: '8px',
-                        border: '1.5px solid #D2E3FC',
-                        fontSize: '0.85rem',
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                        background: manualPatientId ? '#f8fafc' : '#ffffff',
-                        color: manualPatientId ? '#334155' : '#0f172a'
-                      }}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <Clock size={14} color="#7994B8" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+                      <input
+                        type="time"
+                        required
+                        value={manualTime}
+                        onChange={(e) => setManualTime(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '0.55rem 0.75rem 0.55rem 2.1rem',
+                          borderRadius: '8px',
+                          border: '1.5px solid #D2E3FC',
+                          fontSize: '0.85rem',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                          color: '#002182',
+                          fontWeight: 700
+                        }}
+                      />
+                    </div>
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                      Teléfono / WhatsApp
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#002182', marginBottom: '0.25rem' }}>
+                      Obra Social / Cobertura
                     </label>
-                    <input
-                      type="text"
-                      value={manualPatientPhone}
-                      onChange={(e) => setManualPatientPhone(e.target.value)}
-                      placeholder="+54 9 351..."
-                      style={{
-                        width: '100%',
-                        padding: '0.65rem 0.75rem',
-                        borderRadius: '8px',
-                        border: '1.5px solid #D2E3FC',
-                        fontSize: '0.85rem',
-                        outline: 'none',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                      Obra Social / Prepaga
-                    </label>
-                    <input
-                      type="text"
-                      value={manualPatientInsurance}
-                      onChange={(e) => setManualPatientInsurance(e.target.value)}
-                      placeholder="OSDE, Swiss, Particular"
-                      style={{
-                        width: '100%',
-                        padding: '0.65rem 0.75rem',
-                        borderRadius: '8px',
-                        border: '1.5px solid #D2E3FC',
-                        fontSize: '0.85rem',
-                        outline: 'none',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                      Horario *
-                    </label>
-                    <input
-                      type="time"
-                      required
-                      value={manualTime}
-                      onChange={(e) => setManualTime(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '0.65rem 0.75rem',
-                        borderRadius: '8px',
-                        border: '1.5px solid #D2E3FC',
-                        fontSize: '0.85rem',
-                        outline: 'none',
-                        boxSizing: 'border-box'
-                      }}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <Shield size={14} color="#7994B8" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+                      <input
+                        type="text"
+                        value={manualPatientInsurance}
+                        onChange={(e) => setManualPatientInsurance(e.target.value)}
+                        placeholder="OSDE, Swiss, Particular..."
+                        style={{
+                          width: '100%',
+                          padding: '0.55rem 0.75rem 0.55rem 2.1rem',
+                          borderRadius: '8px',
+                          border: '1.5px solid #D2E3FC',
+                          fontSize: '0.85rem',
+                          outline: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
 
+                {/* Motivo de Consulta */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#002182', marginBottom: '0.25rem' }}>
                     Motivo de Consulta
                   </label>
                   <input
                     type="text"
                     value={manualReason}
                     onChange={(e) => setManualReason(e.target.value)}
-                    placeholder="Dolor articular en hombro derecho"
+                    placeholder="Ej: Control postoperatorio, dolor lumbar, primera consulta..."
                     style={{
                       width: '100%',
-                      padding: '0.65rem 0.75rem',
+                      padding: '0.55rem 0.75rem',
                       borderRadius: '8px',
                       border: '1.5px solid #D2E3FC',
                       fontSize: '0.85rem',
@@ -1668,17 +1666,17 @@ export const AppointmentsManager = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.65rem', marginTop: '1.35rem', paddingTop: '0.85rem', borderTop: '1px solid #EDF3FD' }}>
                 <button
                   type="button"
                   onClick={handleCloseManualModal}
                   style={{
-                    background: '#f1f5f9',
-                    border: '1px solid #cbd5e1',
+                    background: '#F1F5F9',
+                    border: '1px solid #CBD5E1',
                     color: '#475569',
                     borderRadius: '8px',
-                    padding: '0.6rem 1rem',
-                    fontSize: '0.84rem',
+                    padding: '0.55rem 1.15rem',
+                    fontSize: '0.82rem',
                     fontWeight: 700,
                     cursor: 'pointer'
                   }}
@@ -1689,18 +1687,23 @@ export const AppointmentsManager = () => {
                   type="submit"
                   disabled={!manualPatientId}
                   style={{
-                    background: manualPatientId ? '#076ABC' : '#94a3b8',
+                    background: manualPatientId ? 'linear-gradient(135deg, #076ABC 0%, #002182 100%)' : '#CBD5E1',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '8px',
-                    padding: '0.6rem 1.2rem',
-                    fontSize: '0.84rem',
+                    padding: '0.55rem 1.35rem',
+                    fontSize: '0.82rem',
                     fontWeight: 800,
                     cursor: manualPatientId ? 'pointer' : 'not-allowed',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    boxShadow: manualPatientId ? '0 4px 12px rgba(7, 106, 188, 0.25)' : 'none',
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  Confirmar y Agendar
+                  <Check size={16} />
+                  <span>Confirmar y Agendar</span>
                 </button>
               </div>
             </form>

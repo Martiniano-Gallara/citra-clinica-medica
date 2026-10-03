@@ -23,7 +23,8 @@ import {
   ExternalLink,
   Layers,
   Sparkles,
-  Tag
+  Tag,
+  Mail
 } from 'lucide-react';
 import { generateSecureTempPassword } from '../../utils/cryptoAudit';
 
@@ -1207,112 +1208,164 @@ export const DoctorsManager = ({ initialTab }) => {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(235px, 1fr))',
-                    gap: '0.75rem',
-                    maxHeight: '270px',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                    gap: '0.85rem',
+                    maxHeight: '290px',
                     overflowY: 'auto',
                     paddingRight: '0.35rem'
                   }}
                 >
-                  {adminUsersList.map((user) => (
-                    <div
-                      key={user.id}
-                      style={{
-                        background: '#F9FAFE',
-                        borderRadius: '10px',
-                        border: '1.5px solid #D2E3FC',
-                        padding: '0.75rem 0.85rem',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        gap: '0.5rem',
-                        transition: 'all 0.15s ease',
-                        boxShadow: '0 2px 4px rgba(0, 33, 130, 0.02)'
-                      }}
-                    >
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.4rem', marginBottom: '0.25rem' }}>
+                  {adminUsersList.map((user) => {
+                    const initials = (user.name || 'S')
+                      .split(' ')
+                      .filter(Boolean)
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join('')
+                      .toUpperCase();
+
+                    return (
+                      <div
+                        key={user.id}
+                        style={{
+                          background: '#ffffff',
+                          borderRadius: '12px',
+                          border: '1.5px solid #D2E3FC',
+                          padding: '0.85rem 0.95rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          gap: '0.65rem',
+                          transition: 'all 0.18s ease',
+                          boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.borderColor = '#BFDBFE';
+                          e.currentTarget.style.boxShadow = '0 6px 14px rgba(0, 33, 130, 0.08)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.borderColor = '#D2E3FC';
+                          e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 33, 130, 0.03)';
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem', marginBottom: '0.45rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+                              <div
+                                style={{
+                                  width: '32px',
+                                  height: '32px',
+                                  borderRadius: '8px',
+                                  background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                                  color: '#ffffff',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: '0.78rem',
+                                  fontWeight: 800,
+                                  flexShrink: 0
+                                }}
+                              >
+                                {initials}
+                              </div>
+                              <span
+                                style={{
+                                  fontSize: '0.66rem',
+                                  fontWeight: 800,
+                                  padding: '0.12rem 0.5rem',
+                                  borderRadius: '100px',
+                                  background: '#EFF6FF',
+                                  color: '#076ABC',
+                                  border: '1px solid #BFDBFE'
+                                }}
+                              >
+                                {user.role || 'Secretaría'}
+                              </span>
+                            </div>
+                            <span
+                              style={{
+                                width: '7px',
+                                height: '7px',
+                                borderRadius: '50%',
+                                background: '#10B981',
+                                display: 'inline-block',
+                                flexShrink: 0
+                              }}
+                              title="Activo"
+                            />
+                          </div>
+
                           <h4
                             style={{
-                              margin: 0,
+                              margin: '0 0 0.2rem',
                               fontSize: '0.88rem',
                               fontWeight: 800,
                               color: '#002182',
                               lineHeight: 1.25,
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
+                              whiteSpace: 'nowrap',
                               overflow: 'hidden',
-                              minHeight: '2.2em'
+                              textOverflow: 'ellipsis'
                             }}
                             title={user.name}
                           >
                             {user.name}
                           </h4>
-                          <span
-                            style={{
-                              fontSize: '0.64rem',
-                              fontWeight: 800,
-                              padding: '0.12rem 0.45rem',
-                              borderRadius: '100px',
-                              background: '#e0f2fe',
-                              color: '#0369a1',
-                              flexShrink: 0
-                            }}
-                          >
-                            {user.role || 'Secretaría'}
-                          </span>
-                        </div>
-                        <p
-                          style={{
-                            margin: 0,
-                            fontSize: '0.74rem',
-                            color: '#496386',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }}
-                          title={user.email}
-                        >
-                          {user.email}
-                        </p>
-                      </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEditStaff(user)}
-                        style={{
-                          width: '100%',
-                          background: '#ffffff',
-                          border: '1px solid #D2E3FC',
-                          color: '#002182',
-                          padding: '0.38rem',
-                          borderRadius: '6px',
-                          fontWeight: 700,
-                          fontSize: '0.78rem',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '0.35rem',
-                          transition: 'all 0.15s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = '#076ABC';
-                          e.currentTarget.style.color = '#ffffff';
-                          e.currentTarget.style.borderColor = '#076ABC';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = '#ffffff';
-                          e.currentTarget.style.color = '#002182';
-                          e.currentTarget.style.borderColor = '#D2E3FC';
-                        }}
-                      >
-                        <KeyRound size={13} />
-                        Editar / Clave
-                      </button>
-                    </div>
-                  ))}
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              fontSize: '0.74rem',
+                              color: '#64748B'
+                            }}
+                            title={user.email}
+                          >
+                            <Mail size={12} color="#7994B8" style={{ flexShrink: 0 }} />
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {user.email}
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditStaff(user)}
+                          style={{
+                            width: '100%',
+                            background: '#F5F8FE',
+                            border: '1.5px solid #D2E3FC',
+                            color: '#002182',
+                            padding: '0.42rem',
+                            borderRadius: '8px',
+                            fontWeight: 700,
+                            fontSize: '0.78rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.4rem',
+                            transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#002182';
+                            e.currentTarget.style.color = '#ffffff';
+                            e.currentTarget.style.borderColor = '#002182';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#F5F8FE';
+                            e.currentTarget.style.color = '#002182';
+                            e.currentTarget.style.borderColor = '#D2E3FC';
+                          }}
+                        >
+                          <KeyRound size={13} />
+                          Gestionar Clave / Rol
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -1454,7 +1507,7 @@ export const DoctorsManager = ({ initialTab }) => {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(285px, 1fr))',
               gap: '0.85rem',
               alignItems: 'stretch'
             }}
@@ -1464,6 +1517,16 @@ export const DoctorsManager = ({ initialTab }) => {
               const daysLabel = formatDaysSummary(doc.workingDays);
               const timeLabel = `${formatCleanTime(doc.scheduleStart, '08:30')} a ${formatCleanTime(doc.scheduleEnd, '17:00')} hs`;
               const docEmailDisplay = userObj?.email || doc.email || 'Acceso por configurar';
+              const cleanDocName = (doc.name || '')
+                .replace(/^Dr\.\s*|^Dra\.\s*|^Lic\.\s*/i, '')
+                .trim();
+              const initials = cleanDocName
+                .split(' ')
+                .filter(Boolean)
+                .map((n) => n[0])
+                .slice(0, 2)
+                .join('')
+                .toUpperCase() || 'DR';
 
               return (
                 <div
@@ -1477,13 +1540,14 @@ export const DoctorsManager = ({ initialTab }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
+                    gap: '0.65rem',
                     height: '100%',
                     boxSizing: 'border-box',
                     transition: 'all 0.18s ease'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 33, 130, 0.07)';
+                    e.currentTarget.style.boxShadow = '0 6px 18px rgba(0, 33, 130, 0.07)';
                     e.currentTarget.style.borderColor = '#BFDBFE';
                   }}
                   onMouseLeave={(e) => {
@@ -1492,33 +1556,61 @@ export const DoctorsManager = ({ initialTab }) => {
                     e.currentTarget.style.borderColor = '#D2E3FC';
                   }}
                 >
-                  <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                    {/* Fila 1: Nombre y Estado */}
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        justifyContent: 'space-between',
-                        gap: '0.5rem',
-                        marginBottom: '0.35rem'
-                      }}
-                    >
-                      <h4
-                        style={{
-                          margin: 0,
-                          fontSize: '0.96rem',
-                          fontWeight: 800,
-                          color: '#002182',
-                          lineHeight: 1.25,
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden'
-                        }}
-                        title={doc.name}
-                      >
-                        {doc.name}
-                      </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+                    {/* Fila 1: Avatar, Nombre & Especialidad, y Switch Activo */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
+                        <div
+                          style={{
+                            width: '38px',
+                            height: '38px',
+                            borderRadius: '10px',
+                            background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                            color: '#ffffff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.85rem',
+                            fontWeight: 800,
+                            flexShrink: 0,
+                            boxShadow: '0 2px 6px rgba(7, 106, 188, 0.2)'
+                          }}
+                        >
+                          {initials}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <h4
+                            style={{
+                              margin: 0,
+                              fontSize: '0.94rem',
+                              fontWeight: 800,
+                              color: '#002182',
+                              lineHeight: 1.2,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}
+                            title={doc.name}
+                          >
+                            {doc.name}
+                          </h4>
+                          <span
+                            style={{
+                              fontSize: '0.73rem',
+                              fontWeight: 700,
+                              color: '#076ABC',
+                              display: 'block',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}
+                            title={doc.specialty || doc.specialtyName || 'Especialidad'}
+                          >
+                            {doc.specialty || doc.specialtyName || 'Especialidad médica'}
+                          </span>
+                        </div>
+                      </div>
+
                       <span
                         onClick={() => {
                           if (isDoctor) {
@@ -1533,82 +1625,71 @@ export const DoctorsManager = ({ initialTab }) => {
                           fontWeight: 800,
                           padding: '0.14rem 0.5rem',
                           borderRadius: '100px',
-                          background: doc.active !== false ? '#d1fae5' : '#fee2e2',
+                          background: doc.active !== false ? '#ecfdf5' : '#fee2e2',
                           color: doc.active !== false ? '#065f46' : '#991b1b',
                           border: doc.active !== false ? '1px solid #a7f3d0' : '1px solid #fecaca',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
                           flexShrink: 0
                         }}
                         title={isDoctor ? 'Habilitación gestionada por Secretaría' : 'Clic para alternar activo/inactivo'}
                       >
+                        <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: doc.active !== false ? '#10b981' : '#ef4444' }} />
                         {doc.active !== false ? 'Activo' : 'Inactivo'}
                       </span>
                     </div>
 
-                    {/* Fila 2: Especialidad */}
-                    <div style={{ marginBottom: '0.55rem', minHeight: '1.5rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.3rem' }}>
-                      <span
-                        style={{
-                          fontSize: '0.74rem',
-                          fontWeight: 700,
-                          color: '#076ABC',
-                          background: '#EFF6FF',
-                          border: '1px solid #BFDBFE',
-                          padding: '0.16rem 0.52rem',
-                          borderRadius: '6px',
-                          display: 'inline-block'
-                        }}
-                      >
-                        {doc.specialty || doc.specialtyName || 'Especialidad médica'}
-                      </span>
-                    </div>
-
-                    {/* Fila 3: Micro-datos de Horarios, Acceso y Obras Sociales */}
+                    {/* Fila 2: Resumen Limpio de Horarios & Obras Sociales */}
                     <div
                       style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '0.3rem',
+                        gap: '0.35rem',
                         fontSize: '0.73rem',
                         color: '#496386',
                         background: '#F8FAFE',
-                        padding: '0.55rem 0.7rem',
+                        padding: '0.5rem 0.65rem',
                         borderRadius: '8px',
-                        border: '1px solid #EDF3FD',
-                        marginBottom: '0.85rem'
+                        border: '1px solid #EDF3FD'
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                         <Clock size={13} color="#076ABC" style={{ flexShrink: 0 }} />
-                        <span style={{ fontWeight: 600, color: '#1E293B' }}>
+                        <span style={{ fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {daysLabel} · <span style={{ color: '#496386', fontWeight: 500 }}>{timeLabel}</span>
                         </span>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                        <KeyRound size={13} color="#076ABC" style={{ flexShrink: 0 }} />
-                        <span
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', minWidth: 0 }}>
+                          <Shield size={12} color="#076ABC" style={{ flexShrink: 0 }} />
+                          <span style={{ fontSize: '0.71rem', color: '#002182', fontWeight: 700 }}>
+                            {(doc.acceptedInsurances || []).length} O.S. habilitadas
+                          </span>
+                        </div>
+                        <div
                           style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                            fontSize: '0.7rem',
+                            color: '#64748B',
+                            maxWidth: '120px',
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            maxWidth: '195px'
+                            textOverflow: 'ellipsis'
                           }}
                           title={docEmailDisplay}
                         >
-                          {docEmailDisplay}
-                        </span>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                        <Shield size={13} color="#076ABC" style={{ flexShrink: 0 }} />
-                        <span>
-                          <strong style={{ color: '#002182' }}>{(doc.acceptedInsurances || []).length}</strong> obras sociales habilitadas
-                        </span>
+                          <Mail size={11} color="#7994B8" style={{ flexShrink: 0 }} />
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{docEmailDisplay}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Acciones de la Tarjeta (alineadas al fondo) */}
+                  {/* Acciones de la Tarjeta */}
                   <div style={{ display: 'flex', gap: '0.4rem', marginTop: 'auto' }}>
                     <button
                       type="button"
@@ -1618,14 +1699,14 @@ export const DoctorsManager = ({ initialTab }) => {
                         background: '#F5F8FE',
                         border: '1.5px solid #D2E3FC',
                         color: '#002182',
-                        padding: '0.45rem 0.65rem',
+                        padding: '0.42rem 0.65rem',
                         borderRadius: '8px',
                         fontWeight: 700,
-                        fontSize: '0.8rem',
+                        fontSize: '0.78rem',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '0.4rem',
+                        gap: '0.35rem',
                         cursor: 'pointer',
                         transition: 'all 0.15s ease'
                       }}
@@ -1651,7 +1732,7 @@ export const DoctorsManager = ({ initialTab }) => {
                         background: '#F0F5FF',
                         border: '1.5px solid #D2E3FC',
                         color: '#076ABC',
-                        padding: '0.45rem 0.65rem',
+                        padding: '0.42rem 0.65rem',
                         borderRadius: '8px',
                         cursor: 'pointer',
                         display: 'flex',
@@ -3523,7 +3604,7 @@ export const DoctorsManager = ({ initialTab }) => {
       )}
 
       {/* ========================================================================= */}
-      {/* 7. MODAL DE USUARIO ADMINISTRATIVO (CABECERA)                             */}
+      {/* 7. MODAL DE USUARIO ADMINISTRATIVO / SECRETARÍA (CABECERA)                */}
       {/* ========================================================================= */}
       {isStaffModalOpen && (
         <div
@@ -3532,7 +3613,7 @@ export const DoctorsManager = ({ initialTab }) => {
             position: 'fixed',
             inset: 0,
             backgroundColor: 'rgba(0, 33, 130, 0.65)',
-            backdropFilter: 'blur(5px)',
+            backdropFilter: 'blur(6px)',
             zIndex: 9999,
             display: 'flex',
             alignItems: 'center',
@@ -3549,104 +3630,218 @@ export const DoctorsManager = ({ initialTab }) => {
               background: '#ffffff',
               borderRadius: '20px',
               width: '100%',
-              maxWidth: '460px',
-              boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
-              overflow: 'hidden'
+              maxWidth: '480px',
+              boxShadow: '0 25px 50px -12px rgba(0, 33, 130, 0.35)',
+              overflow: 'hidden',
+              animation: 'scaleUp 0.18s ease-out'
             }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Luminous Header */}
             <div
               style={{
-                background: '#002182',
+                background: 'linear-gradient(135deg, #002182 0%, #076ABC 100%)',
                 color: '#ffffff',
-                padding: '1.25rem 1.5rem',
+                padding: '1.35rem 1.6rem',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center'
               }}
             >
-              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>
-                {editingStaffUser ? 'Editar Cuenta Administrativa' : 'Nueva Cuenta de Secretaría'}
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '10px',
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backdropFilter: 'blur(4px)'
+                  }}
+                >
+                  <UserCheck size={20} color="#ffffff" />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.12rem', fontWeight: 800 }}>
+                    {editingStaffUser ? 'Editar Cuenta de Secretaría' : 'Nueva Cuenta de Secretaría'}
+                  </h3>
+                  <div style={{ fontSize: '0.76rem', color: '#D2E3FC', marginTop: '2px' }}>
+                    Credenciales institucionales para gestión de turnos y mesa de entrada
+                  </div>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsStaffModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: 4 }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: 'none',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'background 0.15s ease'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveStaffUser} style={{ padding: '1.5rem' }}>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                  Nombre y Apellido *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={staffName}
-                  onChange={(e) => setStaffName(e.target.value)}
-                  placeholder="Ej: Valeria Rossi"
-                  style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                  Email de Ingreso *
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={staffEmail}
-                  onChange={(e) => setStaffEmail(e.target.value)}
-                  placeholder="recepcion@citra.com.ar"
-                  style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.85rem', marginBottom: '1.25rem' }}>
+            <form onSubmit={handleSaveStaffUser} style={{ padding: '1.5rem 1.6rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                    Rol Institucional
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#002182', marginBottom: '0.35rem' }}>
+                    Nombre y Apellido *
                   </label>
                   <input
                     type="text"
-                    value={staffRole}
-                    onChange={(e) => setStaffRole(e.target.value)}
-                    placeholder="Secretaría / Recepción"
-                    style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+                    required
+                    value={staffName}
+                    onChange={(e) => setStaffName(e.target.value)}
+                    placeholder="Ej: Valeria Rossi"
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.85rem',
+                      borderRadius: '8px',
+                      border: '1.5px solid #D2E3FC',
+                      fontSize: '0.86rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      color: '#002182',
+                      fontWeight: 600
+                    }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                    Contraseña
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#002182', marginBottom: '0.35rem' }}>
+                    Email Institucional de Ingreso *
                   </label>
-                  <input
-                    type="text"
-                    value={staffPassword}
-                    onChange={(e) => setStaffPassword(e.target.value)}
-                    placeholder="Contraseña segura..."
-                    style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <Mail size={15} color="#7994B8" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+                    <input
+                      type="email"
+                      required
+                      value={staffEmail}
+                      onChange={(e) => setStaffEmail(e.target.value)}
+                      placeholder="secretaria@citra.com.ar"
+                      style={{
+                        width: '100%',
+                        padding: '0.65rem 0.85rem 0.65rem 2.2rem',
+                        borderRadius: '8px',
+                        border: '1.5px solid #D2E3FC',
+                        fontSize: '0.86rem',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                        color: '#002182',
+                        fontWeight: 600
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '0.85rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#002182', marginBottom: '0.35rem' }}>
+                      Rol Institucional
+                    </label>
+                    <input
+                      type="text"
+                      value={staffRole}
+                      onChange={(e) => setStaffRole(e.target.value)}
+                      placeholder="Secretaría / Recepción"
+                      style={{
+                        width: '100%',
+                        padding: '0.65rem 0.85rem',
+                        borderRadius: '8px',
+                        border: '1.5px solid #D2E3FC',
+                        fontSize: '0.86rem',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                        color: '#002182',
+                        fontWeight: 600
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#002182', marginBottom: '0.35rem' }}>
+                      Contraseña de Acceso
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <KeyRound size={14} color="#7994B8" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+                      <input
+                        type="text"
+                        value={staffPassword}
+                        onChange={(e) => setStaffPassword(e.target.value)}
+                        placeholder="Contraseña segura..."
+                        style={{
+                          width: '100%',
+                          padding: '0.65rem 0.85rem 0.65rem 2.1rem',
+                          borderRadius: '8px',
+                          border: '1.5px solid #D2E3FC',
+                          fontSize: '0.86rem',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                          color: '#002182',
+                          fontWeight: 600
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.65rem', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid #EDF3FD' }}>
                 <button
                   type="button"
                   onClick={() => setIsStaffModalOpen(false)}
-                  style={{ background: '#ffffff', border: '1px solid #D2E3FC', color: '#496386', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}
+                  style={{
+                    background: '#F1F5F9',
+                    border: '1px solid #CBD5E1',
+                    color: '#475569',
+                    padding: '0.55rem 1.15rem',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    fontSize: '0.82rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = '#E2E8F0')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = '#F1F5F9')}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  style={{ background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)', color: '#ffffff', border: 'none', padding: '0.5rem 1.25rem', borderRadius: '8px', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer' }}
+                  style={{
+                    background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '0.55rem 1.35rem',
+                    borderRadius: '8px',
+                    fontWeight: 800,
+                    fontSize: '0.82rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.45rem',
+                    boxShadow: '0 4px 12px rgba(7, 106, 188, 0.25)',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 6px 16px rgba(7, 106, 188, 0.35)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.boxShadow = '0 4px 12px rgba(7, 106, 188, 0.25)')}
                 >
-                  {editingStaffUser ? 'Guardar Cambios' : 'Crear Usuario'}
+                  <Check size={16} />
+                  <span>{editingStaffUser ? 'Guardar Cambios' : 'Crear Cuenta'}</span>
                 </button>
               </div>
             </form>
