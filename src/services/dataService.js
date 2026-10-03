@@ -1398,7 +1398,12 @@ export const dataService = {
               }
             }
           )
-          .subscribe();
+          .subscribe((status, err) => {
+            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              // Conexión realtime no disponible o interrumpida (fallback transparente a estado local)
+              console.warn(`[Realtime] Canal realtime_${tableName} (${status}):`, err?.message || 'Conexión cerrada');
+            }
+          });
 
         return () => {
           try {
