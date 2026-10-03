@@ -610,13 +610,13 @@ export const ClinicalRecordsView = () => {
             alignItems: 'center',
             gap: '8px',
             flex: 1,
-            minWidth: '240px',
-            maxWidth: '560px'
+            minWidth: '280px',
+            maxWidth: '780px'
           }}
         >
           <div style={{ position: 'relative', flex: 1 }}>
             <Search
-              size={17}
+              size={18}
               style={{
                 position: 'absolute',
                 left: '12px',
@@ -633,26 +633,34 @@ export const ClinicalRecordsView = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
                 width: '100%',
-                padding: '0.52rem 2.2rem 0.52rem 2.35rem',
+                padding: '0.58rem 2.2rem 0.58rem 2.45rem',
                 borderRadius: '10px',
-                border: '1.5px solid #C5DCFA',
-                fontSize: '0.84rem',
+                border: '1.5px solid #4B92E8',
+                fontSize: '0.86rem',
                 outline: 'none',
-                background: '#F5F8FE',
+                background: '#ffffff',
                 color: '#0f172a',
                 boxSizing: 'border-box',
                 transition: 'all 0.15s ease',
-                boxShadow: 'inset 0 1px 2px rgba(0, 33, 130, 0.03)'
+                boxShadow: '0 1px 3px rgba(7, 106, 188, 0.08)'
               }}
               onFocus={(e) => {
-                e.target.style.borderColor = '#076ABC';
-                e.target.style.background = '#ffffff';
-                e.target.style.boxShadow = '0 0 0 3px rgba(7, 106, 188, 0.15)';
+                e.target.style.borderColor = '#002182';
+                e.target.style.boxShadow = '0 0 0 3px rgba(7, 106, 188, 0.22)';
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = '#C5DCFA';
-                e.target.style.background = '#F5F8FE';
-                e.target.style.boxShadow = 'inset 0 1px 2px rgba(0, 33, 130, 0.03)';
+                e.target.style.borderColor = '#4B92E8';
+                e.target.style.boxShadow = '0 1px 3px rgba(7, 106, 188, 0.08)';
+              }}
+              onMouseEnter={(e) => {
+                if (document.activeElement !== e.target) {
+                  e.target.style.borderColor = '#076ABC';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (document.activeElement !== e.target) {
+                  e.target.style.borderColor = '#4B92E8';
+                }
               }}
             />
             {searchTerm && (
