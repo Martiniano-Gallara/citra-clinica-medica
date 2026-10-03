@@ -739,6 +739,55 @@ export const dataService = {
     return true;
   },
 
+  // --- CONFIGURACIÓN INSTITUCIONAL DE LA CLÍNICA (MED-01) ---
+  async fetchClinicInfo() {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('clinic_settings')
+        .select('*')
+        .limit(1)
+        .maybeSingle();
+      if (error && error.code !== 'PGRST116') {
+        console.warn('fetchClinicInfo error:', error);
+      }
+      return data ? toCamelCase(data) : null;
+    }
+    return null;
+  },
+
+  async saveClinicInfo(clinicData) {
+    if (isSupabaseConfigured && supabase) {
+      const raw = toSnakeCase(clinicData);
+      const allowedKeys = [
+        'id', 'name', 'legal_name', 'cuit', 'iibb', 'activity_start',
+        'iva_condition', 'address', 'city', 'province', 'postal_code',
+        'phone', 'whatsapp', 'emergency_phone', 'email', 'director_name',
+        'director_license', 'director_specialty', 'director_email',
+        'director_phone', 'director_schedule', 'sisa_refes_code',
+        'renapdis_platform_id', 'arca_pto_vta', 'schedule_summary',
+        'updated_at'
+      ];
+      const payload = { id: clinicData.id || 'main-clinic-config' };
+      allowedKeys.forEach((key) => {
+        if (raw[key] !== undefined) payload[key] = raw[key];
+      });
+      payload.updated_at = new Date().toISOString();
+
+      const { data, error } = await supabase
+        .from('clinic_settings')
+        .upsert(payload, { onConflict: 'id' })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error guardando clinic_settings:', error);
+        throw error;
+      }
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
   // --- ESPECIALIDADES, CONSULTORIOS Y OBRAS SOCIALES ---
   async fetchSpecialties() {
     if (isSupabaseConfigured && supabase) {

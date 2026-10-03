@@ -153,9 +153,11 @@ WITH CHECK ((id = auth.uid() AND role = (SELECT role FROM profiles WHERE id = au
 -- ====================================================================
 -- 4. POLÍTICAS PARA DOCTORS
 -- ====================================================================
+-- MED-09: Restringir acceso directo a tabla doctors; terceros y pacientes consultan public_doctors
 DROP POLICY IF EXISTS "doctors_public_select" ON doctors;
-CREATE POLICY "doctors_public_select" ON doctors
-FOR SELECT USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "doctors_select_policy" ON doctors;
+CREATE POLICY "doctors_select_policy" ON doctors
+FOR SELECT USING (public.is_administrative() OR user_id = auth.uid());
 
 DROP POLICY IF EXISTS "doctors_update_self" ON doctors;
 CREATE POLICY "doctors_update_self" ON doctors

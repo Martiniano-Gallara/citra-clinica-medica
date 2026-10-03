@@ -17,7 +17,7 @@ import {
   CalendarPlus,
   Stethoscope,
   Printer,
-  Trash2,
+  Archive,
   Download,
   Activity,
   FileCheck2,
@@ -226,7 +226,7 @@ export const PatientDetailModal = () => {
               }}
               title="Archivar ficha médica bajo custodia legal de 15 años (Ley 26.529)"
             >
-              <Trash2 size={15} />
+              <Archive size={15} />
               <span>Archivar Ficha (Custodia 15 años)</span>
             </button>
           </div>
