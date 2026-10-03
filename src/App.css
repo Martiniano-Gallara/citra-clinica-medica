@@ -572,6 +572,12 @@ button, input, select, textarea {
   }
 }
 
+@media (max-width: 992px) {
+  .reports-charts-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 @media (max-width: 640px) {
   .kpi-grid,
   .dashboard-stats-grid {

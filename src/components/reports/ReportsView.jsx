@@ -1248,7 +1248,7 @@ export const ReportsView = () => {
   // RENDER: ADMINISTRATIVE / SUPERADMIN GLOBAL REPORT / VISTA GENERAL DR. BLANCO
   // ==============================================================
   return (
-    <div className="reports-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%' }}>
+    <div className="reports-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%', maxWidth: '1440px', margin: '0 auto', boxSizing: 'border-box' }}>
       {/* Header */}
       <div
         style={{
@@ -1393,7 +1393,7 @@ export const ReportsView = () => {
       </div>
 
       {/* Summary KPI Highlights */}
-      <div className="kpi-grid">
+      <div className="kpi-grid" style={{ marginBottom: '0.25rem' }}>
         <div className="kpi-card">
           <div className="kpi-top">
             <span className="kpi-label">Consultas Totales ({period === 'year' ? 'Año 2026' : period === 'week' ? 'Semanal' : 'Mensual'})</span>
@@ -1454,17 +1454,26 @@ export const ReportsView = () => {
       </div>
 
       {/* Row 1: Revenue Line Chart (Dr. Blanco only) + Insurance Doughnut */}
-      <div style={{ display: 'grid', gridTemplateColumns: isDoctor ? '2fr 1fr' : '1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+      <div
+        className="reports-charts-grid"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isDoctor ? 'repeat(2, minmax(0, 1fr))' : 'minmax(0, 1fr)',
+          gap: '1.25rem',
+          width: '100%',
+          boxSizing: 'border-box'
+        }}
+      >
         {/* Revenue Growth Line — exclusivo Dr. Blanco */}
         {isDoctor && (
-          <div className="card">
+          <div className="card" style={{ minWidth: 0, boxSizing: 'border-box' }}>
             <div className="card-header">
               <div className="card-title">
                 <TrendingUp size={20} color="#2563eb" />
                 <span>Evolución Histórica de Facturación e Ingresos</span>
               </div>
             </div>
-            <div style={{ height: '280px' }}>
+            <div style={{ height: '270px', width: '100%', position: 'relative' }}>
               <Line
                 data={revenueTrendData}
                 options={{
@@ -1487,39 +1496,63 @@ export const ReportsView = () => {
         )}
 
         {/* Insurance Doughnut — visible para todos */}
-        <div className="card">
+        <div className="card" style={{ minWidth: 0, boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
           <div className="card-header">
             <div className="card-title">
               <PieChartIcon size={20} color="#2563eb" />
               <span>Pacientes por Prepaga / Cobertura</span>
             </div>
           </div>
-          <div style={{ height: '280px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Doughnut
-              data={insuranceDoughnutData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10.5 } } }
-                }
-              }}
-            />
+          <div
+            style={{
+              height: '270px',
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative'
+            }}
+          >
+            <div style={{ width: '100%', height: '100%', maxWidth: '340px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Doughnut
+                data={insuranceDoughnutData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: 'bottom',
+                      align: 'center',
+                      labels: { boxWidth: 10, padding: 10, font: { size: 10.5, weight: '600' } }
+                    }
+                  }
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Row 2: Turnos por Especialidad & Pacientes Nuevos vs Recurrentes */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+      <div
+        className="reports-charts-grid"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+          gap: '1.25rem',
+          width: '100%',
+          boxSizing: 'border-box'
+        }}
+      >
         {/* Turnos por Especialidad Bar */}
-        <div className="card">
+        <div className="card" style={{ minWidth: 0, boxSizing: 'border-box' }}>
           <div className="card-header">
             <div className="card-title">
               <BarChart3 size={20} color="#2563eb" />
               <span>Demanda de Turnos por Especialidad</span>
             </div>
           </div>
-          <div style={{ height: '260px' }}>
+          <div style={{ height: '270px', width: '100%', position: 'relative' }}>
             <Bar
               data={specialtyDistributionData}
               options={{
@@ -1532,14 +1565,14 @@ export const ReportsView = () => {
         </div>
 
         {/* Nuevos vs Recurrentes */}
-        <div className="card">
+        <div className="card" style={{ minWidth: 0, boxSizing: 'border-box' }}>
           <div className="card-header">
             <div className="card-title">
               <Users size={20} color="#2563eb" />
               <span>Fidelización: Nuevos vs Recurrentes</span>
             </div>
           </div>
-          <div style={{ height: '260px' }}>
+          <div style={{ height: '270px', width: '100%', position: 'relative' }}>
             <Bar
               data={patientRetentionData}
               options={{
@@ -1550,7 +1583,11 @@ export const ReportsView = () => {
                   y: { stacked: true }
                 },
                 plugins: {
-                  legend: { position: 'bottom', labels: { boxWidth: 12 } }
+                  legend: {
+                    position: 'bottom',
+                    align: 'center',
+                    labels: { boxWidth: 12, padding: 10, font: { size: 11, weight: '600' } }
+                  }
                 }
               }}
             />
