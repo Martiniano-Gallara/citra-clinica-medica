@@ -190,6 +190,40 @@ export const dataService = {
     return null;
   },
 
+  async createPublicBooking(bookingData) {
+    if (isSupabaseConfigured && supabase) {
+      const payload = {
+        patient_name: bookingData.patientName,
+        patient_dni: bookingData.patientDni,
+        patient_phone: bookingData.patientPhone || null,
+        patient_email: bookingData.patientEmail || null,
+        patient_insurance: bookingData.patientInsurance || bookingData.insuranceName || 'Particular',
+        patient_insurance_number: bookingData.patientInsuranceNumber || bookingData.insuranceNumber || null,
+        doctor_id: bookingData.doctorId,
+        date: bookingData.date,
+        time: bookingData.time,
+        duration: bookingData.duration || 30,
+        reason: bookingData.reason || bookingData.notes || 'Reserva online de turno',
+        copay_amount: bookingData.copayAmount !== undefined ? bookingData.copayAmount : (bookingData.copay || 0)
+      };
+
+      const { data, error } = await supabase.rpc('create_public_booking', {
+        p_booking: payload
+      });
+
+      if (error) {
+        if (error.message?.includes('ya cuenta con un turno reservado') || error.code === '23505') {
+          const colError = new Error(`El profesional ya cuenta con un turno reservado para la fecha ${payload.date} a las ${payload.time}. Por favor elija otro horario.`);
+          colError.code = 'APPOINTMENT_COLLISION';
+          throw colError;
+        }
+        throw error;
+      }
+      return toCamelCase(data);
+    }
+    return null;
+  },
+
   async updateAppointment(id, updates) {
     if (isSupabaseConfigured && supabase) {
       const allowedKeys = [
@@ -1466,9 +1500,17 @@ export const dataService = {
 
   async getSignedMedicalUrl(bucketName, path, expiresIn = 3600) {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.storage
+      let { data, error } = await supabase.storage
         .from(bucketName)
         .createSignedUrl(path, expiresIn);
+      if (error && (bucketName === 'medical-records' || bucketName === 'medical_records')) {
+        const altBucket = bucketName === 'medical-records' ? 'medical_records' : 'medical-records';
+        const altRes = await supabase.storage.from(altBucket).createSignedUrl(path, expiresIn);
+        if (!altRes.error && altRes.data) {
+          data = altRes.data;
+          error = null;
+        }
+      }
       if (error) {
         console.warn('Error generating signed medical URL:', error);
         return null;

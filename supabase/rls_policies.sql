@@ -208,7 +208,6 @@ CREATE POLICY "appointments_insert_policy" ON appointments
 FOR INSERT WITH CHECK (
     patient_id = public.get_current_patient_id()
     OR public.is_administrative()
-    OR auth.role() = 'anon'
 );
 
 DROP POLICY IF EXISTS "appointments_update_policy" ON appointments;

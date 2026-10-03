@@ -1693,13 +1693,48 @@ FROM public.doctors
 WHERE is_active = TRUE;
 
 -- ====================================================================
--- INMUTABILIDAD LEGAL Y PREVENCIÓN DE BORRADO FÍSICO (Ley 26.529 Art. 18 / CRIT-01, CRIT-02)
+-- INMUTABILIDAD LEGAL Y PREVENCIÓN DE BORRADO FÍSICO (Ley 26.529 Art. 18 / CRIT-01, CRIT-02, ALTA-11)
 -- Obligación de custodia y conservación por 15 años de antecedentes médicos
 -- ====================================================================
+CREATE TABLE IF NOT EXISTS public.retention_policy (
+    id VARCHAR(50) PRIMARY KEY,
+    entity_name VARCHAR(100) NOT NULL UNIQUE,
+    retention_years INTEGER NOT NULL DEFAULT 15,
+    legal_basis VARCHAR(200) NOT NULL DEFAULT 'Ley 26.529 Art. 18 - Historia Clínica Electrónica',
+    allow_hard_delete BOOLEAN NOT NULL DEFAULT FALSE,
+    description TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.retention_policy ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "retention_policy_select" ON public.retention_policy;
+CREATE POLICY "retention_policy_select" ON public.retention_policy FOR SELECT USING (TRUE);
+
+INSERT INTO public.retention_policy (id, entity_name, retention_years, legal_basis, allow_hard_delete, description) VALUES
+('ret-patients', 'patients', 15, 'Ley 26.529 Art. 18', FALSE, 'Padrón de pacientes y filiación con custodia mínima de 15 años.'),
+('ret-doctors', 'doctors', 15, 'Ley 26.529 Art. 18', FALSE, 'Registro de profesionales tratantes y firmas asistenciales.'),
+('ret-appointments', 'appointments', 15, 'Ley 26.529 Art. 18', FALSE, 'Trazabilidad cronológica de citas y atenciones solicitadas.'),
+('ret-consultations', 'consultations', 15, 'Ley 26.529 Art. 18', FALSE, 'Atenciones asistenciales, evoluciones médicas y diagnósticos.'),
+('ret-prescriptions', 'electronic_prescriptions', 15, 'Ley 27.553 / Ley 26.529', FALSE, 'Recetas electrónicas y trazabilidad de prescripciones.'),
+('ret-imaging', 'imaging_studies', 15, 'Ley 26.529 Art. 18', FALSE, 'Estudios de diagnóstico por imágenes y biomecánica.'),
+('ret-rehab-plans', 'rehab_plans', 15, 'Ley 26.529 Art. 18', FALSE, 'Planes de rehabilitación kinésica y evolución motora.'),
+('ret-rehab-sessions', 'rehab_sessions', 15, 'Ley 26.529 Art. 18', FALSE, 'Sesiones y registros de asistencia kinésica.')
+ON CONFLICT (entity_name) DO UPDATE SET retention_years = 15, allow_hard_delete = FALSE;
+
 CREATE OR REPLACE FUNCTION public.prevent_medical_record_hard_delete()
 RETURNS TRIGGER AS $$
+DECLARE
+    v_retention RECORD;
 BEGIN
-  RAISE EXCEPTION 'Operación denegada por Ley 26.529 (Art. 18): Los registros asistenciales, historias clínicas, turnos y pacientes tienen obligación legal de conservación por 15 años y no admiten borrado físico. Utilice baja lógica o cancelación.';
+    SELECT * INTO v_retention
+    FROM public.retention_policy
+    WHERE entity_name = TG_TABLE_NAME;
+
+    RAISE EXCEPTION 'Operación denegada por Ley 26.529 (Art. 18) y Política de Retención Legal (%): Los registros de % tienen obligación legal de conservación por % años y no admiten borrado físico. Utilice baja lógica o cancelación.',
+        COALESCE(v_retention.legal_basis, 'Ley 26.529 Art. 18'),
+        TG_TABLE_NAME,
+        COALESCE(v_retention.retention_years, 15);
 END;
 $$ LANGUAGE plpgsql;
 

@@ -2501,8 +2501,14 @@ export const ClinicProvider = ({ children }) => {
       }
     }
 
-    // ALTA-08: Nunca almacenar contraseñas en memoria de sesión ni en localStorage
-    const { password: _discardedPassword, ...safeAdminUser } = adminUser;
+    // ALTA-08: Guardar únicamente { id, role, name, email, avatar } y nunca contraseñas en memoria de sesión ni en localStorage
+    const safeAdminUser = {
+      id: adminUser.id,
+      role: adminUser.role,
+      name: adminUser.name,
+      email: adminUser.email,
+      avatar: adminUser.avatar || null
+    };
 
     setAuthRole('admin');
     setAuthAdmin(safeAdminUser);

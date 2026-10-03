@@ -164,8 +164,9 @@ export const PatientDetailModal = () => {
       type: newFileType,
       size: cleanSize,
       date: getTodayArgentina(),
-      url: downloadUrl || null,
       storagePath: storagePath || null,
+      bucket: 'medical_records',
+      url: null,
       hashSha256: computedHash
     };
     addPatientFile(patient.id, fileObj);
@@ -176,20 +177,21 @@ export const PatientDetailModal = () => {
   };
 
   const handleDownloadFile = async (file) => {
-    if (file.url) {
-      window.open(file.url, '_blank');
-      return;
-    }
     if (file.storagePath && dataService.isLive()) {
       try {
-        const signedUrl = await dataService.getSignedMedicalUrl('medical-records', file.storagePath, 3600);
+        const bucket = file.bucket || 'medical_records';
+        const signedUrl = await dataService.getSignedMedicalUrl(bucket, file.storagePath, 3600);
         if (signedUrl) {
           window.open(signedUrl, '_blank');
           return;
         }
       } catch (e) {
-        console.warn('Error obteniendo URL firmada:', e);
+        console.warn('Error obteniendo URL firmada de descarga:', e);
       }
+    }
+    if (file.url) {
+      window.open(file.url, '_blank');
+      return;
     }
     addToast('Documento Clínico', `Visualizando registro de ${file.name}`, 'info');
   };
