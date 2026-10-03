@@ -22,7 +22,6 @@ import { ReportsView } from '../reports/ReportsView';
 import { CommunicationsView } from '../communications/CommunicationsView';
 import { SettingsView } from '../settings/SettingsView';
 import { AuditLogsView } from '../audit/AuditLogsView';
-import { IntegrationsHubView } from '../integrations/IntegrationsHubView';
 import { KinesiologyView } from '../kinesio/KinesiologyView';
 
 // Global Clinical Modals
@@ -294,8 +293,7 @@ export const AdminManagementHub = () => {
       {
         title: 'GESTIÓN Y AUDITORÍA',
         items: [
-          { id: 'audit', label: 'Auditoría', icon: ShieldAlert, badge: null },
-          { id: 'integrations', label: 'Integraciones', icon: Layers, badge: 'Próx.' }
+          { id: 'audit', label: 'Auditoría', icon: ShieldAlert, badge: null }
         ]
       },
       {
@@ -1458,8 +1456,6 @@ export const AdminManagementHub = () => {
           {/* TAB 17: AUDITORÍA Y SEGURIDAD (Secretaría) */}
           {activeTab === 'audit' && !isDoctor && <AuditLogsView />}
 
-          {/* TAB 18: HUB DE INTEGRACIONES (Secretaría) */}
-          {activeTab === 'integrations' && !isDoctor && <IntegrationsHubView />}
 
           {/* TAB 19: KINESIOLOGÍA & REHABILITACIÓN FUNCIONAL (C-05, T8) */}
           {activeTab === 'kinesio' && <KinesiologyView />}
