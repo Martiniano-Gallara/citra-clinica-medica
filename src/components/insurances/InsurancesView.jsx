@@ -329,43 +329,44 @@ export const InsurancesView = () => {
         </div>
       </div>
 
-      {/* KPI Stats Grid */}
+      {/* KPI Stats Grid (Compactado) */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '1rem'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+          gap: '0.85rem'
         }}
       >
         {/* Card 1 */}
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '14px',
+            borderRadius: '12px',
             border: '1px solid #e2e8f0',
-            padding: '1.15rem 1.25rem',
-            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.02)',
+            borderLeft: '4px solid #0284c7',
+            padding: '0.7rem 1.1rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
             display: 'flex',
-            flexDirection: 'column',
+            alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '0.5rem'
+            gap: '0.75rem'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Convenios Vigentes
-            </span>
-            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#eff6ff', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Shield size={18} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
+                {totalAgreements}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#166534', fontWeight: 600 }}>
+                OSDE, Apross, PAMI
+              </span>
             </div>
           </div>
-          <div>
-            <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>
-              {totalAgreements}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#166534', fontWeight: 600, marginTop: '0.35rem' }}>
-              OSDE, Swiss, Apross, PAMI
-            </div>
+          <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#eff6ff', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Shield size={16} />
           </div>
         </div>
 
@@ -373,31 +374,32 @@ export const InsurancesView = () => {
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '14px',
+            borderRadius: '12px',
             border: '1px solid #e2e8f0',
-            padding: '1.15rem 1.25rem',
-            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.02)',
+            borderLeft: '4px solid #16a34a',
+            padding: '0.7rem 1.1rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
             display: 'flex',
-            flexDirection: 'column',
+            alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '0.5rem'
+            gap: '0.75rem'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Autorizaciones Aprobadas
-            </span>
-            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#f0fdf4', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <CheckCircle2 size={18} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
+                {approvedAuths}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 600 }}>
+                92% aprobadas
+              </span>
             </div>
           </div>
-          <div>
-            <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>
-              {approvedAuths}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 600, marginTop: '0.35rem' }}>
-              Tasa de aprobación 92%
-            </div>
+          <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#f0fdf4', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <CheckCircle2 size={16} />
           </div>
         </div>
 
@@ -405,31 +407,32 @@ export const InsurancesView = () => {
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '14px',
+            borderRadius: '12px',
             border: '1px solid #e2e8f0',
-            padding: '1.15rem 1.25rem',
-            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.02)',
+            borderLeft: '4px solid #dc2626',
+            padding: '0.7rem 1.1rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
             display: 'flex',
-            flexDirection: 'column',
+            alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '0.5rem'
+            gap: '0.75rem'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Débitos / Rechazos
-            </span>
-            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <AlertCircle size={18} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#dc2626', lineHeight: 1 }}>
+                {rejectedAuths}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#b91c1c', fontWeight: 600 }}>
+                en revisión
+              </span>
             </div>
           </div>
-          <div>
-            <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#dc2626', lineHeight: 1.1 }}>
-              {rejectedAuths}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#b91c1c', fontWeight: 600, marginTop: '0.35rem' }}>
-              En revisión para refacturar
-            </div>
+          <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <AlertCircle size={16} />
           </div>
         </div>
 
@@ -437,34 +440,32 @@ export const InsurancesView = () => {
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '14px',
+            borderRadius: '12px',
             border: '1px solid #e2e8f0',
-            padding: '1.15rem 1.25rem',
-            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.02)',
+            borderLeft: '4px solid #9333ea',
+            padding: '0.7rem 1.1rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
             display: 'flex',
-            flexDirection: 'column',
+            alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '0.5rem'
+            gap: '0.75rem'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Nomenclador Arancelado
-            </span>
-            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#faf5ff', color: '#9333ea', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Percent size={18} />
-            </div>
-          </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
-              <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Nomenclador Arancelado
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
                 {nomenclatorItems.length}
               </span>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>códigos</span>
+              <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
+                códigos activos
+              </span>
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, marginTop: '0.35rem' }}>
-              Trauma & Kinesiología
-            </div>
+          </div>
+          <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#faf5ff', color: '#9333ea', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Percent size={16} />
           </div>
         </div>
       </div>

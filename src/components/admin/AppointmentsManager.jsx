@@ -458,38 +458,44 @@ export const AppointmentsManager = () => {
         )}
       </div>
 
-      {/* 2. OPERATIONAL KPI STRIP: PENDIENTES, ATENDIDOS Y AUSENTES */}
+      {/* 2. OPERATIONAL KPI STRIP: PENDIENTES, ATENDIDOS Y AUSENTES (COMPACTADO) */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '1.25rem'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+          gap: '0.85rem'
         }}
       >
         {/* KPI 1: Pendientes de Hoy */}
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '16px',
-            border: '1.5px solid #D2E3FC',
+            borderRadius: '12px',
+            border: '1px solid #D2E3FC',
             borderLeft: '4px solid #076ABC',
-            padding: '1.25rem 1.5rem',
-            boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+            padding: '0.7rem 1.1rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Por Atender Hoy
-            </span>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#EBF3FD', color: '#076ABC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Clock size={18} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
+                {pendingCount}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
+                en jornada
+              </span>
             </div>
           </div>
-          <div style={{ fontSize: '2.1rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
-            {pendingCount}
-          </div>
-          <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '0.45rem', fontWeight: 600 }}>
-            Pacientes por atender en la jornada
+          <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#EBF3FD', color: '#076ABC', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Clock size={16} />
           </div>
         </div>
 
@@ -497,26 +503,32 @@ export const AppointmentsManager = () => {
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '16px',
-            border: '1.5px solid #D2E3FC',
+            borderRadius: '12px',
+            border: '1px solid #D2E3FC',
             borderLeft: '4px solid #10b981',
-            padding: '1.25rem 1.5rem',
-            boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+            padding: '0.7rem 1.1rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Atendidos
-            </span>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <CheckCircle2 size={18} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
+                {attendedCount}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 600 }}>
+                completadas
+              </span>
             </div>
           </div>
-          <div style={{ fontSize: '2.1rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
-            {attendedCount}
-          </div>
-          <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '0.45rem', fontWeight: 600 }}>
-            Consultas completadas con éxito
+          <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <CheckCircle2 size={16} />
           </div>
         </div>
 
@@ -524,26 +536,32 @@ export const AppointmentsManager = () => {
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '16px',
-            border: '1.5px solid #D2E3FC',
+            borderRadius: '12px',
+            border: '1px solid #D2E3FC',
             borderLeft: '4px solid #ef4444',
-            padding: '1.25rem 1.5rem',
-            boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+            padding: '0.7rem 1.1rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Ausentes
-            </span>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <UserX size={18} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
+                {absentCount}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#dc2626', fontWeight: 600 }}>
+                no asistieron
+              </span>
             </div>
           </div>
-          <div style={{ fontSize: '2.1rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
-            {absentCount}
-          </div>
-          <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '0.45rem', fontWeight: 600 }}>
-            Pacientes que no asistieron al turno
+          <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <UserX size={16} />
           </div>
         </div>
       </div>

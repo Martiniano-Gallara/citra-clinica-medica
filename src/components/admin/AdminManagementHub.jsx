@@ -1099,14 +1099,14 @@ export const AdminManagementHub = () => {
           {/* TAB 1: DASHBOARD GENERAL (PERSONAL ADMINISTRATIVO) */}
           {activeTab === 'dashboard' && !isDoctor && (
             <div>
-              {/* KPI Cards Grid (4 Identical Cards to reference image + Consultorios) */}
+              {/* KPI Cards Grid (Compactado y estilizado) */}
               <div
                 className="admin-kpi-grid"
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
-                  gap: '1.25rem',
-                  marginBottom: '2rem'
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+                  gap: '0.85rem',
+                  marginBottom: '1.35rem'
                 }}
               >
                 {/* Card 1: Turnos Totales */}
@@ -1115,35 +1115,41 @@ export const AdminManagementHub = () => {
                   title="Click para ver todos los turnos programados"
                   style={{
                     background: '#ffffff',
-                    borderRadius: '18px',
+                    borderRadius: '13px',
                     border: '1.5px solid #D2E3FC',
-                    padding: '1.5rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)',
+                    padding: '0.75rem 1.15rem',
+                    boxShadow: '0 2px 8px rgba(0, 33, 130, 0.03)',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '0.35rem'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = '#076ABC';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = '#D2E3FC';
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                       TURNOS TOTALES
                     </div>
-                    <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#EBF3FD', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#076ABC' }}>
-                      <CalendarCheck size={20} />
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#EBF3FD', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#076ABC' }}>
+                      <CalendarCheck size={16} />
                     </div>
                   </div>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
-                    {totalAppointments}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#076ABC', fontWeight: 700, marginTop: '0.5rem' }}>
-                    En sistema general
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem' }}>
+                    <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
+                      {totalAppointments}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: '#076ABC', fontWeight: 700 }}>
+                      en sistema
+                    </span>
                   </div>
                 </div>
 
@@ -1153,35 +1159,41 @@ export const AdminManagementHub = () => {
                   title="Click para ver la agenda del día"
                   style={{
                     background: '#ffffff',
-                    borderRadius: '18px',
+                    borderRadius: '13px',
                     border: '1.5px solid #D2E3FC',
-                    padding: '1.5rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)',
+                    padding: '0.75rem 1.15rem',
+                    boxShadow: '0 2px 8px rgba(0, 33, 130, 0.03)',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '0.35rem'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = '#92400e';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = '#D2E3FC';
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                       TURNOS HOY
                     </div>
-                    <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#92400e' }}>
-                      <Clock size={20} />
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#92400e' }}>
+                      <Clock size={16} />
                     </div>
                   </div>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
-                    {todayAppointments.length}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#496386', marginTop: '0.5rem' }}>
-                    Agenda del día activa
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem' }}>
+                    <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
+                      {todayAppointments.length}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: '#92400e', fontWeight: 700 }}>
+                      agenda del día
+                    </span>
                   </div>
                 </div>
 
@@ -1191,35 +1203,41 @@ export const AdminManagementHub = () => {
                   title="Click para ver el padrón de pacientes"
                   style={{
                     background: '#ffffff',
-                    borderRadius: '18px',
+                    borderRadius: '13px',
                     border: '1.5px solid #D2E3FC',
-                    padding: '1.5rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)',
+                    padding: '0.75rem 1.15rem',
+                    boxShadow: '0 2px 8px rgba(0, 33, 130, 0.03)',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '0.35rem'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = '#002182';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = '#D2E3FC';
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                       PACIENTES REGISTRADOS
                     </div>
-                    <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#EBF3FD', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#002182' }}>
-                      <Users size={20} />
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#EBF3FD', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#002182' }}>
+                      <Users size={16} />
                     </div>
                   </div>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
-                    {totalPatients}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#076ABC', fontWeight: 700, marginTop: '0.5rem' }}>
-                    Padrón de afiliados activo
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem' }}>
+                    <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
+                      {totalPatients}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: '#076ABC', fontWeight: 700 }}>
+                      padrón activo
+                    </span>
                   </div>
                 </div>
 
@@ -1229,35 +1247,41 @@ export const AdminManagementHub = () => {
                   title="Click para ver disponibilidad y horarios de profesionales"
                   style={{
                     background: '#ffffff',
-                    borderRadius: '18px',
+                    borderRadius: '13px',
                     border: '1.5px solid #D2E3FC',
-                    padding: '1.5rem',
-                    boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)',
+                    padding: '0.75rem 1.15rem',
+                    boxShadow: '0 2px 8px rgba(0, 33, 130, 0.03)',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '0.35rem'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = '#065f46';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = '#D2E3FC';
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#7994B8', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                       CUERPO MÉDICO ACTIVO
                     </div>
-                    <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#065f46' }}>
-                      <Stethoscope size={20} />
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#065f46' }}>
+                      <Stethoscope size={16} />
                     </div>
                   </div>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
-                    {activeDoctors}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#065f46', fontWeight: 700, marginTop: '0.5rem' }}>
-                    En {specialties.length} especialidades
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem' }}>
+                    <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
+                      {activeDoctors}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: '#065f46', fontWeight: 700 }}>
+                      en {specialties.length} especialidades
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1280,7 +1304,7 @@ export const AdminManagementHub = () => {
                   <div
                     style={{
                       background: 'linear-gradient(135deg, #002182 0%, #0746a6 100%)',
-                      padding: '1.1rem 1.5rem',
+                      padding: '0.85rem 1.25rem',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
@@ -1334,7 +1358,7 @@ export const AdminManagementHub = () => {
                     </button>
                   </div>
 
-                  <div style={{ padding: '1.35rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.65rem', flex: 1 }}>
+                  <div style={{ padding: '1.1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.6rem', flex: 1 }}>
                     {appointments.length === 0 ? (
                       <div style={{ padding: '2rem 1rem', textAlign: 'center', color: '#64748b', fontSize: '0.88rem' }}>
                         No hay turnos registrados recientemente.
@@ -1357,7 +1381,7 @@ export const AdminManagementHub = () => {
                             title="Click para ver o editar turno"
                             style={{
                               background: '#F5F8FE',
-                              padding: '0.85rem 1.1rem',
+                              padding: '0.7rem 0.95rem',
                               borderRadius: '12px',
                               display: 'flex',
                               alignItems: 'center',
@@ -1426,7 +1450,7 @@ export const AdminManagementHub = () => {
                   <div
                     style={{
                       background: 'linear-gradient(135deg, #002182 0%, #0746a6 100%)',
-                      padding: '1.1rem 1.5rem',
+                      padding: '0.85rem 1.25rem',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
@@ -1480,7 +1504,7 @@ export const AdminManagementHub = () => {
                     </button>
                   </div>
 
-                  <div style={{ padding: '1.35rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.65rem', flex: 1 }}>
+                  <div style={{ padding: '1.1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.6rem', flex: 1 }}>
                     {patients.length === 0 ? (
                       <div style={{ padding: '2rem 1rem', textAlign: 'center', color: '#64748b', fontSize: '0.88rem' }}>
                         No hay pacientes registrados en el padrón.
@@ -1491,7 +1515,7 @@ export const AdminManagementHub = () => {
                           key={p.id}
                           style={{
                             background: '#F5F8FE',
-                            padding: '0.85rem 1.1rem',
+                            padding: '0.7rem 0.95rem',
                             borderRadius: '12px',
                             display: 'flex',
                             alignItems: 'center',

@@ -291,59 +291,75 @@ export const PatientsView = () => {
         </div>
       </div>
 
-      {/* 2. OPERATIONAL SUMMARY KPI CARDS */}
+      {/* 2. OPERATIONAL SUMMARY KPI CARDS (COMPACTADO) */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '1rem'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+          gap: '0.85rem'
         }}
       >
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '14px',
+            borderRadius: '12px',
             border: '1px solid #e2e8f0',
-            padding: '1.15rem 1.25rem'
+            borderLeft: '4px solid #2563eb',
+            padding: '0.7rem 1.1rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               {isDoctor ? 'Total en Mi Padrón' : 'Total Pacientes'}
-            </span>
-            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Users size={18} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
+                {effectivePatients.length}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 600 }}>
+                {isDoctor ? 'en seguimiento' : 'padrón activo'}
+              </span>
             </div>
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.2rem' }}>
-            {effectivePatients.length}
-          </div>
-          <div style={{ fontSize: '0.74rem', color: '#16a34a', fontWeight: 600 }}>
-            {isDoctor ? 'Pacientes bajo seguimiento médico' : 'Padrón de afiliados activo en CITRA'}
+          <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Users size={16} />
           </div>
         </div>
 
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '14px',
+            borderRadius: '12px',
             border: '1px solid #e2e8f0',
-            padding: '1.15rem 1.25rem'
+            borderLeft: '4px solid #059669',
+            padding: '0.7rem 1.1rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               En Rehabilitación
-            </span>
-            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Activity size={18} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
+                {rehabPlans.length}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 600 }}>
+                planes activos
+              </span>
             </div>
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.2rem' }}>
-            {rehabPlans.length}
-          </div>
-          <div style={{ fontSize: '0.74rem', color: '#059669', fontWeight: 600 }}>
-            Planes kinesiológicos activos
+          <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Activity size={16} />
           </div>
         </div>
 
@@ -351,49 +367,64 @@ export const PatientsView = () => {
           <div
             style={{
               background: '#ffffff',
-              borderRadius: '14px',
+              borderRadius: '12px',
               border: '1px solid #e2e8f0',
               borderLeft: '4px solid #ef4444',
-              padding: '1.15rem 1.25rem'
+              padding: '0.7rem 1.1rem',
+              boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.75rem'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-              <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div>
+              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Alertas Clínicas
-              </span>
-              <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <AlertTriangle size={18} />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+                <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#dc2626', lineHeight: 1 }}>
+                  {patientsWithAllergiesCount}
+                </span>
+                <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
+                  con alergias
+                </span>
               </div>
             </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#dc2626', marginBottom: '0.2rem' }}>
-              {patientsWithAllergiesCount}
-            </div>
-            <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-              Pacientes con alergias declaradas
+            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <AlertTriangle size={16} />
             </div>
           </div>
         ) : (
           <div
             style={{
               background: '#ffffff',
-              borderRadius: '14px',
+              borderRadius: '12px',
               border: '1px solid #e2e8f0',
-              padding: '1.15rem 1.25rem'
+              borderLeft: '4px solid #076ABC',
+              padding: '0.7rem 1.1rem',
+              boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.75rem'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-              <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div>
+              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Atención Diaria
-              </span>
-              <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#eff6ff', color: '#076ABC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <UserCheck size={18} />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+                <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
+                  {effectivePatients.length}
+                </span>
+                <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
+                  en recepción
+                </span>
               </div>
             </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#002182', marginBottom: '0.2rem' }}>
-              {effectivePatients.length}
-            </div>
-            <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-              Pacientes empadronados para recepción
+            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#eff6ff', color: '#076ABC', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <UserCheck size={16} />
             </div>
           </div>
         )}
@@ -401,24 +432,32 @@ export const PatientsView = () => {
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '14px',
+            borderRadius: '12px',
             border: '1px solid #e2e8f0',
-            padding: '1.15rem 1.25rem'
+            borderLeft: '4px solid #16a34a',
+            padding: '0.7rem 1.1rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Obras Sociales
-            </span>
-            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#f0fdf4', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Shield size={18} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#16a34a', lineHeight: 1 }}>
+                {healthInsurances.length}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
+                convenios
+              </span>
             </div>
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#16a34a', marginBottom: '0.2rem' }}>
-            {healthInsurances.length}
-          </div>
-          <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-            Convenios y prepagas aceptadas
+          <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#f0fdf4', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Shield size={16} />
           </div>
         </div>
       </div>

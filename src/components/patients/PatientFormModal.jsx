@@ -571,8 +571,11 @@ export const PatientFormModal = () => {
                 <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#002182', marginBottom: '0.2rem' }}>
                   Plan
                 </label>
-                {selectedInsurance && selectedInsurance.plans && selectedInsurance.plans.length > 0 ? (
-                  <select
+                <input
+                    type="text"
+                    id="insurance-plan-input"
+                    list="insurance-plans-list"
+                    placeholder={selectedInsurance?.plans?.length > 0 ? 'Seleccionar o escribir un plan...' : 'Plan de cobertura'}
                     value={formData.insurancePlan}
                     onChange={(e) => setFormData({ ...formData, insurancePlan: e.target.value })}
                     style={{
@@ -585,28 +588,14 @@ export const PatientFormModal = () => {
                       boxSizing: 'border-box',
                       background: '#ffffff'
                     }}
-                  >
-                    {selectedInsurance.plans.map((p) => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    placeholder="Plan de cobertura"
-                    value={formData.insurancePlan}
-                    onChange={(e) => setFormData({ ...formData, insurancePlan: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.65rem',
-                      borderRadius: '8px',
-                      border: '1.5px solid #D2E3FC',
-                      fontSize: '0.84rem',
-                      outline: 'none',
-                      boxSizing: 'border-box'
-                    }}
                   />
-                )}
+                  {selectedInsurance?.plans?.length > 0 && (
+                    <datalist id="insurance-plans-list">
+                      {selectedInsurance.plans.map((p) => (
+                        <option key={p} value={p} />
+                      ))}
+                    </datalist>
+                  )}
               </div>
 
               <div>

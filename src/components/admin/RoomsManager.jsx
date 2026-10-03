@@ -102,122 +102,143 @@ export const RoomsManager = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* KPI Cards Row */}
+      {/* KPI Cards Row (Compactado) */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '1.25rem'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+          gap: '0.85rem'
         }}
       >
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '20px',
-            padding: '1.4rem 1.6rem',
+            borderRadius: '12px',
             border: '1.5px solid #D2E3FC',
-            boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)',
+            borderLeft: '4px solid #076ABC',
+            padding: '0.7rem 1.1rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
             display: 'flex',
+            alignItems: 'center',
             justifyContent: 'space-between',
-            alignItems: 'flex-start'
+            gap: '0.75rem'
           }}
         >
           <div>
-            <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#496386', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#496386', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
               TOTAL CONSULTORIOS
             </div>
-            <div style={{ fontSize: '2rem', fontWeight: 900, color: '#002182', margin: '0.2rem 0' }}>
-              {totalCount}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
+                {totalCount}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#496386', fontWeight: 600 }}>
+                sede central
+              </span>
             </div>
-            <div style={{ fontSize: '0.8rem', color: '#496386' }}>Sede Central Arroyito</div>
           </div>
           <div
             style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '12px',
+              width: '34px',
+              height: '34px',
+              borderRadius: '8px',
               background: '#EBF3FD',
               color: '#076ABC',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              flexShrink: 0
             }}
           >
-            <DoorClosed size={22} />
+            <DoorClosed size={16} />
           </div>
         </div>
 
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '20px',
-            padding: '1.4rem 1.6rem',
+            borderRadius: '12px',
             border: '1.5px solid #D2E3FC',
-            boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)',
+            borderLeft: '4px solid #059669',
+            padding: '0.7rem 1.1rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
             display: 'flex',
+            alignItems: 'center',
             justifyContent: 'space-between',
-            alignItems: 'flex-start'
+            gap: '0.75rem'
           }}
         >
           <div>
-            <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#496386', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#496386', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
               DISPONIBLES AHORA
             </div>
-            <div style={{ fontSize: '2rem', fontWeight: 900, color: '#059669', margin: '0.2rem 0' }}>
-              {availableCount}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#059669', lineHeight: 1 }}>
+                {availableCount}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 600 }}>
+                listos
+              </span>
             </div>
-            <div style={{ fontSize: '0.8rem', color: '#059669' }}>Listos para atención</div>
           </div>
           <div
             style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '12px',
+              width: '34px',
+              height: '34px',
+              borderRadius: '8px',
               background: '#d1fae5',
               color: '#059669',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              flexShrink: 0
             }}
           >
-            <CheckCircle2 size={22} />
+            <CheckCircle2 size={16} />
           </div>
         </div>
 
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '20px',
-            padding: '1.4rem 1.6rem',
+            borderRadius: '12px',
             border: '1.5px solid #D2E3FC',
-            boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)',
+            borderLeft: '4px solid #002182',
+            padding: '0.7rem 1.1rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
             display: 'flex',
+            alignItems: 'center',
             justifyContent: 'space-between',
-            alignItems: 'flex-start'
+            gap: '0.75rem'
           }}
         >
           <div>
-            <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#496386', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#496386', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
               EN CONSULTA ACTIVA
             </div>
-            <div style={{ fontSize: '2rem', fontWeight: 900, color: '#002182', margin: '0.2rem 0' }}>
-              {inConsultCount}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#002182', lineHeight: 1 }}>
+                {inConsultCount}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#076ABC', fontWeight: 600 }}>
+                en curso
+              </span>
             </div>
-            <div style={{ fontSize: '0.8rem', color: '#076ABC' }}>Atención en curso</div>
           </div>
           <div
             style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '12px',
+              width: '34px',
+              height: '34px',
+              borderRadius: '8px',
               background: '#EBF3FD',
               color: '#002182',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              flexShrink: 0
             }}
           >
-            <Clock size={22} />
+            <Clock size={16} />
           </div>
         </div>
       </div>

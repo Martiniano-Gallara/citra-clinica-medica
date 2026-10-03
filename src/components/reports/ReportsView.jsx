@@ -1273,12 +1273,12 @@ export const ReportsView = () => {
             }}
           >
             <BarChart3 size={28} color="#002182" />
-            <span>{isDoctor ? 'Métricas Globales de la Clínica (CITRA)' : 'Estadísticas & Reportes Ejecutivos Institucionales'}</span>
+            <span>{isDoctor ? 'Métricas Globales de la Clínica (CITRA)' : 'Métricas Operativas de la Clínica'}</span>
           </h1>
           <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
             {isDoctor
-              ? 'Vista general de toda la clínica: productividad, volumen de pacientes, ingresos por especialidad y retención.'
-              : 'Métricas globales de la clínica: productividad, volumen de pacientes, ingresos por especialidad y retención.'}
+              ? 'Vista general de toda la clínica: productividad, evolución de ingresos, volumen de pacientes y facturación por especialidad.'
+              : 'Estadísticas operativas de la clínica: volumen de turnos, consultas, distribución por cobertura y fidelización de pacientes.'}
           </p>
         </div>
 
@@ -1408,21 +1408,23 @@ export const ReportsView = () => {
           </div>
         </div>
 
-        <div className="kpi-card">
-          <div className="kpi-top">
-            <span className="kpi-label">Facturación {period === 'year' ? 'Anual' : period === 'week' ? 'Semanal' : 'Mensual'}</span>
-            <div className="kpi-icon-box" style={{ background: '#f0fdf4', color: '#16a34a' }}>
-              <DollarSign size={22} />
+        {isDoctor && (
+          <div className="kpi-card">
+            <div className="kpi-top">
+              <span className="kpi-label">Facturación {period === 'year' ? 'Anual' : period === 'week' ? 'Semanal' : 'Mensual'}</span>
+              <div className="kpi-icon-box" style={{ background: '#f0fdf4', color: '#16a34a' }}>
+                <DollarSign size={22} />
+              </div>
+            </div>
+            <div className="kpi-value" style={{ color: '#16a34a' }}>
+              {period === 'year' ? '$34.680.000' : period === 'week' ? '$720.000' : '$2.890.000'}
+            </div>
+            <div className="kpi-trend positive">
+              <TrendingUp size={15} />
+              <span>+22.1% crecimiento</span>
             </div>
           </div>
-          <div className="kpi-value" style={{ color: '#16a34a' }}>
-            {period === 'year' ? '$34.680.000' : period === 'week' ? '$720.000' : '$2.890.000'}
-          </div>
-          <div className="kpi-trend positive">
-            <TrendingUp size={15} />
-            <span>+22.1% crecimiento</span>
-          </div>
-        </div>
+        )}
 
         <div className="kpi-card">
           <div className="kpi-top">
@@ -1451,43 +1453,45 @@ export const ReportsView = () => {
         </div>
       </div>
 
-      {/* Row 1: Revenue Line Chart & Insurance Doughnut */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
-        {/* Revenue Growth Line */}
-        <div className="card">
-          <div className="card-header">
-            <div className="card-title">
-              <TrendingUp size={20} color="#2563eb" />
-              <span>Evolución Histórica de Facturación e Ingresos</span>
+      {/* Row 1: Revenue Line Chart (Dr. Blanco only) + Insurance Doughnut */}
+      <div style={{ display: 'grid', gridTemplateColumns: isDoctor ? '2fr 1fr' : '1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+        {/* Revenue Growth Line — exclusivo Dr. Blanco */}
+        {isDoctor && (
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">
+                <TrendingUp size={20} color="#2563eb" />
+                <span>Evolución Histórica de Facturación e Ingresos</span>
+              </div>
             </div>
-          </div>
-          <div style={{ height: '280px' }}>
-            <Line
-              data={revenueTrendData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: { display: false }
-                },
-                scales: {
-                  y: {
-                    ticks: {
-                      callback: (value) => `$${(value / 1000000).toFixed(1)}M`
+            <div style={{ height: '280px' }}>
+              <Line
+                data={revenueTrendData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { display: false }
+                  },
+                  scales: {
+                    y: {
+                      ticks: {
+                        callback: (value) => `$${(value / 1000000).toFixed(1)}M`
+                      }
                     }
                   }
-                }
-              }}
-            />
+                }}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Insurance Doughnut */}
+        {/* Insurance Doughnut — visible para todos */}
         <div className="card">
           <div className="card-header">
             <div className="card-title">
               <PieChartIcon size={20} color="#2563eb" />
-              <span>Pacientes por Prepaga</span>
+              <span>Pacientes por Prepaga / Cobertura</span>
             </div>
           </div>
           <div style={{ height: '280px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

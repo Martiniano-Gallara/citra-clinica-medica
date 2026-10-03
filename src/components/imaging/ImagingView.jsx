@@ -305,7 +305,7 @@ export const ImagingView = () => {
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-          gap: '1rem'
+          gap: '0.85rem'
         }}
       >
         {/* Card 1: Total Estudios */}
@@ -313,38 +313,43 @@ export const ImagingView = () => {
           style={{
             background: '#ffffff',
             border: '1px solid #e2e8f0',
+            borderLeft: '4px solid #1d4ed8',
             borderRadius: '12px',
-            padding: '1rem 1.2rem',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            padding: '0.7rem 1.1rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
             display: 'flex',
-            flexDirection: 'column',
-            gap: '0.35rem'
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Total de Estudios
-            </span>
-            <div
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: '#eff6ff',
-                color: '#1d4ed8',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <Eye size={16} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
+                {metrics.total}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
+                registrados
+              </span>
             </div>
           </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a' }}>
-            {metrics.total}
-          </div>
-          <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-            Estudios registrados en sistema
+          <div
+            style={{
+              width: '34px',
+              height: '34px',
+              borderRadius: '8px',
+              background: '#eff6ff',
+              color: '#1d4ed8',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}
+          >
+            <Eye size={16} />
           </div>
         </div>
 
@@ -353,39 +358,43 @@ export const ImagingView = () => {
           style={{
             background: '#ffffff',
             border: '1px solid #e2e8f0',
+            borderLeft: '4px solid #6d28d9',
             borderRadius: '12px',
-            padding: '1rem 1.2rem',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            padding: '0.7rem 1.1rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
             display: 'flex',
-            flexDirection: 'column',
-            gap: '0.35rem'
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Resonancias (RMN)
-            </span>
-            <div
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: '#ede9fe',
-                color: '#6d28d9',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.9rem'
-              }}
-            >
-              <Activity size={18} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
+                {metrics.rmnCount}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
+                protocolos
+              </span>
             </div>
           </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a' }}>
-            {metrics.rmnCount}
-          </div>
-          <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-            Protocolo ligamentario y articular
+          <div
+            style={{
+              width: '34px',
+              height: '34px',
+              borderRadius: '8px',
+              background: '#ede9fe',
+              color: '#6d28d9',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}
+          >
+            <Activity size={16} />
           </div>
         </div>
 
@@ -394,39 +403,43 @@ export const ImagingView = () => {
           style={{
             background: '#ffffff',
             border: '1px solid #e2e8f0',
+            borderLeft: '4px solid #0369a1',
             borderRadius: '12px',
-            padding: '1rem 1.2rem',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            padding: '0.7rem 1.1rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
             display: 'flex',
-            flexDirection: 'column',
-            gap: '0.35rem'
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Radiografías & TAC
-            </span>
-            <div
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: '#e0f2fe',
-                color: '#0369a1',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.9rem'
-              }}
-            >
-              <Maximize2 size={18} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
+                {metrics.rxTacCount}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
+                evaluaciones
+              </span>
             </div>
           </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a' }}>
-            {metrics.rxTacCount}
-          </div>
-          <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-            Evaluación ósea y estructural
+          <div
+            style={{
+              width: '34px',
+              height: '34px',
+              borderRadius: '8px',
+              background: '#e0f2fe',
+              color: '#0369a1',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}
+          >
+            <Maximize2 size={16} />
           </div>
         </div>
 
@@ -435,38 +448,43 @@ export const ImagingView = () => {
           style={{
             background: '#ffffff',
             border: '1px solid #e2e8f0',
+            borderLeft: '4px solid #059669',
             borderRadius: '12px',
-            padding: '1rem 1.2rem',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            padding: '0.7rem 1.1rem',
+            boxShadow: '0 2px 6px rgba(0, 33, 130, 0.03)',
             display: 'flex',
-            flexDirection: 'column',
-            gap: '0.35rem'
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Estudios Informados
-            </span>
-            <div
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: '#ecfdf5',
-                color: '#059669',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <ShieldCheck size={16} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', marginTop: '2px' }}>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#059669', lineHeight: 1 }}>
+                {metrics.informedCount} / {metrics.total}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 600 }}>
+                concluidos
+              </span>
             </div>
           </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#059669' }}>
-            {metrics.informedCount} / {metrics.total}
-          </div>
-          <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-            Informes médicos concluidos
+          <div
+            style={{
+              width: '34px',
+              height: '34px',
+              borderRadius: '8px',
+              background: '#ecfdf5',
+              color: '#059669',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}
+          >
+            <ShieldCheck size={16} />
           </div>
         </div>
       </div>
