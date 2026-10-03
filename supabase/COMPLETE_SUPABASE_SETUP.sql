@@ -1914,3 +1914,32 @@ FOR INSERT WITH CHECK (
         (auth.uid() IS NOT NULL AND auth.uid()::text = (storage.foldername(name))[1])
     )
 );
+
+-- ====================================================================
+-- 30. PUBLICACIÓN EN TIEMPO REAL (Sección 4 - Riesgo 4)
+-- ====================================================================
+ALTER TABLE public.patients REPLICA IDENTITY FULL;
+ALTER TABLE public.appointments REPLICA IDENTITY FULL;
+ALTER TABLE public.consultations REPLICA IDENTITY FULL;
+ALTER TABLE public.electronic_prescriptions REPLICA IDENTITY FULL;
+ALTER TABLE public.imaging_studies REPLICA IDENTITY FULL;
+ALTER TABLE public.cash_shifts REPLICA IDENTITY FULL;
+ALTER TABLE public.cash_movements REPLICA IDENTITY FULL;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.patients;
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.appointments;
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.consultations;
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.electronic_prescriptions;
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.imaging_studies;
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.cash_shifts;
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.cash_movements;
+    END IF;
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+    WHEN undefined_object THEN NULL;
+    WHEN OTHERS THEN NULL;
+END $$;
+
