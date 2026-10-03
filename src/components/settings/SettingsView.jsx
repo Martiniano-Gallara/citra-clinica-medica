@@ -81,6 +81,10 @@ export const SettingsView = () => {
 
   const handleUpdateDoctorPassword = async (e) => {
     e.preventDefault();
+    if (!currentPassword) {
+      addToast('Seguridad', 'Debe ingresar su contraseña actual para reautenticar la operación.', 'warning');
+      return;
+    }
     if (!newPassword || newPassword.length < 6) {
       addToast('Error', 'La nueva contraseña debe tener al menos 6 caracteres.', 'warning');
       return;
@@ -92,29 +96,19 @@ export const SettingsView = () => {
 
     try {
       if (dataService.isLive()) {
-        await dataService.updateUserPassword(newPassword);
-      }
-
-      const userEmail = authAdmin?.email || currentDoctor?.email;
-      if (userEmail) {
-        setUsers((prev) =>
-          prev.map((u) => (u.email?.toLowerCase() === userEmail.toLowerCase() ? { ...u, password: newPassword } : u))
-        );
-        if (setAuthAdmin && authAdmin) {
-          setAuthAdmin((prev) => ({ ...prev, password: newPassword }));
-        }
+        await dataService.updateUserPassword(currentPassword, newPassword);
       }
 
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       if (logAudit) {
-        logAudit('UPDATE_PASSWORD', 'Seguridad & Credenciales', authAdmin?.email || '-', 'El profesional actualizó su contraseña de acceso.');
+        logAudit('UPDATE_PASSWORD', 'Seguridad & Credenciales', authAdmin?.email || currentDoctor?.email || '-', 'El profesional actualizó su contraseña de acceso.');
       }
       addToast('Contraseña Actualizada', 'Tu clave de acceso ha sido cambiada con éxito en la plataforma.', 'success');
     } catch (err) {
       console.error('Error al actualizar contraseña médica:', err);
-      addToast('Error al Cambiar Contraseña', 'No se pudo actualizar la contraseña en el servidor: ' + (err.message || ''), 'error');
+      addToast('Error al Cambiar Contraseña', 'No se pudo actualizar la contraseña: ' + (err.message || ''), 'error');
     }
   };
 
@@ -156,6 +150,10 @@ export const SettingsView = () => {
 
   const handleUpdateAdminPassword = async (e) => {
     e.preventDefault();
+    if (!adminCurrentPassword) {
+      addToast('Seguridad', 'Debe ingresar su contraseña actual para reautenticar la operación.', 'warning');
+      return;
+    }
     if (!adminNewPassword || adminNewPassword.length < 6) {
       addToast('Error', 'La nueva contraseña debe tener al menos 6 caracteres.', 'warning');
       return;
@@ -167,17 +165,7 @@ export const SettingsView = () => {
 
     try {
       if (dataService.isLive()) {
-        await dataService.updateUserPassword(adminNewPassword);
-      }
-
-      const userEmail = authAdmin?.email;
-      if (userEmail) {
-        setUsers((prev) =>
-          prev.map((u) => (u.email?.toLowerCase() === userEmail.toLowerCase() ? { ...u, password: adminNewPassword } : u))
-        );
-        if (setAuthAdmin && authAdmin) {
-          setAuthAdmin((prev) => ({ ...prev, password: adminNewPassword }));
-        }
+        await dataService.updateUserPassword(adminCurrentPassword, adminNewPassword);
       }
 
       setAdminCurrentPassword('');
@@ -189,7 +177,7 @@ export const SettingsView = () => {
       addToast('Contraseña Actualizada', 'Tu clave administrativa ha sido cambiada con éxito en la plataforma.', 'success');
     } catch (err) {
       console.error('Error al actualizar contraseña de administración:', err);
-      addToast('Error al Cambiar Contraseña', 'No se pudo actualizar la contraseña en el servidor: ' + (err.message || ''), 'error');
+      addToast('Error al Cambiar Contraseña', 'No se pudo actualizar la contraseña: ' + (err.message || ''), 'error');
     }
   };
 

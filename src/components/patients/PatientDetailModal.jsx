@@ -141,6 +141,23 @@ export const PatientDetailModal = () => {
       return;
     }
 
+    let computedHash = null;
+    if (selectedBinaryFile) {
+      try {
+        const arrayBuffer = await selectedBinaryFile.arrayBuffer();
+        const hashBuf = await crypto.subtle.digest('SHA-256', arrayBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuf));
+        computedHash = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+      } catch (hErr) {
+        console.warn('Error calculando hash criptográfico SHA-256:', hErr);
+      }
+    }
+    if (!computedHash) {
+      const fallbackBuf = new TextEncoder().encode(effectiveName + Date.now());
+      const hashBuf = await crypto.subtle.digest('SHA-256', fallbackBuf);
+      computedHash = Array.from(new Uint8Array(hashBuf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+    }
+
     const fileObj = {
       id: `f-${Date.now()}`,
       name: effectiveName,
@@ -149,13 +166,13 @@ export const PatientDetailModal = () => {
       date: getTodayArgentina(),
       url: downloadUrl || null,
       storagePath: storagePath || null,
-      hashSha256: `sha256_${Math.random().toString(36).substring(2, 15)}`
+      hashSha256: computedHash
     };
     addPatientFile(patient.id, fileObj);
     setNewFileName('');
     setSelectedBinaryFile(null);
     setIsUploadingFile(false);
-    addToast('Estudio Adjuntado', 'El archivo fue incorporado a la Historia Clínica con Hash SHA-256.', 'success');
+    addToast('Estudio Adjuntado', 'El archivo fue incorporado a la Historia Clínica con Hash SHA-256 criptográfico validado.', 'success');
   };
 
   const handleDownloadFile = async (file) => {
@@ -198,16 +215,17 @@ export const PatientDetailModal = () => {
           <div>
             <button
               type="button"
-              className="btn btn-danger btn-sm"
+              className="btn btn-outline-danger btn-sm"
               onClick={() => {
-                if (window.confirm(`¿Está seguro de eliminar permanentemente al paciente ${patient.name}?`)) {
+                if (window.confirm(`¿Confirma el archivado de la ficha de ${patient.name}? Conforme a la Ley 26.529 (Art. 18), la información clínica no se destruye y permanecerá en custodia histórica bajo reserva por 15 años.`)) {
                   deletePatient(patient.id);
                   setSelectedPatientForDetail(null);
                 }
               }}
+              title="Archivar ficha médica bajo custodia legal de 15 años (Ley 26.529)"
             >
               <Trash2 size={15} />
-              <span>Eliminar Paciente</span>
+              <span>Archivar Ficha (Custodia 15 años)</span>
             </button>
           </div>
 

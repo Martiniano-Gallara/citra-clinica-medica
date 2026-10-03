@@ -46,17 +46,27 @@ $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.is_doctor()
 RETURNS BOOLEAN AS $$
-    SELECT (public.get_auth_role() = 'doctor' OR auth.jwt() ->> 'email' = 'dr.blanco@citra.com.ar' OR EXISTS (SELECT 1 FROM public.doctors WHERE user_id = auth.uid()));
+    SELECT (
+        public.get_auth_role() IN ('doctor', 'superadmin')
+        AND EXISTS (
+            SELECT 1 FROM public.doctors d
+            JOIN public.profiles p ON p.id = d.user_id
+            WHERE d.user_id = auth.uid()
+              AND p.role IN ('doctor', 'superadmin')
+              AND p.is_active = TRUE
+              AND d.is_active = TRUE
+        )
+    );
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.get_current_doctor_id()
 RETURNS VARCHAR AS $$
     SELECT d.id
     FROM public.doctors d
-    LEFT JOIN public.profiles p ON p.id = d.user_id
-    WHERE (d.user_id = auth.uid() OR auth.jwt() ->> 'email' = d.email)
-      AND (p.role IN ('doctor', 'superadmin') OR p.role IS NULL)
-      AND COALESCE(p.is_active, TRUE) = TRUE
+    JOIN public.profiles p ON p.id = d.user_id
+    WHERE d.user_id = auth.uid()
+      AND p.role IN ('doctor', 'superadmin')
+      AND p.is_active = TRUE
       AND d.is_active = TRUE
     LIMIT 1;
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;

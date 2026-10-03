@@ -538,17 +538,27 @@ $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.is_doctor()
 RETURNS BOOLEAN AS $$
-    SELECT (public.get_auth_role() = 'doctor' OR auth.jwt() ->> 'email' = 'dr.blanco@citra.com.ar' OR EXISTS (SELECT 1 FROM public.doctors WHERE user_id = auth.uid()));
+    SELECT (
+        public.get_auth_role() IN ('doctor', 'superadmin')
+        AND EXISTS (
+            SELECT 1 FROM public.doctors d
+            JOIN public.profiles p ON p.id = d.user_id
+            WHERE d.user_id = auth.uid()
+              AND p.role IN ('doctor', 'superadmin')
+              AND p.is_active = TRUE
+              AND d.is_active = TRUE
+        )
+    );
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.get_current_doctor_id()
 RETURNS VARCHAR AS $$
     SELECT d.id
     FROM public.doctors d
-    LEFT JOIN public.profiles p ON p.id = d.user_id
-    WHERE (d.user_id = auth.uid() OR auth.jwt() ->> 'email' = d.email)
-      AND (p.role IN ('doctor', 'superadmin') OR p.role IS NULL)
-      AND COALESCE(p.is_active, TRUE) = TRUE
+    JOIN public.profiles p ON p.id = d.user_id
+    WHERE d.user_id = auth.uid()
+      AND p.role IN ('doctor', 'superadmin')
+      AND p.is_active = TRUE
       AND d.is_active = TRUE
     LIMIT 1;
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
@@ -664,7 +674,10 @@ CREATE POLICY "rooms_admin_all" ON rooms FOR ALL USING (public.is_administrative
 CREATE POLICY "health_insurances_public_select" ON health_insurances FOR SELECT USING (true);
 CREATE POLICY "insurances_admin_all" ON health_insurances FOR ALL USING (public.is_administrative());
 
-CREATE POLICY "doctors_public_select" ON doctors FOR SELECT USING (auth.role() = 'authenticated');
+-- MED-09: Restringir acceso directo a tabla doctors; terceros y pacientes consultan la vista public_doctors
+DROP POLICY IF EXISTS "doctors_public_select" ON doctors;
+DROP POLICY IF EXISTS "doctors_select_policy" ON doctors;
+CREATE POLICY "doctors_select_policy" ON doctors FOR SELECT USING (public.is_administrative() OR user_id = auth.uid());
 CREATE POLICY "doctors_update_self" ON doctors FOR UPDATE USING (user_id = auth.uid() OR public.is_administrative());
 CREATE POLICY "doctors_admin_insert" ON doctors FOR INSERT WITH CHECK (public.is_administrative());
 -- CRIT-02: Se elimina la política de DELETE físico para doctores; las bajas son lógicas (is_active = false)
@@ -889,12 +902,12 @@ CREATE TRIGGER trg_immutable_prescriptions
 BEFORE UPDATE OR DELETE ON public.electronic_prescriptions
 FOR EACH ROW EXECUTE FUNCTION public.enforce_prescription_immutability();
 
--- 3. Inmutabilidad de Consentimientos Informados
+-- 3. Inmutabilidad de Consentimientos Informados (Ley 26.529 / MED-04)
 CREATE OR REPLACE FUNCTION public.enforce_consent_immutability()
 RETURNS TRIGGER AS $$
 BEGIN
     IF TG_OP = 'DELETE' THEN
-        RAISE EXCEPTION 'Operación denegada: Los consentimientos informados no pueden eliminarse.';
+        RAISE EXCEPTION 'Operación denegada (Ley 26.529): Los consentimientos informados no pueden eliminarse.';
     END IF;
 
     IF TG_OP = 'UPDATE' THEN
@@ -904,6 +917,26 @@ BEGIN
         IF NEW.status != 'revoked' OR NEW.revocation_reason IS NULL OR TRIM(NEW.revocation_reason) = '' THEN
             RAISE EXCEPTION 'Operación denegada: El consentimiento solo puede modificarse para asentar su revocación formal con motivo.';
         END IF;
+
+        -- MED-04: Comparar OLD y NEW en todas las columnas firmadas e inmutables
+        IF NEW.id IS DISTINCT FROM OLD.id OR
+           NEW.patient_id IS DISTINCT FROM OLD.patient_id OR
+           NEW.patient_name IS DISTINCT FROM OLD.patient_name OR
+           NEW.patient_dni IS DISTINCT FROM OLD.patient_dni OR
+           NEW.doctor_id IS DISTINCT FROM OLD.doctor_id OR
+           NEW.doctor_name IS DISTINCT FROM OLD.doctor_name OR
+           NEW.procedure_type IS DISTINCT FROM OLD.procedure_type OR
+           NEW.title IS DISTINCT FROM OLD.title OR
+           NEW.risks IS DISTINCT FROM OLD.risks OR
+           NEW.benefits IS DISTINCT FROM OLD.benefits OR
+           NEW.witness_name IS DISTINCT FROM OLD.witness_name OR
+           NEW.witness_dni IS DISTINCT FROM OLD.witness_dni OR
+           NEW.signed_at IS DISTINCT FROM OLD.signed_at OR
+           NEW.integrity_hash IS DISTINCT FROM OLD.integrity_hash OR
+           NEW.created_at IS DISTINCT FROM OLD.created_at THEN
+            RAISE EXCEPTION 'Operación denegada (MED-04 / Ley 26.529): No se permite alterar campos clínicos, voluntades declaradas ni firmas del consentimiento informado.';
+        END IF;
+
         NEW.revoked_at := NOW();
     END IF;
 

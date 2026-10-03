@@ -885,8 +885,9 @@ export const ClinicProvider = ({ children }) => {
           rxRecordToInsert,
           ordersToInsert.length > 0 ? ordersToInsert : null
         );
-        if (rpcResult?.integrityHash) {
-          finalizedRecord.integrityHash = rpcResult.integrityHash;
+        const hash = rpcResult?.integrityHash || rpcResult?.integrity_hash;
+        if (hash) {
+          finalizedRecord.integrityHash = hash;
         }
 
         // Persistir estudios de diagnóstico e imágenes en Supabase (CRIT-03)
@@ -1869,10 +1870,13 @@ export const ClinicProvider = ({ children }) => {
             type: isExpense ? 'expense' : 'income',
             amount: numAmount,
             concept: concept || 'Movimiento de caja',
-            cashierName: cashierName || currentUser?.name || 'Recepción'
+            cashierName: cashierName || currentUser?.name || 'Recepción',
+            userId: authAdmin?.id || currentUser?.id
           });
         } catch (err) {
-          console.warn('Error al sincronizar movimiento de caja con Supabase:', err);
+          console.error('Error al sincronizar movimiento de caja con Supabase:', err);
+          addToast('Error de Caja', err.message || 'No se pudo registrar en la base de datos.', 'error');
+          return;
         }
       }
 
@@ -1889,16 +1893,18 @@ export const ClinicProvider = ({ children }) => {
     if (cashLockRef.current) return;
     cashLockRef.current = true;
     try {
+      if (dataService.isLive()) {
+        try {
+          await dataService.closeCashShift(null, observations || '');
+        } catch (err) {
+          console.error('Error al cerrar turno de caja en Supabase:', err);
+          addToast('Error al Cerrar Caja', err.message || 'No se pudo cerrar el turno en el servidor.', 'error');
+          return;
+        }
+      }
       setCashClosures((prev) =>
         prev.map((c, idx) => (idx === 0 ? { ...c, status: 'Cerrada y Arqueada', closeTimestamp: new Date().toISOString(), observations } : c))
       );
-      if (dataService.isLive()) {
-        try {
-          await dataService.closeCashShift('shift-1', observations || '');
-        } catch (err) {
-          console.warn('Error al cerrar turno de caja en Supabase:', err);
-        }
-      }
       logAudit('CASH', 'Caja Diaria', '-', `Cierre de arqueo de caja realizado por ${currentUser?.name || 'Operador'}`);
       addToast('Arqueo de Caja Finalizado', 'Caja cerrada y balances fiscales consolidados.', 'success');
     } finally {
@@ -2154,7 +2160,7 @@ export const ClinicProvider = ({ children }) => {
   };
 
   // --- GESTIÓN DE SERVICIOS Y ESPECIALIDADES ---
-  const addSpecialty = (specData) => {
+  const addSpecialty = async (specData) => {
     const newId = `spec-${Date.now()}`;
     const newSpec = {
       id: newId,
@@ -2165,19 +2171,35 @@ export const ClinicProvider = ({ children }) => {
       icon: 'Stethoscope',
       ...specData
     };
-    setSpecialties((prev) => [...prev, newSpec]);
     if (dataService.isLive()) {
-      dataService.createSpecialty(newSpec).catch(console.warn);
+      try {
+        await dataService.createSpecialty(newSpec);
+      } catch (err) {
+        console.error('Error al crear especialidad en Supabase:', err);
+        addToast('Error al Crear Especialidad', err.message || 'No se pudo guardar la especialidad.', 'error');
+        throw err;
+      }
     }
+    setSpecialties((prev) => [...prev, newSpec]);
     logAudit('CREATE', 'Especialidades', '-', `Alta de especialidad médica: ${newSpec.name}`);
     addToast('Especialidad Creada', `Especialidad "${newSpec.name}" registrada con éxito.`, 'success');
     return newSpec;
   };
 
-  const updateSpecialty = (id, updatedData) => {
+  const updateSpecialty = async (id, updatedData) => {
     const targetSpec = specialties.find((s) => s.id === id);
     const oldName = targetSpec?.name;
     const newName = updatedData.name?.trim();
+
+    if (dataService.isLive()) {
+      try {
+        await dataService.updateSpecialty(id, updatedData);
+      } catch (err) {
+        console.error('Error al actualizar especialidad en Supabase:', err);
+        addToast('Error al Actualizar Especialidad', err.message || 'No se pudo actualizar en el servidor.', 'error');
+        throw err;
+      }
+    }
 
     setSpecialties((prev) =>
       prev.map((s) => (s.id === id ? { ...s, ...updatedData } : s))
@@ -2204,16 +2226,24 @@ export const ClinicProvider = ({ children }) => {
       );
     }
 
-    if (dataService.isLive()) {
-      dataService.updateSpecialty(id, updatedData).catch(console.warn);
-    }
     logAudit('UPDATE', 'Especialidades', '-', `Modificación de especialidad ID ${id}: ${newName || oldName || ''}`);
     addToast('Especialidad Actualizada', 'Cambios guardados con éxito.', 'success');
   };
 
-  const deleteSpecialty = (id) => {
+  const deleteSpecialty = async (id) => {
     const targetSpec = specialties.find((s) => s.id === id);
     const specName = targetSpec?.name;
+
+    if (dataService.isLive()) {
+      try {
+        await dataService.deleteSpecialty(id);
+      } catch (err) {
+        console.error('Error al eliminar especialidad en Supabase:', err);
+        addToast('Error al Eliminar Especialidad', err.message || 'No se pudo eliminar en el servidor.', 'error');
+        throw err;
+      }
+    }
+
     setSpecialties((prev) => prev.filter((s) => s.id !== id));
     if (specName) {
       setDoctors((prev) =>
@@ -2233,9 +2263,6 @@ export const ClinicProvider = ({ children }) => {
           return doc;
         })
       );
-    }
-    if (dataService.isLive()) {
-      dataService.deleteSpecialty(id).catch(console.warn);
     }
     logAudit('DELETE', 'Especialidades', '-', `Eliminación de especialidad ID ${id}`);
     addToast('Especialidad Eliminada', 'La especialidad fue removida.', 'info');
@@ -2272,19 +2299,20 @@ export const ClinicProvider = ({ children }) => {
 
   // --- GESTIÓN DE USUARIOS Y ROLES (Ley 25.326 / A-02) ---
   const updateUser = async (userId, updatedData) => {
-    if (updatedData.password && dataService.isLive()) {
+    const { password, ...safeData } = updatedData;
+    if (password && dataService.isLive()) {
       try {
-        await dataService.updateUserPassword(updatedData.password);
+        await dataService.updateUserPassword(null, password);
       } catch (err) {
         console.warn('Error al actualizar contraseña en Supabase Auth:', err);
       }
     }
     setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, ...updatedData } : u))
+      prev.map((u) => (u.id === userId ? { ...u, ...safeData } : u))
     );
     if (authAdmin && authAdmin.id === userId) {
-      setAuthAdmin((prev) => ({ ...prev, ...updatedData }));
-      setCurrentUser((prev) => ({ ...prev, ...updatedData }));
+      setAuthAdmin((prev) => ({ ...prev, ...safeData }));
+      setCurrentUser((prev) => ({ ...prev, ...safeData }));
     }
     logAudit('UPDATE', 'Usuarios & Roles', '-', `Modificación de datos/permisos para usuario ${updatedData.name || userId}`);
     addToast('Usuario Actualizado', 'Los datos y credenciales fueron actualizados correctamente.', 'success');
@@ -2292,13 +2320,13 @@ export const ClinicProvider = ({ children }) => {
 
   const addUser = (userData) => {
     const newId = `usr-${Date.now()}`;
+    const { password, ...safeUserData } = userData;
     const newUser = {
       id: newId,
       status: 'Activo',
       mfaEnabled: true,
       lastAccess: 'Nunca',
-      password: userData.password || '',
-      ...userData
+      ...safeUserData
     };
     setUsers((prev) => [...prev, newUser]);
     logAudit('CREATE', 'Usuarios & Roles', '-', `Alta de usuario institucional: ${newUser.name} (${newUser.role})`);
@@ -2610,13 +2638,14 @@ export const ClinicProvider = ({ children }) => {
       }
 
       const merged = { ...clinicInfo, ...normalized };
-      setClinicInfo(merged);
-      saveStorage('clinicInfo', merged);
 
-      // Persistir de inmediato en PostgreSQL Supabase Cloud
+      // Persistir de inmediato en PostgreSQL Supabase Cloud (MED-01 / CRIT-03)
       if (dataService.isLive()) {
         await dataService.saveClinicInfo(merged);
       }
+
+      setClinicInfo(merged);
+      saveStorage('clinicInfo', merged);
 
       logAudit(
         'UPDATE_CLINIC_INFO',

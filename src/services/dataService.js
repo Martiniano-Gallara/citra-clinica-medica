@@ -102,8 +102,19 @@ export const dataService = {
     return null;
   },
 
-  async updateUserPassword(newPassword) {
+  async updateUserPassword(currentPassword, newPassword) {
     if (isSupabaseConfigured && supabase) {
+      const { data: authData } = await supabase.auth.getUser();
+      const userEmail = authData?.user?.email;
+      if (userEmail && currentPassword) {
+        const { error: signInErr } = await supabase.auth.signInWithPassword({
+          email: userEmail,
+          password: currentPassword
+        });
+        if (signInErr) {
+          throw new Error('La contraseña actual es incorrecta.');
+        }
+      }
       const { data, error } = await supabase.auth.updateUser({
         password: newPassword
       });
@@ -324,7 +335,7 @@ export const dataService = {
         console.error('Error al asentar paquete clínico transaccional en Supabase:', error);
         throw new Error(error.message || 'Error al persistir consulta médica atómica');
       }
-      return data;
+      return data ? toCamelCase(data) : null;
     }
     return null;
   },
@@ -706,7 +717,13 @@ export const dataService = {
 
   async createSpecialty(specialtyData) {
     if (isSupabaseConfigured && supabase) {
-      const payload = toSnakeCase(specialtyData);
+      const raw = toSnakeCase(specialtyData);
+      const allowedKeys = ['id', 'name', 'category', 'color', 'icon', 'estimated_duration', 'description', 'is_active', 'created_at'];
+      const payload = {};
+      allowedKeys.forEach((key) => {
+        if (raw[key] !== undefined) payload[key] = raw[key];
+      });
+      if (!payload.id) payload.id = `esp-${Date.now()}`;
       const { data, error } = await supabase.from('specialties').insert([payload]).select().single();
       if (error) throw error;
       return toCamelCase(data);
@@ -716,7 +733,12 @@ export const dataService = {
 
   async updateSpecialty(id, updates) {
     if (isSupabaseConfigured && supabase) {
-      const payload = toSnakeCase(updates);
+      const raw = toSnakeCase(updates);
+      const allowedKeys = ['name', 'category', 'color', 'icon', 'estimated_duration', 'description', 'is_active'];
+      const payload = {};
+      allowedKeys.forEach((key) => {
+        if (raw[key] !== undefined) payload[key] = raw[key];
+      });
       const { data, error } = await supabase.from('specialties').update(payload).eq('id', id).select().single();
       if (error) throw error;
       return toCamelCase(data);
@@ -868,24 +890,31 @@ export const dataService = {
 
   async saveClinicInfo(clinicInfo) {
     if (isSupabaseConfigured && supabase) {
-      try {
-        const payload = {
-          ...toSnakeCase(clinicInfo),
-          id: 'main-clinic-config',
-          updated_at: new Date().toISOString()
-        };
-        const { error } = await supabase
-          .from('clinic_settings')
-          .upsert([payload]);
-        if (error) {
-          console.warn('Could not save clinic info to Supabase clinic_settings:', error);
-          return false;
-        }
-        return true;
-      } catch (err) {
-        console.warn('Supabase saveClinicInfo notice:', err);
-        return false;
+      const raw = toSnakeCase(clinicInfo);
+      const allowedKeys = [
+        'name', 'legal_name', 'cuit', 'iibb', 'activity_start', 'iva_condition',
+        'address', 'city', 'province', 'postal_code', 'phone', 'whatsapp', 'emergency_phone',
+        'email', 'director_name', 'director_license', 'director_specialty', 'director_email',
+        'director_phone', 'director_schedule', 'sisa_refes_code', 'renapdis_platform_id',
+        'arca_pto_vta', 'schedule_summary'
+      ];
+      const payload = {
+        id: 'main-clinic-config',
+        updated_at: new Date().toISOString()
+      };
+      allowedKeys.forEach((key) => {
+        if (raw[key] !== undefined) payload[key] = raw[key];
+      });
+      const { data, error } = await supabase
+        .from('clinic_settings')
+        .upsert([payload])
+        .select()
+        .single();
+      if (error) {
+        console.error('Could not save clinic info to Supabase clinic_settings:', error);
+        throw error;
       }
+      return data ? toCamelCase(data) : true;
     }
     return false;
   },
@@ -1304,11 +1333,36 @@ export const dataService = {
     return [];
   },
 
+  async getActiveCashShift(userId = null) {
+    if (isSupabaseConfigured && supabase) {
+      let query = supabase.from('cash_shifts').select('*').eq('status', 'open');
+      if (userId) {
+        query = query.eq('user_id', userId);
+      }
+      const { data, error } = await query.order('opened_at', { ascending: false }).limit(1).maybeSingle();
+      if (error && error.code !== 'PGRST116') {
+        console.warn('getActiveCashShift warning:', error);
+      }
+      return data ? toCamelCase(data) : null;
+    }
+    return null;
+  },
+
   async addCashMovement(movementData) {
     if (isSupabaseConfigured && supabase) {
+      let shiftId = movementData.shiftId;
+      if (!shiftId || shiftId === 'shift-1') {
+        const activeShift = await this.getActiveCashShift(movementData.userId);
+        if (activeShift?.id) {
+          shiftId = activeShift.id;
+        } else {
+          throw new Error('No existe un turno de caja abierto para registrar el movimiento.');
+        }
+      }
+
       const payload = {
         id: movementData.id || `mov-${Date.now()}`,
-        shift_id: movementData.shiftId || 'shift-1',
+        shift_id: shiftId,
         type: movementData.type === 'expense' ? 'expense' : 'income',
         amount: Number(movementData.amount) || 0,
         concept: movementData.concept || 'Movimiento de caja',
@@ -1329,11 +1383,20 @@ export const dataService = {
     return null;
   },
 
-  async closeCashShift(shiftId, observations = '') {
+  async closeCashShift(shiftId = null, observations = '') {
     if (isSupabaseConfigured && supabase) {
+      let targetShiftId = shiftId;
+      if (!targetShiftId || targetShiftId === 'shift-1') {
+        const activeShift = await this.getActiveCashShift();
+        if (activeShift?.id) {
+          targetShiftId = activeShift.id;
+        } else {
+          throw new Error('No hay un turno de caja abierto para cerrar.');
+        }
+      }
       const { data, error } = await supabase.rpc('close_cash_shift_rpc', {
-        p_shift_id: shiftId,
-        p_observations: observations
+        p_shift_id: targetShiftId,
+        p_observations: observations || ''
       });
       if (error) throw error;
       return data;

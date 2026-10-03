@@ -26,8 +26,14 @@ export const verifyRecordIntegrity = (record) => {
   };
 };
 
-export const hashPassword = (password) => {
-  return generateSHA256Hash(`citra_salt_${password}`);
+/**
+ * @deprecated MED-10: El almacenamiento y hash de contraseñas es gestionado de manera
+ * exclusiva y criptográficamente segura por Supabase Auth (bcrypt / Argon2id).
+ * Esta función no debe utilizarse para almacenar ni verificar credenciales.
+ */
+export const hashPassword = () => {
+  console.warn('MED-10: hashPassword está obsoleta. La autenticación es gestionada por Supabase Auth.');
+  return null;
 };
 
 const calculatedHashEquals = (h1, h2) => {
