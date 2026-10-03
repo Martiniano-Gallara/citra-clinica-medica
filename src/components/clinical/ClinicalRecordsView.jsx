@@ -58,7 +58,6 @@ export const ClinicalRecordsView = () => {
     requestClinicalAccess,
     resolveClinicalAccessRequest,
     canDoctorViewConsultation,
-    switchDoctorView,
     setIsNewConsultationModalOpen,
     setConsultationPreloadData,
     setSelectedConsultationForPrint,
@@ -285,47 +284,7 @@ export const ClinicalRecordsView = () => {
           </p>
         </div>
 
-        {/* Action buttons & Developer/Demo doctor switcher */}
-        <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          {/* Quick Doctor View Switcher to test Blanco vs other doctor */}
-          <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', padding: '3px 8px', borderRadius: '10px', border: '1px solid #cbd5e1', gap: '6px' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#475569' }}>Simular como:</span>
-            <button
-              type="button"
-              onClick={() => switchDoctorView('doc-1')}
-              style={{
-                background: isDoctorBlanco ? '#002182' : '#ffffff',
-                color: isDoctorBlanco ? '#ffffff' : '#002182',
-                border: '1px solid #cbd5e1',
-                padding: '0.25rem 0.55rem',
-                borderRadius: '6px',
-                fontSize: '0.72rem',
-                fontWeight: 800,
-                cursor: 'pointer'
-              }}
-              title="Dr. Alejandro Blanco"
-            >
-              Dr. Blanco
-            </button>
-            <button
-              type="button"
-              onClick={() => switchDoctorView('doc-2')}
-              style={{
-                background: !isDoctorBlanco && currentDoctor?.id === 'doc-2' ? '#002182' : '#ffffff',
-                color: !isDoctorBlanco && currentDoctor?.id === 'doc-2' ? '#ffffff' : '#076ABC',
-                border: '1px solid #cbd5e1',
-                padding: '0.25rem 0.55rem',
-                borderRadius: '6px',
-                fontSize: '0.72rem',
-                fontWeight: 800,
-                cursor: 'pointer'
-              }}
-              title="Dr. Lagos"
-            >
-              Dr. Lagos
-            </button>
-          </div>
-        </div>
+
       </div>
 
       {/* 2. URGENT ALERT BANNER IF PENDING ACCESS REQUESTS EXIST FOR CURRENT DOCTOR */}
