@@ -22,7 +22,8 @@ import {
   Check,
   ExternalLink,
   Layers,
-  Sparkles
+  Sparkles,
+  Tag
 } from 'lucide-react';
 import { generateSecureTempPassword } from '../../utils/cryptoAudit';
 
@@ -99,6 +100,7 @@ export const DoctorsManager = ({ initialTab }) => {
   const [editingSpecialty, setEditingSpecialty] = useState(null);
   const [specialtyName, setSpecialtyName] = useState('');
   const [specialtySelectedDocIds, setSpecialtySelectedDocIds] = useState([]);
+  const [specialtyDocSearch, setSpecialtyDocSearch] = useState('');
 
   // --- MODAL DE OBRA SOCIAL (CABECERA) ---
   const [isInsuranceModalOpen, setIsInsuranceModalOpen] = useState(false);
@@ -215,6 +217,17 @@ export const DoctorsManager = ({ initialTab }) => {
     });
   };
 
+  // Helper: Obtener iniciales profesionales
+  const getDoctorInitials = (name) => {
+    if (!name) return 'DR';
+    const clean = name.replace(/^(Dr\.|Dra\.|Lic\.)\s*/i, '').trim();
+    const parts = clean.split(' ').filter(Boolean);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return clean.substring(0, 2).toUpperCase() || 'DR';
+  };
+
   // Helper: Encontrar usuario asociado a un doctor
   const getDoctorUser = (doc) => {
     if (!doc) return null;
@@ -255,6 +268,18 @@ export const DoctorsManager = ({ initialTab }) => {
       return matchesSearch && matchesSpec;
     });
   }, [doctors, searchDocTerm, selectedSpecialtyFilter]);
+
+  // Doctores filtrados para el modal de asignación de especialidades
+  const filteredSpecialtyDoctors = useMemo(() => {
+    if (!specialtyDocSearch.trim()) return doctors;
+    const term = normalizeStr(specialtyDocSearch);
+    return doctors.filter(
+      (d) =>
+        normalizeStr(d.name).includes(term) ||
+        normalizeStr(d.specialty).includes(term) ||
+        normalizeStr(d.specialtyName).includes(term)
+    );
+  }, [doctors, specialtyDocSearch]);
 
   // Cuentas de usuarios administrativos (no médicos)
   const adminUsersList = useMemo(() => {
@@ -496,6 +521,7 @@ export const DoctorsManager = ({ initialTab }) => {
     setEditingSpecialty(null);
     setSpecialtyName('');
     setSpecialtySelectedDocIds([]);
+    setSpecialtyDocSearch('');
     setIsSpecialtyModalOpen(true);
   };
 
@@ -503,6 +529,7 @@ export const DoctorsManager = ({ initialTab }) => {
     if (!spec) return;
     setEditingSpecialty(spec);
     setSpecialtyName(spec.name || '');
+    setSpecialtyDocSearch('');
     try {
       const assigned = getDoctorsForSpecialty(spec).map((d) => d.id);
       setSpecialtySelectedDocIds(assigned || []);
@@ -2484,7 +2511,7 @@ export const DoctorsManager = ({ initialTab }) => {
       )}
 
       {/* ========================================================================= */}
-      {/* 5. MODAL DE ESPECIALIDAD (CABECERA)                                       */}
+      {/* 5. MODAL DE ESPECIALIDAD (CABECERA) - REDISEÑO PROFESIONAL               */}
       {/* ========================================================================= */}
       {isSpecialtyModalOpen && (
         <div
@@ -2492,8 +2519,9 @@ export const DoctorsManager = ({ initialTab }) => {
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0, 33, 130, 0.65)',
-            backdropFilter: 'blur(5px)',
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
             zIndex: 9999,
             display: 'flex',
             alignItems: 'center',
@@ -2508,152 +2536,443 @@ export const DoctorsManager = ({ initialTab }) => {
           <div
             style={{
               background: '#ffffff',
-              borderRadius: '20px',
+              borderRadius: '24px',
               width: '100%',
-              maxWidth: '480px',
+              maxWidth: '540px',
               maxHeight: '90vh',
-              boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+              boxShadow: '0 25px 60px -15px rgba(0, 33, 130, 0.3), 0 0 0 1px rgba(226, 232, 240, 0.8)',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column'
             }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Cabecera Luminosa con Ícono e Información */}
             <div
               style={{
-                background: '#002182',
-                color: '#ffffff',
                 padding: '1.25rem 1.5rem',
+                borderBottom: '1px solid #EDF2F7',
+                background: 'linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%)',
                 display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                gap: '1rem'
               }}
             >
-              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>
-                {editingSpecialty ? 'Editar Especialidad' : 'Nueva Especialidad'}
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #E0F2FE 0%, #DBEAFE 100%)',
+                    border: '1px solid #BAE6FD',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#076ABC',
+                    flexShrink: 0,
+                    boxShadow: '0 2px 6px rgba(7, 106, 188, 0.12)'
+                  }}
+                >
+                  <Stethoscope size={22} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.01em' }}>
+                    {editingSpecialty ? 'Editar Especialidad Médica' : 'Nueva Especialidad Médica'}
+                  </h3>
+                  <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.78rem', color: '#64748B' }}>
+                    Configure la prestación y asigne los profesionales habilitados.
+                  </p>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsSpecialtyModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: 4 }}
+                style={{
+                  background: '#F1F5F9',
+                  border: 'none',
+                  color: '#64748B',
+                  cursor: 'pointer',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#E2E8F0';
+                  e.currentTarget.style.color = '#0F172A';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#F1F5F9';
+                  e.currentTarget.style.color = '#64748B';
+                }}
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleSaveSpecialty} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-              <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }}>
-                <div style={{ marginBottom: '1.25rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#002182', marginBottom: '0.35rem' }}>
-                    Nombre de la Especialidad *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={specialtyName}
-                    onChange={(e) => setSpecialtyName(e.target.value)}
-                    placeholder="Ej: Cirugía de Cadera, Neurología..."
-                    style={{
-                      width: '100%',
-                      padding: '0.65rem 0.75rem',
-                      borderRadius: '8px',
-                      border: '1.5px solid #D2E3FC',
-                      fontSize: '0.88rem',
-                      outline: 'none',
-                      boxSizing: 'border-box'
-                    }}
-                  />
+              <div style={{ padding: '1.4rem 1.5rem', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {/* Campo: Nombre de la Especialidad */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', fontWeight: 700, color: '#1E293B' }}>
+                      <Tag size={14} color="#076ABC" />
+                      <span>Nombre de la Especialidad</span>
+                    </label>
+                    <span style={{ fontSize: '0.7rem', color: '#076ABC', fontWeight: 700, background: '#EFF6FF', padding: '0.1rem 0.45rem', borderRadius: '4px' }}>
+                      Obligatorio
+                    </span>
+                  </div>
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <Stethoscope size={16} color="#94A3B8" style={{ position: 'absolute', left: '0.9rem', pointerEvents: 'none' }} />
+                    <input
+                      type="text"
+                      required
+                      value={specialtyName}
+                      onChange={(e) => setSpecialtyName(e.target.value)}
+                      placeholder="Ej: Cirugía de Cadera, Neurología, Traumatología..."
+                      style={{
+                        width: '100%',
+                        padding: '0.7rem 0.85rem 0.7rem 2.45rem',
+                        borderRadius: '12px',
+                        border: '1.5px solid #CBD5E1',
+                        fontSize: '0.88rem',
+                        fontWeight: 600,
+                        color: '#0F172A',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                        transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+                        background: '#FAFAFC'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#076ABC';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(7, 106, 188, 0.12)';
+                        e.target.style.background = '#FFFFFF';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#CBD5E1';
+                        e.target.style.boxShadow = 'none';
+                        e.target.style.background = '#FAFAFC';
+                      }}
+                    />
+                  </div>
                 </div>
 
+                {/* Campo: Profesionales Asignados con selección inteligente */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#002182', marginBottom: '0.35rem' }}>
-                    Profesionales Asignados ({specialtySelectedDocIds.length})
-                  </label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.4rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                      <Users size={15} color="#076ABC" />
+                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1E293B' }}>
+                        Profesionales Asignados
+                      </span>
+                      <span style={{
+                        background: '#EFF6FF',
+                        color: '#076ABC',
+                        fontWeight: 800,
+                        fontSize: '0.72rem',
+                        padding: '0.12rem 0.55rem',
+                        borderRadius: '100px',
+                        border: '1px solid #BFDBFE'
+                      }}>
+                        {specialtySelectedDocIds.length} de {doctors.length}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '0.35rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => setSpecialtySelectedDocIds(doctors.map((d) => d.id))}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#076ABC',
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          padding: '0.15rem 0.35rem',
+                          borderRadius: '4px'
+                        }}
+                      >
+                        Seleccionar todos
+                      </button>
+                      <span style={{ color: '#CBD5E1', fontSize: '0.74rem' }}>•</span>
+                      <button
+                        type="button"
+                        onClick={() => setSpecialtySelectedDocIds([])}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#64748B',
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          padding: '0.15rem 0.35rem',
+                          borderRadius: '4px'
+                        }}
+                      >
+                        Ninguno
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Buscador interno si hay varios profesionales */}
+                  {doctors.length > 4 && (
+                    <div style={{ position: 'relative', marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
+                      <Search size={14} color="#94A3B8" style={{ position: 'absolute', left: '0.75rem', pointerEvents: 'none' }} />
+                      <input
+                        type="text"
+                        value={specialtyDocSearch}
+                        onChange={(e) => setSpecialtyDocSearch(e.target.value)}
+                        placeholder="Filtrar por nombre de médico o especialidad..."
+                        style={{
+                          width: '100%',
+                          padding: '0.45rem 0.75rem 0.45rem 2.1rem',
+                          borderRadius: '8px',
+                          border: '1px solid #E2E8F0',
+                          fontSize: '0.78rem',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                          background: '#F8FAFC'
+                        }}
+                      />
+                      {specialtyDocSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setSpecialtyDocSearch('')}
+                          style={{
+                            position: 'absolute',
+                            right: '0.5rem',
+                            background: 'none',
+                            border: 'none',
+                            color: '#94A3B8',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: 0
+                          }}
+                        >
+                          <X size={13} />
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Lista de médicos estilo tarjetas interactivas */}
                   <div
                     style={{
-                      border: '1.5px solid #D2E3FC',
-                      borderRadius: '10px',
-                      padding: '0.6rem',
-                      maxHeight: '180px',
+                      border: '1.5px solid #E2E8F0',
+                      borderRadius: '14px',
+                      padding: '0.5rem',
+                      maxHeight: '210px',
                       overflowY: 'auto',
-                      background: '#F8FAFE',
+                      background: '#F8FAFC',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '0.4rem'
                     }}
                   >
-                    {doctors.map((d) => {
-                      const isSel = specialtySelectedDocIds.includes(d.id);
-                      return (
-                        <label
-                          key={d.id}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '0.45rem 0.65rem',
-                            borderRadius: '6px',
-                            background: isSel ? '#EFF6FF' : '#ffffff',
-                            border: isSel ? '1px solid #BFDBFE' : '1px solid #E2E8F0',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <input
-                              type="checkbox"
-                              checked={isSel}
-                              onChange={() => toggleSpecialtyDoc(d.id)}
-                              style={{ accentColor: '#076ABC', cursor: 'pointer' }}
-                            />
-                            <span style={{ fontSize: '0.82rem', fontWeight: isSel ? 800 : 600, color: '#002182' }}>
-                              {d.name}
+                    {filteredSpecialtyDoctors.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '1.5rem', fontSize: '0.78rem', color: '#94A3B8' }}>
+                        No se encontraron profesionales que coincidan.
+                      </div>
+                    ) : (
+                      filteredSpecialtyDoctors.map((d) => {
+                        const isSel = specialtySelectedDocIds.includes(d.id);
+                        const initials = getDoctorInitials(d.name);
+                        return (
+                          <div
+                            key={d.id}
+                            onClick={() => toggleSpecialtyDoc(d.id)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '0.55rem 0.75rem',
+                              borderRadius: '10px',
+                              background: isSel ? '#EFF6FF' : '#FFFFFF',
+                              border: isSel ? '1.5px solid #93C5FD' : '1px solid #E2E8F0',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                              boxShadow: isSel ? '0 2px 5px rgba(7, 106, 188, 0.08)' : 'none'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
+                              <div
+                                style={{
+                                  width: '20px',
+                                  height: '20px',
+                                  borderRadius: '6px',
+                                  background: isSel ? '#076ABC' : '#FFFFFF',
+                                  border: isSel ? 'none' : '1.5px solid #CBD5E1',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexShrink: 0,
+                                  transition: 'all 0.15s ease'
+                                }}
+                              >
+                                {isSel && <Check size={14} color="#FFFFFF" strokeWidth={3} />}
+                              </div>
+                              <div
+                                style={{
+                                  width: '30px',
+                                  height: '30px',
+                                  borderRadius: '8px',
+                                  background: isSel ? '#DBEAFE' : '#F1F5F9',
+                                  color: isSel ? '#002182' : '#475569',
+                                  fontWeight: 800,
+                                  fontSize: '0.74rem',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexShrink: 0
+                                }}
+                              >
+                                {initials}
+                              </div>
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{
+                                  fontSize: '0.84rem',
+                                  fontWeight: isSel ? 800 : 700,
+                                  color: isSel ? '#002182' : '#1E293B',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis'
+                                }}>
+                                  {d.name}
+                                </div>
+                              </div>
+                            </div>
+
+                            <span
+                              style={{
+                                fontSize: '0.68rem',
+                                color: isSel ? '#1E40AF' : '#64748B',
+                                background: isSel ? '#DBEAFE' : '#F1F5F9',
+                                padding: '0.15rem 0.5rem',
+                                borderRadius: '6px',
+                                fontWeight: 600,
+                                whiteSpace: 'nowrap',
+                                flexShrink: 0,
+                                marginLeft: '0.5rem'
+                              }}
+                            >
+                              {d.specialty || d.specialtyName || 'Medicina General'}
                             </span>
                           </div>
-                          <span style={{ fontSize: '0.7rem', color: '#64748B' }}>
-                            {d.specialty || d.specialtyName || 'Sin especialidad'}
-                          </span>
-                        </label>
-                      );
-                    })}
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               </div>
 
+              {/* Pie de Acciones */}
               <div
                 style={{
-                  padding: '1rem 1.5rem',
-                  borderTop: '1px solid #EDF3FD',
-                  background: '#F8FAFE',
+                  padding: '1.1rem 1.5rem',
+                  borderTop: '1px solid #EDF2F7',
+                  background: '#F8FAFC',
                   display: 'flex',
                   justifyContent: 'space-between',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  gap: '0.75rem'
                 }}
               >
                 {editingSpecialty ? (
                   <button
                     type="button"
                     onClick={handleDeleteSpecialtyAction}
-                    style={{ background: 'none', border: 'none', color: '#e11d48', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                    style={{
+                      background: '#FEF2F2',
+                      border: '1px solid #FECACA',
+                      color: '#DC2626',
+                      padding: '0.5rem 0.85rem',
+                      borderRadius: '10px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#FEE2E2';
+                      e.currentTarget.style.borderColor = '#FCA5A5';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#FEF2F2';
+                      e.currentTarget.style.borderColor = '#FECACA';
+                    }}
                   >
-                    Eliminar
+                    <Trash2 size={14} />
+                    <span>Eliminar</span>
                   </button>
                 ) : (
                   <span />
                 )}
 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.6rem' }}>
                   <button
                     type="button"
                     onClick={() => setIsSpecialtyModalOpen(false)}
-                    style={{ background: '#ffffff', border: '1px solid #D2E3FC', color: '#496386', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}
+                    style={{
+                      background: '#FFFFFF',
+                      border: '1.5px solid #CBD5E1',
+                      color: '#475569',
+                      padding: '0.55rem 1.15rem',
+                      borderRadius: '10px',
+                      fontWeight: 700,
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#F1F5F9';
+                      e.currentTarget.style.borderColor = '#94A3B8';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#FFFFFF';
+                      e.currentTarget.style.borderColor = '#CBD5E1';
+                    }}
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    style={{ background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)', color: '#ffffff', border: 'none', padding: '0.5rem 1.25rem', borderRadius: '8px', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer' }}
+                    style={{
+                      background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      padding: '0.55rem 1.35rem',
+                      borderRadius: '10px',
+                      fontWeight: 800,
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      boxShadow: '0 4px 12px rgba(7, 106, 188, 0.28)',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(7, 106, 188, 0.35)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(7, 106, 188, 0.28)';
+                    }}
                   >
-                    {editingSpecialty ? 'Guardar Cambios' : 'Crear'}
+                    <Check size={16} />
+                    <span>{editingSpecialty ? 'Guardar Cambios' : 'Crear Especialidad'}</span>
                   </button>
                 </div>
               </div>
@@ -2663,7 +2982,7 @@ export const DoctorsManager = ({ initialTab }) => {
       )}
 
       {/* ========================================================================= */}
-      {/* 6. MODAL DE OBRA SOCIAL (CABECERA)                                        */}
+      {/* 6. MODAL DE OBRA SOCIAL (CABECERA) - REDISEÑO PROFESIONAL                 */}
       {/* ========================================================================= */}
       {isInsuranceModalOpen && (
         <div
@@ -2671,8 +2990,9 @@ export const DoctorsManager = ({ initialTab }) => {
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0, 33, 130, 0.65)',
-            backdropFilter: 'blur(5px)',
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
             zIndex: 9999,
             display: 'flex',
             alignItems: 'center',
@@ -2687,119 +3007,513 @@ export const DoctorsManager = ({ initialTab }) => {
           <div
             style={{
               background: '#ffffff',
-              borderRadius: '20px',
+              borderRadius: '24px',
               width: '100%',
-              maxWidth: '460px',
-              boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
-              overflow: 'hidden'
+              maxWidth: '520px',
+              maxHeight: '90vh',
+              boxShadow: '0 25px 60px -15px rgba(0, 33, 130, 0.3), 0 0 0 1px rgba(226, 232, 240, 0.8)',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column'
             }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Cabecera Luminosa con Ícono de Cobertura */}
             <div
               style={{
-                background: '#002182',
-                color: '#ffffff',
                 padding: '1.25rem 1.5rem',
+                borderBottom: '1px solid #EDF2F7',
+                background: 'linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%)',
                 display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                gap: '1rem'
               }}
             >
-              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>
-                {editingInsurance ? 'Configurar Obra Social' : 'Nueva Obra Social'}
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #DCFCE7 0%, #E0F2FE 100%)',
+                    border: '1px solid #BBF7D0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#059669',
+                    flexShrink: 0,
+                    boxShadow: '0 2px 6px rgba(5, 150, 105, 0.12)'
+                  }}
+                >
+                  <ShieldCheck size={22} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.01em' }}>
+                    {editingInsurance ? 'Configurar Obra Social / Prepaga' : 'Nueva Obra Social / Prepaga'}
+                  </h3>
+                  <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.78rem', color: '#64748B' }}>
+                    Defina las condiciones de cobertura, aranceles y planes habilitados.
+                  </p>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsInsuranceModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: 4 }}
+                style={{
+                  background: '#F1F5F9',
+                  border: 'none',
+                  color: '#64748B',
+                  cursor: 'pointer',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#E2E8F0';
+                  e.currentTarget.style.color = '#0F172A';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#F1F5F9';
+                  e.currentTarget.style.color = '#64748B';
+                }}
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveInsurance} style={{ padding: '1.5rem' }}>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                  Nombre de la Cobertura *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={insuranceName}
-                  onChange={(e) => setInsuranceName(e.target.value)}
-                  placeholder="Ej: OSDE, Swiss Medical..."
-                  style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem', marginBottom: '1rem' }}>
+            <form onSubmit={handleSaveInsurance} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              <div style={{ padding: '1.4rem 1.5rem', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
+                {/* Nombre de la Cobertura */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                    Copago ($ ARS)
-                  </label>
-                  <input
-                    type="number"
-                    value={insuranceCopay}
-                    onChange={(e) => setInsuranceCopay(e.target.value)}
-                    placeholder="0"
-                    style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
-                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', fontWeight: 700, color: '#1E293B' }}>
+                      <Shield size={14} color="#076ABC" />
+                      <span>Nombre de la Entidad o Cobertura</span>
+                    </label>
+                    <span style={{ fontSize: '0.7rem', color: '#076ABC', fontWeight: 700, background: '#EFF6FF', padding: '0.1rem 0.45rem', borderRadius: '4px' }}>
+                      Obligatorio
+                    </span>
+                  </div>
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <ShieldCheck size={16} color="#94A3B8" style={{ position: 'absolute', left: '0.9rem', pointerEvents: 'none' }} />
+                    <input
+                      type="text"
+                      required
+                      value={insuranceName}
+                      onChange={(e) => setInsuranceName(e.target.value)}
+                      placeholder="Ej: OSDE, Swiss Medical, Apross, PAMI..."
+                      style={{
+                        width: '100%',
+                        padding: '0.7rem 0.85rem 0.7rem 2.45rem',
+                        borderRadius: '12px',
+                        border: '1.5px solid #CBD5E1',
+                        fontSize: '0.88rem',
+                        fontWeight: 600,
+                        color: '#0F172A',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                        transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+                        background: '#FAFAFC'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#076ABC';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(7, 106, 188, 0.12)';
+                        e.target.style.background = '#FFFFFF';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#CBD5E1';
+                        e.target.style.boxShadow = 'none';
+                        e.target.style.background = '#FAFAFC';
+                      }}
+                    />
+                  </div>
                 </div>
 
+                {/* Dos Columnas: Copago y Estado con botón segmentado */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  {/* Copago */}
+                  <div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', fontWeight: 700, color: '#1E293B', marginBottom: '0.4rem' }}>
+                      <DollarSign size={14} color="#076ABC" />
+                      <span>Copago al Paciente</span>
+                    </label>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <span style={{ position: 'absolute', left: '0.9rem', color: '#64748B', fontWeight: 700, fontSize: '0.9rem', pointerEvents: 'none' }}>$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="100"
+                        value={insuranceCopay}
+                        onChange={(e) => setInsuranceCopay(e.target.value)}
+                        placeholder="0"
+                        style={{
+                          width: '100%',
+                          padding: '0.7rem 0.85rem 0.7rem 2.2rem',
+                          borderRadius: '12px',
+                          border: '1.5px solid #CBD5E1',
+                          fontSize: '0.88rem',
+                          fontWeight: 700,
+                          color: '#0F172A',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                          background: '#FAFAFC'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#076ABC';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(7, 106, 188, 0.12)';
+                          e.target.style.background = '#FFFFFF';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#CBD5E1';
+                          e.target.style.boxShadow = 'none';
+                          e.target.style.background = '#FAFAFC';
+                        }}
+                      />
+                    </div>
+                    <span style={{ display: 'block', fontSize: '0.71rem', color: '#64748B', marginTop: '0.3rem' }}>
+                      Monto a abonar en secretaría ($0 = 100% cubierto).
+                    </span>
+                  </div>
+
+                  {/* Estado con Selector Visual */}
+                  <div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', fontWeight: 700, color: '#1E293B', marginBottom: '0.4rem' }}>
+                      <Sparkles size={14} color="#076ABC" />
+                      <span>Estado del Convenio</span>
+                    </label>
+                    <div
+                      style={{
+                        display: 'flex',
+                        background: '#F1F5F9',
+                        padding: '0.25rem',
+                        borderRadius: '12px',
+                        border: '1.5px solid #E2E8F0',
+                        gap: '0.25rem'
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setInsuranceStatus('Activa')}
+                        style={{
+                          flex: 1,
+                          padding: '0.48rem 0.5rem',
+                          borderRadius: '9px',
+                          border: insuranceStatus === 'Activa' ? '1px solid #86EFAC' : 'none',
+                          background: insuranceStatus === 'Activa' ? '#DCFCE7' : 'transparent',
+                          color: insuranceStatus === 'Activa' ? '#166534' : '#64748B',
+                          fontWeight: insuranceStatus === 'Activa' ? 800 : 600,
+                          fontSize: '0.78rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.35rem',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: insuranceStatus === 'Activa' ? '#16A34A' : '#94A3B8' }} />
+                        Activa
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setInsuranceStatus('Inactiva')}
+                        style={{
+                          flex: 1,
+                          padding: '0.48rem 0.5rem',
+                          borderRadius: '9px',
+                          border: insuranceStatus === 'Inactiva' ? '1px solid #FCA5A5' : 'none',
+                          background: insuranceStatus === 'Inactiva' ? '#FEE2E2' : 'transparent',
+                          color: insuranceStatus === 'Inactiva' ? '#991B1B' : '#64748B',
+                          fontWeight: insuranceStatus === 'Inactiva' ? 800 : 600,
+                          fontSize: '0.78rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.35rem',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: insuranceStatus === 'Inactiva' ? '#DC2626' : '#94A3B8' }} />
+                        Inactiva
+                      </button>
+                    </div>
+                    <span style={{ display: 'block', fontSize: '0.71rem', color: '#64748B', marginTop: '0.3rem' }}>
+                      {insuranceStatus === 'Activa' ? 'Disponible para otorgar turnos.' : 'Pausada temporalmente.'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Planes Aceptados con Chips Interactivos y Presets */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                    Estado
-                  </label>
-                  <select
-                    value={insuranceStatus}
-                    onChange={(e) => setInsuranceStatus(e.target.value)}
-                    style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', background: '#ffffff', boxSizing: 'border-box' }}
-                  >
-                    <option value="Activa">Activa</option>
-                    <option value="Inactiva">Inactiva</option>
-                  </select>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', fontWeight: 700, color: '#1E293B' }}>
+                      <Layers size={14} color="#076ABC" />
+                      <span>Planes de Cobertura Habilitados</span>
+                    </label>
+                    <span style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                      Separar con comas
+                    </span>
+                  </div>
+
+                  {(() => {
+                    const parsedPlans = insurancePlansInput
+                      .split(',')
+                      .map((p) => p.trim())
+                      .filter(Boolean);
+
+                    const removePlan = (planToRemove) => {
+                      const updated = parsedPlans.filter((p) => p.toLowerCase() !== planToRemove.toLowerCase());
+                      setInsurancePlansInput(updated.join(', '));
+                    };
+
+                    const addPlanPreset = (preset) => {
+                      if (!parsedPlans.some((p) => p.toLowerCase() === preset.toLowerCase())) {
+                        const updated = [...parsedPlans, preset];
+                        setInsurancePlansInput(updated.join(', '));
+                      }
+                    };
+
+                    const presets = ['210', '310', '410', '510', 'Obligatorio', 'Voluntario', 'Particular'];
+
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {parsedPlans.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', padding: '0.45rem', background: '#F8FAFC', borderRadius: '10px', border: '1px dashed #CBD5E1' }}>
+                            {parsedPlans.map((plan, idx) => (
+                              <span
+                                key={idx}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.35rem',
+                                  background: '#EFF6FF',
+                                  border: '1px solid #BFDBFE',
+                                  color: '#1D4ED8',
+                                  fontSize: '0.76rem',
+                                  fontWeight: 700,
+                                  padding: '0.22rem 0.55rem',
+                                  borderRadius: '8px'
+                                }}
+                              >
+                                {plan}
+                                <button
+                                  type="button"
+                                  onClick={() => removePlan(plan)}
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#60A5FA',
+                                    cursor: 'pointer',
+                                    padding: 0,
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                  }}
+                                  title="Quitar plan"
+                                >
+                                  <X size={12} />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        <input
+                          type="text"
+                          value={insurancePlansInput}
+                          onChange={(e) => setInsurancePlansInput(e.target.value)}
+                          placeholder="Ej: 210, 310, 410, Obligatorio..."
+                          style={{
+                            width: '100%',
+                            padding: '0.7rem 0.85rem',
+                            borderRadius: '12px',
+                            border: '1.5px solid #CBD5E1',
+                            fontSize: '0.88rem',
+                            outline: 'none',
+                            boxSizing: 'border-box',
+                            background: '#FAFAFC',
+                            fontWeight: 600,
+                            color: '#0F172A'
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = '#076ABC';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(7, 106, 188, 0.12)';
+                            e.target.style.background = '#FFFFFF';
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = '#CBD5E1';
+                            e.target.style.boxShadow = 'none';
+                            e.target.style.background = '#FAFAFC';
+                          }}
+                        />
+
+                        {/* Atajos rápidos de planes */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 600 }}>Atajos rápidos:</span>
+                          {presets.map((preset) => {
+                            const alreadyAdded = parsedPlans.some((p) => p.toLowerCase() === preset.toLowerCase());
+                            if (alreadyAdded) return null;
+                            return (
+                              <button
+                                key={preset}
+                                type="button"
+                                onClick={() => addPlanPreset(preset)}
+                                style={{
+                                  background: '#FFFFFF',
+                                  border: '1px solid #D2E3FC',
+                                  color: '#076ABC',
+                                  fontSize: '0.7rem',
+                                  fontWeight: 700,
+                                  padding: '0.15rem 0.45rem',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.12s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.background = '#EFF6FF';
+                                  e.currentTarget.style.borderColor = '#076ABC';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background = '#FFFFFF';
+                                  e.currentTarget.style.borderColor = '#D2E3FC';
+                                }}
+                              >
+                                + {preset}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Nota de Integración */}
+                <div
+                  style={{
+                    background: '#F0F9FF',
+                    border: '1px solid #BAE6FD',
+                    borderRadius: '12px',
+                    padding: '0.75rem 0.9rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.6rem',
+                    fontSize: '0.76rem',
+                    color: '#0369A1'
+                  }}
+                >
+                  <CheckCircle2 size={16} color="#0284C7" style={{ flexShrink: 0 }} />
+                  <span>
+                    Los planes definidos aquí estarán disponibles automáticamente para los recepcionistas y médicos en la agenda de turnos.
+                  </span>
                 </div>
               </div>
 
-              <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#002182', marginBottom: '0.3rem' }}>
-                  Planes Aceptados (Separados por coma)
-                </label>
-                <input
-                  type="text"
-                  value={insurancePlansInput}
-                  onChange={(e) => setInsurancePlansInput(e.target.value)}
-                  placeholder="210, 310, 410, 510"
-                  style={{ width: '100%', padding: '0.65rem 0.75rem', borderRadius: '8px', border: '1.5px solid #D2E3FC', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {/* Pie de Acciones */}
+              <div
+                style={{
+                  padding: '1.1rem 1.5rem',
+                  borderTop: '1px solid #EDF2F7',
+                  background: '#F8FAFC',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '0.75rem'
+                }}
+              >
                 {editingInsurance ? (
                   <button
                     type="button"
                     onClick={handleDeleteInsuranceAction}
-                    style={{ background: 'none', border: 'none', color: '#e11d48', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                    style={{
+                      background: '#FEF2F2',
+                      border: '1px solid #FECACA',
+                      color: '#DC2626',
+                      padding: '0.5rem 0.85rem',
+                      borderRadius: '10px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#FEE2E2';
+                      e.currentTarget.style.borderColor = '#FCA5A5';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#FEF2F2';
+                      e.currentTarget.style.borderColor = '#FECACA';
+                    }}
                   >
-                    Eliminar
+                    <Trash2 size={14} />
+                    <span>Eliminar</span>
                   </button>
                 ) : (
                   <span />
                 )}
 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.6rem' }}>
                   <button
                     type="button"
                     onClick={() => setIsInsuranceModalOpen(false)}
-                    style={{ background: '#ffffff', border: '1px solid #D2E3FC', color: '#496386', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}
+                    style={{
+                      background: '#FFFFFF',
+                      border: '1.5px solid #CBD5E1',
+                      color: '#475569',
+                      padding: '0.55rem 1.15rem',
+                      borderRadius: '10px',
+                      fontWeight: 700,
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#F1F5F9';
+                      e.currentTarget.style.borderColor = '#94A3B8';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#FFFFFF';
+                      e.currentTarget.style.borderColor = '#CBD5E1';
+                    }}
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    style={{ background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)', color: '#ffffff', border: 'none', padding: '0.5rem 1.25rem', borderRadius: '8px', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer' }}
+                    style={{
+                      background: 'linear-gradient(135deg, #076ABC 0%, #002182 100%)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      padding: '0.55rem 1.35rem',
+                      borderRadius: '10px',
+                      fontWeight: 800,
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      boxShadow: '0 4px 12px rgba(7, 106, 188, 0.28)',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(7, 106, 188, 0.35)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(7, 106, 188, 0.28)';
+                    }}
                   >
-                    {editingInsurance ? 'Guardar Cambios' : 'Crear'}
+                    <Check size={16} />
+                    <span>{editingInsurance ? 'Guardar Cambios' : 'Crear Obra Social'}</span>
                   </button>
                 </div>
               </div>
