@@ -71,7 +71,22 @@ export const ReportsView = () => {
   } = useClinic();
 
   const [period, setPeriod] = useState('month'); // 'week', 'month', 'year'
-  const [viewScope, setViewScope] = useState('individual'); // 'individual' | 'general'
+  const [viewScope, setViewScope] = useState(() => {
+    try {
+      return localStorage.getItem('citra_reports_view_scope') || 'general';
+    } catch {
+      return 'general';
+    }
+  });
+
+  const handleSetViewScope = (newScope) => {
+    setViewScope(newScope);
+    try {
+      localStorage.setItem('citra_reports_view_scope', newScope);
+    } catch {
+      // ignore
+    }
+  };
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   // El selector de métricas globales de la clínica solo está habilitado para el Dr. Blanco
@@ -442,7 +457,7 @@ export const ReportsView = () => {
 
   if (shouldRenderDoctorIndividual) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%' }}>
+      <div className="reports-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%', maxWidth: '1440px', margin: '0 auto', boxSizing: 'border-box' }}>
         {/* 1. TOP HEADER: SIN TEXTO INÚTIL, PROFESIONAL Y DIRECTO */}
         <div
           style={{
@@ -489,7 +504,7 @@ export const ReportsView = () => {
               >
                 <button
                   type="button"
-                  onClick={() => setViewScope('individual')}
+                  onClick={() => handleSetViewScope('individual')}
                   style={{
                     padding: '0.45rem 0.95rem',
                     borderRadius: '8px',
@@ -506,7 +521,7 @@ export const ReportsView = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setViewScope('general')}
+                  onClick={() => handleSetViewScope('general')}
                   style={{
                     padding: '0.45rem 0.95rem',
                     borderRadius: '8px',
@@ -767,10 +782,13 @@ export const ReportsView = () => {
 
         {/* 3. ROW 1: CHARTS (LEFT: EVOLUCIÓN HISTÓRICA; RIGHT: PREPAGAS & OBRAS SOCIALES) */}
         <div
+          className="reports-charts-grid"
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-            gap: '1.25rem'
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: '1.25rem',
+            width: '100%',
+            boxSizing: 'border-box'
           }}
         >
           {/* Chart Left: Línea de Evolución de Honorarios Netos */}
@@ -941,10 +959,13 @@ export const ReportsView = () => {
 
         {/* 4. ROW 2: PRACTICE INTELLIGENCE & AGENDA OCCUPANCY */}
         <div
+          className="reports-charts-grid"
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-            gap: '1.25rem'
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: '1.25rem',
+            width: '100%',
+            boxSizing: 'border-box'
           }}
         >
           {/* Practice Intelligence: Nomenclador Traumatológico */}
@@ -1296,7 +1317,7 @@ export const ReportsView = () => {
             >
               <button
                 type="button"
-                onClick={() => setViewScope('individual')}
+                onClick={() => handleSetViewScope('individual')}
                 style={{
                   padding: '0.45rem 0.95rem',
                   borderRadius: '8px',
@@ -1313,7 +1334,7 @@ export const ReportsView = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setViewScope('general')}
+                onClick={() => handleSetViewScope('general')}
                 style={{
                   padding: '0.45rem 0.95rem',
                   borderRadius: '8px',
@@ -1455,7 +1476,7 @@ export const ReportsView = () => {
 
       {/* Row 1: Revenue Line Chart (Dr. Blanco only) + Insurance Doughnut */}
       <div
-        className="reports-charts-grid"
+        className={`reports-charts-grid ${!isDoctor ? 'single-column' : ''}`}
         style={{
           display: 'grid',
           gridTemplateColumns: isDoctor ? 'repeat(2, minmax(0, 1fr))' : 'minmax(0, 1fr)',
@@ -1513,7 +1534,7 @@ export const ReportsView = () => {
               position: 'relative'
             }}
           >
-            <div style={{ width: '100%', height: '100%', maxWidth: '340px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '100%', height: '100%', maxWidth: '320px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Doughnut
                 data={insuranceDoughnutData}
                 options={{

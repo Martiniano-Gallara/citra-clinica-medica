@@ -572,8 +572,31 @@ button, input, select, textarea {
   }
 }
 
+.reports-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.reports-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.reports-charts-grid.single-column {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 @media (max-width: 992px) {
-  .reports-charts-grid {
+  .reports-charts-grid,
+  .reports-charts-grid.single-column {
     grid-template-columns: 1fr !important;
   }
 }
