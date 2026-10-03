@@ -19,12 +19,14 @@ import {
 import { Badge } from '../common/Badge';
 import { PrescriptionDigitalModal } from '../clinical/PrescriptionDigitalModal';
 import { AppointmentModal } from '../agenda/AppointmentModal';
+import { dataService } from '../../services/dataService';
 
 export const PatientPortalView = () => {
   const {
     currentPortalPatient,
     setCurrentPortalPatient,
     patients,
+    doctors,
     appointments,
     electronicPrescriptions,
     consultations,
@@ -182,6 +184,26 @@ export const PatientPortalView = () => {
     addToast('Solicitud Registrada', 'Se ha generado la constancia formal de entrega de copia de Historia Clínica dentro de las 48 hs hábiles.', 'success');
   };
 
+  const handleDownloadFile = async (file) => {
+    try {
+      if (file.url) {
+        window.open(file.url, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      const bucket = file.bucket || 'medical-records';
+      const path = file.path || file.storagePath || file.name;
+      const signedUrl = await dataService.getSignedMedicalUrl(bucket, path, 300);
+      if (signedUrl) {
+        window.open(signedUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        addToast('Descarga no disponible', `No se pudo generar el enlace seguro de descarga para ${file.name}.`, 'error');
+      }
+    } catch (err) {
+      console.error('Error al descargar archivo:', err);
+      addToast('Error al descargar', 'Ocurrió un error al intentar acceder al archivo.', 'error');
+    }
+  };
+
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '3rem' }}>
       <PrescriptionDigitalModal />
@@ -321,40 +343,56 @@ export const PatientPortalView = () => {
                 No tienes turnos agendados en este momento.
               </div>
             ) : (
-              myAppointments.map((app) => (
-                <div
-                  key={app.id}
-                  className="card"
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '1.25rem'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                    <div style={{ background: '#EBF3FD', color: '#076ABC', padding: '0.85rem', borderRadius: '12px', textAlign: 'center', minWidth: '75px' }}>
-                      <div style={{ fontSize: '1.2rem', fontWeight: 900 }}>{app.date.split('-')[2]}</div>
-                      <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>Ago 2026</div>
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#002182' }}>
-                        {app.doctorName} — {app.specialtyName}
-                      </div>
-                      <div style={{ fontSize: '0.84rem', color: '#496386', marginTop: '2px' }}>
-                        Horario: {app.time} hs
-                      </div>
-                      <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
-                        Motivo: {app.reason}
-                      </div>
-                    </div>
-                  </div>
+              myAppointments.map((app) => {
+                const dateParts = (app.date || '').split('-');
+                const dayStr = dateParts[2] || '--';
+                const monthStr = app.date
+                  ? (() => {
+                      const [y, m, d] = dateParts.map(Number);
+                      const dObj = new Date(y, (m || 1) - 1, d || 1);
+                      return isNaN(dObj.getTime())
+                        ? ''
+                        : dObj.toLocaleDateString('es-AR', { month: 'short', year: 'numeric' });
+                    })()
+                  : '';
+                const doc = doctors?.find((d) => d.id === app.doctorId || d.name === app.doctorName);
+                const specialty = app.specialtyName || app.specialty || doc?.specialty || 'Consulta Médica';
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <Badge status={app.status} />
+                return (
+                  <div
+                    key={app.id}
+                    className="card"
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '1.25rem'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                      <div style={{ background: '#EBF3FD', color: '#076ABC', padding: '0.85rem', borderRadius: '12px', textAlign: 'center', minWidth: '75px' }}>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 900 }}>{dayStr}</div>
+                        <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>{monthStr}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#002182' }}>
+                          {app.doctorName} — {specialty}
+                        </div>
+                        <div style={{ fontSize: '0.84rem', color: '#496386', marginTop: '2px' }}>
+                          Horario: {app.time} hs
+                        </div>
+                        <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                          Motivo: {app.reason}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <Badge status={app.status} />
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -453,7 +491,7 @@ export const PatientPortalView = () => {
               <button
                 className="btn btn-secondary btn-icon"
                 title="Descargar archivo"
-                onClick={() => alert(`Descargando copia segura de ${file.name}...`)}
+                onClick={() => handleDownloadFile(file)}
               >
                 <Download size={16} />
               </button>

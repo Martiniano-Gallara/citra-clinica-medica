@@ -76,6 +76,7 @@ export const AppointmentBookingWizard = () => {
 
   // Created appointment result
   const [confirmedAppointment, setConfirmedAppointment] = useState(null);
+  const [isBookingSubmitting, setIsBookingSubmitting] = useState(false);
 
   // Pre-selection initialization from external triggers
   useEffect(() => {
@@ -259,13 +260,15 @@ export const AppointmentBookingWizard = () => {
   };
 
   // Handle finalize booking
-  const handleConfirmBooking = (e) => {
+  const handleConfirmBooking = async (e) => {
     e.preventDefault();
 
     if (!patientName.trim() || !patientDni.trim() || !patientEmail.trim()) {
       addToast('Datos requeridos', 'Completá tu nombre, DNI y correo electrónico.', 'warning');
       return;
     }
+
+    if (isBookingSubmitting) return;
 
     let assignedDoctor = selectedDoctor && selectedDoctor.id !== 'any' ? selectedDoctor : null;
     if (!assignedDoctor) {
@@ -310,9 +313,17 @@ export const AppointmentBookingWizard = () => {
       bookingCode: `CITRA-${Math.floor(10000 + Math.random() * 90000)}`
     };
 
-    const created = addAppointment(newAppointmentData);
-    setConfirmedAppointment(created || newAppointmentData);
-    setCurrentStep(5);
+    setIsBookingSubmitting(true);
+    try {
+      const created = await addAppointment(newAppointmentData);
+      setConfirmedAppointment(created || newAppointmentData);
+      setCurrentStep(5);
+    } catch (err) {
+      console.error('Error al persistir reserva de turno:', err);
+      addToast('Error al reservar', err?.message || 'No se pudo registrar el turno en el servidor. Por favor reintente.', 'error');
+    } finally {
+      setIsBookingSubmitting(false);
+    }
   };
 
   const handlePrint = () => {
@@ -1266,27 +1277,29 @@ export const AppointmentBookingWizard = () => {
 
                     <button
                       type="submit"
+                      disabled={isBookingSubmitting}
                       style={{
                         width: '100%',
-                        background: 'linear-gradient(135deg, #257CE6 0%, #076ABC 100%)',
+                        background: isBookingSubmitting ? '#94a3b8' : 'linear-gradient(135deg, #257CE6 0%, #076ABC 100%)',
                         color: '#ffffff',
                         border: 'none',
                         padding: '0.9rem',
                         borderRadius: '12px',
                         fontWeight: 900,
                         fontSize: '0.98rem',
-                        cursor: 'pointer',
+                        cursor: isBookingSubmitting ? 'not-allowed' : 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '0.55rem',
-                        boxShadow: '0 6px 18px rgba(7, 106, 188, 0.35)',
+                        boxShadow: isBookingSubmitting ? 'none' : '0 6px 18px rgba(7, 106, 188, 0.35)',
                         minHeight: '48px',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        opacity: isBookingSubmitting ? 0.75 : 1
                       }}
                     >
                       <CheckCircle2 size={18} />
-                      Confirmar y Reservar Turno
+                      {isBookingSubmitting ? 'Confirmando Reserva...' : 'Confirmar y Reservar Turno'}
                     </button>
                   </div>
                 </div>
