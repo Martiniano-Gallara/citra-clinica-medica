@@ -398,33 +398,33 @@ export const ClinicalRecordsView = () => {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: '1.15rem'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '0.85rem'
         }}
       >
         {/* KPI 1: Historias Clínicas (Pacientes) */}
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '16px',
+            borderRadius: '13px',
             border: '1.5px solid #D2E3FC',
-            borderLeft: '4px solid #076ABC',
-            padding: '1.25rem 1.4rem',
-            boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+            borderLeft: '3.5px solid #076ABC',
+            padding: '0.75rem 1.1rem',
+            boxShadow: '0 2px 8px rgba(0, 33, 130, 0.03)'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
-            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#076ABC', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Historias Clínicas
             </span>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#EBF3FD', color: '#076ABC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <FolderOpen size={18} />
+            <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: '#EBF3FD', color: '#076ABC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <FolderOpen size={16} />
             </div>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 900, color: '#002182', marginBottom: '0.2rem', lineHeight: 1 }}>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#002182', marginBottom: '0.1rem', lineHeight: 1 }}>
             {effectivePatients.length}
           </div>
-          <div style={{ fontSize: '0.76rem', color: '#64748b' }}>
+          <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
             {isDoctorBlanco ? 'Todos los pacientes de CITRA' : 'Pacientes vinculados a su atención'}
           </div>
         </div>
@@ -433,25 +433,25 @@ export const ClinicalRecordsView = () => {
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '16px',
+            borderRadius: '13px',
             border: '1.5px solid #D2E3FC',
-            borderLeft: '4px solid #059669',
-            padding: '1.25rem 1.4rem',
-            boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)'
+            borderLeft: '3.5px solid #059669',
+            padding: '0.75rem 1.1rem',
+            boxShadow: '0 2px 8px rgba(0, 33, 130, 0.03)'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
-            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Atenciones en CITRA
             </span>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Stethoscope size={18} />
+            <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Stethoscope size={16} />
             </div>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.2rem', lineHeight: 1 }}>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.1rem', lineHeight: 1 }}>
             {allAvailableConsultations.length}
           </div>
-          <div style={{ fontSize: '0.76rem', color: '#059669', fontWeight: 700 }}>
+          <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 700 }}>
             {todayConsultationsCount} registradas hoy
           </div>
         </div>
@@ -461,26 +461,26 @@ export const ClinicalRecordsView = () => {
           onClick={() => setActiveSubTab('requests')}
           style={{
             background: pendingRequestsForMe.length > 0 ? '#fff1f2' : '#ffffff',
-            borderRadius: '16px',
+            borderRadius: '13px',
             border: pendingRequestsForMe.length > 0 ? '1.5px solid #fecdd3' : '1.5px solid #D2E3FC',
-            borderLeft: pendingRequestsForMe.length > 0 ? '4px solid #e11d48' : '4px solid #7c3aed',
-            padding: '1.25rem 1.4rem',
-            boxShadow: '0 4px 14px rgba(0, 33, 130, 0.04)',
+            borderLeft: pendingRequestsForMe.length > 0 ? '3.5px solid #e11d48' : '3.5px solid #7c3aed',
+            padding: '0.75rem 1.1rem',
+            boxShadow: '0 2px 8px rgba(0, 33, 130, 0.03)',
             cursor: 'pointer'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
-            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: pendingRequestsForMe.length > 0 ? '#be123c' : '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: pendingRequestsForMe.length > 0 ? '#be123c' : '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Solicitudes de Acceso
             </span>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: pendingRequestsForMe.length > 0 ? '#ffe4e6' : '#f5f3ff', color: pendingRequestsForMe.length > 0 ? '#e11d48' : '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ShieldCheck size={18} />
+            <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: pendingRequestsForMe.length > 0 ? '#ffe4e6' : '#f5f3ff', color: pendingRequestsForMe.length > 0 ? '#e11d48' : '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ShieldCheck size={16} />
             </div>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 900, color: pendingRequestsForMe.length > 0 ? '#9f1239' : '#0f172a', marginBottom: '0.2rem', lineHeight: 1 }}>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: pendingRequestsForMe.length > 0 ? '#9f1239' : '#0f172a', marginBottom: '0.1rem', lineHeight: 1 }}>
             {pendingRequestsForMe.length}
           </div>
-          <div style={{ fontSize: '0.76rem', color: pendingRequestsForMe.length > 0 ? '#be123c' : '#64748b', fontWeight: 700 }}>
+          <div style={{ fontSize: '0.72rem', color: pendingRequestsForMe.length > 0 ? '#be123c' : '#64748b', fontWeight: 700 }}>
             {pendingRequestsForMe.length > 0
               ? 'Requieren doble autorización urgente'
               : isDoctorBlanco
