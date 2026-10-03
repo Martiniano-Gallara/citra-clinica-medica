@@ -494,36 +494,49 @@ export const ClinicalRecordsView = () => {
       <div
         style={{
           background: '#ffffff',
-          borderRadius: '14px',
-          border: '1px solid #e2e8f0',
-          padding: '0.75rem 1.25rem',
+          borderRadius: '16px',
+          border: '1.5px solid #D2E3FC',
+          padding: '0.85rem 1.25rem',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
-          gap: '1rem'
+          gap: '1rem',
+          boxShadow: '0 2px 10px rgba(0, 33, 130, 0.03)'
         }}
       >
         {/* Tabs: Historias Clínicas por Paciente / Cronología / Solicitudes */}
-        <div style={{ display: 'flex', background: '#f1f5f9', padding: '3px', borderRadius: '10px', gap: '3px' }}>
+        <div
+          style={{
+            display: 'flex',
+            background: '#F1F5F9',
+            padding: '3px',
+            borderRadius: '11px',
+            gap: '3px',
+            border: '1px solid #E2E8F0',
+            flexShrink: 0
+          }}
+        >
           <button
             type="button"
             onClick={() => setActiveSubTab('patients')}
             style={{
-              background: activeSubTab === 'patients' ? '#002182' : 'transparent',
-              color: activeSubTab === 'patients' ? '#ffffff' : '#475569',
-              border: 'none',
+              background: activeSubTab === 'patients' ? 'linear-gradient(135deg, #002182 0%, #076ABC 100%)' : '#ffffff',
+              color: activeSubTab === 'patients' ? '#ffffff' : '#334155',
+              border: activeSubTab === 'patients' ? '1px solid #002182' : '1px solid #CBD5E1',
               borderRadius: '8px',
-              padding: '0.45rem 0.95rem',
+              padding: '0.45rem 0.85rem',
               fontSize: '0.82rem',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '6px',
+              boxShadow: activeSubTab === 'patients' ? '0 2px 8px rgba(0, 33, 130, 0.28)' : '0 1px 2px rgba(0, 0, 0, 0.04)',
+              transition: 'all 0.15s ease'
             }}
           >
-            <FolderOpen size={15} />
+            <FolderOpen size={15} color={activeSubTab === 'patients' ? '#ffffff' : '#076ABC'} />
             <span>Historias Clínicas ({effectivePatients.length})</span>
           </button>
 
@@ -531,20 +544,22 @@ export const ClinicalRecordsView = () => {
             type="button"
             onClick={() => setActiveSubTab('timeline')}
             style={{
-              background: activeSubTab === 'timeline' ? '#002182' : 'transparent',
-              color: activeSubTab === 'timeline' ? '#ffffff' : '#475569',
-              border: 'none',
+              background: activeSubTab === 'timeline' ? 'linear-gradient(135deg, #002182 0%, #076ABC 100%)' : '#ffffff',
+              color: activeSubTab === 'timeline' ? '#ffffff' : '#334155',
+              border: activeSubTab === 'timeline' ? '1px solid #002182' : '1px solid #CBD5E1',
               borderRadius: '8px',
-              padding: '0.45rem 0.95rem',
+              padding: '0.45rem 0.85rem',
               fontSize: '0.82rem',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '6px',
+              boxShadow: activeSubTab === 'timeline' ? '0 2px 8px rgba(0, 33, 130, 0.28)' : '0 1px 2px rgba(0, 0, 0, 0.04)',
+              transition: 'all 0.15s ease'
             }}
           >
-            <FileText size={15} />
+            <FileText size={15} color={activeSubTab === 'timeline' ? '#ffffff' : '#076ABC'} />
             <span>Todas las Atenciones ({allAvailableConsultations.length})</span>
           </button>
 
@@ -552,21 +567,23 @@ export const ClinicalRecordsView = () => {
             type="button"
             onClick={() => setActiveSubTab('requests')}
             style={{
-              background: activeSubTab === 'requests' ? '#002182' : 'transparent',
-              color: activeSubTab === 'requests' ? '#ffffff' : '#475569',
-              border: 'none',
+              background: activeSubTab === 'requests' ? 'linear-gradient(135deg, #002182 0%, #076ABC 100%)' : '#ffffff',
+              color: activeSubTab === 'requests' ? '#ffffff' : '#334155',
+              border: activeSubTab === 'requests' ? '1px solid #002182' : '1px solid #CBD5E1',
               borderRadius: '8px',
-              padding: '0.45rem 0.95rem',
+              padding: '0.45rem 0.85rem',
               fontSize: '0.82rem',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              position: 'relative'
+              position: 'relative',
+              boxShadow: activeSubTab === 'requests' ? '0 2px 8px rgba(0, 33, 130, 0.28)' : '0 1px 2px rgba(0, 0, 0, 0.04)',
+              transition: 'all 0.15s ease'
             }}
           >
-            <ShieldCheck size={15} />
+            <ShieldCheck size={15} color={activeSubTab === 'requests' ? '#ffffff' : '#7c3aed'} />
             <span>Solicitudes de Acceso</span>
             {pendingRequestsForMe.length > 0 && (
               <span
@@ -576,7 +593,8 @@ export const ClinicalRecordsView = () => {
                   borderRadius: '100px',
                   fontSize: '0.68rem',
                   padding: '1px 6px',
-                  fontWeight: 900
+                  fontWeight: 900,
+                  boxShadow: '0 1px 4px rgba(239, 68, 68, 0.4)'
                 }}
               >
                 {pendingRequestsForMe.length}
@@ -585,24 +603,118 @@ export const ClinicalRecordsView = () => {
           </button>
         </div>
 
-        {/* Search input */}
-        <div style={{ position: 'relative', flex: 1, minWidth: '240px', maxWidth: '420px' }}>
-          <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-          <input
-            type="text"
-            placeholder="Buscar por paciente, DNI o diagnóstico CIE-10..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+        {/* Búsqueda de pacientes alargada y botón resaltado */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            flex: 1,
+            minWidth: '240px',
+            maxWidth: '560px'
+          }}
+        >
+          <div style={{ position: 'relative', flex: 1 }}>
+            <Search
+              size={17}
+              style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#076ABC',
+                pointerEvents: 'none'
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Buscar por paciente, DNI o diagnóstico CIE-10..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.52rem 2.2rem 0.52rem 2.35rem',
+                borderRadius: '10px',
+                border: '1.5px solid #C5DCFA',
+                fontSize: '0.84rem',
+                outline: 'none',
+                background: '#F5F8FE',
+                color: '#0f172a',
+                boxSizing: 'border-box',
+                transition: 'all 0.15s ease',
+                boxShadow: 'inset 0 1px 2px rgba(0, 33, 130, 0.03)'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#076ABC';
+                e.target.style.background = '#ffffff';
+                e.target.style.boxShadow = '0 0 0 3px rgba(7, 106, 188, 0.15)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#C5DCFA';
+                e.target.style.background = '#F5F8FE';
+                e.target.style.boxShadow = 'inset 0 1px 2px rgba(0, 33, 130, 0.03)';
+              }}
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                title="Limpiar búsqueda"
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: '#e2e8f0',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '18px',
+                  height: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#475569',
+                  cursor: 'pointer',
+                  padding: 0
+                }}
+              >
+                <X size={11} />
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            title="Buscar en historias clínicas"
             style={{
-              width: '100%',
-              padding: '0.5rem 0.75rem 0.5rem 2.25rem',
-              borderRadius: '8px',
-              border: '1px solid #cbd5e1',
-              fontSize: '0.82rem',
-              outline: 'none',
-              boxSizing: 'border-box'
+              background: 'linear-gradient(135deg, #002182 0%, #076ABC 100%)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '10px',
+              padding: '0.58rem 1.25rem',
+              fontSize: '0.84rem',
+              fontWeight: 800,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0, 33, 130, 0.22)',
+              transition: 'all 0.15s ease',
+              whiteSpace: 'nowrap',
+              flexShrink: 0
             }}
-          />
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 33, 130, 0.32)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 33, 130, 0.22)';
+            }}
+          >
+            <Search size={15} />
+            <span>Buscar</span>
+          </button>
         </div>
       </div>
 
