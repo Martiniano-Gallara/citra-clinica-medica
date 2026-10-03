@@ -232,31 +232,24 @@ export const dataService = {
     return null;
   },
 
-  async deleteAppointment(id) {
+  async deleteAppointment(id, cancelReason = 'Cancelado por administración / profesional') {
     if (isSupabaseConfigured && supabase) {
-      // Por auditoría clínica y restricciones FK (M-04), cancelar en vez de borrar si tiene historial
-      try {
-        const { data: cons } = await supabase
-          .from('consultations')
-          .select('id')
-          .eq('appointment_id', id)
-          .limit(1);
-        if (cons && cons.length > 0) {
-          return await this.cancelAppointment(id, 'Cancelado (preservado por consulta médica asociada)');
-        }
-        const { error } = await supabase
-          .from('appointments')
-          .delete()
-          .eq('id', id);
-        if (error) {
-          return await this.cancelAppointment(id, 'Cancelado');
-        }
-        return true;
-      } catch {
-        return await this.cancelAppointment(id, 'Cancelado tras excepción de integridad');
-      }
+      // Inmutabilidad asistencial (CRIT-02): la baja de turnos es lógica (status = 'cancelado')
+      const { data, error } = await supabase
+        .from('appointments')
+        .update({
+          status: 'cancelado',
+          cancel_reason: cancelReason,
+          cancelled_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return toCamelCase(data);
     }
-    return false;
+    return true;
   },
 
   // --- HISTORIA CLÍNICA & CONSULTAS (CONSULTATIONS) ---
@@ -520,17 +513,10 @@ export const dataService = {
       if (updates.insuranceNumber !== undefined) payload.insurance_number = updates.insuranceNumber;
       if (updates.avatar !== undefined || updates.avatarUrl !== undefined) payload.avatar_url = updates.avatarUrl || updates.avatar;
       if (updates.active !== undefined || updates.isActive !== undefined) payload.is_active = (updates.isActive ?? updates.active);
+      if (updates.deletedAt !== undefined) payload.deleted_at = updates.deletedAt;
+      if (Array.isArray(updates.assignedDoctorIds)) payload.assigned_doctor_ids = updates.assignedDoctorIds;
 
-      if (Array.isArray(updates.assignedDoctorIds)) {
-        try {
-          await supabase
-            .from('patients')
-            .update({ assigned_doctor_ids: updates.assignedDoctorIds })
-            .eq('id', id);
-        } catch {
-          // Ignorar error si la columna no existe en la base de datos remota
-        }
-      }
+      payload.updated_at = new Date().toISOString();
 
       const { data, error } = await supabase
         .from('patients')
@@ -546,17 +532,21 @@ export const dataService = {
 
   async deletePatient(id) {
     if (isSupabaseConfigured && supabase) {
-      // Archivado lógico auditado (Ley 26.529 / T12): los antecedentes clínicos no se borran físicamente
+      // Archivado lógico auditado (Ley 26.529 / CRIT-01): los antecedentes clínicos no se borran físicamente
       const { data, error } = await supabase
         .from('patients')
-        .update({ is_active: false })
+        .update({
+          is_active: false,
+          deleted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
         .select()
         .single();
       if (error) throw error;
       return toCamelCase(data);
     }
-    return false;
+    return true;
   },
 
   // --- CUERPO MÉDICO (DOCTORS / A-01: Soporte de Vista Pública) ---
@@ -658,14 +648,21 @@ export const dataService = {
 
   async deleteDoctor(id) {
     if (isSupabaseConfigured && supabase) {
-      const { error } = await supabase
+      // Inmutabilidad profesional (CRIT-02): baja lógica para preservar historial asistencial
+      const { data, error } = await supabase
         .from('doctors')
-        .delete()
-        .eq('id', id);
+        .update({
+          is_active: false,
+          deleted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
       if (error) throw error;
-      return true;
+      return toCamelCase(data);
     }
-    return false;
+    return true;
   },
 
   // --- ESPECIALIDADES, CONSULTORIOS Y OBRAS SOCIALES ---
@@ -1119,11 +1116,16 @@ export const dataService = {
 
   async deleteRehabPlan(id) {
     if (isSupabaseConfigured && supabase) {
-      const { error } = await supabase.from('rehab_plans').delete().eq('id', id);
+      const { data, error } = await supabase
+        .from('rehab_plans')
+        .update({ status: 'cancelado' })
+        .eq('id', id)
+        .select()
+        .single();
       if (error) throw error;
-      return true;
+      return toCamelCase(data);
     }
-    return false;
+    return true;
   },
 
   async fetchRehabSessions(planId = null, patientId = null) {
@@ -1188,11 +1190,16 @@ export const dataService = {
 
   async deleteRehabSession(id) {
     if (isSupabaseConfigured && supabase) {
-      const { error } = await supabase.from('rehab_sessions').delete().eq('id', id);
+      const { data, error } = await supabase
+        .from('rehab_sessions')
+        .update({ patient_tolerance: 'Cancelada / Anulada' })
+        .eq('id', id)
+        .select()
+        .single();
       if (error) throw error;
-      return true;
+      return toCamelCase(data);
     }
-    return false;
+    return true;
   },
 
   // --- AUDITORÍA INMUTABLE (AUDIT LOGS - LEY 25.326 / M-06) ---

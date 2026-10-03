@@ -849,6 +849,13 @@ export const ClinicProvider = ({ children }) => {
         if (rpcResult?.integrityHash) {
           finalizedRecord.integrityHash = rpcResult.integrityHash;
         }
+
+        // Persistir estudios de diagnóstico e imágenes en Supabase (CRIT-03)
+        if (studiesToInsert.length > 0) {
+          for (const study of studiesToInsert) {
+            await dataService.createImagingStudy(study);
+          }
+        }
       } catch (err) {
         console.error('Error sincronizando consulta médica con Supabase Cloud:', err);
         addToast(
@@ -1333,7 +1340,7 @@ export const ClinicProvider = ({ children }) => {
     logAudit('STATUS_CHANGE', 'Turnos', '-', `Turno ${id} pasó a estado: ${newStatus}`);
   };
 
-  const addPatient = (patientData) => {
+  const addPatient = async (patientData) => {
     const newId = `pat-${Date.now()}`;
     const newPat = {
       id: newId,
@@ -1345,17 +1352,25 @@ export const ClinicProvider = ({ children }) => {
     };
     setPatients((prev) => [newPat, ...prev]);
     if (dataService.isLive()) {
-      dataService.createPatient(newPat).catch((err) => {
+      try {
+        await dataService.createPatient(newPat);
+      } catch (err) {
         console.error('Error al dar de alta paciente:', err);
+        setPatients((prev) => prev.filter((p) => p.id !== newId));
         addToast('Error de Sincronización', 'No se pudo guardar el paciente en el servidor: ' + (err.message || ''), 'error');
-      });
+        throw err;
+      }
     }
     logAudit('CREATE', 'Padrón de Pacientes', patientData.dni, `Alta de paciente ${newPat.name}`);
     addToast('Paciente Registrado', `${newPat.name} ha sido dado de alta exitosamente.`, 'success');
     return newPat;
   };
 
-  const updatePatient = (id, updatedData) => {
+  const updatePatient = async (id, updatedData) => {
+    const previousPatients = patients;
+    const previousAuthPatient = authPatient;
+    const previousPortalPatient = currentPortalPatient;
+
     setPatients((prev) =>
       prev.map((pat) => (pat.id === id ? { ...pat, ...updatedData } : pat))
     );
@@ -1364,16 +1379,23 @@ export const ClinicProvider = ({ children }) => {
       setCurrentPortalPatient((prev) => ({ ...prev, ...updatedData }));
     }
     if (dataService.isLive()) {
-      dataService.updatePatient(id, updatedData).catch((err) => {
+      try {
+        await dataService.updatePatient(id, updatedData);
+      } catch (err) {
         console.error('Error al actualizar paciente:', err);
+        setPatients(previousPatients);
+        setAuthPatient(previousAuthPatient);
+        setCurrentPortalPatient(previousPortalPatient);
         addToast('Error de Sincronización', 'No se pudo actualizar la ficha del paciente en el servidor: ' + (err.message || ''), 'error');
-      });
+        throw err;
+      }
     }
     logAudit('UPDATE', 'Padrón de Pacientes', updatedData.dni || '-', `Actualización de datos del paciente.`);
     addToast('Ficha Actualizada', 'Datos del paciente guardados.', 'success');
   };
 
-  const addPatientFile = (patientId, fileObj) => {
+  const addPatientFile = async (patientId, fileObj) => {
+    const previousPatients = patients;
     let updatedFiles = [];
     setPatients((prev) =>
       prev.map((pat) => {
@@ -1386,19 +1408,24 @@ export const ClinicProvider = ({ children }) => {
       })
     );
     if (dataService.isLive()) {
-      dataService.updatePatient(patientId, { files: updatedFiles }).catch((err) => {
+      try {
+        await dataService.updatePatient(patientId, { files: updatedFiles });
+      } catch (err) {
         console.error('Error al persistir adjunto en Supabase:', err);
-        addToast('Aviso de Persistencia', 'El archivo se cargó pero falló la vinculación con el paciente: ' + (err.message || ''), 'warning');
-      });
+        setPatients(previousPatients);
+        addToast('Aviso de Persistencia', 'El archivo no se pudo sincronizar en el servidor: ' + (err.message || ''), 'error');
+        throw err;
+      }
     }
     logAudit('CREATE', 'Archivo Clínico', patientId, `Se adjuntó el archivo ${fileObj.name} a la ficha del paciente.`);
     addToast('Estudio Adjuntado', `El archivo ${fileObj.name} fue incorporado a la Historia Clínica.`, 'success');
   };
 
-  const deletePatient = (patientId) => {
+  const deletePatient = async (patientId) => {
     const pat = patients.find((p) => p.id === patientId);
     if (!pat) return;
 
+    const previousPatients = patients;
     // Archivado lógico auditado conforme Ley 26.529 Art. 18 y T12 (custodia obligatoria de antecedentes)
     setPatients((prev) =>
       prev.map((p) =>
@@ -1408,10 +1435,14 @@ export const ClinicProvider = ({ children }) => {
       )
     );
     if (dataService.isLive()) {
-      dataService.deletePatient(patientId).catch((err) => {
+      try {
+        await dataService.deletePatient(patientId);
+      } catch (err) {
         console.error('Error al archivar paciente:', err);
+        setPatients(previousPatients);
         addToast('Error de Sincronización', 'No se pudo archivar la ficha en el servidor: ' + (err.message || ''), 'error');
-      });
+        throw err;
+      }
     }
     logAudit('ARCHIVE', 'Padrón de Pacientes', pat.dni || '-', `Ficha archivada lógicamente conforme Ley 26.529 para ${pat.name}`);
     addToast('Ficha Archivada', `La ficha de ${pat.name} fue archivada lógicamente. Sus antecedentes clínicos quedan preservados por Ley 26.529.`, 'info');
@@ -1898,54 +1929,69 @@ export const ClinicProvider = ({ children }) => {
   };
 
   // --- GESTIÓN DE TURNOS AVANZADA ---
-  const cancelAppointment = (id, reason = 'Cancelado por el paciente') => {
+  const cancelAppointment = async (id, reason = 'Cancelado por el paciente') => {
+    const previousAppointments = appointments;
     setAppointments((prev) =>
-      prev.map((app) => (app.id === id ? { ...app, status: 'cancelado', cancelReason: reason } : app))
+      prev.map((app) => (app.id === id ? { ...app, status: 'cancelado', cancelReason: reason, cancelledAt: new Date().toISOString() } : app))
     );
     if (dataService.isLive()) {
-      dataService.updateAppointment(id, { status: 'cancelado', cancelReason: reason }).catch((err) => {
+      try {
+        await dataService.cancelAppointment(id, reason);
+      } catch (err) {
         console.error('Error al cancelar turno:', err);
+        setAppointments(previousAppointments);
         addToast('Error de Sincronización', 'No se pudo cancelar el turno en el servidor: ' + (err.message || ''), 'error');
-      });
+        throw err;
+      }
     }
     logAudit('CANCEL', 'Turnos', '-', `Turno ${id} cancelado. Motivo: ${reason}`);
     addToast('Turno Cancelado', 'El turno ha sido cancelado exitosamente.', 'info');
   };
 
-  const updateAppointment = (id, updatedData) => {
+  const updateAppointment = async (id, updatedData) => {
+    const previousAppointments = appointments;
     setAppointments((prev) =>
       prev.map((app) => (app.id === id ? { ...app, ...updatedData } : app))
     );
     if (dataService.isLive()) {
-      dataService.updateAppointment(id, updatedData).catch((err) => {
+      try {
+        await dataService.updateAppointment(id, updatedData);
+      } catch (err) {
         console.error('Error al actualizar turno:', err);
+        setAppointments(previousAppointments);
         addToast('Error de Sincronización', 'No se pudo actualizar el turno en el servidor: ' + (err.message || ''), 'error');
-      });
+        throw err;
+      }
     }
     logAudit('UPDATE', 'Turnos', '-', `Turno ${id} actualizado.`);
     addToast('Turno Actualizado', 'Los datos del turno fueron modificados.', 'success');
   };
 
-  const deleteAppointment = (id) => {
+  const deleteAppointment = async (id, reason = 'Cancelado y archivado por administración') => {
+    const previousAppointments = appointments;
     setAppointments((prev) =>
       prev.map((app) =>
         app.id === id
-          ? { ...app, status: 'cancelado', cancelReason: 'Cancelado y archivado por administración' }
+          ? { ...app, status: 'cancelado', cancelReason: reason, cancelledAt: new Date().toISOString() }
           : app
       )
     );
     if (dataService.isLive()) {
-      dataService.cancelAppointment(id, 'Cancelado y archivado por administración').catch((err) => {
+      try {
+        await dataService.deleteAppointment(id, reason);
+      } catch (err) {
         console.error('Error al archivar turno:', err);
+        setAppointments(previousAppointments);
         addToast('Error de Sincronización', 'No se pudo archivar el turno en el servidor: ' + (err.message || ''), 'error');
-      });
+        throw err;
+      }
     }
     logAudit('CANCEL_APPOINTMENT', 'Turnos', '-', `Turno ${id} cancelado y archivado por administración.`);
     addToast('Turno Archivado', 'El turno ha sido cancelado y archivado conforme a la trazabilidad legal.', 'info');
   };
 
   // --- GESTIÓN DE PROFESIONALES / MÉDICOS ---
-  const addDoctor = (doctorData) => {
+  const addDoctor = async (doctorData) => {
     const newId = `doc-${Date.now()}`;
     const newDoc = {
       id: newId,
@@ -1980,7 +2026,15 @@ export const ClinicProvider = ({ children }) => {
     setUsers((prev) => [...prev, newUser]);
 
     if (dataService.isLive()) {
-      dataService.createDoctor(newDoc).catch(console.warn);
+      try {
+        await dataService.createDoctor(newDoc);
+      } catch (err) {
+        console.error('Error al registrar profesional en servidor:', err);
+        setDoctors((prev) => prev.filter((d) => d.id !== newId));
+        setUsers((prev) => prev.filter((u) => u.id !== newUserId));
+        addToast('Error de Sincronización', 'No se pudo guardar el profesional en el servidor: ' + (err.message || ''), 'error');
+        throw err;
+      }
     }
 
     logAudit('CREATE', 'Profesionales', '-', `Alta médica de ${newDoc.name} (${newDoc.specialty}) y cuenta de acceso habilitada.`);
@@ -1988,7 +2042,10 @@ export const ClinicProvider = ({ children }) => {
     return newDoc;
   };
 
-  const updateDoctor = (id, updatedData) => {
+  const updateDoctor = async (id, updatedData) => {
+    const previousDoctors = doctors;
+    const previousUsers = users;
+
     setDoctors((prev) =>
       prev.map((doc) => (doc.id === id ? { ...doc, ...updatedData } : doc))
     );
@@ -2007,20 +2064,47 @@ export const ClinicProvider = ({ children }) => {
       })
     );
     if (dataService.isLive()) {
-      dataService.updateDoctor(id, updatedData).catch(console.warn);
+      try {
+        await dataService.updateDoctor(id, updatedData);
+      } catch (err) {
+        console.error('Error al actualizar profesional en servidor:', err);
+        setDoctors(previousDoctors);
+        setUsers(previousUsers);
+        addToast('Error de Sincronización', 'No se pudo actualizar el profesional en el servidor: ' + (err.message || ''), 'error');
+        throw err;
+      }
     }
     logAudit('UPDATE', 'Profesionales', '-', `Actualización de ficha para profesional ID ${id}`);
     addToast('Profesional Actualizado', 'Los datos del profesional se actualizaron.', 'success');
   };
 
-  const deleteDoctor = (id) => {
-    setDoctors((prev) => prev.filter((doc) => doc.id !== id));
-    setUsers((prev) => prev.filter((u) => u.doctorId !== id));
+  const deleteDoctor = async (id) => {
+    const previousDoctors = doctors;
+    const previousUsers = users;
+    const nowIso = new Date().toISOString();
+
+    // Inmutabilidad profesional (CRIT-02): baja lógica para preservar historial asistencial
+    setDoctors((prev) =>
+      prev.map((doc) =>
+        doc.id === id ? { ...doc, active: false, isActive: false, is_active: false, deletedAt: nowIso } : doc
+      )
+    );
+    setUsers((prev) =>
+      prev.map((u) => (u.doctorId === id ? { ...u, status: 'Inactivo' } : u))
+    );
     if (dataService.isLive()) {
-      dataService.deleteDoctor(id).catch(console.warn);
+      try {
+        await dataService.deleteDoctor(id);
+      } catch (err) {
+        console.error('Error al dar de baja profesional:', err);
+        setDoctors(previousDoctors);
+        setUsers(previousUsers);
+        addToast('Error de Sincronización', 'No se pudo dar de baja al profesional en el servidor: ' + (err.message || ''), 'error');
+        throw err;
+      }
     }
-    logAudit('DELETE', 'Profesionales', '-', `Baja del profesional ID ${id}`);
-    addToast('Profesional Eliminado', 'El profesional fue removido del sistema.', 'info');
+    logAudit('DELETE', 'Profesionales', '-', `Baja lógica del profesional ID ${id}`);
+    addToast('Profesional Desactivado', 'El profesional fue dado de baja y archivado preservando su historial.', 'info');
   };
 
   // --- GESTIÓN DE SERVICIOS Y ESPECIALIDADES ---

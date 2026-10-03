@@ -106,6 +106,7 @@ CREATE TABLE IF NOT EXISTS doctors (
     price_consultation NUMERIC(10,2) DEFAULT 25000,
     fee_percentage NUMERIC(5,2) DEFAULT 75,
     is_active BOOLEAN DEFAULT TRUE,
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
     working_days TEXT[] DEFAULT ARRAY['Lunes','Miércoles','Viernes'],
     schedule_start TIME DEFAULT '08:00',
     schedule_end TIME DEFAULT '14:00',
@@ -139,6 +140,7 @@ CREATE TABLE IF NOT EXISTS patients (
     registered_at DATE DEFAULT CURRENT_DATE,
     avatar_url TEXT,
     is_active BOOLEAN DEFAULT TRUE,
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -158,14 +160,14 @@ CREATE TABLE IF NOT EXISTS clinic_schedules (
 -- 10. Turnos / Citas Médicas
 CREATE TABLE IF NOT EXISTS appointments (
     id VARCHAR(50) PRIMARY KEY,
-    patient_id VARCHAR(50) NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    patient_id VARCHAR(50) NOT NULL REFERENCES patients(id) ON DELETE RESTRICT,
     patient_name VARCHAR(200) NOT NULL,
     patient_dni VARCHAR(20) NOT NULL,
     patient_phone VARCHAR(50),
     patient_email VARCHAR(200),
     patient_insurance VARCHAR(150),
     patient_insurance_number VARCHAR(100),
-    doctor_id VARCHAR(50) NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
+    doctor_id VARCHAR(50) NOT NULL REFERENCES doctors(id) ON DELETE RESTRICT,
     doctor_name VARCHAR(200) NOT NULL,
     doctor_specialty VARCHAR(150) NOT NULL,
     room_id VARCHAR(50) REFERENCES rooms(id) ON DELETE SET NULL,
@@ -177,6 +179,7 @@ CREATE TABLE IF NOT EXISTS appointments (
     status appointment_status DEFAULT 'confirmado',
     reason TEXT,
     cancel_reason TEXT,
+    cancelled_at TIMESTAMPTZ DEFAULT NULL,
     copay_amount NUMERIC(10,2) DEFAULT 0,
     booked_online BOOLEAN DEFAULT FALSE,
     booking_code VARCHAR(50) UNIQUE,
@@ -264,7 +267,7 @@ CREATE TABLE IF NOT EXISTS electronic_prescriptions (
 -- 14. Diagnóstico por Imágenes & Radiología
 CREATE TABLE IF NOT EXISTS imaging_studies (
     id VARCHAR(50) PRIMARY KEY,
-    patient_id VARCHAR(50) NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    patient_id VARCHAR(50) NOT NULL REFERENCES patients(id) ON DELETE RESTRICT,
     patient_name VARCHAR(200) NOT NULL,
     patient_dni VARCHAR(20) NOT NULL,
     study_type VARCHAR(100) NOT NULL,
@@ -286,7 +289,7 @@ CREATE TABLE IF NOT EXISTS imaging_studies (
 -- 15. Órdenes y Certificados Médicos
 CREATE TABLE IF NOT EXISTS medical_orders (
     id VARCHAR(50) PRIMARY KEY,
-    patient_id VARCHAR(50) NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    patient_id VARCHAR(50) NOT NULL REFERENCES patients(id) ON DELETE RESTRICT,
     patient_name VARCHAR(200) NOT NULL,
     doctor_id VARCHAR(50) REFERENCES doctors(id) ON DELETE SET NULL,
     doctor_name VARCHAR(200) NOT NULL,
@@ -298,7 +301,7 @@ CREATE TABLE IF NOT EXISTS medical_orders (
 
 CREATE TABLE IF NOT EXISTS medical_certificates (
     id VARCHAR(50) PRIMARY KEY,
-    patient_id VARCHAR(50) NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    patient_id VARCHAR(50) NOT NULL REFERENCES patients(id) ON DELETE RESTRICT,
     patient_name VARCHAR(200) NOT NULL,
     patient_dni VARCHAR(20),
     doctor_id VARCHAR(50) REFERENCES doctors(id) ON DELETE SET NULL,
@@ -557,13 +560,13 @@ FOR EACH ROW EXECUTE FUNCTION public.handle_new_auth_user();
 -- 24. Solicitudes de Acceso Clínico e Interconsultas (A-07)
 CREATE TABLE IF NOT EXISTS public.clinical_access_grants (
     id VARCHAR(50) PRIMARY KEY,
-    consultation_id VARCHAR(50) REFERENCES public.consultations(id) ON DELETE CASCADE,
-    patient_id VARCHAR(50) NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+    consultation_id VARCHAR(50) REFERENCES public.consultations(id) ON DELETE RESTRICT,
+    patient_id VARCHAR(50) NOT NULL REFERENCES public.patients(id) ON DELETE RESTRICT,
     patient_name VARCHAR(200) NOT NULL,
     patient_dni VARCHAR(20) NOT NULL,
-    requester_doctor_id VARCHAR(50) NOT NULL REFERENCES public.doctors(id) ON DELETE CASCADE,
+    requester_doctor_id VARCHAR(50) NOT NULL REFERENCES public.doctors(id) ON DELETE RESTRICT,
     requester_doctor_name VARCHAR(200) NOT NULL,
-    target_doctor_id VARCHAR(50) NOT NULL REFERENCES public.doctors(id) ON DELETE CASCADE,
+    target_doctor_id VARCHAR(50) NOT NULL REFERENCES public.doctors(id) ON DELETE RESTRICT,
     target_doctor_name VARCHAR(200) NOT NULL,
     status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'expired')),
     justification TEXT NOT NULL,
@@ -596,6 +599,41 @@ SELECT
     is_active
 FROM public.doctors
 WHERE is_active = TRUE;
+
+-- ====================================================================
+-- INMUTABILIDAD LEGAL Y PREVENCIÓN DE BORRADO FÍSICO (Ley 26.529 Art. 18 / CRIT-01, CRIT-02)
+-- Obligación de custodia y conservación por 15 años de antecedentes médicos
+-- ====================================================================
+CREATE OR REPLACE FUNCTION public.prevent_medical_record_hard_delete()
+RETURNS TRIGGER AS $$
+BEGIN
+  RAISE EXCEPTION 'Operación denegada por Ley 26.529 (Art. 18): Los registros asistenciales, historias clínicas, turnos y pacientes tienen obligación legal de conservación por 15 años y no admiten borrado físico. Utilice baja lógica o cancelación.';
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_no_hard_delete_patients ON public.patients;
+CREATE TRIGGER trg_no_hard_delete_patients BEFORE DELETE ON public.patients FOR EACH ROW EXECUTE FUNCTION public.prevent_medical_record_hard_delete();
+
+DROP TRIGGER IF EXISTS trg_no_hard_delete_doctors ON public.doctors;
+CREATE TRIGGER trg_no_hard_delete_doctors BEFORE DELETE ON public.doctors FOR EACH ROW EXECUTE FUNCTION public.prevent_medical_record_hard_delete();
+
+DROP TRIGGER IF EXISTS trg_no_hard_delete_appointments ON public.appointments;
+CREATE TRIGGER trg_no_hard_delete_appointments BEFORE DELETE ON public.appointments FOR EACH ROW EXECUTE FUNCTION public.prevent_medical_record_hard_delete();
+
+DROP TRIGGER IF EXISTS trg_no_hard_delete_consultations ON public.consultations;
+CREATE TRIGGER trg_no_hard_delete_consultations BEFORE DELETE ON public.consultations FOR EACH ROW EXECUTE FUNCTION public.prevent_medical_record_hard_delete();
+
+DROP TRIGGER IF EXISTS trg_no_hard_delete_prescriptions ON public.electronic_prescriptions;
+CREATE TRIGGER trg_no_hard_delete_prescriptions BEFORE DELETE ON public.electronic_prescriptions FOR EACH ROW EXECUTE FUNCTION public.prevent_medical_record_hard_delete();
+
+DROP TRIGGER IF EXISTS trg_no_hard_delete_imaging ON public.imaging_studies;
+CREATE TRIGGER trg_no_hard_delete_imaging BEFORE DELETE ON public.imaging_studies FOR EACH ROW EXECUTE FUNCTION public.prevent_medical_record_hard_delete();
+
+DROP TRIGGER IF EXISTS trg_no_hard_delete_rehab_plans ON public.rehab_plans;
+CREATE TRIGGER trg_no_hard_delete_rehab_plans BEFORE DELETE ON public.rehab_plans FOR EACH ROW EXECUTE FUNCTION public.prevent_medical_record_hard_delete();
+
+DROP TRIGGER IF EXISTS trg_no_hard_delete_rehab_sessions ON public.rehab_sessions;
+CREATE TRIGGER trg_no_hard_delete_rehab_sessions BEFORE DELETE ON public.rehab_sessions FOR EACH ROW EXECUTE FUNCTION public.prevent_medical_record_hard_delete();
 
 GRANT SELECT ON public.public_doctors TO anon, authenticated;
 
