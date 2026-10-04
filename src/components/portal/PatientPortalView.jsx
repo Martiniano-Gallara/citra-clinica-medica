@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { dataService, MEDICAL_BUCKET } from '../../services/dataService';
 import {
   User,
   Calendar,
@@ -19,7 +20,6 @@ import {
 import { Badge } from '../common/Badge';
 import { PrescriptionDigitalModal } from '../clinical/PrescriptionDigitalModal';
 import { AppointmentModal } from '../agenda/AppointmentModal';
-import { dataService } from '../../services/dataService';
 
 export const PatientPortalView = () => {
   const {
@@ -190,7 +190,7 @@ export const PatientPortalView = () => {
         window.open(file.url, '_blank', 'noopener,noreferrer');
         return;
       }
-      const bucket = file.bucket || 'medical-records';
+      const bucket = file.bucket || MEDICAL_BUCKET;
       const path = file.path || file.storagePath || file.name;
       const signedUrl = await dataService.getSignedMedicalUrl(bucket, path, 300);
       if (signedUrl) {

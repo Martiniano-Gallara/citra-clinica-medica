@@ -41,6 +41,8 @@ export function toCamelCase(obj) {
   return newObj;
 }
 
+export const MEDICAL_BUCKET = 'medical_records';
+
 /**
  * Servicio de datos y persistencia unificado CITRA
  * Sincroniza de forma transparente y reactiva con Supabase Cloud
@@ -104,16 +106,23 @@ export const dataService = {
 
   async updateUserPassword(currentPassword, newPassword) {
     if (isSupabaseConfigured && supabase) {
-      const { data: authData } = await supabase.auth.getUser();
-      const userEmail = authData?.user?.email;
-      if (userEmail && currentPassword) {
-        const { error: signInErr } = await supabase.auth.signInWithPassword({
-          email: userEmail,
-          password: currentPassword
-        });
-        if (signInErr) {
-          throw new Error('La contraseña actual es incorrecta.');
-        }
+      if (!currentPassword || !currentPassword.trim()) {
+        throw new Error('Debe proporcionar su contraseña actual para confirmar el cambio.');
+      }
+      const { data: authData, error: authErr } = await supabase.auth.getUser();
+      if (authErr || !authData?.user) {
+        throw new Error('No se detectó una sesión activa en Supabase Auth.');
+      }
+      const userEmail = authData.user.email;
+      if (!userEmail) {
+        throw new Error('No se pudo identificar el correo de la sesión.');
+      }
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: userEmail,
+        password: currentPassword
+      });
+      if (signInErr) {
+        throw new Error('La contraseña actual es incorrecta.');
       }
       const { data, error } = await supabase.auth.updateUser({
         password: newPassword
@@ -122,6 +131,27 @@ export const dataService = {
       return data;
     }
     return null;
+  },
+
+  async adminSetUserPassword(userId, newPassword) {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase.functions.invoke('admin-set-password', {
+          body: { user_id: userId, password: newPassword }
+        });
+        if (error) throw error;
+        return data;
+      } catch (fnErr) {
+        console.warn('Edge Function admin-set-password retornó error o no está desplegada:', fnErr);
+        const { data: profile } = await supabase.from('profiles').select('email').eq('id', userId).single();
+        if (profile?.email) {
+          await supabase.auth.resetPasswordForEmail(profile.email);
+          return { success: true, message: 'Se envió un correo de restablecimiento de contraseña.' };
+        }
+        throw fnErr;
+      }
+    }
+    return true;
   },
 
   // --- TURNOS (APPOINTMENTS) ---
@@ -297,32 +327,6 @@ export const dataService = {
     return true;
   },
 
-  // Reserva pública de turnos segura (ALTA-07)
-  async createPublicBooking(bookingData) {
-    if (isSupabaseConfigured && supabase) {
-      const payload = {
-        patient_dni: bookingData.patientDni,
-        patient_name: bookingData.patientName,
-        patient_phone: bookingData.patientPhone || null,
-        patient_email: bookingData.patientEmail || null,
-        patient_insurance: bookingData.patientInsurance || bookingData.insuranceName || null,
-        patient_insurance_number: bookingData.patientInsuranceNumber || bookingData.insuranceNumber || null,
-        doctor_id: bookingData.doctorId,
-        date: bookingData.date,
-        time: bookingData.time,
-        duration: bookingData.duration || 30,
-        reason: bookingData.reason || 'Reserva online de turno',
-        copay_amount: bookingData.copayAmount || 0
-      };
-      const { data, error } = await supabase.rpc('create_public_booking', {
-        p_booking: payload
-      });
-      if (error) throw error;
-      return toCamelCase(data);
-    }
-    return null;
-  },
-
   // --- HISTORIA CLÍNICA & CONSULTAS (CONSULTATIONS) ---
   async fetchConsultations(patientId = null, doctorId = null, limit = 200) {
     if (isSupabaseConfigured && supabase) {
@@ -496,8 +500,10 @@ export const dataService = {
     if (isSupabaseConfigured && supabase) {
       let query = supabase.from('patients').select('*', { count: 'exact' });
       if (searchTerm && typeof searchTerm === 'string' && searchTerm.trim()) {
-        const term = searchTerm.trim();
-        query = query.or(`name.ilike.%${term}%,dni.ilike.%${term}%,email.ilike.%${term}%`);
+        const cleanTerm = searchTerm.trim().replace(/[,()]/g, '');
+        if (cleanTerm) {
+          query = query.or(`name.ilike.%${cleanTerm}%,dni.ilike.%${cleanTerm}%,email.ilike.%${cleanTerm}%`);
+        }
       }
       query = query.order('name', { ascending: true });
       if (typeof options === 'object' && options !== null) {
@@ -515,6 +521,19 @@ export const dataService = {
         return { data: result, total: count };
       }
       return result;
+    }
+    return null;
+  },
+
+  async fetchCurrentPatient(userId) {
+    if (isSupabaseConfigured && supabase && userId) {
+      const { data, error } = await supabase
+        .from('patients')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? toCamelCase(data) : null;
     }
     return null;
   },
@@ -1329,11 +1348,14 @@ export const dataService = {
     return null;
   },
 
-  async deleteRehabSession(id) {
+  async deleteRehabSession(id, voidReason = 'Cancelada / Anulada') {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('rehab_sessions')
-        .update({ patient_tolerance: 'Cancelada / Anulada' })
+        .update({
+          voided_at: new Date().toISOString(),
+          void_reason: voidReason
+        })
         .eq('id', id)
         .select()
         .single();
@@ -1431,11 +1453,43 @@ export const dataService = {
     return null;
   },
 
+  async openCashShift(openingBalance = 0, shiftName = 'Turno de Caja', cashierName = null) {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.rpc('open_cash_shift_rpc', {
+        p_opening_balance: Number(openingBalance) || 0,
+        p_shift_name: shiftName,
+        p_cashier_name: cashierName
+      });
+      if (error) throw error;
+      return data;
+    }
+    return { success: true, shift_id: `shift-${Date.now()}` };
+  },
+
+  async linkDoctorAccount(doctorId, userId) {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.rpc('link_doctor_account', {
+        p_doctor_id: doctorId,
+        p_user_id: userId
+      });
+      if (error) throw error;
+      return data;
+    }
+    return { success: true, doctor_id: doctorId, user_id: userId };
+  },
+
   async addCashMovement(movementData) {
     if (isSupabaseConfigured && supabase) {
       let shiftId = movementData.shiftId;
       if (!shiftId || shiftId === 'shift-1') {
-        const activeShift = await this.getActiveCashShift(movementData.userId);
+        let authUserId = null;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          authUserId = user?.id || null;
+        } catch (e) {
+          // ignore error if unauthenticated
+        }
+        const activeShift = await this.getActiveCashShift(authUserId || movementData.userId);
         if (activeShift?.id) {
           shiftId = activeShift.id;
         } else {
@@ -1527,17 +1581,18 @@ export const dataService = {
     return null;
   },
 
-  // --- STORAGE / ARCHIVOS MÉDICOS (A-09 / ALTA-09: Signed URLs estrictas sin fallback público) ---
-  async uploadMedicalFile(bucketName, path, file) {
+  // --- STORAGE / ARCHIVOS MÉDICOS (A-09 / ALTA-09 / V2-A4: Bucket canónico medical_records) ---
+  async uploadMedicalFile(bucketName = MEDICAL_BUCKET, path, file) {
+    const targetBucket = bucketName || MEDICAL_BUCKET;
     if (isSupabaseConfigured && supabase) {
-      const { error } = await supabase.storage.from(bucketName).upload(path, file, {
+      const { error } = await supabase.storage.from(targetBucket).upload(path, file, {
         cacheControl: '3600',
         upsert: false
       });
       if (error) throw error;
 
       // Generar URL firmada temporal de 1 hora para protección de secreto médico (Ley 25.326)
-      const { data: signedData, error: signError } = await supabase.storage.from(bucketName).createSignedUrl(path, 3600);
+      const { data: signedData, error: signError } = await supabase.storage.from(targetBucket).createSignedUrl(path, 3600);
       if (signError) {
         console.warn('Advertencia al generar URL firmada inmediata:', signError);
         return path;
@@ -1547,19 +1602,12 @@ export const dataService = {
     return null;
   },
 
-  async getSignedMedicalUrl(bucketName, path, expiresIn = 3600) {
+  async getSignedMedicalUrl(bucketName = MEDICAL_BUCKET, path, expiresIn = 3600) {
+    const targetBucket = bucketName || MEDICAL_BUCKET;
     if (isSupabaseConfigured && supabase) {
-      let { data, error } = await supabase.storage
-        .from(bucketName)
+      const { data, error } = await supabase.storage
+        .from(targetBucket)
         .createSignedUrl(path, expiresIn);
-      if (error && (bucketName === 'medical-records' || bucketName === 'medical_records')) {
-        const altBucket = bucketName === 'medical-records' ? 'medical_records' : 'medical-records';
-        const altRes = await supabase.storage.from(altBucket).createSignedUrl(path, expiresIn);
-        if (!altRes.error && altRes.data) {
-          data = altRes.data;
-          error = null;
-        }
-      }
       if (error) {
         console.warn('Error generating signed medical URL:', error);
         return null;

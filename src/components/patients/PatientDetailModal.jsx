@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { getTodayArgentina } from '../../utils/dateUtils';
-import { dataService } from '../../services/dataService';
+import { dataService, MEDICAL_BUCKET } from '../../services/dataService';
 import { Modal } from '../common/Modal';
 import { Badge } from '../common/Badge';
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
@@ -132,7 +132,7 @@ export const PatientDetailModal = () => {
     try {
       if (dataService.isLive() && selectedBinaryFile) {
         storagePath = `${patient.id}/${Date.now()}_${selectedBinaryFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-        downloadUrl = await dataService.uploadMedicalFile('medical-records', storagePath, selectedBinaryFile);
+        downloadUrl = await dataService.uploadMedicalFile(MEDICAL_BUCKET, storagePath, selectedBinaryFile);
       }
     } catch (err) {
       console.warn('Error subiendo archivo a Supabase Storage:', err);
@@ -152,11 +152,6 @@ export const PatientDetailModal = () => {
         console.warn('Error calculando hash criptográfico SHA-256:', hErr);
       }
     }
-    if (!computedHash) {
-      const fallbackBuf = new TextEncoder().encode(effectiveName + Date.now());
-      const hashBuf = await crypto.subtle.digest('SHA-256', fallbackBuf);
-      computedHash = Array.from(new Uint8Array(hashBuf)).map((b) => b.toString(16).padStart(2, '0')).join('');
-    }
 
     const fileObj = {
       id: `f-${Date.now()}`,
@@ -165,7 +160,7 @@ export const PatientDetailModal = () => {
       size: cleanSize,
       date: getTodayArgentina(),
       storagePath: storagePath || null,
-      bucket: 'medical_records',
+      bucket: MEDICAL_BUCKET,
       url: null,
       hashSha256: computedHash
     };
@@ -218,10 +213,14 @@ export const PatientDetailModal = () => {
             <button
               type="button"
               className="btn btn-outline-danger btn-sm"
-              onClick={() => {
+              onClick={async () => {
                 if (window.confirm(`¿Confirma el archivado de la ficha de ${patient.name}? Conforme a la Ley 26.529 (Art. 18), la información clínica no se destruye y permanecerá en custodia histórica bajo reserva por 15 años.`)) {
-                  deletePatient(patient.id);
-                  setSelectedPatientForDetail(null);
+                  try {
+                    await deletePatient(patient.id);
+                    setSelectedPatientForDetail(null);
+                  } catch (err) {
+                    console.error('Error al archivar paciente:', err);
+                  }
                 }
               }}
               title="Archivar ficha médica bajo custodia legal de 15 años (Ley 26.529)"

@@ -28,6 +28,7 @@ async function testSql() {
     CREATE TABLE IF NOT EXISTS auth.users (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       email TEXT,
+      raw_user_meta_data JSONB DEFAULT '{}'::jsonb,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE OR REPLACE FUNCTION auth.uid() RETURNS UUID AS $$
@@ -45,6 +46,35 @@ async function testSql() {
         'email', current_setting('request.jwt.claim.email', true)
       );
     $$ LANGUAGE sql STABLE;
+
+    CREATE SCHEMA IF NOT EXISTS storage;
+    CREATE TABLE IF NOT EXISTS storage.buckets (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      owner UUID,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      public BOOLEAN DEFAULT FALSE,
+      avif_autodetection BOOLEAN DEFAULT FALSE,
+      file_size_limit BIGINT,
+      allowed_mime_types TEXT[],
+      owner_id TEXT
+    );
+    CREATE TABLE IF NOT EXISTS storage.objects (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      bucket_id TEXT REFERENCES storage.buckets(id),
+      name TEXT,
+      owner UUID,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      last_accessed_at TIMESTAMPTZ DEFAULT NOW(),
+      metadata JSONB,
+      path_tokens TEXT[]
+    );
+    CREATE OR REPLACE FUNCTION storage.foldername(name TEXT)
+    RETURNS TEXT[] AS $$
+      SELECT string_to_array(name, '/');
+    $$ LANGUAGE sql IMMUTABLE;
   `);
 
   let sql = fs.readFileSync(path.join(process.cwd(), 'supabase', 'COMPLETE_SUPABASE_SETUP.sql'), 'utf8');

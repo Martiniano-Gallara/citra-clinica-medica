@@ -358,7 +358,7 @@ export const DoctorsManager = ({ initialTab }) => {
     );
   };
 
-  const handleSaveDoctor = (e) => {
+  const handleSaveDoctor = async (e) => {
     e.preventDefault();
     if (!docName.trim()) {
       addToast('Nombre Requerido', 'Ingrese el nombre del profesional.', 'warning');
@@ -382,7 +382,11 @@ export const DoctorsManager = ({ initialTab }) => {
         defaultDuration: Number(docSlotDuration) || 30
       };
       if (typeof addSpecialty === 'function') {
-        addSpecialty(matchedSpec);
+        try {
+          await addSpecialty(matchedSpec);
+        } catch (sErr) {
+          console.warn('Error al guardar especialidad:', sErr);
+        }
       }
     }
 
@@ -415,11 +419,16 @@ export const DoctorsManager = ({ initialTab }) => {
 
     let targetDoctorId = editingDoctor ? editingDoctor.id : null;
 
-    if (editingDoctor) {
-      updateDoctor(editingDoctor.id, payload);
-    } else {
-      const created = addDoctor(payload);
-      targetDoctorId = created?.id;
+    try {
+      if (editingDoctor) {
+        await updateDoctor(editingDoctor.id, payload);
+      } else {
+        const created = await addDoctor(payload);
+        targetDoctorId = created?.id;
+      }
+    } catch (err) {
+      console.error('Error al guardar profesional:', err);
+      return;
     }
 
     // Sincronizar cuenta de usuario y contraseña (C-06: sin clave por defecto predecible)
@@ -437,28 +446,35 @@ export const DoctorsManager = ({ initialTab }) => {
         (u.email && u.email.toLowerCase() === cleanEmail.toLowerCase())
     );
 
-    if (matchedUser) {
-      updateUser(matchedUser.id, {
-        name: docName.trim(),
-        email: cleanEmail,
-        password: cleanPassword || matchedUser.password,
-        role: docRole.trim() || `Médico ${finalSpecialty}`,
-        specialty: finalSpecialty,
-        doctorId: effectiveDocId,
-        status: effectiveActive ? 'Activo' : 'Inactivo'
-      });
-    } else if (addUser) {
-      addUser({
-        name: docName.trim(),
-        fullName: docName.trim(),
-        email: cleanEmail,
-        password: cleanPassword,
-        role: docRole.trim() || `Médico ${finalSpecialty}`,
-        adminType: 'doctor',
-        doctorId: effectiveDocId,
-        specialty: finalSpecialty,
-        status: effectiveActive ? 'Activo' : 'Inactivo'
-      });
+    try {
+      if (matchedUser) {
+        await updateUser(matchedUser.id, {
+          name: docName.trim(),
+          email: cleanEmail,
+          password: cleanPassword || matchedUser.password,
+          role: docRole.trim() || `Médico ${finalSpecialty}`,
+          specialty: finalSpecialty,
+          doctorId: effectiveDocId,
+          status: effectiveActive ? 'Activo' : 'Inactivo'
+        });
+        if (effectiveDocId && matchedUser.authUserId) {
+          dataService.linkDoctorAccount(effectiveDocId, matchedUser.authUserId).catch(e => console.warn('linkDoctorAccount error:', e));
+        }
+      } else if (addUser) {
+        addUser({
+          name: docName.trim(),
+          fullName: docName.trim(),
+          email: cleanEmail,
+          password: cleanPassword,
+          role: docRole.trim() || `Médico ${finalSpecialty}`,
+          adminType: 'doctor',
+          doctorId: effectiveDocId,
+          specialty: finalSpecialty,
+          status: effectiveActive ? 'Activo' : 'Inactivo'
+        });
+      }
+    } catch (uErr) {
+      console.error('Error al sincronizar usuario de médico:', uErr);
     }
 
     addToast(
@@ -470,11 +486,15 @@ export const DoctorsManager = ({ initialTab }) => {
     setIsDoctorModalOpen(false);
   };
 
-  const handleDeleteDoctor = () => {
+  const handleDeleteDoctor = async () => {
     if (!editingDoctor) return;
     if (window.confirm(`¿Está seguro de dar de baja al profesional ${editingDoctor.name}?`)) {
-      deleteDoctor(editingDoctor.id);
-      setIsDoctorModalOpen(false);
+      try {
+        await deleteDoctor(editingDoctor.id);
+        setIsDoctorModalOpen(false);
+      } catch (err) {
+        console.error('Error al eliminar profesional:', err);
+      }
     }
   };
 
@@ -486,7 +506,7 @@ export const DoctorsManager = ({ initialTab }) => {
     setIsPasswordModalOpen(true);
   };
 
-  const handleSaveQuickPassword = (e) => {
+  const handleSaveQuickPassword = async (e) => {
     e.preventDefault();
     if (!passwordTargetDoctor) return;
     const newPwd = quickPasswordValue.trim();
@@ -496,26 +516,30 @@ export const DoctorsManager = ({ initialTab }) => {
     }
     const matched = getDoctorUser(passwordTargetDoctor);
 
-    if (matched && typeof updateUser === 'function') {
-      updateUser(matched.id, { password: newPwd });
-    } else if (typeof addUser === 'function') {
-      addUser({
-        name: passwordTargetDoctor.name,
-        email: passwordTargetDoctor.email || `${passwordTargetDoctor.name.toLowerCase().replace(/[^a-z]/g, '')}@citra.com.ar`,
-        password: newPwd,
-        adminType: 'doctor',
-        doctorId: passwordTargetDoctor.id,
-        role: `Médico ${passwordTargetDoctor.specialty || 'Profesional'}`
-      });
-    }
+    try {
+      if (matched && typeof updateUser === 'function') {
+        await updateUser(matched.id, { password: newPwd });
+      } else if (typeof addUser === 'function') {
+        addUser({
+          name: passwordTargetDoctor.name,
+          email: passwordTargetDoctor.email || `${passwordTargetDoctor.name.toLowerCase().replace(/[^a-z]/g, '')}@citra.com.ar`,
+          password: newPwd,
+          adminType: 'doctor',
+          doctorId: passwordTargetDoctor.id,
+          role: `Médico ${passwordTargetDoctor.specialty || 'Profesional'}`
+        });
+      }
 
-    if (typeof updateDoctor === 'function') {
-      updateDoctor(passwordTargetDoctor.id, { password: newPwd });
-    }
+      if (typeof updateDoctor === 'function') {
+        await updateDoctor(passwordTargetDoctor.id, { password: newPwd });
+      }
 
-    addToast('Contraseña Actualizada', `Nueva clave asignada a ${passwordTargetDoctor.name}.`, 'success');
-    setIsPasswordModalOpen(false);
-    setPasswordTargetDoctor(null);
+      addToast('Contraseña Actualizada', `Nueva clave asignada a ${passwordTargetDoctor.name}.`, 'success');
+      setIsPasswordModalOpen(false);
+      setPasswordTargetDoctor(null);
+    } catch (err) {
+      console.error('Error al guardar contraseña rápida:', err);
+    }
   };
 
   // --- HANDLERS: ESPECIALIDADES EN CABECERA ---
@@ -547,61 +571,73 @@ export const DoctorsManager = ({ initialTab }) => {
     );
   };
 
-  const handleSaveSpecialty = (e) => {
+  const handleSaveSpecialty = async (e) => {
     e.preventDefault();
     const clean = specialtyName.trim();
     if (!clean) return;
 
     let targetSpecId = editingSpecialty ? editingSpecialty.id : `esp-${Date.now()}`;
 
-    if (editingSpecialty) {
-      updateSpecialty(editingSpecialty.id, { name: clean });
-    } else {
-      addSpecialty({
-        id: targetSpecId,
-        name: clean,
-        color: '#076ABC',
-        category: 'Especialidades',
-        defaultDuration: 30
-      });
-    }
-
-    // Vincular / desvincular doctores
-    if (typeof updateDoctor === 'function') {
-      const oldName = editingSpecialty ? editingSpecialty.name.trim().toLowerCase() : '';
-      doctors.forEach((doc) => {
-        const isSelected = specialtySelectedDocIds.includes(doc.id);
-        const matchesOld =
-          doc.specialtyId === targetSpecId ||
-          (oldName && (
-            (doc.specialty && doc.specialty.trim().toLowerCase() === oldName) ||
-            (doc.specialtyName && doc.specialtyName.trim().toLowerCase() === oldName)
-          ));
-
-        if (isSelected) {
-          updateDoctor(doc.id, {
-            specialty: clean,
-            specialtyName: clean,
-            specialtyId: targetSpecId
-          });
-        } else if (!isSelected && matchesOld) {
-          updateDoctor(doc.id, {
-            specialty: 'Medicina General',
-            specialtyName: 'Medicina General',
-            specialtyId: 'spec-general'
+    try {
+      if (editingSpecialty) {
+        if (typeof updateSpecialty === 'function') {
+          await updateSpecialty(editingSpecialty.id, { name: clean });
+        }
+      } else {
+        if (typeof addSpecialty === 'function') {
+          await addSpecialty({
+            id: targetSpecId,
+            name: clean,
+            color: '#076ABC',
+            category: 'Especialidades',
+            defaultDuration: 30
           });
         }
-      });
-    }
+      }
 
-    setIsSpecialtyModalOpen(false);
+      // Vincular / desvincular doctores
+      if (typeof updateDoctor === 'function') {
+        const oldName = editingSpecialty ? editingSpecialty.name.trim().toLowerCase() : '';
+        for (const doc of doctors) {
+          const isSelected = specialtySelectedDocIds.includes(doc.id);
+          const matchesOld =
+            doc.specialtyId === targetSpecId ||
+            (oldName && (
+              (doc.specialty && doc.specialty.trim().toLowerCase() === oldName) ||
+              (doc.specialtyName && doc.specialtyName.trim().toLowerCase() === oldName)
+            ));
+
+          if (isSelected) {
+            await updateDoctor(doc.id, {
+              specialty: clean,
+              specialtyName: clean,
+              specialtyId: targetSpecId
+            });
+          } else if (!isSelected && matchesOld) {
+            await updateDoctor(doc.id, {
+              specialty: 'Medicina General',
+              specialtyName: 'Medicina General',
+              specialtyId: 'spec-general'
+            });
+          }
+        }
+      }
+
+      setIsSpecialtyModalOpen(false);
+    } catch (err) {
+      console.error('Error al guardar especialidad:', err);
+    }
   };
 
-  const handleDeleteSpecialtyAction = () => {
+  const handleDeleteSpecialtyAction = async () => {
     if (!editingSpecialty) return;
     if (window.confirm(`¿Está seguro de eliminar la especialidad "${editingSpecialty.name}"?`)) {
-      deleteSpecialty(editingSpecialty.id);
-      setIsSpecialtyModalOpen(false);
+      try {
+        await deleteSpecialty(editingSpecialty.id);
+        setIsSpecialtyModalOpen(false);
+      } catch (err) {
+        console.error('Error al eliminar especialidad:', err);
+      }
     }
   };
 

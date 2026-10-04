@@ -242,7 +242,7 @@ export const PatientFormModal = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!formData.name.trim() || !formData.dni.trim()) {
       addToast('Campos requeridos', 'El nombre y DNI son obligatorios.', 'error');
@@ -301,13 +301,16 @@ export const PatientFormModal = () => {
         : []
     };
 
-    if (patientFormModalData) {
-      updatePatient(patientFormModalData.id, payload);
-    } else {
-      addPatient(payload);
+    try {
+      if (patientFormModalData) {
+        await updatePatient(patientFormModalData.id, payload);
+      } else {
+        await addPatient(payload);
+      }
+      setIsPatientFormModalOpen(false);
+    } catch (err) {
+      console.error('Error al guardar paciente:', err);
     }
-
-    setIsPatientFormModalOpen(false);
   };
 
   const isBlancoSelected = (formData.assignedDoctorIds || []).includes('doc-1');

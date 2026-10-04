@@ -8,6 +8,7 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
+    "test": "node tests/test-init.js && node tests/e2e-persistence.js",
     "test:e2e": "node tests/e2e-persistence.js",
     "test:rls": "node tests/test-init.js"
   },

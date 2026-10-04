@@ -126,26 +126,24 @@ export const DashboardView = () => {
 
   const progressPercentage = totalAppointmentsToday > 0 ? Math.round((attendedCount / totalAppointmentsToday) * 100) : 0;
 
-  // ALTA-10: Cálculo real de efectividad asistencial: completados / (completados + cancelados + ausentes)
+  // ALTA-10 / V2-B1: Cálculo real de efectividad asistencial: completados / (completados + cancelados + ausentes)
   const completedTotal = baseAppointments.filter((a) => a.status === 'atendido').length;
   const cancelledTotal = baseAppointments.filter((a) => a.status === 'cancelado').length;
   const absentTotal = baseAppointments.filter((a) => a.status === 'ausente').length;
   const totalResolved = completedTotal + cancelledTotal + absentTotal;
   const completionRate = totalResolved > 0
     ? Math.round((completedTotal / totalResolved) * 100)
-    : (completedTotal > 0 ? 100 : 95);
+    : (completedTotal > 0 ? 100 : 'Sin datos');
 
-  const signedConsultationsRatio = consultations && consultations.length > 0
-    ? Math.round((consultations.filter((c) => c.signed || c.signatureTimestamp).length / consultations.length) * 100)
-    : 100;
-
-  // Chart data: cálculo dinámico sobre turnos reales de la clínica (M-07)
+  // Chart data: cálculo dinámico sobre turnos reales de la clínica (excluyendo cancelados - V2-B1)
   const specialtyDistributionData = useMemo(() => {
     const specCounts = {};
-    baseAppointments.forEach((a) => {
-      const spec = a.doctorSpecialty || a.specialtyName || 'Traumatología';
-      specCounts[spec] = (specCounts[spec] || 0) + 1;
-    });
+    baseAppointments
+      .filter((a) => a.status !== 'cancelado')
+      .forEach((a) => {
+        const spec = a.doctorSpecialty || a.specialtyName || 'Traumatología';
+        specCounts[spec] = (specCounts[spec] || 0) + 1;
+      });
 
     const entries = Object.entries(specCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
     const labels = entries.length > 0 ? entries.map(([name]) => name) : ['Traumatología', 'Kinesiología'];
@@ -466,10 +464,12 @@ export const DashboardView = () => {
             </div>
           </div>
           <div>
-            <div className="stat-card-value" style={{ color: '#065f46' }}>{completionRate}%</div>
+            <div className="stat-card-value" style={{ color: '#065f46', fontSize: typeof completionRate === 'string' ? '1.4rem' : undefined }}>
+              {typeof completionRate === 'number' ? `${completionRate}%` : completionRate}
+            </div>
             <div className="stat-card-meta" style={{ color: '#065f46', marginTop: '4px' }}>
               <CheckCircle2 size={14} />
-              <span>{completedTotal} atendidos de {totalResolved || completedTotal || 1} turnos</span>
+              <span>{completedTotal} atendidos de {totalResolved || completedTotal || 0} turnos</span>
             </div>
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>

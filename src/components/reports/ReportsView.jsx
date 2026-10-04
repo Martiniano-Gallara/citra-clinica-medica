@@ -424,10 +424,12 @@ export const ReportsView = () => {
 
   const specialtyDistributionData = useMemo(() => {
     const counts = {};
-    (appointments || []).forEach(a => {
-      const spec = a.doctorSpecialty || a.specialtyName || 'General';
-      counts[spec] = (counts[spec] || 0) + 1;
-    });
+    (appointments || [])
+      .filter(a => a.status !== 'cancelado')
+      .forEach(a => {
+        const spec = a.doctorSpecialty || a.specialtyName || 'General';
+        counts[spec] = (counts[spec] || 0) + 1;
+      });
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
     const labels = sorted.length > 0 ? sorted.map(([k]) => k) : ['Traumatología', 'Kinesiología'];
     const data = sorted.length > 0 ? sorted.map(([, v]) => v) : [0, 0];
@@ -454,10 +456,12 @@ export const ReportsView = () => {
 
   const insuranceDoughnutData = useMemo(() => {
     const counts = {};
-    (appointments || []).forEach(a => {
-      const ins = a.patientInsurance || a.insuranceName || 'Particular';
-      counts[ins] = (counts[ins] || 0) + 1;
-    });
+    (appointments || [])
+      .filter(a => a.status !== 'cancelado')
+      .forEach(a => {
+        const ins = a.patientInsurance || a.insuranceName || 'Particular';
+        counts[ins] = (counts[ins] || 0) + 1;
+      });
     const total = Object.values(counts).reduce((s, v) => s + v, 0);
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
     const labels = sorted.map(([k, v]) => total > 0 ? `${k} (${Math.round((v / total) * 100)}%)` : k);
@@ -480,19 +484,21 @@ export const ReportsView = () => {
     const recurringByDay = [0, 0, 0, 0, 0];
     const newByDay = [0, 0, 0, 0, 0];
 
-    (appointments || []).forEach(app => {
-      if (!app.date) return;
-      const d = new Date(app.date + 'T12:00:00');
-      const dayIdx = d.getDay() - 1;
-      if (dayIdx >= 0 && dayIdx <= 4) {
-        const isNew = (patients || []).some(p => p.id === app.patientId && (p.registeredAt || '').startsWith((app.date || '').substring(0, 7)));
-        if (isNew) {
-          newByDay[dayIdx]++;
-        } else {
-          recurringByDay[dayIdx]++;
+    (appointments || [])
+      .filter(app => app.status !== 'cancelado')
+      .forEach(app => {
+        if (!app.date) return;
+        const d = new Date(app.date + 'T12:00:00');
+        const dayIdx = d.getDay() - 1;
+        if (dayIdx >= 0 && dayIdx <= 4) {
+          const isNew = (patients || []).some(p => p.id === app.patientId && (p.registeredAt || '').startsWith((app.date || '').substring(0, 7)));
+          if (isNew) {
+            newByDay[dayIdx]++;
+          } else {
+            recurringByDay[dayIdx]++;
+          }
         }
-      }
-    });
+      });
 
     return {
       labels: days,

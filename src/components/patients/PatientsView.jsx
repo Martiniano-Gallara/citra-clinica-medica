@@ -30,6 +30,7 @@ export const PatientsView = () => {
   const {
     patients,
     scopedPatients,
+    searchPatientsServer,
     isDoctor,
     currentDoctor,
     doctors,
@@ -51,6 +52,26 @@ export const PatientsView = () => {
   const [insuranceFilter, setInsuranceFilter] = useState('all');
   const [allergyOnlyFilter, setAllergyOnlyFilter] = useState(false);
   const [expandedPatientId, setExpandedPatientId] = useState(null);
+  const [isSearchingServer, setIsSearchingServer] = useState(false);
+
+  // V2-M2: Búsqueda dinámica en servidor cuando se ingresan términos de búsqueda
+  useEffect(() => {
+    const term = searchTerm.trim();
+    if (!term || term.length < 2) return;
+    const timer = setTimeout(async () => {
+      if (typeof searchPatientsServer === 'function') {
+        setIsSearchingServer(true);
+        try {
+          await searchPatientsServer(term, 50);
+        } catch (err) {
+          console.warn('Error en búsqueda de pacientes en servidor:', err);
+        } finally {
+          setIsSearchingServer(false);
+        }
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchTerm, searchPatientsServer]);
 
   // Strict Scoping: Doctor only sees patients attended by them
   const effectivePatients = useMemo(() => {

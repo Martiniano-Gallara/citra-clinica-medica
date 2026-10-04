@@ -160,11 +160,15 @@ export const PatientUnifiedPortal = () => {
     (a) => a.status === 'atendido' || a.status === 'cancelado'
   );
 
-  const handleConfirmCancel = () => {
+  const handleConfirmCancel = async () => {
     if (appointmentToCancel) {
-      cancelAppointment(appointmentToCancel.id, cancelReason);
-      setAppointmentToCancel(null);
-      addToast('Turno Cancelado', 'El turno ha sido cancelado en el sistema.', 'info');
+      try {
+        await cancelAppointment(appointmentToCancel.id, cancelReason);
+        setAppointmentToCancel(null);
+        addToast('Turno Cancelado', 'El turno ha sido cancelado en el sistema.', 'info');
+      } catch (err) {
+        console.error('Error al cancelar turno:', err);
+      }
     }
   };
 

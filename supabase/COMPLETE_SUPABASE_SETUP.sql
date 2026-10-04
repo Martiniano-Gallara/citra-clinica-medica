@@ -355,6 +355,8 @@ CREATE TABLE IF NOT EXISTS rehab_sessions (
     procedures JSONB DEFAULT '[]'::jsonb,
     patient_tolerance VARCHAR(50) DEFAULT 'Buena',
     next_session_planned TEXT,
+    voided_at TIMESTAMPTZ,
+    void_reason TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -509,6 +511,16 @@ BEGIN
         email = EXCLUDED.email,
         first_name = COALESCE(EXCLUDED.first_name, profiles.first_name),
         last_name = COALESCE(EXCLUDED.last_name, profiles.last_name);
+
+    -- Auto-vincular ficha de paciente si existe por email o metadata->>'dni'
+    UPDATE public.patients
+    SET user_id = NEW.id
+    WHERE user_id IS NULL
+      AND (
+          (email IS NOT NULL AND lower(email) = lower(NEW.email))
+          OR (NEW.raw_user_meta_data->>'dni' IS NOT NULL AND dni = NEW.raw_user_meta_data->>'dni')
+      );
+
     RETURN NEW;
 EXCEPTION
     WHEN OTHERS THEN
@@ -528,12 +540,12 @@ $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.is_superadmin()
 RETURNS BOOLEAN AS $$
-    SELECT (public.get_auth_role() = 'superadmin' OR auth.jwt() ->> 'email' = 'dr.blanco@citra.com.ar');
+    SELECT COALESCE(public.get_auth_role() = 'superadmin', false);
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.is_administrative()
 RETURNS BOOLEAN AS $$
-    SELECT (public.get_auth_role() IN ('administrative', 'superadmin') OR auth.jwt() ->> 'email' = 'dr.blanco@citra.com.ar');
+    SELECT COALESCE(public.get_auth_role() IN ('administrative', 'superadmin'), false);
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.is_doctor()
@@ -613,6 +625,48 @@ REVOKE EXECUTE ON FUNCTION public.get_current_doctor_id() FROM anon;
 REVOKE EXECUTE ON FUNCTION public.get_current_patient_id() FROM anon;
 REVOKE EXECUTE ON FUNCTION public.doctor_treats_patient(VARCHAR, VARCHAR) FROM anon, public;
 GRANT EXECUTE ON FUNCTION public.doctor_treats_patient(VARCHAR, VARCHAR) TO authenticated;
+
+-- V2-A3: Vinculación formal de credenciales de auth a profesionales médicos por Superadmin
+CREATE OR REPLACE FUNCTION public.link_doctor_account(
+    p_doctor_id VARCHAR,
+    p_user_id UUID
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+    IF NOT public.is_superadmin() THEN
+        RAISE EXCEPTION 'Solo un superadministrador puede vincular cuentas de profesionales';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM public.doctors WHERE id = p_doctor_id) THEN
+        RAISE EXCEPTION 'Profesional % no encontrado', p_doctor_id;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = p_user_id) THEN
+        RAISE EXCEPTION 'Usuario auth % no encontrado', p_user_id;
+    END IF;
+
+    UPDATE public.doctors
+    SET user_id = p_user_id
+    WHERE id = p_doctor_id;
+
+    UPDATE public.profiles
+    SET role = 'doctor'::public.user_role
+    WHERE id = p_user_id AND role = 'patient'::public.user_role;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'doctor_id', p_doctor_id,
+        'user_id', p_user_id
+    );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.link_doctor_account(VARCHAR, UUID) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.link_doctor_account(VARCHAR, UUID) FROM anon;
 
 -- T9: Vista segura de catálogo público de profesionales (oculta datos confidenciales y honorarios)
 DROP VIEW IF EXISTS public.public_doctors CASCADE;
@@ -1469,6 +1523,90 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_catalog;
 
+-- 9.5. RPC: Apertura de Turno de Caja (V2-A7)
+CREATE OR REPLACE FUNCTION public.open_cash_shift_rpc(
+    p_opening_balance NUMERIC DEFAULT 0,
+    p_shift_name VARCHAR DEFAULT 'Turno de Caja',
+    p_cashier_name VARCHAR DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_catalog
+AS $$
+DECLARE
+    v_user_id UUID;
+    v_cashier_name VARCHAR(150);
+    v_shift_id VARCHAR(50);
+    v_existing_shift_id VARCHAR(50);
+    v_shift_record public.cash_shifts%ROWTYPE;
+BEGIN
+    IF NOT public.is_administrative() THEN
+        RAISE EXCEPTION 'Acceso denegado: Se requiere rol administrativo para abrir turnos de caja.';
+    END IF;
+
+    v_user_id := auth.uid();
+    IF v_user_id IS NULL THEN
+        RAISE EXCEPTION 'Usuario no autenticado.';
+    END IF;
+
+    SELECT id INTO v_existing_shift_id
+    FROM public.cash_shifts
+    WHERE user_id = v_user_id AND status = 'open'
+    LIMIT 1;
+
+    IF v_existing_shift_id IS NOT NULL THEN
+        RAISE EXCEPTION 'El usuario ya posee un turno de caja abierto: %', v_existing_shift_id;
+    END IF;
+
+    IF p_cashier_name IS NOT NULL AND trim(p_cashier_name) <> '' THEN
+        v_cashier_name := trim(p_cashier_name);
+    ELSE
+        SELECT COALESCE(trim(first_name || ' ' || last_name), email, 'Administrador')
+        INTO v_cashier_name
+        FROM public.profiles
+        WHERE id = v_user_id;
+
+        IF v_cashier_name IS NULL OR trim(v_cashier_name) = '' THEN
+            v_cashier_name := 'Administrador de Caja';
+        END IF;
+    END IF;
+
+    v_shift_id := 'shift-' || to_char(NOW(), 'YYYYMMDD-HH24MISS') || '-' || substr(gen_random_uuid()::text, 1, 6);
+
+    INSERT INTO public.cash_shifts (
+        id, user_id, cashier_name, shift_name, status,
+        opening_balance, total_cash, total_cards, total_transfers, total_expenses, net_total,
+        opened_at, created_at, updated_at
+    ) VALUES (
+        v_shift_id, v_user_id, v_cashier_name, COALESCE(p_shift_name, 'Turno de Caja'), 'open',
+        COALESCE(p_opening_balance, 0), 0, 0, 0, 0, COALESCE(p_opening_balance, 0),
+        NOW(), NOW(), NOW()
+    ) RETURNING * INTO v_shift_record;
+
+    INSERT INTO public.audit_logs (
+        id, timestamp, user_id, user_name, user_role,
+        action, resource, details, ip_address, event_hash
+    ) VALUES (
+        'aud-' || gen_random_uuid()::text,
+        NOW(), v_user_id::text, v_cashier_name, 'admin',
+        'OPEN_CASH_SHIFT', 'cash_shifts',
+        jsonb_build_object('shift_id', v_shift_id, 'opening_balance', p_opening_balance)::text,
+        COALESCE(inet_client_addr()::text, '127.0.0.1'),
+        encode(digest(v_shift_id || '|' || NOW()::text || '|OPEN', 'sha256'), 'hex')
+    );
+
+    RETURN jsonb_build_object(
+        'success', TRUE,
+        'shift_id', v_shift_id,
+        'shift', to_jsonb(v_shift_record)
+    );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.open_cash_shift_rpc(NUMERIC, VARCHAR, VARCHAR) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.open_cash_shift_rpc(NUMERIC, VARCHAR, VARCHAR) FROM anon;
+
 -- 10. RPC: Cierre de Turno de Caja (M08)
 CREATE OR REPLACE FUNCTION public.close_cash_shift_rpc(
     p_shift_id VARCHAR,
@@ -1769,12 +1907,22 @@ GRANT SELECT ON public.public_doctors TO anon, authenticated;
 -- 28. RESERVA PÚBLICA DE TURNOS SEGURA (ALTA-07)
 -- Ejecutable por rol anon y authenticated con validaciones estrictas
 -- ====================================================================
+-- Tabla para control de intentos y mitigación de abuso de reservas públicas (V2-A8)
+CREATE TABLE IF NOT EXISTS public.public_booking_attempts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    dni VARCHAR(30) NOT NULL,
+    ip_address TEXT,
+    attempted_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_booking_attempts_dni_time ON public.public_booking_attempts(dni, attempted_at);
+
 CREATE OR REPLACE FUNCTION public.create_public_booking(
     p_booking JSONB
 )
 RETURNS JSONB AS $$
 DECLARE
     v_patient_id VARCHAR;
+    v_existing_email VARCHAR;
     v_clean_dni VARCHAR;
     v_doctor_id VARCHAR;
     v_doctor_name VARCHAR;
@@ -1784,11 +1932,25 @@ DECLARE
     v_app_id VARCHAR;
     v_booking_code VARCHAR;
     v_collision_count INT;
+    v_status public.appointment_status := 'confirmado';
+    v_attempts_count INT;
 BEGIN
     v_clean_dni := regexp_replace(COALESCE(p_booking->>'patient_dni', ''), '\D', '', 'g');
     IF length(v_clean_dni) < 6 THEN
         RAISE EXCEPTION 'DNI inválido para reserva de turno.';
     END IF;
+
+    -- V2-A8: Control de abuso y rate limiting por DNI (máximo 5 reservas por DNI en 24 horas)
+    SELECT count(*) INTO v_attempts_count
+    FROM public.public_booking_attempts
+    WHERE dni = v_clean_dni AND attempted_at > NOW() - INTERVAL '24 hours';
+
+    IF v_attempts_count >= 5 THEN
+        RAISE EXCEPTION 'Ha superado el límite de 5 intentos de reserva por día para este DNI.';
+    END IF;
+
+    INSERT INTO public.public_booking_attempts (dni, ip_address, attempted_at)
+    VALUES (v_clean_dni, COALESCE(inet_client_addr()::text, '127.0.0.1'), NOW());
 
     v_doctor_id := p_booking->>'doctor_id';
     SELECT id, name, specialty_name INTO v_doctor_id, v_doctor_name, v_doctor_specialty
@@ -1802,6 +1964,15 @@ BEGIN
     v_date := (p_booking->>'date')::date;
     v_time := (p_booking->>'time')::time;
 
+    -- V2-A8: Validaciones de fecha: rechazar fechas pasadas y reservas a más de 90 días
+    IF v_date < (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date THEN
+        RAISE EXCEPTION 'No se pueden agendar turnos para fechas pasadas.';
+    END IF;
+
+    IF v_date > ((NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date + INTERVAL '90 days') THEN
+        RAISE EXCEPTION 'La fecha de reserva supera el límite permitido de 90 días de antelación.';
+    END IF;
+
     -- Validar colisión de turno activo
     SELECT count(*) INTO v_collision_count
     FROM public.appointments
@@ -1814,14 +1985,23 @@ BEGIN
         RAISE EXCEPTION 'El profesional ya cuenta con un turno reservado para la fecha y horario seleccionados.';
     END IF;
 
-    -- Buscar o crear paciente en padrón
-    SELECT id INTO v_patient_id
+    -- Buscar o crear paciente en padrón (V2-A8: IDs no colisionables con gen_random_uuid())
+    SELECT id, email INTO v_patient_id, v_existing_email
     FROM public.patients
     WHERE regexp_replace(dni, '\D', '', 'g') = v_clean_dni
     LIMIT 1;
 
-    IF v_patient_id IS NULL THEN
-        v_patient_id := 'pat-' || floor(extract(epoch from now()) * 1000)::text;
+    IF v_patient_id IS NOT NULL THEN
+        -- Si el paciente ya existe en el padrón, comprobar correo; si difiere, requiere confirmación de secretaría
+        IF p_booking->>'patient_email' IS NOT NULL AND v_existing_email IS NOT NULL AND
+           lower(trim(p_booking->>'patient_email')) <> lower(trim(v_existing_email)) THEN
+            v_status := 'pendiente';
+        ELSE
+            v_status := 'confirmado';
+        END IF;
+    ELSE
+        v_patient_id := 'pat-' || gen_random_uuid()::text;
+        v_status := 'confirmado';
         INSERT INTO public.patients (
             id, name, dni, email, phone, insurance_name, insurance_number, registered_at
         ) VALUES (
@@ -1836,7 +2016,7 @@ BEGIN
         );
     END IF;
 
-    v_app_id := 'app-' || floor(extract(epoch from now()) * 1000)::text;
+    v_app_id := 'app-' || gen_random_uuid()::text;
     v_booking_code := 'CITRA-' || floor(10000 + random() * 90000)::text;
 
     INSERT INTO public.appointments (
@@ -1860,18 +2040,19 @@ BEGIN
         v_time,
         COALESCE((p_booking->>'duration')::int, 30),
         'Consulta Presencial',
-        'confirmado',
+        v_status,
         COALESCE(p_booking->>'reason', 'Reserva online de turno'),
         COALESCE((p_booking->>'copay_amount')::numeric, 0),
         TRUE,
         v_booking_code
     );
 
+    -- V2-A8: Retorno seguro sin filtrar patient_id
     RETURN jsonb_build_object(
         'success', TRUE,
         'appointment_id', v_app_id,
         'booking_code', v_booking_code,
-        'patient_id', v_patient_id,
+        'status', v_status,
         'date', v_date,
         'time', v_time,
         'doctor_name', v_doctor_name
@@ -1899,9 +2080,23 @@ DROP POLICY IF EXISTS "medical_records_read_policy" ON storage.objects;
 CREATE POLICY "medical_records_read_policy" ON storage.objects
 FOR SELECT USING (
     bucket_id = 'medical_records' AND (
+        public.is_superadmin() OR
         public.is_administrative() OR
-        public.is_doctor() OR
-        (auth.uid() IS NOT NULL AND auth.uid()::text = (storage.foldername(name))[1])
+        (
+            public.is_doctor() AND
+            public.doctor_treats_patient(
+                (storage.foldername(name))[1],
+                public.get_current_doctor_id()
+            )
+        ) OR
+        (
+            auth.uid() IS NOT NULL AND
+            EXISTS (
+                SELECT 1 FROM public.patients p
+                WHERE p.user_id = auth.uid()
+                  AND p.id = (storage.foldername(name))[1]
+            )
+        )
     )
 );
 
@@ -1909,9 +2104,17 @@ DROP POLICY IF EXISTS "medical_records_insert_policy" ON storage.objects;
 CREATE POLICY "medical_records_insert_policy" ON storage.objects
 FOR INSERT WITH CHECK (
     bucket_id = 'medical_records' AND (
+        public.is_superadmin() OR
         public.is_administrative() OR
         public.is_doctor() OR
-        (auth.uid() IS NOT NULL AND auth.uid()::text = (storage.foldername(name))[1])
+        (
+            auth.uid() IS NOT NULL AND
+            EXISTS (
+                SELECT 1 FROM public.patients p
+                WHERE p.user_id = auth.uid()
+                  AND p.id = (storage.foldername(name))[1]
+            )
+        )
     )
 );
 
@@ -1942,4 +2145,74 @@ EXCEPTION
     WHEN undefined_object THEN NULL;
     WHEN OTHERS THEN NULL;
 END $$;
+
+-- ====================================================================
+-- 31. PREVENCIÓN TOTAL DE TRUNCATE EN TABLAS CLÍNICAS Y LEGALES
+-- Ley 26.529 Art. 18 / Integridad y Custodia Legal
+-- ====================================================================
+CREATE OR REPLACE FUNCTION public.prevent_table_truncate()
+RETURNS TRIGGER AS $$
+BEGIN
+    RAISE EXCEPTION 'Operación TRUNCATE terminantemente prohibida en tablas clínicas y contables (Ley 26.529 / Citra Security Policy).';
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_no_truncate_patients ON public.patients;
+CREATE TRIGGER trg_no_truncate_patients BEFORE TRUNCATE ON public.patients FOR EACH STATEMENT EXECUTE FUNCTION public.prevent_table_truncate();
+
+DROP TRIGGER IF EXISTS trg_no_truncate_doctors ON public.doctors;
+CREATE TRIGGER trg_no_truncate_doctors BEFORE TRUNCATE ON public.doctors FOR EACH STATEMENT EXECUTE FUNCTION public.prevent_table_truncate();
+
+DROP TRIGGER IF EXISTS trg_no_truncate_appointments ON public.appointments;
+CREATE TRIGGER trg_no_truncate_appointments BEFORE TRUNCATE ON public.appointments FOR EACH STATEMENT EXECUTE FUNCTION public.prevent_table_truncate();
+
+DROP TRIGGER IF EXISTS trg_no_truncate_consultations ON public.consultations;
+CREATE TRIGGER trg_no_truncate_consultations BEFORE TRUNCATE ON public.consultations FOR EACH STATEMENT EXECUTE FUNCTION public.prevent_table_truncate();
+
+DROP TRIGGER IF EXISTS trg_no_truncate_prescriptions ON public.electronic_prescriptions;
+CREATE TRIGGER trg_no_truncate_prescriptions BEFORE TRUNCATE ON public.electronic_prescriptions FOR EACH STATEMENT EXECUTE FUNCTION public.prevent_table_truncate();
+
+DROP TRIGGER IF EXISTS trg_no_truncate_imaging ON public.imaging_studies;
+CREATE TRIGGER trg_no_truncate_imaging BEFORE TRUNCATE ON public.imaging_studies FOR EACH STATEMENT EXECUTE FUNCTION public.prevent_table_truncate();
+
+DROP TRIGGER IF EXISTS trg_no_truncate_rehab_sessions ON public.rehab_sessions;
+CREATE TRIGGER trg_no_truncate_rehab_sessions BEFORE TRUNCATE ON public.rehab_sessions FOR EACH STATEMENT EXECUTE FUNCTION public.prevent_table_truncate();
+
+DROP TRIGGER IF EXISTS trg_no_truncate_cash_shifts ON public.cash_shifts;
+CREATE TRIGGER trg_no_truncate_cash_shifts BEFORE TRUNCATE ON public.cash_shifts FOR EACH STATEMENT EXECUTE FUNCTION public.prevent_table_truncate();
+
+DROP TRIGGER IF EXISTS trg_no_truncate_cash_movements ON public.cash_movements;
+CREATE TRIGGER trg_no_truncate_cash_movements BEFORE TRUNCATE ON public.cash_movements FOR EACH STATEMENT EXECUTE FUNCTION public.prevent_table_truncate();
+
+DROP TRIGGER IF EXISTS trg_no_truncate_audit_logs ON public.audit_logs;
+CREATE TRIGGER trg_no_truncate_audit_logs BEFORE TRUNCATE ON public.audit_logs FOR EACH STATEMENT EXECUTE FUNCTION public.prevent_table_truncate();
+
+REVOKE TRUNCATE ON TABLE
+    public.patients,
+    public.doctors,
+    public.appointments,
+    public.consultations,
+    public.electronic_prescriptions,
+    public.imaging_studies,
+    public.rehab_plans,
+    public.rehab_sessions,
+    public.consent_forms,
+    public.invoices,
+    public.cash_shifts,
+    public.cash_movements,
+    public.audit_logs
+FROM public, authenticated, anon;
+
+-- Asegurar rol de superadmin y vínculo médico para la cuenta del director (Dr. Blanco) si ya existe en auth
+DO $$
+DECLARE
+    v_blanco_uid UUID;
+BEGIN
+    SELECT id INTO v_blanco_uid FROM auth.users WHERE email = 'dr.blanco@citra.com.ar' LIMIT 1;
+    IF v_blanco_uid IS NOT NULL THEN
+        UPDATE public.profiles SET role = 'superadmin' WHERE id = v_blanco_uid;
+        UPDATE public.doctors SET user_id = v_blanco_uid WHERE id = 'doc-1';
+    END IF;
+END $$;
+
 

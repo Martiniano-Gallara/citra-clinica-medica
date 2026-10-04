@@ -45,9 +45,32 @@ npm install
 
 # 4. Iniciar servidor de desarrollo
 npm run dev
+
+# 5. Ejecutar suites de pruebas (Seguridad, RLS, Persistencia E2E)
+npm run test:rls
+npm run test:e2e
+
+# 6. Compilar para producción
+npm run build
 ```
 
 La aplicación se ejecutará en `http://localhost:5173/`.
+
+---
+
+## 🔒 Arquitectura de Seguridad & Base de Datos (Auditoría v2 Remediada)
+
+- **Migraciones Secuenciales y Supabase:**
+  - Migración canónica: `supabase/migrations/20260924000000_complete_supabase_setup.sql`.
+  - Configuración consolidada: `supabase/COMPLETE_SUPABASE_SETUP.sql`.
+- **Inmutabilidad y Cumplimiento Normativo (Ley 26.529):**
+  - Triggers que impiden el borrado (`DELETE`) físico o vaciado (`TRUNCATE`) en tablas clínicas (`patients`, `consultations`, `prescriptions`, `medical_studies`).
+  - HCE inmutable protegida por hashes SHA-256 criptográficos y sistema legal de adendas fechadas.
+- **Roles y Privilegios Estrictos (RLS):**
+  - Función de superadmin sin backdoors de email; basada exclusivamente en roles asignados en `public.profiles`.
+  - Vinculación explícita de cuentas profesionales (`public.link_doctor_account`).
+  - Gestión segura de turnos de caja (`public.open_cash_shift_rpc`) y cierre con arqueo inmutable.
+  - Bucket de almacenamiento privado `medical_records` con políticas RLS de lectura y escritura por propiedad y vínculo médico-paciente.
 
 ---
 
@@ -58,3 +81,4 @@ La aplicación se ejecutará en `http://localhost:5173/`.
 - **Kinesiólogo / Fisiatra**
 - **Recepción / Secretaría de Guardia**
 - **Facturación & Administración**
+

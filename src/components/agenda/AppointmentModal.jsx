@@ -150,7 +150,7 @@ export const AppointmentModal = () => {
     setShowPatientResults(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.patientName) {
       addToast('Error', 'Por favor seleccione o ingrese un paciente.', 'error');
@@ -166,12 +166,16 @@ export const AppointmentModal = () => {
       return;
     }
 
-    if (appointmentModalData) {
-      updateAppointment(appointmentModalData.id, formData);
-    } else {
-      addAppointment(formData);
+    try {
+      if (appointmentModalData) {
+        await updateAppointment(appointmentModalData.id, formData);
+      } else {
+        await addAppointment(formData);
+      }
+      setIsAppointmentModalOpen(false);
+    } catch (err) {
+      console.error('Error al guardar turno:', err);
     }
-    setIsAppointmentModalOpen(false);
   };
 
   const handleSendReminderWhatsApp = () => {
@@ -206,10 +210,14 @@ export const AppointmentModal = () => {
             {appointmentModalData && appointmentModalData.status !== 'cancelado' && (
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   if (window.confirm('¿Está seguro de cancelar este turno? Conforme a la Ley 26.529, el registro será archivado con estado cancelado manteniendo su trazabilidad legal.')) {
-                    deleteAppointment(appointmentModalData.id);
-                    setIsAppointmentModalOpen(false);
+                    try {
+                      await deleteAppointment(appointmentModalData.id);
+                      setIsAppointmentModalOpen(false);
+                    } catch (err) {
+                      console.error('Error al cancelar turno:', err);
+                    }
                   }
                 }}
                 style={{

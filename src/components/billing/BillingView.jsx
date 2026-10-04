@@ -30,6 +30,7 @@ export const BillingView = () => {
     doctors,
     cashClosures,
     addCashMovement,
+    openCashShift,
     closeCashShift,
     setIsPaymentModalOpen,
     setPaymentPreloadData,
@@ -43,6 +44,24 @@ export const BillingView = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMethod, setFilterMethod] = useState('all');
   const [isClosingShift, setIsClosingShift] = useState(false);
+
+  const handleOpenShift = async () => {
+    const balanceStr = prompt('Monto de Apertura de Caja (Fondo Fijo $):', '10000');
+    if (balanceStr === null) return;
+    const numBalance = Number(balanceStr);
+    if (isNaN(numBalance) || numBalance < 0) {
+      addToast('Monto Inválido', 'Debe ingresar un monto numérico válido (0 o superior).', 'warning');
+      return;
+    }
+    const shiftName = prompt('Nombre del Turno:', 'Turno Mañana') || 'Turno Regular';
+    try {
+      if (typeof openCashShift === 'function') {
+        await openCashShift(numBalance, shiftName);
+      }
+    } catch (err) {
+      console.error('Error al abrir turno de caja:', err);
+    }
+  };
 
   // KPI Calculations
   const totalFacturado = invoices.reduce((acc, curr) => acc + (curr.amount || 0), 0);
@@ -300,11 +319,40 @@ export const BillingView = () => {
           </div>
         </div>
       ) : activeSubTab === 'caja' ? (
-        /* CAJA DIARIA & ARQUEOS DE TURNO VIEW */
+        /* CAJA DIARIA & ARQUEOS DE TURNO VIEW (V2-A7) */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F8FAFC', padding: '1rem 1.25rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+            <div>
+              <h3 style={{ margin: 0, color: '#002182', fontSize: '1.15rem', fontWeight: 800 }}>
+                Control de Caja y Turnos de Arqueo
+              </h3>
+              <p style={{ margin: '0.2rem 0 0', fontSize: '0.84rem', color: '#496386' }}>
+                Apertura y cierre seguro de caja con conciliación de efectivo y comprobantes.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleOpenShift}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.55rem 1rem', fontSize: '0.88rem' }}
+            >
+              <Plus size={16} />
+              <span>Abrir Turno de Caja</span>
+            </button>
+          </div>
+
           {(!cashClosures || cashClosures.length === 0) ? (
-            <div className="card" style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
-              No hay arqueos de caja registrados actualmente.
+            <div className="card" style={{ padding: '3rem 2rem', textAlign: 'center', color: '#64748b' }}>
+              <p style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: 600 }}>No hay turnos de caja registrados actualmente.</p>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleOpenShift}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', margin: '0 auto' }}
+              >
+                <Plus size={16} />
+                <span>Abrir Primer Turno de Caja</span>
+              </button>
             </div>
           ) : (
             cashClosures.map((caja) => (
@@ -319,7 +367,7 @@ export const BillingView = () => {
                     <button
                       type="button"
                       className="btn btn-outline btn-sm"
-                      onClick={() => {
+                      onClick={async () => {
                         const amountStr = prompt('Monto del Egreso Menor ($):', '2500');
                         if (!amountStr) return;
                         const numAmount = Number(amountStr);
@@ -330,7 +378,11 @@ export const BillingView = () => {
                         const concept = prompt('Concepto del Egreso:', 'Artículos de limpieza / librería');
                         if (concept) {
                           if (typeof addCashMovement === 'function') {
-                            addCashMovement('EGRESO', numAmount, concept, caja.cashierName || 'Recepción');
+                            try {
+                              await addCashMovement('EGRESO', numAmount, concept, caja.cashierName || 'Recepción', 'Efectivo');
+                            } catch (err) {
+                              console.error('Error al registrar egreso:', err);
+                            }
                           }
                         }
                       }}

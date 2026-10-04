@@ -1331,7 +1331,7 @@ export const ClinicProvider = ({ children }) => {
         files: []
       };
       setPatients((prev) => [newPat, ...prev]);
-      if (dataService.isLive()) {
+      if (dataService.isLive() && !appData.bookedOnline) {
         try {
           await dataService.createPatient(newPat);
         } catch (err) {
@@ -1439,6 +1439,31 @@ export const ClinicProvider = ({ children }) => {
     }
     logAudit('UPDATE', 'Padrón de Pacientes', updatedData.dni || '-', `Actualización de datos del paciente.`);
     addToast('Ficha Actualizada', 'Datos del paciente guardados.', 'success');
+  };
+
+  const searchPatientsServer = async (searchTerm, limit = 50) => {
+    if (dataService.isLive()) {
+      try {
+        const results = await dataService.fetchPatients(limit, searchTerm);
+        if (Array.isArray(results)) {
+          setPatients((prev) => {
+            const map = new Map(prev.map((p) => [p.id, p]));
+            results.forEach((p) => map.set(p.id, p));
+            return Array.from(map.values());
+          });
+          return results;
+        }
+      } catch (err) {
+        console.warn('Error al buscar pacientes en servidor (V2-M2):', err);
+      }
+    }
+    const term = (searchTerm || '').toLowerCase().trim();
+    if (!term) return patients;
+    return patients.filter((p) =>
+      (p.name && p.name.toLowerCase().includes(term)) ||
+      (p.dni && p.dni.includes(term)) ||
+      (p.email && p.email.toLowerCase().includes(term))
+    );
   };
 
   const addPatientFile = async (patientId, fileObj) => {
@@ -1835,7 +1860,7 @@ export const ClinicProvider = ({ children }) => {
   };
 
   // --- CAJA & ARQUEOS DIARIOS (M-08) ---
-  const addCashMovement = async (type, amount, concept, cashierName) => {
+  const addCashMovement = async (type, amount, concept, cashierName, paymentMethod = 'Efectivo') => {
     if (cashLockRef.current) {
       addToast('Operación en Curso', 'Se está registrando un movimiento de caja. Aguarde un instante.', 'warning');
       return;
@@ -1848,6 +1873,25 @@ export const ClinicProvider = ({ children }) => {
         return;
       }
       const isExpense = String(type).trim().toUpperCase() === 'EGRESO';
+
+      // V2-A7: Persistir primero en servidor y únicamente ante respuesta exitosa actualizar estado local
+      if (dataService.isLive()) {
+        try {
+          await dataService.addCashMovement({
+            type: isExpense ? 'expense' : 'income',
+            amount: numAmount,
+            concept: concept || 'Movimiento de caja',
+            cashierName: cashierName || currentUser?.name || 'Recepción',
+            paymentMethod: paymentMethod || 'Efectivo',
+            userId: authAdmin?.id || currentUser?.id
+          });
+        } catch (err) {
+          console.error('Error al sincronizar movimiento de caja con Supabase:', err);
+          addToast('Error de Caja', err.message || 'No se pudo registrar en la base de datos.', 'error');
+          throw err;
+        }
+      }
+
       setCashClosures((prev) =>
         prev.map((c, idx) => {
           if (idx === 0) {
@@ -1864,28 +1908,44 @@ export const ClinicProvider = ({ children }) => {
         })
       );
 
-      if (dataService.isLive()) {
-        try {
-          await dataService.addCashMovement({
-            type: isExpense ? 'expense' : 'income',
-            amount: numAmount,
-            concept: concept || 'Movimiento de caja',
-            cashierName: cashierName || currentUser?.name || 'Recepción',
-            userId: authAdmin?.id || currentUser?.id
-          });
-        } catch (err) {
-          console.error('Error al sincronizar movimiento de caja con Supabase:', err);
-          addToast('Error de Caja', err.message || 'No se pudo registrar en la base de datos.', 'error');
-          return;
-        }
-      }
-
       logAudit('CASH', 'Caja Diaria', '-', `Movimiento de caja ${type}: $${numAmount} por ${concept} (Operador: ${cashierName || currentUser?.name || 'Recepción'})`);
       addToast('Movimiento de Caja Registrado', `${isExpense ? 'Egreso' : 'Ingreso'} de $${numAmount.toLocaleString()} asentado.`, 'info');
     } finally {
       setTimeout(() => {
         cashLockRef.current = false;
       }, 300);
+    }
+  };
+
+  const openCashShift = async (openingBalance = 0, shiftName = 'Turno de Caja') => {
+    try {
+      const numBal = Number(openingBalance) || 0;
+      let newShiftId = `shift-${Date.now()}`;
+      if (dataService.isLive()) {
+        const res = await dataService.openCashShift(numBal, shiftName, currentUser?.name || authAdmin?.name);
+        if (res?.shift_id) newShiftId = res.shift_id;
+      }
+      const newShiftObj = {
+        id: newShiftId,
+        date: getTodayArgentina(),
+        shift: shiftName,
+        cashierName: currentUser?.name || authAdmin?.name || 'Administración',
+        status: 'open',
+        openingBalance: numBal,
+        totalCash: 0,
+        totalCards: 0,
+        totalQrTransfer: 0,
+        totalExpenses: 0,
+        netTotal: numBal,
+        movements: []
+      };
+      setCashClosures((prev) => [newShiftObj, ...prev.filter(c => c.status !== 'open')]);
+      addToast('Caja Abierta', `Se abrió el turno de caja exitosamente con saldo inicial $${numBal.toLocaleString()}.`, 'success');
+      return newShiftObj;
+    } catch (err) {
+      console.error('Error abriendo caja:', err);
+      addToast('Error al Abrir Caja', err.message || 'No se pudo abrir el turno de caja.', 'error');
+      throw err;
     }
   };
 
@@ -2297,14 +2357,26 @@ export const ClinicProvider = ({ children }) => {
     addToast('Perfil Actualizado', 'Tus datos profesionales y credenciales han sido guardados.', 'success');
   };
 
-  // --- GESTIÓN DE USUARIOS Y ROLES (Ley 25.326 / A-02) ---
+  // --- GESTIÓN DE USUARIOS Y ROLES (Ley 25.326 / A-02 / V2-A9 / V2-M3) ---
   const updateUser = async (userId, updatedData) => {
-    const { password, ...safeData } = updatedData;
+    const { password, currentPassword, ...safeData } = updatedData;
     if (password && dataService.isLive()) {
       try {
-        await dataService.updateUserPassword(null, password);
+        const isSelf = (authAdmin && authAdmin.id === userId) || (currentUser && currentUser.id === userId);
+        if (isSelf) {
+          if (!currentPassword) {
+            throw new Error('Debe proporcionar su contraseña actual para confirmar el cambio.');
+          }
+          await dataService.updateUserPassword(currentPassword, password);
+        } else {
+          const target = users.find((u) => u.id === userId);
+          const targetAuthId = target?.authUserId || target?.userId || userId;
+          await dataService.adminSetUserPassword(targetAuthId, password);
+        }
       } catch (err) {
-        console.warn('Error al actualizar contraseña en Supabase Auth:', err);
+        console.error('Error al actualizar contraseña:', err);
+        addToast('Error al Actualizar Contraseña', err?.message || 'No se pudo cambiar la contraseña en el servidor.', 'error');
+        throw err;
       }
     }
     setUsers((prev) =>
@@ -2344,67 +2416,88 @@ export const ClinicProvider = ({ children }) => {
     console.warn('Cambio de usuario deshabilitado por seguridad (CITRA-003). Se requiere iniciar sesión formalmente.');
   };
 
-  // --- AUTENTICACIÓN PACIENTES Y ADMINISTRADORES ---
+  // --- AUTENTICACIÓN PACIENTES Y ADMINISTRADORES (V2-A6) ---
   const loginPatient = async (dniOrEmail, password) => {
-    const cleanInput = (dniOrEmail || '').trim().toLowerCase().replace(/\./g, '');
-    const foundPatient = patients.find((p) => {
-      const cleanDni = (p.dni || '').replace(/\./g, '');
-      const cleanEmail = (p.email || '').toLowerCase().trim();
-      return cleanDni === cleanInput || cleanEmail === cleanInput;
-    });
-
-    if (!foundPatient) {
-      addToast('Credenciales no encontradas', 'No encontramos ningún paciente con ese DNI o Email.', 'warning');
-      return { success: false, message: 'Paciente no encontrado' };
+    const cleanInput = (dniOrEmail || '').trim().toLowerCase();
+    if (!cleanInput) {
+      addToast('Campo Requerido', 'Por favor ingrese su correo electrónico o DNI.', 'warning');
+      return { success: false, message: 'Identificación requerida' };
     }
-
-    // Validación estricta: la contraseña es obligatoria
     if (!password || !password.trim()) {
       addToast('Contraseña Requerida', 'Por favor ingresá tu contraseña de acceso.', 'warning');
       return { success: false, message: 'Contraseña requerida' };
     }
 
-    if (dataService.isLive() && foundPatient.email) {
+    if (dataService.isLive()) {
       try {
-        const { session, user } = await dataService.signInWithPassword(foundPatient.email, password);
+        const { session, user } = await dataService.signInWithPassword(cleanInput, password);
         if (!session && !user) {
           addToast('Error de Autenticación', 'Credenciales no válidas en el servidor central.', 'error');
           return { success: false, message: 'Fallo de autenticación GoTrue' };
         }
-      } catch (err) {
-        if (!foundPatient.password || foundPatient.password !== password) {
-          addToast('Contraseña Incorrecta', 'La contraseña ingresada no es válida.', 'error');
-          return { success: false, message: 'Contraseña incorrecta' };
+        const patientRecord = await dataService.fetchCurrentPatient(user?.id);
+        if (!patientRecord) {
+          addToast('Perfil No Encontrado', 'No se encontró una ficha de paciente asociada a esta cuenta.', 'error');
+          return { success: false, message: 'Ficha médica no encontrada' };
         }
+        setAuthRole('patient');
+        setAuthPatient(patientRecord);
+        setCurrentPortalPatient(patientRecord);
+        setIsAuthModalOpen(false);
+        logAudit('LOGIN', 'Portal Pacientes', patientRecord.dni, `Inicio de sesión de ${patientRecord.name}`);
+        addToast('Bienvenido a CITRA', `Hola, ${patientRecord.name}. Sesión iniciada.`, 'success');
+        return { success: true, patient: patientRecord };
+      } catch (err) {
+        console.error('Error de autenticación portal paciente:', err);
+        addToast('Credenciales Inválidas', err?.message || 'Correo o contraseña incorrectos.', 'error');
+        return { success: false, message: err?.message || 'Credenciales incorrectas' };
       }
     } else {
-      if (!foundPatient.password || foundPatient.password !== password) {
-        addToast('Contraseña Incorrecta', 'La contraseña ingresada no es válida.', 'error');
-        return { success: false, message: 'Contraseña incorrecta' };
-      }
-    }
+      // Mock / Offline fallback (V2-A6: sin exponer contraseñas)
+      const cleanDni = cleanInput.replace(/\./g, '');
+      const foundPatient = patients.find((p) => {
+        const pDni = (p.dni || '').replace(/\./g, '');
+        const pEmail = (p.email || '').toLowerCase().trim();
+        return pDni === cleanDni || pEmail === cleanInput;
+      });
 
-    setAuthRole('patient');
-    setAuthPatient(foundPatient);
-    setCurrentPortalPatient(foundPatient);
-    setIsAuthModalOpen(false);
-    logAudit('LOGIN', 'Portal Pacientes', foundPatient.dni, `Inicio de sesión de ${foundPatient.name}`);
-    addToast('Bienvenido a CITRA', `Hola, ${foundPatient.name}. Sesión iniciada.`, 'success');
-    return { success: true, patient: foundPatient };
+      if (!foundPatient) {
+        addToast('Credenciales no encontradas', 'No encontramos ningún paciente con ese DNI o Correo.', 'warning');
+        return { success: false, message: 'Paciente no encontrado' };
+      }
+
+      setAuthRole('patient');
+      setAuthPatient(foundPatient);
+      setCurrentPortalPatient(foundPatient);
+      setIsAuthModalOpen(false);
+      logAudit('LOGIN', 'Portal Pacientes', foundPatient.dni, `Inicio de sesión de ${foundPatient.name}`);
+      addToast('Bienvenido a CITRA', `Hola, ${foundPatient.name}. Sesión iniciada.`, 'success');
+      return { success: true, patient: foundPatient };
+    }
   };
 
-  const registerPatient = (patientData) => {
-    const newPat = addPatient({
-      ...patientData,
-      registeredAt: patientData.registeredAt || getTodayArgentina()
-    });
-    setAuthRole('patient');
-    setAuthPatient(newPat);
-    setCurrentPortalPatient(newPat);
-    setIsAuthModalOpen(false);
-    logAudit('REGISTER', 'Portal Pacientes', newPat.dni, `Registro de nuevo paciente: ${newPat.name}`);
-    addToast('Registro Exitoso', `¡Bienvenido/a a CITRA, ${newPat.name}! Tu cuenta está lista.`, 'success');
-    return newPat;
+  const registerPatient = async (patientData) => {
+    try {
+      const newPat = await addPatient({
+        ...patientData,
+        registeredAt: patientData.registeredAt || getTodayArgentina()
+      });
+      if (!newPat) {
+        addToast('Error de Registro', 'No se pudo completar el registro del paciente.', 'error');
+        return null;
+      }
+      setAuthRole('patient');
+      setAuthPatient(newPat);
+      setCurrentPortalPatient(newPat);
+      setIsAuthModalOpen(false);
+      logAudit('REGISTER', 'Portal Pacientes', newPat.dni, `Registro de nuevo paciente: ${newPat.name}`);
+      addToast('Registro Exitoso', `¡Bienvenido/a a CITRA, ${newPat.name}! Tu cuenta está lista.`, 'success');
+      return newPat;
+    } catch (err) {
+      console.error('Error en registerPatient:', err);
+      addToast('Error de Registro', err?.message || 'No se pudo registrar el paciente.', 'error');
+      return null;
+    }
   };
 
   const logoutPatient = () => {
@@ -2910,6 +3003,7 @@ export const ClinicProvider = ({ children }) => {
         addPatient,
         updatePatient,
         deletePatient,
+        searchPatientsServer,
         addPatientFile,
         addConsultation,
         updateConsultation,
@@ -2934,6 +3028,7 @@ export const ClinicProvider = ({ children }) => {
         sendWhatsAppReminder,
         updateCommunicationStatus,
         addCashMovement,
+        openCashShift,
         closeCashShift,
         addMedicalOrder,
         addMedicalCertificate,

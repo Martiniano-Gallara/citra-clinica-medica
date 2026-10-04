@@ -178,10 +178,14 @@ export const MyTurnosView = () => {
     (a) => a.status === 'atendido' || a.status === 'cancelado' || a.status === 'ausente'
   );
 
-  const handleConfirmCancel = () => {
+  const handleConfirmCancel = async () => {
     if (appointmentToCancel) {
-      cancelAppointment(appointmentToCancel.id, cancelReason);
-      setAppointmentToCancel(null);
+      try {
+        await cancelAppointment(appointmentToCancel.id, cancelReason);
+        setAppointmentToCancel(null);
+      } catch (err) {
+        console.error('Error al cancelar turno:', err);
+      }
     }
   };
 

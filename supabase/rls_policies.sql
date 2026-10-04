@@ -36,12 +36,12 @@ $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.is_superadmin()
 RETURNS BOOLEAN AS $$
-    SELECT (public.get_auth_role() = 'superadmin' OR auth.jwt() ->> 'email' = 'dr.blanco@citra.com.ar');
+    SELECT COALESCE(public.get_auth_role() = 'superadmin', false);
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.is_administrative()
 RETURNS BOOLEAN AS $$
-    SELECT (public.get_auth_role() IN ('administrative', 'superadmin') OR auth.jwt() ->> 'email' = 'dr.blanco@citra.com.ar');
+    SELECT COALESCE(public.get_auth_role() IN ('administrative', 'superadmin'), false);
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.is_doctor()
@@ -503,3 +503,63 @@ CREATE POLICY "invoices_select_policy" ON invoices FOR SELECT USING (patient_id 
 CREATE POLICY "invoices_insert_policy" ON invoices FOR INSERT WITH CHECK (public.is_administrative());
 CREATE POLICY "invoices_update_policy" ON invoices FOR UPDATE USING (public.is_superadmin());
 -- Inmutabilidad fiscal: Las facturas emitidas no tienen DELETE permitido para ningún rol (se anulan con nota de crédito)
+
+-- Storage de archivos médicos seguro (V2-A4, V2-M6)
+DROP POLICY IF EXISTS "medical_records_read_policy" ON storage.objects;
+CREATE POLICY "medical_records_read_policy" ON storage.objects
+FOR SELECT USING (
+    bucket_id = 'medical_records' AND (
+        public.is_superadmin() OR
+        public.is_administrative() OR
+        (
+            public.is_doctor() AND
+            public.doctor_treats_patient(
+                (storage.foldername(name))[1],
+                public.get_current_doctor_id()
+            )
+        ) OR
+        (
+            auth.uid() IS NOT NULL AND
+            EXISTS (
+                SELECT 1 FROM public.patients p
+                WHERE p.user_id = auth.uid()
+                  AND p.id = (storage.foldername(name))[1]
+            )
+        )
+    )
+);
+
+DROP POLICY IF EXISTS "medical_records_insert_policy" ON storage.objects;
+CREATE POLICY "medical_records_insert_policy" ON storage.objects
+FOR INSERT WITH CHECK (
+    bucket_id = 'medical_records' AND (
+        public.is_superadmin() OR
+        public.is_administrative() OR
+        public.is_doctor() OR
+        (
+            auth.uid() IS NOT NULL AND
+            EXISTS (
+                SELECT 1 FROM public.patients p
+                WHERE p.user_id = auth.uid()
+                  AND p.id = (storage.foldername(name))[1]
+            )
+        )
+    )
+);
+
+REVOKE TRUNCATE ON TABLE
+    public.patients,
+    public.doctors,
+    public.appointments,
+    public.consultations,
+    public.electronic_prescriptions,
+    public.imaging_studies,
+    public.rehab_plans,
+    public.rehab_sessions,
+    public.consent_forms,
+    public.invoices,
+    public.cash_shifts,
+    public.cash_movements,
+    public.audit_logs
+FROM public, authenticated, anon;
+

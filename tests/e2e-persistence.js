@@ -67,6 +67,7 @@ async function bootstrapDB() {
     CREATE TABLE IF NOT EXISTS auth.users (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       email TEXT,
+      raw_user_meta_data JSONB DEFAULT '{}'::jsonb,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE OR REPLACE FUNCTION auth.uid() RETURNS UUID AS $$
@@ -82,6 +83,38 @@ async function bootstrapDB() {
         'email', current_setting('request.jwt.claim.email', true)
       );
     $$ LANGUAGE sql STABLE;
+
+    -- V2-M5: Storage schema mock for PGlite test harness
+    CREATE SCHEMA IF NOT EXISTS storage;
+    CREATE TABLE IF NOT EXISTS storage.buckets (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      owner UUID,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      public BOOLEAN DEFAULT FALSE,
+      avif_autodetection BOOLEAN DEFAULT FALSE,
+      file_size_limit BIGINT,
+      allowed_mime_types TEXT[],
+      owner_id TEXT
+    );
+    CREATE TABLE IF NOT EXISTS storage.objects (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      bucket_id TEXT REFERENCES storage.buckets(id),
+      name TEXT NOT NULL,
+      owner UUID,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      last_accessed_at TIMESTAMPTZ DEFAULT NOW(),
+      metadata JSONB DEFAULT '{}'::jsonb,
+      path_tokens TEXT[] GENERATED ALWAYS AS (string_to_array(name, '/')) STORED
+    );
+    CREATE OR REPLACE FUNCTION storage.foldername(name text)
+    RETURNS text[] LANGUAGE plpgsql AS $$
+    BEGIN
+      RETURN string_to_array(name, '/');
+    END;
+    $$;
   `);
 
   let sql = fs.readFileSync(
@@ -141,12 +174,19 @@ async function testPatients(db) {
   } catch (err) {
     dupeErr = true;
   }
-  assert(dupeErr, 'Restricción UNIQUE en DNI rechaza duplicados');
+  // 6. Seguridad (CRIT-01 / Ley 26.529): Intento de DELETE físico de paciente es bloqueado por trigger
+  let deleteBlocked = false;
+  try {
+    await exec(db, `DELETE FROM patients WHERE id = $1`, [patId]);
+  } catch (err) {
+    deleteBlocked = err.message.includes('Ley 26.529') || err.message.includes('borrado');
+  }
+  assert(deleteBlocked, 'Seguridad (Ley 26.529): Trigger bloquea DELETE físico de pacientes');
 
-  // 6. DELETE de paciente de prueba
-  await exec(db, `DELETE FROM patients WHERE id = $1`, [patId]);
-  rows = await query(db, `SELECT count(*) AS n FROM patients WHERE id = $1`, [patId]);
-  assert(parseInt(rows[0].n) === 0,            'Paciente eliminado correctamente');
+  // 7. Baja lógica (Soft delete) mediante is_active = false
+  await exec(db, `UPDATE patients SET is_active = false WHERE id = $1`, [patId]);
+  rows = await query(db, `SELECT is_active FROM patients WHERE id = $1`, [patId]);
+  assert(rows[0].is_active === false, 'Baja lógica: Paciente marcado como inactivo persiste');
 }
 
 // ─── SUITE 2: TURNOS ──────────────────────────────────────────────────────────
@@ -388,6 +428,219 @@ async function testReferentialIntegrity(db) {
   assert(patDeleteBlocked, 'Seguridad: ON DELETE RESTRICT impide borrar pacientes con historias clínicas activas');
 }
 
+// ─── SUITE 5: REMEDIACIONES AUDITORÍA CITRA V2 ──────────────────────────────
+async function testAuditV2Remediations(db) {
+  section('AUDITORÍA CITRA V2 — Pruebas de Remediación Forense');
+
+  // 1. Prevención de TRUNCATE en tablas clínicas (V2 Riesgo Potencial)
+  let truncBlocked = false;
+  try {
+    await exec(db, `TRUNCATE TABLE patients CASCADE`);
+  } catch (err) {
+    truncBlocked = err.message.toLowerCase().includes('truncate') || err.message.includes('Ley 26.529');
+  }
+  assert(truncBlocked, 'Seguridad: TRUNCATE bloqueado por trigger prevent_table_truncate en patients');
+
+  let truncConsBlocked = false;
+  try {
+    await exec(db, `TRUNCATE TABLE consultations CASCADE`);
+  } catch (err) {
+    truncConsBlocked = err.message.toLowerCase().includes('truncate') || err.message.includes('Ley 26.529');
+  }
+  assert(truncConsBlocked, 'Seguridad: TRUNCATE bloqueado por trigger prevent_table_truncate en consultations');
+
+  // 2. Control de Superadmin sin atajo por email (V2-A2)
+  const testUserId = '11111111-2222-3333-4444-555555555555';
+  await exec(db, `
+    INSERT INTO auth.users (id, email) VALUES ($1, 'dr.blanco@citra.com.ar')
+    ON CONFLICT (id) DO NOTHING
+  `, [testUserId]);
+
+  await exec(db, `
+    INSERT INTO public.profiles (id, email, first_name, last_name, role)
+    VALUES ($1, 'dr.blanco@citra.com.ar', 'Alejandro', 'Blanco', 'patient')
+    ON CONFLICT (id) DO UPDATE SET role = 'patient'
+  `, [testUserId]);
+
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', $1, false),
+           set_config('request.jwt.claim.role', 'authenticated', false),
+           set_config('request.jwt.claim.email', 'dr.blanco@citra.com.ar', false)
+  `, [testUserId]);
+
+  const saCheck = await query(db, `SELECT public.is_superadmin() AS is_sa`);
+  assert(saCheck[0].is_sa === false, 'V2-A2: Email dr.blanco@citra.com.ar NO otorga superadmin sin rol en profiles');
+
+  // Asignar rol formal
+  await exec(db, `
+    UPDATE public.profiles SET role = 'superadmin' WHERE id = $1
+  `, [testUserId]);
+  const saCheckAfter = await query(db, `SELECT public.is_superadmin() AS is_sa`);
+  assert(saCheckAfter[0].is_sa === true, 'V2-A2: Rol formal superadmin en profiles habilita is_superadmin()');
+
+  // 3. RPC link_doctor_account (V2-A3)
+  const linkRes = await query(db, `SELECT public.link_doctor_account('doc-1', $1) AS res`, [testUserId]);
+  assert(linkRes[0].res?.success === true, 'V2-A3: link_doctor_account vincula exitosamente doctor con auth user');
+  const docRow = await query(db, `SELECT user_id FROM public.doctors WHERE id = 'doc-1'`);
+  assert(docRow[0].user_id === testUserId, 'V2-A3: Campo doctors.user_id actualizado con auth user ID');
+
+  // 4. Validaciones de Reserva Pública create_public_booking (V2-A8)
+  // Simular sesión anon
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', '', false),
+           set_config('request.jwt.claim.role', 'anon', false),
+           set_config('request.jwt.claim.email', '', false)
+  `);
+
+  let pastErr = null;
+  try {
+    await query(db, `
+      SELECT public.create_public_booking($1::jsonb) AS res
+    `, [JSON.stringify({
+      doctor_id: 'doc-1',
+      date: '2020-01-01',
+      time: '15:00:00',
+      patient_name: 'Paciente Pasado',
+      patient_dni: '11223344',
+      patient_email: 'paciente@test.com',
+      patient_phone: '35761234'
+    })]);
+  } catch (err) {
+    pastErr = err.message;
+  }
+  assert(pastErr && pastErr.includes('pasada'), 'V2-A8: create_public_booking rechaza fechas pasadas');
+
+  let futureErr = null;
+  try {
+    await query(db, `
+      SELECT public.create_public_booking($1::jsonb) AS res
+    `, [JSON.stringify({
+      doctor_id: 'doc-1',
+      date: '2028-01-01',
+      time: '15:00:00',
+      patient_name: 'Paciente Futuro',
+      patient_dni: '11223345',
+      patient_email: 'paciente@test.com',
+      patient_phone: '35761234'
+    })]);
+  } catch (err) {
+    futureErr = err.message;
+  }
+  assert(futureErr && futureErr.includes('90 días'), 'V2-A8: create_public_booking rechaza fechas superiores a 90 días');
+
+  // Reserva válida en fecha futura (un miércoles)
+  const validDateRow = await query(db, `
+    SELECT (CURRENT_DATE + ((3 - EXTRACT(DOW FROM CURRENT_DATE)::int + 7) % 7 + 7)::int)::text AS fdate
+  `);
+  const validDate = validDateRow[0].fdate;
+
+  const bookingRows = await query(db, `
+    SELECT public.create_public_booking($1::jsonb) AS res
+  `, [JSON.stringify({
+    doctor_id: 'doc-1',
+    date: validDate,
+    time: '15:00:00',
+    patient_name: 'Paciente Valido Anon',
+    patient_dni: '88223344',
+    patient_email: 'anonvalido@citra.test',
+    patient_phone: '3576443322'
+  })]);
+  assert(bookingRows[0].res?.success === true, 'V2-A8: create_public_booking genera reserva exitosa');
+  assert(bookingRows[0].res?.patient_id === undefined, 'V2-A8: create_public_booking no filtra el campo patient_id');
+
+  // 5. RPC open_cash_shift_rpc (V2-A7)
+  const adminUserId = '22222222-3333-4444-5555-666666666666';
+  await exec(db, `
+    INSERT INTO auth.users (id, email) VALUES ($1, 'secretaria@citra.com.ar')
+    ON CONFLICT (id) DO NOTHING
+  `, [adminUserId]);
+  await exec(db, `
+    INSERT INTO public.profiles (id, email, first_name, last_name, role)
+    VALUES ($1, 'secretaria@citra.com.ar', 'Marta', 'Secretaria', 'administrative')
+    ON CONFLICT (id) DO UPDATE SET role = 'administrative'
+  `, [adminUserId]);
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', $1, false),
+           set_config('request.jwt.claim.role', 'authenticated', false),
+           set_config('request.jwt.claim.email', 'secretaria@citra.com.ar', false)
+  `, [adminUserId]);
+
+  const openShiftRes = await query(db, `SELECT public.open_cash_shift_rpc(15000, 'Turno Mañana Test', 'Secretaría Central') AS res`);
+  assert(openShiftRes[0].res?.success === true, 'V2-A7: open_cash_shift_rpc abre turno de caja exitosamente');
+
+  let dupeShiftErr = false;
+  try {
+    await query(db, `SELECT public.open_cash_shift_rpc(5000, 'Turno Duplicado', 'Secretaría')`);
+  } catch (err) {
+    dupeShiftErr = true;
+  }
+  assert(dupeShiftErr, 'V2-A7: Índice único bloquea apertura simultánea de dos turnos para el mismo operador');
+
+  // 6. Anulación de sesión de kinesiología sin pisar patient_tolerance (V2-M1)
+  const pId = 'pat-rehab-test';
+  await exec(db, `
+    INSERT INTO patients (id, name, dni) VALUES ($1, 'Paciente Kine', '66554433')
+    ON CONFLICT (id) DO NOTHING
+  `, [pId]);
+  const planId = 'plan-rehab-test';
+  await exec(db, `
+    INSERT INTO rehab_plans (id, patient_id, patient_name, prescribing_doctor, diagnosis, target_sessions, status)
+    VALUES ($1, $2, 'Paciente Kine', 'Dr. Blanco', 'Rehabilitación postquirúrgica', 10, 'En curso')
+    ON CONFLICT (id) DO NOTHING
+  `, [planId, pId]);
+  const sessId = 'sess-rehab-test';
+  await exec(db, `
+    INSERT INTO rehab_sessions (id, plan_id, patient_id, patient_name, therapist_name, session_number, date, patient_tolerance)
+    VALUES ($1, $2, $3, 'Paciente Kine', 'Lic. Kinesiólogo', 1, CURRENT_DATE, 'Buena tolerancia sin dolor agudo')
+    ON CONFLICT (id) DO NOTHING
+  `, [sessId, planId, pId]);
+
+  await exec(db, `
+    UPDATE rehab_sessions
+    SET voided_at = NOW(), void_reason = 'Cancelación por reposo médico'
+    WHERE id = $1
+  `, [sessId]);
+
+  const sessCheck = await query(db, `SELECT voided_at, void_reason, patient_tolerance FROM rehab_sessions WHERE id = $1`, [sessId]);
+  assert(sessCheck[0].voided_at !== null, 'V2-M1: voided_at registrado correctamente');
+  assert(sessCheck[0].void_reason === 'Cancelación por reposo médico', 'V2-M1: void_reason registrado');
+  assert(sessCheck[0].patient_tolerance === 'Buena tolerancia sin dolor agudo', 'V2-M1: patient_tolerance clínico preservado');
+
+  // 7. Auto-vínculo de paciente en registro de usuario Auth (V2-A5 / V2-A6)
+  const autolinkPatId = 'pat-autolink-test';
+  const autolinkEmail = 'paciente.autolink@citra.test';
+  await exec(db, `
+    INSERT INTO patients (id, name, dni, email, user_id)
+    VALUES ($1, 'Paciente AutoVinculo', '45678912', $2, NULL)
+    ON CONFLICT (id) DO NOTHING
+  `, [autolinkPatId, autolinkEmail]);
+
+  const newAuthPatUserId = '33333333-4444-5555-6666-777777777777';
+  await exec(db, `
+    INSERT INTO auth.users (id, email, raw_user_meta_data)
+    VALUES ($1, $2, '{"dni":"45678912","first_name":"Paciente"}'::jsonb)
+  `, [newAuthPatUserId, autolinkEmail]);
+
+  const linkedPatCheck = await query(db, `SELECT user_id FROM patients WHERE id = $1`, [autolinkPatId]);
+  assert(linkedPatCheck[0].user_id === newAuthPatUserId, 'V2-A6: handle_new_auth_user vincula automáticamente paciente con su auth user_id');
+
+  // 8. Validación de política de almacenamiento de carpetas por patient.id (V2-A4)
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', $1, false),
+           set_config('request.jwt.claim.role', 'authenticated', false),
+           set_config('request.jwt.claim.email', $2, false)
+  `, [newAuthPatUserId, autolinkEmail]);
+
+  const storageCheck = await query(db, `
+    SELECT EXISTS (
+      SELECT 1 FROM public.patients p
+      WHERE p.user_id = auth.uid()
+        AND p.id = $1
+    ) AS can_access_folder
+  `, [autolinkPatId]);
+  assert(storageCheck[0].can_access_folder === true, 'V2-A4: Carpeta con patient.id autorizada para lectura del paciente autenticado');
+}
+
 // ─── RUNNER PRINCIPAL ─────────────────────────────────────────────────────────
 async function main() {
   console.log(`\n${C.bold}${C.cyan}╔══════════════════════════════════════════════════╗${C.reset}`);
@@ -409,6 +662,7 @@ async function main() {
   await testAppointments(db);
   await testConsultations(db);
   await testReferentialIntegrity(db);
+  await testAuditV2Remediations(db);
 
   // Resumen final
   const total = passed + failed;

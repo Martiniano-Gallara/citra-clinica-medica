@@ -83,14 +83,18 @@ export const UsersManager = () => {
     setIsEditModalOpen(true);
   };
 
-  const handleSaveEdit = (e) => {
+  const handleSaveEdit = async (e) => {
     e.preventDefault();
     if (!editingUser) return;
-    if (typeof updateUser === 'function') {
-      updateUser(editingUser.id, editingUser);
+    try {
+      if (typeof updateUser === 'function') {
+        await updateUser(editingUser.id, editingUser);
+      }
+      setIsEditModalOpen(false);
+      setEditingUser(null);
+    } catch (err) {
+      console.error('Error al actualizar usuario:', err);
     }
-    setIsEditModalOpen(false);
-    setEditingUser(null);
   };
 
   const handleOpenAddModal = () => {
@@ -145,20 +149,24 @@ export const UsersManager = () => {
     setIsPasswordModalOpen(true);
   };
 
-  const handleChangePassword = (e) => {
+  const handleChangePassword = async (e) => {
     e.preventDefault();
     if (!passwordUser) return;
     if (!newPasswordValue.trim()) {
       if (addToast) addToast('Contraseña Requerida', 'Ingrese la nueva contraseña.', 'warning');
       return;
     }
-    if (typeof updateUser === 'function') {
-      updateUser(passwordUser.id, { password: newPasswordValue.trim() });
+    try {
+      if (typeof updateUser === 'function') {
+        await updateUser(passwordUser.id, { password: newPasswordValue.trim() });
+      }
+      setIsPasswordModalOpen(false);
+      setPasswordUser(null);
+      setNewPasswordValue('');
+      if (addToast) addToast('Contraseña Actualizada', `Nueva clave asignada a ${passwordUser.name}.`, 'success');
+    } catch (err) {
+      console.error('Error al cambiar contraseña:', err);
     }
-    setIsPasswordModalOpen(false);
-    setPasswordUser(null);
-    setNewPasswordValue('');
-    if (addToast) addToast('Contraseña Actualizada', `Nueva clave asignada a ${passwordUser.name}.`, 'success');
   };
 
   return (
