@@ -297,7 +297,6 @@ export const AdminManagementHub = () => {
         title: 'ADMINISTRACIÓN Y FACTURACIÓN',
         items: [
           { id: 'doctors', label: 'Cuerpo Médico & Servicios', icon: Users, badge: activeDoctors },
-          { id: 'insurances', label: 'Obras Sociales & Prepagas', icon: Shield, badge: healthInsurances.filter((h) => (h.status || 'Activa') !== 'Inactiva').length },
           { id: 'billing', label: 'Facturación / Caja', icon: CreditCard, badge: null },
           { id: 'reports', label: 'Métricas Operativas', icon: BarChart3, badge: null }
         ]

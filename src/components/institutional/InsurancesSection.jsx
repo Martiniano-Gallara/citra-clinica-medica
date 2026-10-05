@@ -27,12 +27,14 @@ const getResolvedLogo = (hi) => {
 };
 
 const getInsuranceBadge = (hi) => {
-  if (hi.badge && typeof hi.badge === 'string' && hi.badge.trim() !== '') return hi.badge;
+  if (hi.badge && typeof hi.badge === 'string' && hi.badge.trim() !== '') {
+    if (hi.badge === 'Planes Adheridos') return 'Convenio Activo';
+    return hi.badge;
+  }
   const n = (hi.name || '').toLowerCase();
   if (n.includes('pami') || n.includes('osde')) return 'Consultar a secretaría';
   if (n.includes('apross')) return 'Convenio Provincial';
-  if (hi.copay > 0) return 'Planes Adheridos';
-  return 'Planes Adheridos';
+  return 'Convenio Activo';
 };
 
 export const InsurancesSection = () => {

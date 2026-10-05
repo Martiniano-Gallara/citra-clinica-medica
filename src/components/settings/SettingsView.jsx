@@ -50,7 +50,7 @@ const InstagramIcon = ({ size = 20, color = '#ffffff', ...props }) => (
   </svg>
 );
 
-export const SettingsView = ({ initialTab = 'general' }) => {
+export const SettingsView = ({ initialTab = 'contact' }) => {
   const {
     clinicInfo,
     setClinicInfo,
@@ -314,10 +314,10 @@ export const SettingsView = ({ initialTab = 'general' }) => {
         <div className="page-title-group">
           <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 0 0.25rem' }}>
             <Settings size={26} color="#076ABC" />
-            <span>Configuración y Canales Oficiales</span>
+            <span>Mi Configuración</span>
           </h1>
           <p style={{ margin: 0, fontSize: '0.86rem', color: '#64748B' }}>
-            Gestioná los canales de atención en la portada, datos institucionales y seguridad de secretaría.
+            Gestión unificada de canales de contacto oficiales, datos institucionales y seguridad de la cuenta.
           </p>
         </div>
       </div>
