@@ -561,7 +561,7 @@ export const ReportsView = () => {
             gap: '1rem'
           }}
         >
-          <div>
+          <div style={{ flex: '1 1 auto', minWidth: '320px' }}>
             <h1
               style={{
                 fontSize: '1.65rem',
@@ -585,7 +585,7 @@ export const ReportsView = () => {
           </div>
 
           {/* Controls: Slide selector Mis Métricas / Toda la Clínica (Solo Dr. Blanco) + Período + PDF */}
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap', flexShrink: 0 }}>
             {/* Slide selector Mis Métricas / Toda la Clínica (Exclusivo Dr. Blanco - Dueño) */}
             {isDoctorBlancoUser && (
               <div
@@ -1388,7 +1388,7 @@ export const ReportsView = () => {
           gap: '1rem'
         }}
       >
-        <div>
+        <div style={{ flex: '1 1 auto', minWidth: '320px' }}>
           <h1
             style={{
               fontSize: '1.65rem',
@@ -1413,7 +1413,7 @@ export const ReportsView = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap', flexShrink: 0 }}>
           {/* Slide selector Mis Métricas / Toda la Clínica (Exclusivo Dr. Blanco - Dueño) */}
           {isDoctorBlancoUser && (
             <div

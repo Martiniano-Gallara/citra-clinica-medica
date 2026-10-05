@@ -212,29 +212,6 @@ export const AuditLogsView = () => {
       </div>
 
       {/* Info Alert with Server Status */}
-      <div style={{
-        background: '#EBF3FD',
-        padding: '0.85rem 1.15rem',
-        borderRadius: '8px',
-        border: '1px solid #257CE6',
-        marginBottom: '1.5rem',
-        fontSize: '0.86rem',
-        color: '#002182',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '0.5rem'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <ShieldCheck size={18} color="#002182" />
-          <span><strong>Registro Central de Auditoría:</strong> Acceso exclusivo de Dirección Médica (Dr. Alejandro Blanco).</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', fontWeight: 700 }}>
-          <Server size={15} color={isServerSource ? '#059669' : '#b45309'} />
-          <span>{isServerSource ? 'Conectado a audit_logs (PostgreSQL)' : 'Modo local sincronizado'}</span>
-        </div>
-      </div>
 
       {/* Filter Bar */}
       <div className="filter-bar">
