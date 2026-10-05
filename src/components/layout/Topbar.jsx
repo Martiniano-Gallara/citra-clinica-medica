@@ -291,7 +291,7 @@ export const Topbar = () => {
                 }}
               >
                 <Receipt size={18} color="#0d9488" />
-                <span>Factura Electrónica ARCA</span>
+                <span>Factura Representativa</span>
               </div>
 
               <div

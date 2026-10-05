@@ -119,10 +119,10 @@ export const BillingView = () => {
         <div className="page-title-group">
           <h1>
             <Receipt size={32} color="#076ABC" />
-            <span>Facturación ARCA (AFIP) & Honorarios Médicos</span>
+            <span>Facturación Representativa & Honorarios Médicos</span>
           </h1>
           <p>
-            Comprobantes fiscales electrónicos con CAE, liquidación de honorarios y control de caja (Pto Vta {clinicInfo?.arcaPtoVta || '0003'})
+            Comprobantes de facturación representativa, liquidación de honorarios y control de caja
           </p>
         </div>
 
@@ -140,7 +140,7 @@ export const BillingView = () => {
             }}
           >
             <Plus size={18} />
-            <span>+ Emitir Factura Electrónica ARCA</span>
+            <span>Emitir Factura Representativa</span>
           </button>
         </div>
       </div>
@@ -157,7 +157,7 @@ export const BillingView = () => {
           <div className="kpi-value">${totalFacturado.toLocaleString()}</div>
           <div className="kpi-trend positive">
             <ShieldCheck size={16} />
-            <span>100% Comprobantes con CAE ARCA</span>
+            <span>100% Facturación Representativa Registrada</span>
           </div>
         </div>
 
@@ -199,7 +199,7 @@ export const BillingView = () => {
           onClick={() => setActiveSubTab('invoices')}
         >
           <Receipt size={18} />
-          <span>Comprobantes Fiscales ARCA ({filteredInvoices.length})</span>
+          <span>Comprobantes Representativos ({filteredInvoices.length})</span>
         </button>
 
         <button

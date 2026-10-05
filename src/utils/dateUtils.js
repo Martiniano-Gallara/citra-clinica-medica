@@ -54,6 +54,45 @@ export const getNowArgentinaTime = () => {
   }
 };
 
+export const formatDateTimeArgentina = (dateInput) => {
+  if (!dateInput) return { dateStr: '-', timeStr: '-' };
+  try {
+    let raw = dateInput;
+    if (typeof raw === 'string') {
+      const trimmed = raw.trim();
+      // Si viene en formato ISO o SQL sin zona horaria explícita (almacenado como UTC en PostgreSQL), interpretarlo en UTC
+      if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?(\.\d+)?$/.test(trimmed)) {
+        raw = trimmed.replace(' ', 'T') + 'Z';
+      }
+    }
+    const d = typeof raw === 'string' || typeof raw === 'number' ? new Date(raw) : raw;
+    if (isNaN(d.getTime())) {
+      return { dateStr: String(dateInput), timeStr: '' };
+    }
+    const dateFormatted = new Intl.DateTimeFormat('es-AR', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(d);
+
+    const timeFormatted = new Intl.DateTimeFormat('es-AR', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).format(d);
+
+    return {
+      dateStr: dateFormatted,
+      timeStr: `${timeFormatted} hs`
+    };
+  } catch {
+    return { dateStr: String(dateInput), timeStr: '' };
+  }
+};
+
 export const addDays = (dateStr, days) => {
   if (!dateStr) return getTodayArgentina();
   const [y, m, d] = dateStr.split('-').map(Number);

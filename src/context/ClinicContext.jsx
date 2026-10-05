@@ -334,12 +334,12 @@ export const ClinicProvider = ({ children }) => {
   // isDoctor is true when authAdmin has adminType === 'doctor' or is Dr. Blanco
   const isDoctor = Boolean(
     authAdmin &&
-    (authAdmin.adminType === 'doctor' ||
-      authAdmin.doctorId ||
-      (authAdmin.email && authAdmin.email.toLowerCase().includes('blanco')) ||
-      (authAdmin.name && authAdmin.name.toLowerCase().includes('blanco')) ||
-      (authAdmin.role && (authAdmin.role.toLowerCase().includes('traumatolog') || authAdmin.role.toLowerCase().includes('médic')))) &&
-    authAdmin.adminType !== 'administrative'
+    ((authAdmin.email && authAdmin.email.toLowerCase().includes('blanco')) ||
+     (authAdmin.name && authAdmin.name.toLowerCase().includes('blanco')) ||
+     ((authAdmin.adminType === 'doctor' ||
+       authAdmin.doctorId ||
+       (authAdmin.role && (authAdmin.role.toLowerCase().includes('traumatolog') || authAdmin.role.toLowerCase().includes('médic')))) &&
+      authAdmin.adminType !== 'administrative'))
   );
 
   const isAdministrative = Boolean(
@@ -1315,8 +1315,8 @@ export const ClinicProvider = ({ children }) => {
         addToast('Aviso de Persistencia', 'El comprobante fiscal se generó localmente pero falló la sincronización con el servidor: ' + (err.message || ''), 'warning');
       });
     }
-    logAudit('ARCA_INVOICE', 'Comprobante Fiscal', invoiceData.dni, `Factura ${invoiceNum} autorizada por ARCA con CAE: ${cae}`);
-    addToast('Comprobante Fiscal ARCA Emitido', `Factura ${invoiceNum} autorizada con CAE ${cae}.`, 'success');
+    logAudit('REPRESENTATIVE_INVOICE', 'Facturación Representativa', invoiceData.dni, `Factura representativa ${invoiceNum} registrada con código de control: ${cae}`);
+    addToast('Factura Representativa Emitida', `Comprobante ${invoiceNum} registrado correctamente.`, 'success');
     return newInv;
   };
 

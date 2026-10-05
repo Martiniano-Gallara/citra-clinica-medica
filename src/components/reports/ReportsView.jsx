@@ -23,7 +23,8 @@ import {
   Clock,
   CheckCircle2,
   Award,
-  FileText
+  FileText,
+  Building2
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -58,6 +59,7 @@ export const ReportsView = () => {
     clinicInfo,
     appointments,
     patients,
+    consultations,
     invoices,
     doctors,
     specialties,
@@ -65,6 +67,7 @@ export const ReportsView = () => {
     isDoctor,
     isDoctorBlanco,
     currentDoctor,
+    authAdmin,
     scopedAppointments,
     scopedPatients,
     scopedConsultations,
@@ -74,9 +77,11 @@ export const ReportsView = () => {
   const [period, setPeriod] = useState('month'); // 'week', 'month', 'year'
   const [viewScope, setViewScope] = useState(() => {
     try {
-      return localStorage.getItem('citra_reports_view_scope') || 'general';
+      const saved = localStorage.getItem('citra_reports_view_scope');
+      if (saved === 'individual' || saved === 'general') return saved;
+      return 'individual'; // Por defecto Blanco ve sus métricas y con un simple slide pasa a las de la clínica
     } catch {
-      return 'general';
+      return 'individual';
     }
   });
 
@@ -90,13 +95,21 @@ export const ReportsView = () => {
   };
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
-  // El selector de métricas globales de la clínica solo está habilitado para el Dr. Blanco
-  const isDoctorBlancoUser = isDoctor && (
-    isDoctorBlanco ||
-    currentDoctor?.id === 'doc-1' ||
-    (currentDoctor?.name || '').toLowerCase().includes('blanco') ||
-    (currentDoctor?.fullName || '').toLowerCase().includes('blanco')
-  );
+  // El selector de métricas globales de la clínica solo está habilitado para el Dr. Blanco (Dueño de la Clínica)
+  const isDoctorBlancoUser = useMemo(() => {
+    const adminName = (authAdmin?.name || '').toLowerCase();
+    const adminEmail = (authAdmin?.email || '').toLowerCase();
+    const docName = (currentDoctor?.name || '').toLowerCase();
+    const docEmail = (currentDoctor?.email || '').toLowerCase();
+    return Boolean(
+      isDoctorBlanco ||
+      currentDoctor?.id === 'doc-1' ||
+      adminName.includes('blanco') ||
+      adminEmail.includes('blanco') ||
+      docName.includes('blanco') ||
+      docEmail.includes('blanco')
+    );
+  }, [authAdmin, currentDoctor, isDoctorBlanco]);
 
   const handleExportPDF = () => {
     setIsPrintModalOpen(true);
@@ -107,11 +120,26 @@ export const ReportsView = () => {
   // ==============================================================
   const activeDoctorData = useMemo(() => {
     const docFeePct = currentDoctor?.feePercentage || 75;
+    const docId = currentDoctor?.id || (isDoctorBlancoUser ? 'doc-1' : null);
+    const docNameLower = (currentDoctor?.name || 'blanco').toLowerCase();
 
-    const allDocConsultations = scopedConsultations || [];
-    const allDocAppointments = scopedAppointments || [];
+    // Para las métricas personales del profesional (Dr. Blanco o médico en sesión):
+    const allDocConsultations = (consultations || []).filter(
+      (c) =>
+        (docId && c.doctorId === docId) ||
+        (c.doctorName && (c.doctorName.toLowerCase().includes('blanco') || (currentDoctor?.name && c.doctorName.toLowerCase().includes(docNameLower))))
+    );
+    const allDocAppointments = (appointments || []).filter(
+      (a) =>
+        (docId && a.doctorId === docId) ||
+        (a.doctorName && (a.doctorName.toLowerCase().includes('blanco') || (currentDoctor?.name && a.doctorName.toLowerCase().includes(docNameLower))))
+    );
     const allDocPatients = scopedPatients || [];
-    const allDocInvoices = scopedInvoices || [];
+    const allDocInvoices = (invoices || []).filter(
+      (inv) =>
+        (docId && inv.doctorId === docId) ||
+        (inv.doctorName && (inv.doctorName.toLowerCase().includes('blanco') || (currentDoctor?.name && inv.doctorName.toLowerCase().includes(docNameLower))))
+    );
 
     let periodConsultations = [];
     let periodAppointments = [];
@@ -517,12 +545,8 @@ export const ReportsView = () => {
     };
   }, [appointments, patients]);
 
-  // ==============================================================
-  // RENDER: DOCTOR VIEW (ESTADÍSTICAS REALES, ÚTILES Y CLÍNICAS)
-  // El Dr. Blanco puede alternar entre su vista individual y la general de la clínica
-  // Los demás profesionales solo acceden a su rendimiento individual
-  // ==============================================================
-  const shouldRenderDoctorIndividual = isDoctor && (!isDoctorBlancoUser || viewScope === 'individual');
+  const isDoctorUser = isDoctor || isDoctorBlancoUser;
+  const shouldRenderDoctorIndividual = isDoctorUser && (!isDoctorBlancoUser || viewScope === 'individual');
 
   if (shouldRenderDoctorIndividual) {
     return (
@@ -551,59 +575,74 @@ export const ReportsView = () => {
               }}
             >
               <BarChart3 size={28} color="#002182" />
-              <span>Métricas & Rendimiento Asistencial</span>
+              <span>{isDoctorBlancoUser ? 'Mis Métricas Asistenciales · Dr. Alejandro Blanco' : 'Métricas & Rendimiento Asistencial'}</span>
             </h1>
             <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
-              Monitoreo de actividad clínica, consultas atendidas, distribución de coberturas y liquidación de honorarios.
+              {isDoctorBlancoUser
+                ? 'Productividad personal: consultas traumatológicas, liquidación de honorarios (75%) y agenda propia.'
+                : 'Monitoreo de actividad clínica, consultas atendidas, distribución de coberturas y liquidación de honorarios.'}
             </p>
           </div>
 
-          {/* Controls: Selector Individual / General (Solo Blanco) + Switcher Período + Export PDF */}
+          {/* Controls: Slide selector Mis Métricas / Toda la Clínica (Solo Dr. Blanco) + Período + PDF */}
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* Botón selector individual / general de la clínica (Exclusivo Dr. Blanco) */}
+            {/* Slide selector Mis Métricas / Toda la Clínica (Exclusivo Dr. Blanco - Dueño) */}
             {isDoctorBlancoUser && (
               <div
                 style={{
-                  display: 'flex',
-                  background: '#f1f5f9',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  background: '#e2e8f0',
                   padding: '3px',
-                  borderRadius: '10px',
-                  border: '1px solid #e2e8f0'
+                  borderRadius: '12px',
+                  border: '1.5px solid #cbd5e1',
+                  boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
+                  gap: '2px'
                 }}
               >
                 <button
                   type="button"
                   onClick={() => handleSetViewScope('individual')}
                   style={{
-                    padding: '0.45rem 0.95rem',
-                    borderRadius: '8px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '0.45rem 1rem',
+                    borderRadius: '9px',
                     fontSize: '0.82rem',
                     fontWeight: viewScope === 'individual' ? 800 : 600,
-                    background: viewScope === 'individual' ? '#002182' : 'transparent',
-                    color: viewScope === 'individual' ? '#ffffff' : '#64748b',
+                    background: viewScope === 'individual' ? 'linear-gradient(135deg, #002182 0%, #076ABC 100%)' : 'transparent',
+                    color: viewScope === 'individual' ? '#ffffff' : '#475569',
                     border: 'none',
                     cursor: 'pointer',
-                    transition: 'all 0.15s ease'
+                    boxShadow: viewScope === 'individual' ? '0 2px 8px rgba(0, 33, 130, 0.35)' : 'none',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                   }}
                 >
-                  Individual
+                  <Stethoscope size={15} />
+                  <span>Mis Métricas (Dr. Blanco)</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSetViewScope('general')}
                   style={{
-                    padding: '0.45rem 0.95rem',
-                    borderRadius: '8px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '0.45rem 1rem',
+                    borderRadius: '9px',
                     fontSize: '0.82rem',
                     fontWeight: viewScope === 'general' ? 800 : 600,
-                    background: viewScope === 'general' ? '#002182' : 'transparent',
-                    color: viewScope === 'general' ? '#ffffff' : '#64748b',
+                    background: viewScope === 'general' ? 'linear-gradient(135deg, #002182 0%, #076ABC 100%)' : 'transparent',
+                    color: viewScope === 'general' ? '#ffffff' : '#475569',
                     border: 'none',
                     cursor: 'pointer',
-                    transition: 'all 0.15s ease'
+                    boxShadow: viewScope === 'general' ? '0 2px 8px rgba(0, 33, 130, 0.35)' : 'none',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                   }}
                 >
-                  General de la Clínica
+                  <Building2 size={15} />
+                  <span>Toda la Clínica (General)</span>
                 </button>
               </div>
             )}
@@ -1363,60 +1402,75 @@ export const ReportsView = () => {
             }}
           >
             <BarChart3 size={28} color="#002182" />
-            <span>{isDoctor ? 'Métricas Globales de la Clínica (CITRA)' : 'Métricas Operativas de la Clínica'}</span>
+            <span>{isDoctorBlancoUser ? 'Métricas Globales de la Clínica (CITRA)' : (isDoctor ? 'Métricas Globales de la Clínica (CITRA)' : 'Métricas Operativas de la Clínica')}</span>
           </h1>
           <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
-            {isDoctor
-              ? 'Vista general de toda la clínica: productividad, evolución de ingresos, volumen de pacientes y facturación por especialidad.'
-              : 'Estadísticas operativas de la clínica: volumen de turnos, consultas, distribución por cobertura y fidelización de pacientes.'}
+            {isDoctorBlancoUser
+              ? 'Vista general de toda la clínica: volumen integral de turnos, consultas de todas las especialidades, facturación y productividad.'
+              : (isDoctor
+                ? 'Vista general de toda la clínica: productividad, evolución de ingresos, volumen de pacientes y facturación por especialidad.'
+                : 'Estadísticas operativas de la clínica: volumen de turnos, consultas, distribución por cobertura y fidelización de pacientes.')}
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          {/* Botón selector individual / general de la clínica (Exclusivo Dr. Blanco) */}
+          {/* Slide selector Mis Métricas / Toda la Clínica (Exclusivo Dr. Blanco - Dueño) */}
           {isDoctorBlancoUser && (
             <div
               style={{
-                display: 'flex',
-                background: '#f1f5f9',
+                display: 'inline-flex',
+                alignItems: 'center',
+                background: '#e2e8f0',
                 padding: '3px',
-                borderRadius: '10px',
-                border: '1px solid #e2e8f0'
+                borderRadius: '12px',
+                border: '1.5px solid #cbd5e1',
+                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
+                gap: '2px'
               }}
             >
               <button
                 type="button"
                 onClick={() => handleSetViewScope('individual')}
                 style={{
-                  padding: '0.45rem 0.95rem',
-                  borderRadius: '8px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '0.45rem 1rem',
+                  borderRadius: '9px',
                   fontSize: '0.82rem',
                   fontWeight: viewScope === 'individual' ? 800 : 600,
-                  background: viewScope === 'individual' ? '#002182' : 'transparent',
-                  color: viewScope === 'individual' ? '#ffffff' : '#64748b',
+                  background: viewScope === 'individual' ? 'linear-gradient(135deg, #002182 0%, #076ABC 100%)' : 'transparent',
+                  color: viewScope === 'individual' ? '#ffffff' : '#475569',
                   border: 'none',
                   cursor: 'pointer',
-                  transition: 'all 0.15s ease'
+                  boxShadow: viewScope === 'individual' ? '0 2px 8px rgba(0, 33, 130, 0.35)' : 'none',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}
               >
-                Individual
+                <Stethoscope size={15} />
+                <span>Mis Métricas (Dr. Blanco)</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleSetViewScope('general')}
                 style={{
-                  padding: '0.45rem 0.95rem',
-                  borderRadius: '8px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '0.45rem 1rem',
+                  borderRadius: '9px',
                   fontSize: '0.82rem',
                   fontWeight: viewScope === 'general' ? 800 : 600,
-                  background: viewScope === 'general' ? '#002182' : 'transparent',
-                  color: viewScope === 'general' ? '#ffffff' : '#64748b',
+                  background: viewScope === 'general' ? 'linear-gradient(135deg, #002182 0%, #076ABC 100%)' : 'transparent',
+                  color: viewScope === 'general' ? '#ffffff' : '#475569',
                   border: 'none',
                   cursor: 'pointer',
-                  transition: 'all 0.15s ease'
+                  boxShadow: viewScope === 'general' ? '0 2px 8px rgba(0, 33, 130, 0.35)' : 'none',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}
               >
-                General de la Clínica
+                <Building2 size={15} />
+                <span>Toda la Clínica (General)</span>
               </button>
             </div>
           )}

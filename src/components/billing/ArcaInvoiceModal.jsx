@@ -80,7 +80,7 @@ export const ArcaInvoiceModal = () => {
     <Modal
       isOpen={isArcaInvoiceModalOpen}
       onClose={() => setIsArcaInvoiceModalOpen(false)}
-      title="Emisión de Comprobante Fiscal — ARCA (AFIP)"
+      title="Emisión de Factura Representativa (Comprobante Interno)"
       size="lg"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', width: '100%' }}>
@@ -93,19 +93,19 @@ export const ArcaInvoiceModal = () => {
           </button>
           <button type="button" className="btn btn-primary" onClick={handleSubmit} disabled={isSubmitting}>
             <Receipt size={16} />
-            <span>{isSubmitting ? 'Emitiendo...' : 'Emitir Comprobante (Simulación CAE)'}</span>
+            <span>{isSubmitting ? 'Emitiendo...' : 'Emitir Factura Representativa'}</span>
           </button>
         </div>
       }
     >
       <form onSubmit={handleSubmit}>
-        <div style={{ background: '#FFFBEB', padding: '0.85rem 1rem', borderRadius: '8px', border: '1.5px solid #F59E0B', marginBottom: '1.25rem', fontSize: '0.84rem', color: '#92400E' }}>
+        <div style={{ background: '#F0F9FF', padding: '0.85rem 1rem', borderRadius: '8px', border: '1.5px solid #0284C7', marginBottom: '1.25rem', fontSize: '0.84rem', color: '#0369A1' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, marginBottom: '3px' }}>
-            <ShieldCheck size={16} color="#D97706" />
-            <span>MODO SIMULACIÓN FISCAL · HOMOLOGACIÓN ARCA (WSFEv1)</span>
+            <ShieldCheck size={16} color="#0284C7" />
+            <span>FACTURA REPRESENTATIVA · CONTROL INTERNO CITRA</span>
           </div>
           <div>
-            Este módulo opera en entorno de previsualización y cálculo interno de honorarios profesionales. Los comprobantes y CAE generados en este panel son de <strong>carácter demostrativo</strong> y <strong>no tienen validez fiscal vinculante ante ARCA</strong> hasta configurar el certificado digital X.509 de producción.
+            Este módulo emite comprobantes de facturación de <strong>carácter representativo</strong> para el control interno de caja, registro administrativo y liquidación de honorarios profesionales de la clínica. No realiza emisión fiscal ante ARCA.
           </div>
         </div>
 

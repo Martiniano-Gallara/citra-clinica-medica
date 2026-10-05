@@ -222,6 +222,14 @@ export const AdminManagementHub = () => {
     (r) => r.targetDoctorId === currentDoctor?.id && r.status === 'pendiente'
   ).length;
 
+  const isBlancoUser = Boolean(
+    isDoctorBlanco ||
+    currentDoctor?.id === 'doc-1' ||
+    (authAdmin?.email && authAdmin.email.toLowerCase().includes('blanco')) ||
+    (authAdmin?.name && authAdmin.name.toLowerCase().includes('blanco')) ||
+    (currentDoctor?.name && currentDoctor.name.toLowerCase().includes('blanco'))
+  );
+
   // Sidebar Grouped Navigation Sections according to Role (Doctor vs Administrativo)
   const navSections = React.useMemo(() => {
     if (isDoctor) {
@@ -243,10 +251,6 @@ export const AdminManagementHub = () => {
               icon: FileText,
               badge: pendingUrgentRequests > 0 ? `${pendingUrgentRequests} Urgente` : scopedConsultations.length
             }
-            // Temporalmente ocultos a pedido del usuario:
-            // { id: 'prescriptions', label: 'Mis Recetas (CUIR)', icon: Pill, badge: scopedElectronicPrescriptions.length },
-            // { id: 'imaging', label: 'Estudios & PACS', icon: Eye, badge: scopedImagingStudies.length },
-            // { id: 'kinesio', label: 'Kinesiología & Rehab', icon: Activity, badge: null }
           ]
         },
         {
@@ -255,6 +259,16 @@ export const AdminManagementHub = () => {
             { id: 'reports', label: 'Métricas & Rendimiento', icon: BarChart3, badge: null }
           ]
         },
+        ...(isBlancoUser
+          ? [
+              {
+                title: 'SEGURIDAD & CONTROL',
+                items: [
+                  { id: 'audit', label: 'Auditoría del Sistema', icon: ShieldAlert, badge: null }
+                ]
+              }
+            ]
+          : []),
         {
           title: 'MI CUENTA',
           items: [
@@ -277,10 +291,6 @@ export const AdminManagementHub = () => {
         items: [
           { id: 'appointments', label: 'Gestión de Turnos', icon: CalendarCheck, badge: appointments.length },
           { id: 'patients', label: 'Pacientes', icon: Users, badge: patients.length }
-          // Temporalmente ocultos a pedido del usuario:
-          // { id: 'prescriptions', label: 'Recetas (CUIR)', icon: Pill, badge: (electronicPrescriptions || []).length },
-          // { id: 'imaging', label: 'Estudios & PACS', icon: Eye, badge: (imagingStudies || []).length },
-          // { id: 'kinesio', label: 'Kinesiología & Rehab', icon: Activity, badge: null }
         ]
       },
       {
@@ -288,15 +298,8 @@ export const AdminManagementHub = () => {
         items: [
           { id: 'doctors', label: 'Cuerpo Médico & Servicios', icon: Users, badge: activeDoctors },
           { id: 'insurances', label: 'Obras Sociales & Prepagas', icon: Shield, badge: healthInsurances.filter((h) => (h.status || 'Activa') !== 'Inactiva').length },
-          { id: 'contact', label: 'Canales de Contacto Web', icon: Phone, badge: null },
           { id: 'billing', label: 'Facturación / Caja', icon: CreditCard, badge: null },
           { id: 'reports', label: 'Métricas Operativas', icon: BarChart3, badge: null }
-        ]
-      },
-      {
-        title: 'GESTIÓN Y AUDITORÍA',
-        items: [
-          { id: 'audit', label: 'Auditoría', icon: ShieldAlert, badge: null }
         ]
       },
       {
@@ -308,7 +311,7 @@ export const AdminManagementHub = () => {
     ];
 
     return adminSections;
-  }, [isDoctor, doctorAppointments.length, doctorPatients.length, scopedConsultations.length, scopedElectronicPrescriptions.length, scopedImagingStudies.length, appointments.length, patients.length, electronicPrescriptions.length, imagingStudies?.length, healthInsurances.length, availableRooms, activeDoctors]);
+  }, [isDoctor, isBlancoUser, doctorAppointments.length, doctorPatients.length, scopedConsultations.length, scopedElectronicPrescriptions.length, scopedImagingStudies.length, appointments.length, patients.length, electronicPrescriptions.length, imagingStudies?.length, healthInsurances.length, availableRooms, activeDoctors]);
 
   // RBAC Guard Effect: automatically redirect to dashboard if tab not permitted for current role
   React.useEffect(() => {
@@ -412,13 +415,17 @@ export const AdminManagementHub = () => {
     navSections.flatMap((s) => s.items).find((i) => i.id === activeTab)?.label || 'Inicio';
 
   const doctorAdminName = (() => {
-    const raw = currentDoctor?.name || authAdmin?.name || 'Dr. Alejandro Blanco';
-    const clean = raw.includes('Morales') ? 'Dr. Alejandro Blanco' : raw;
-    return clean;
+    if (authAdmin?.name) {
+      return authAdmin.name.includes('Morales') ? 'Dr. Alejandro Blanco' : authAdmin.name;
+    }
+    if (currentDoctor?.name) {
+      return currentDoctor.name.includes('Morales') ? 'Dr. Alejandro Blanco' : currentDoctor.name;
+    }
+    return isDoctor ? 'Dr. Alejandro Blanco' : 'Secretaría CITRA';
   })();
 
   const doctorSpecialtyLabel = (() => {
-    const nameLower = (authAdmin?.name || currentDoctor?.name || '').toLowerCase();
+    const nameLower = (doctorAdminName || authAdmin?.name || currentDoctor?.name || '').toLowerCase();
     const emailLower = (authAdmin?.email || currentDoctor?.email || '').toLowerCase();
     if (nameLower.includes('blanco') || emailLower.includes('blanco')) {
       return 'Traumatólogo';
@@ -784,15 +791,15 @@ export const AdminManagementHub = () => {
                   width: '8px',
                   height: '8px',
                   borderRadius: '50%',
-                  background: isDoctor ? '#10b981' : '#2563eb',
-                  boxShadow: isDoctor ? '0 0 0 3px rgba(16, 185, 129, 0.2)' : '0 0 0 3px rgba(37, 99, 235, 0.2)',
+                  background: (isDoctor || doctorAdminName.toLowerCase().includes('blanco')) ? '#10b981' : '#2563eb',
+                  boxShadow: (isDoctor || doctorAdminName.toLowerCase().includes('blanco')) ? '0 0 0 3px rgba(16, 185, 129, 0.2)' : '0 0 0 3px rgba(37, 99, 235, 0.2)',
                   flexShrink: 0
                 }}
               />
               <span className="admin-user-name" style={{ fontSize: '0.83rem', fontWeight: 800, color: '#0f172a' }}>
                 {doctorAdminName}
               </span>
-              <span className="admin-user-role" style={{ fontSize: '0.76rem', color: isDoctor ? '#0284c7' : '#64748b', fontWeight: 700 }}>
+              <span className="admin-user-role" style={{ fontSize: '0.76rem', color: (isDoctor || doctorAdminName.toLowerCase().includes('blanco')) ? '#0284c7' : '#64748b', fontWeight: 700 }}>
                 · {doctorSpecialtyLabel}
               </span>
             </div>
@@ -1618,13 +1625,13 @@ export const AdminManagementHub = () => {
           {/* TAB 13: REPORTES & ESTADÍSTICAS */}
           {activeTab === 'reports' && <ReportsView />}
 
-          {/* TAB 16: CONFIGURACIÓN DE LA CLÍNICA / CANALES DE CONTACTO / MI PERFIL */}
+          {/* TAB 16: MI CONFIGURACIÓN (Canales de Contacto, Datos Institucionales & Mi Perfil) */}
           {(activeTab === 'settings' || activeTab === 'contact') && (
-            <SettingsView initialTab={activeTab === 'contact' ? 'contact' : 'general'} />
+            <SettingsView initialTab="contact" />
           )}
 
-          {/* TAB 17: AUDITORÍA Y SEGURIDAD (Secretaría) */}
-          {activeTab === 'audit' && !isDoctor && <AuditLogsView />}
+          {/* TAB 17: AUDITORÍA Y SEGURIDAD (Exclusivo Dr. Blanco - Dueño) */}
+          {activeTab === 'audit' && isBlancoUser && <AuditLogsView />}
 
 
           {/* TAB 19: KINESIOLOGÍA & REHABILITACIÓN FUNCIONAL (C-05, T8) */}

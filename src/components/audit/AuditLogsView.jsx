@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { dataService } from '../../services/dataService';
-import { sanitizeCsvCell, getTodayArgentina } from '../../utils/dateUtils';
+import { sanitizeCsvCell, getTodayArgentina, formatDateTimeArgentina } from '../../utils/dateUtils';
 import {
   ShieldCheck,
   Search,
@@ -124,11 +124,8 @@ export const AuditLogsView = () => {
       return (
         (log.userName || '').toLowerCase().includes(s) ||
         (log.userRole || '').toLowerCase().includes(s) ||
-        (log.resource || log.module || '').toLowerCase().includes(s) ||
-        (log.targetDni || '').includes(s) ||
         (log.details || '').toLowerCase().includes(s) ||
-        (log.action || '').toLowerCase().includes(s) ||
-        (log.eventHash || '').toLowerCase().includes(s)
+        (log.action || '').toLowerCase().includes(s)
       );
     });
   }, [processedLogs, searchTerm]);
@@ -154,26 +151,25 @@ export const AuditLogsView = () => {
   };
 
   const handleExportCSV = () => {
-    const headers = ['ID', 'Fecha y Hora UTC', 'Operador / Usuario', 'Rol / Especialidad', 'Accion Legal', 'Recurso Afectado', 'DNI Paciente', 'Detalle Operativo', 'IP', 'Hash SHA-256'];
-    const rows = filteredLogs.map((l) => [
-      sanitizeCsvCell(l.id),
-      sanitizeCsvCell(l.timestamp),
-      sanitizeCsvCell(l.userName),
-      sanitizeCsvCell(l.userRole),
-      sanitizeCsvCell(l.action),
-      sanitizeCsvCell(l.resource || l.module),
-      sanitizeCsvCell(l.targetDni),
-      sanitizeCsvCell(l.details),
-      sanitizeCsvCell(l.ipAddress),
-      sanitizeCsvCell(l.eventHash)
-    ]);
+    const headers = ['ID', 'Fecha y Hora (Argentina)', 'Operador / Usuario', 'Rol', 'Accion', 'Detalle Operativo'];
+    const rows = filteredLogs.map((l) => {
+      const dt = formatDateTimeArgentina(l.timestamp || l.created_at);
+      return [
+        sanitizeCsvCell(l.id),
+        sanitizeCsvCell(`${dt.dateStr} ${dt.timeStr}`),
+        sanitizeCsvCell(l.userName),
+        sanitizeCsvCell(l.userRole),
+        sanitizeCsvCell(l.action),
+        sanitizeCsvCell(l.details)
+      ];
+    });
 
     const csvContent = '\uFEFF' + [headers.map(sanitizeCsvCell).join(','), ...rows.map((e) => e.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `CITRA_Auditoria_Seguridad_Inmutable_${getTodayArgentina()}.csv`);
+    link.setAttribute('download', `CITRA_Auditoria_${getTodayArgentina()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -230,8 +226,9 @@ export const AuditLogsView = () => {
         flexWrap: 'wrap',
         gap: '0.5rem'
       }}>
-        <div>
-          <strong>Protección y Cifrado de Datos de Salud:</strong> Cada evento queda sellado criptográficamente con Hash SHA-256 forzado en el servidor PostgreSQL para garantizar no repudio y trazabilidad forense.
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <ShieldCheck size={18} color="#002182" />
+          <span><strong>Registro Central de Auditoría:</strong> Acceso exclusivo de Dirección Médica (Dr. Alejandro Blanco).</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', fontWeight: 700 }}>
           <Server size={15} color={isServerSource ? '#059669' : '#b45309'} />
@@ -246,7 +243,7 @@ export const AuditLogsView = () => {
           <input
             type="text"
             className="form-control"
-            placeholder="Buscar por usuario, DNI del paciente o detalle del evento..."
+            placeholder="Buscar por usuario o detalle de la acción..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -285,38 +282,33 @@ export const AuditLogsView = () => {
         <table className="table">
           <thead>
             <tr>
-              <th>Fecha y Hora</th>
-              <th>Operador / Usuario</th>
-              <th>Acción Legal</th>
-              <th>Recurso Afectado</th>
-              <th>DNI Paciente</th>
+              <th style={{ width: '160px' }}>Fecha y Hora</th>
+              <th style={{ width: '240px' }}>Operador / Usuario</th>
+              <th style={{ width: '130px' }}>Acción</th>
               <th>Detalle Operativo</th>
-              <th>Hash SHA-256 de Integridad</th>
             </tr>
           </thead>
           <tbody>
             {filteredLogs.length === 0 ? (
               <tr>
-                <td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                <td colSpan="4" style={{ textAlign: 'center', padding: '2.5rem', color: '#64748b' }}>
                   {loading ? 'Cargando eventos desde el servidor...' : 'No se encontraron eventos de auditoría para los criterios seleccionados.'}
                 </td>
               </tr>
             ) : (
               filteredLogs.map((log) => {
                 const badgeStyle = getActionBadgeColor(log.action);
-                const timeString = log.timestamp || '';
-                const datePart = timeString.includes('T') ? timeString.split('T')[0] : timeString.split(' ')[0] || '-';
-                const timePart = timeString.includes('T') ? timeString.split('T')[1]?.substring(0, 8) : (timeString.split(' ')[1] || '');
+                const dt = formatDateTimeArgentina(log.timestamp || log.created_at);
 
                 return (
                   <tr key={log.id}>
                     <td style={{ whiteSpace: 'nowrap', fontSize: '0.84rem' }}>
-                      <div style={{ fontWeight: 700 }}>{datePart}</div>
-                      <div style={{ color: '#64748b', fontSize: '0.76rem' }}>{timePart} UTC</div>
+                      <div style={{ fontWeight: 800, color: '#0f172a' }}>{dt.dateStr}</div>
+                      <div style={{ color: '#0284c7', fontSize: '0.78rem', fontWeight: 600 }}>{dt.timeStr}</div>
                     </td>
                     <td>
                       <div style={{ fontWeight: 800, color: '#002182' }}>{log.userName}</div>
-                      <div style={{ fontSize: '0.76rem', color: '#496386' }}>{log.userRole}</div>
+                      <div style={{ fontSize: '0.76rem', color: '#496386', fontWeight: 600 }}>{log.userRole}</div>
                     </td>
                     <td>
                       <span
@@ -324,37 +316,19 @@ export const AuditLogsView = () => {
                           background: badgeStyle.bg,
                           color: badgeStyle.text,
                           border: `1px solid ${badgeStyle.border}`,
-                          padding: '0.2rem 0.6rem',
-                          borderRadius: '4px',
+                          padding: '0.22rem 0.6rem',
+                          borderRadius: '6px',
                           fontSize: '0.76rem',
                           fontWeight: 800,
-                          whiteSpace: 'nowrap'
+                          whiteSpace: 'nowrap',
+                          display: 'inline-block'
                         }}
                       >
                         {log.action}
                       </span>
                     </td>
-                    <td style={{ fontWeight: 600 }}>{log.resource || log.module || '-'}</td>
-                    <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>{log.targetDni || '-'}</td>
-                    <td style={{ fontSize: '0.86rem', maxWidth: '300px' }}>{log.details || '-'}</td>
-                    <td>
-                      <div
-                        style={{
-                          fontFamily: 'monospace',
-                          fontSize: '0.72rem',
-                          background: '#f1f5f9',
-                          padding: '0.25rem 0.5rem',
-                          borderRadius: '4px',
-                          color: '#475569',
-                          maxWidth: '140px',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}
-                        title={log.eventHash}
-                      >
-                        {log.eventHash || 'hash-calculado-servidor'}
-                      </div>
+                    <td style={{ fontSize: '0.88rem', color: '#1e293b', lineHeight: 1.45 }}>
+                      {log.details || '-'}
                     </td>
                   </tr>
                 );
