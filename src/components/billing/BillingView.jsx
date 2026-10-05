@@ -63,19 +63,20 @@ export const BillingView = () => {
     }
   };
 
-  // KPI Calculations
-  const totalFacturado = invoices.reduce((acc, curr) => acc + (curr.amount || 0), 0);
-  const totalHonorariosMedicos = invoices.reduce((acc, curr) => acc + (curr.doctorHonorario || Math.round(curr.amount * 0.75)), 0);
+  // KPI Calculations (Soporta total de Supabase y amount de mocks)
+  const getInvTotal = (inv) => Number(inv.total ?? inv.amount ?? 0);
+  const totalFacturado = invoices.reduce((acc, curr) => acc + getInvTotal(curr), 0);
+  const totalHonorariosMedicos = invoices.reduce((acc, curr) => acc + (curr.doctorHonorario || Math.round(getInvTotal(curr) * 0.75)), 0);
   const totalRetencionClinica = totalFacturado - totalHonorariosMedicos;
 
   const filteredInvoices = invoices.filter((inv) => {
     const cleanQ = searchTerm.toLowerCase();
     const matchSearch =
-      inv.patientName.toLowerCase().includes(cleanQ) ||
-      inv.invoiceNumber.toLowerCase().includes(cleanQ) ||
-      inv.concept.toLowerCase().includes(cleanQ) ||
-      (inv.dni && inv.dni.includes(cleanQ)) ||
-      (inv.cae && inv.cae.includes(cleanQ));
+      (inv.patientName && inv.patientName.toLowerCase().includes(cleanQ)) ||
+      (inv.invoiceNumber && inv.invoiceNumber.toLowerCase().includes(cleanQ)) ||
+      (inv.concept && inv.concept.toLowerCase().includes(cleanQ)) ||
+      (inv.dni && String(inv.dni).includes(cleanQ)) ||
+      (inv.cae && String(inv.cae).includes(cleanQ));
 
     const matchMethod = filterMethod === 'all' || inv.paymentMethod === filterMethod;
     return matchSearch && matchMethod;
@@ -92,8 +93,8 @@ export const BillingView = () => {
       sanitizeCsvCell(i.dni || '-'),
       sanitizeCsvCell(i.concept),
       sanitizeCsvCell(i.doctorName || '-'),
-      sanitizeCsvCell(i.amount),
-      sanitizeCsvCell(i.doctorHonorario || Math.round(i.amount * 0.75)),
+      sanitizeCsvCell(getInvTotal(i)),
+      sanitizeCsvCell(i.doctorHonorario || Math.round(getInvTotal(i) * 0.75)),
       sanitizeCsvCell(i.paymentMethod),
       sanitizeCsvCell(i.status)
     ]);
@@ -293,12 +294,12 @@ export const BillingView = () => {
                     </td>
                     <td>
                       <div style={{ fontWeight: 900, color: '#002182', fontSize: '1.05rem' }}>
-                        ${inv.amount.toLocaleString()}
+                        ${getInvTotal(inv).toLocaleString()}
                       </div>
                     </td>
                     <td>
                       <div style={{ fontWeight: 700, color: '#065f46' }}>
-                        ${(inv.doctorHonorario || Math.round(inv.amount * 0.75)).toLocaleString()}
+                        ${(inv.doctorHonorario || Math.round(getInvTotal(inv) * 0.75)).toLocaleString()}
                       </div>
                     </td>
                     <td>

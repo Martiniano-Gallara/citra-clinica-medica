@@ -360,14 +360,15 @@ export const dataService = {
     return null;
   },
 
-  // Bundle transaccional atómico RPC: Consulta + Receta + Pedidos Diagnósticos (C-08)
-  async createConsultationBundle(consultationData, prescriptionData = null, medicalOrders = null) {
+  // Bundle transaccional atómico RPC: Consulta + Receta + Pedidos Diagnósticos + Imágenes (C-08 / A3-09)
+  async createConsultationBundle(consultationData, prescriptionData = null, medicalOrders = null, imagingStudies = null) {
     if (isSupabaseConfigured && supabase) {
       const { adendas, ...cleanConsultation } = consultationData;
       const { data, error } = await supabase.rpc('create_consultation_bundle', {
         p_consultation: toSnakeCase(cleanConsultation),
         p_prescription: prescriptionData ? toSnakeCase(prescriptionData) : null,
-        p_medical_orders: medicalOrders ? toSnakeCase(medicalOrders) : null
+        p_medical_orders: medicalOrders ? toSnakeCase(medicalOrders) : null,
+        p_imaging_studies: imagingStudies ? toSnakeCase(imagingStudies) : null
       });
       if (error) {
         console.error('Error al asentar paquete clínico transaccional en Supabase:', error);
@@ -708,6 +709,10 @@ export const dataService = {
       if (updates.sisaRefeps !== undefined) payload.sisa_refeps = updates.sisaRefeps;
       if (updates.specialtyName !== undefined || updates.specialty !== undefined) {
         payload.specialty_name = updates.specialtyName || updates.specialty;
+      }
+      if (updates.specialtyId !== undefined) payload.specialty_id = updates.specialtyId;
+      if (updates.roomId !== undefined || updates.room_id !== undefined) {
+        payload.room_id = updates.roomId || updates.room_id;
       }
       if (updates.email !== undefined) payload.email = updates.email;
       if (updates.phone !== undefined) payload.phone = updates.phone;
@@ -1506,8 +1511,7 @@ export const dataService = {
         payment_method: movementData.paymentMethod || movementData.method || 'Efectivo',
         patient_id: movementData.patientId || null,
         patient_name: movementData.patientName || null,
-        cashier_name: movementData.cashierName || 'Recepción',
-        created_at: new Date().toISOString()
+        cashier_name: movementData.cashierName || 'Recepción'
       };
       const { data, error } = await supabase
         .from('cash_movements')
@@ -1571,7 +1575,7 @@ export const dataService = {
         concept: invoiceData.concept || 'Atención médica',
         payment_method: invoiceData.paymentMethod || 'Efectivo',
         status: invoiceData.status || 'Cobrado',
-        arca_validated: true,
+        arca_validated: false,
         receipt_number: invoiceData.receiptNumber || null
       };
       const { data, error } = await supabase.from('invoices').insert([payload]).select().single();
@@ -1686,10 +1690,17 @@ export const dataService = {
 
   async updateClinicalAccessRequest(id, status) {
     if (isSupabaseConfigured && supabase) {
+      if (status === 'approved') {
+        const { data, error } = await supabase.rpc('approve_access_grant', {
+          p_grant_id: id,
+          p_hours_valid: 48
+        });
+        if (error) throw error;
+        return data;
+      }
       const payload = {
         status,
-        approved_at: status === 'approved' ? new Date().toISOString() : null,
-        expires_at: status === 'approved' ? new Date(Date.now() + 48 * 3600 * 1000).toISOString() : null
+        expires_at: null
       };
       const { data, error } = await supabase.from('clinical_access_grants').update(payload).eq('id', id).select().single();
       if (error) throw error;

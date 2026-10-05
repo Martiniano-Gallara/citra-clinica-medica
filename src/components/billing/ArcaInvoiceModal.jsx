@@ -18,30 +18,46 @@ export const ArcaInvoiceModal = () => {
     addToast
   } = useClinic();
 
+  const selectedDoc = doctors.find((d) => d.name === (formData?.doctorName)) || doctors[0];
+  const effectiveHonorarioPercent = selectedDoc?.feePercentage || 75;
+
   const [formData, setFormData] = useState({
-    patientId: patients[0]?.id || '',
-    patientName: patients[0]?.name || '',
-    dni: patients[0]?.dni || '',
+    patientId: '',
+    patientName: '',
+    dni: '',
     tipoCmp: 6, // Factura B
     tipoCmpName: 'Factura B (Consumidor Final)',
-    concept: 'Consulta Médica Especializada Traumatología',
+    concept: 'Consulta Médica Especializada',
     doctorName: doctors[0]?.name || '',
     amount: 2500,
     paymentMethod: 'Tarjeta Débito',
     ivaCondition: 'Consumidor Final',
-    docHonorarioPercent: 75
+    docHonorarioPercent: effectiveHonorarioPercent
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (arcaInvoicePreloadData) {
+      const doc = doctors.find(d => d.name === arcaInvoicePreloadData.doctorName) || doctors[0];
       setFormData((prev) => ({
         ...prev,
-        ...arcaInvoicePreloadData
+        ...arcaInvoicePreloadData,
+        docHonorarioPercent: doc?.feePercentage || prev.docHonorarioPercent
+      }));
+    } else if (patients.length > 0 && !formData.patientId) {
+      const defaultPat = patients[0] || {};
+      const doc = doctors[0];
+      setFormData((prev) => ({
+        ...prev,
+        patientId: defaultPat.id || '',
+        patientName: defaultPat.name || '',
+        dni: defaultPat.dni || '',
+        doctorName: doc?.name || '',
+        docHonorarioPercent: doc?.feePercentage || 75
       }));
     }
-  }, [arcaInvoicePreloadData, isArcaInvoiceModalOpen]);
+  }, [arcaInvoicePreloadData, isArcaInvoiceModalOpen, patients, doctors]);
 
   const honorariosCalc = calculateDoctorHonorarios(formData.amount, formData.docHonorarioPercent);
 

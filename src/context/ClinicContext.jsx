@@ -261,6 +261,8 @@ export const ClinicProvider = ({ children }) => {
   const [adendaTargetConsultation, setAdendaTargetConsultation] = useState(null);
   const [isArcaInvoiceModalOpen, setIsArcaInvoiceModalOpen] = useState(false);
   const [arcaInvoicePreloadData, setArcaInvoicePreloadData] = useState(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentPreloadData, setPaymentPreloadData] = useState(null);
   const [isDigitalSignatureModalOpen, setIsDigitalSignatureModalOpen] = useState(false);
   const [isBlockTimeModalOpen, setIsBlockTimeModalOpen] = useState(false);
   const [isDoctorModalOpen, setIsDoctorModalOpen] = useState(false);
@@ -1977,7 +1979,8 @@ export const ClinicProvider = ({ children }) => {
     try {
       if (dataService.isLive()) {
         try {
-          await dataService.closeCashShift(null, observations || '');
+          const activeShift = cashClosures.find((c) => c.status === 'open' || c.status === 'Abierta' || !c.closeTimestamp);
+          await dataService.closeCashShift(activeShift?.id || null, observations || '');
         } catch (err) {
           console.error('Error al cerrar turno de caja en Supabase:', err);
           addToast('Error al Cerrar Caja', err.message || 'No se pudo cerrar el turno en el servidor.', 'error');
@@ -2561,19 +2564,8 @@ export const ClinicProvider = ({ children }) => {
       return { success: false, message: 'Contraseña requerida' };
     }
 
-    // 3. Comprobar credenciales temporales explícitamente autorizadas para testing/desarrollo
-    const isTempSecretaria =
-      (rawEmail.includes('secretaria') || rawEmail.includes('recepcion') || rawEmail.includes('admin')) &&
-      (cleanPass === 'secretaria2026' || cleanPass === 'citra2026' || cleanPass === 'admin123');
-
-    const isTempBlanco =
-      (rawEmail.includes('blanco') || rawEmail === 'dr.blanco@citra.com.ar') &&
-      (cleanPass === 'blanco2026' || cleanPass === 'citra2026' || cleanPass === 'admin123');
-
-    const isAuthorizedTemp = isTempSecretaria || isTempBlanco;
-
-    // 4. Si Supabase está en vivo y no es una credencial temporal local autorizada, autenticar contra GoTrue
-    if (dataService.isLive() && !isAuthorizedTemp) {
+    // 3. Autenticación en modo Supabase LIVE vs MODO LOCAL/DEV
+    if (dataService.isLive()) {
       try {
         const { session, user } = await dataService.signInWithPassword(cleanEmail, cleanPass);
         if (!session && !user) {
@@ -2581,34 +2573,21 @@ export const ClinicProvider = ({ children }) => {
           return { success: false, message: 'Fallo de autenticación GoTrue' };
         }
       } catch (err) {
-        // Si GoTrue falla pero la contraseña coincide con la clave guardada del usuario o credencial autorizada
-        const validPassList = [
-          adminUser.password,
-          'citra2026',
-          'admin123',
-          rawEmail.includes('blanco') ? 'blanco2026' : null,
-          rawEmail.includes('secretaria') || rawEmail.includes('recepcion') ? 'secretaria2026' : null
-        ].filter(Boolean);
-
-        const isMatch = validPassList.includes(cleanPass) || (adminUser.password && adminUser.password === cleanPass);
-
-        if (!isMatch) {
-          console.warn('Acceso administrativo denegado en GoTrue:', err?.message || 'Credenciales inválidas');
-          addToast('Acceso Denegado', 'Credenciales no autorizadas en el servidor de autenticación.', 'error');
-          return { success: false, message: 'Credenciales inválidas en GoTrue' };
-        }
+        console.warn('Acceso administrativo denegado en GoTrue:', err?.message || 'Credenciales inválidas');
+        addToast('Acceso Denegado', 'Credenciales no autorizadas en el servidor de autenticación.', 'error');
+        return { success: false, message: 'Credenciales inválidas en GoTrue' };
       }
-    } else if (!isAuthorizedTemp) {
-      // Modo local / offline: validar contra la contraseña guardada o credenciales autorizadas
-      const validPassList = [
-        adminUser.password,
-        'citra2026',
-        'admin123',
-        rawEmail.includes('blanco') ? 'blanco2026' : null,
-        rawEmail.includes('secretaria') || rawEmail.includes('recepcion') ? 'secretaria2026' : null
-      ].filter(Boolean);
+    } else {
+      // Modo local / offline: comprobar credenciales autorizadas locales
+      const isTempSecretaria =
+        (rawEmail.includes('secretaria') || rawEmail.includes('recepcion') || rawEmail.includes('admin')) &&
+        (cleanPass === 'secretaria2026' || cleanPass === 'citra2026' || cleanPass === 'admin123');
 
-      const isMatch = validPassList.includes(cleanPass) || (adminUser.password && adminUser.password === cleanPass);
+      const isTempBlanco =
+        (rawEmail.includes('blanco') || rawEmail === 'dr.blanco@citra.com.ar') &&
+        (cleanPass === 'blanco2026' || cleanPass === 'citra2026' || cleanPass === 'admin123');
+
+      const isMatch = isTempSecretaria || isTempBlanco || (adminUser.password && adminUser.password === cleanPass);
 
       if (!isMatch) {
         addToast('Contraseña Incorrecta', 'La contraseña administrativa no es correcta.', 'error');
@@ -3006,6 +2985,10 @@ export const ClinicProvider = ({ children }) => {
         setIsArcaInvoiceModalOpen,
         arcaInvoicePreloadData,
         setArcaInvoicePreloadData,
+        isPaymentModalOpen,
+        setIsPaymentModalOpen,
+        paymentPreloadData,
+        setPaymentPreloadData,
         isDigitalSignatureModalOpen,
         setIsDigitalSignatureModalOpen,
         isBlockTimeModalOpen,

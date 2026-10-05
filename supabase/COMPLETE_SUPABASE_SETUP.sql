@@ -470,7 +470,7 @@ CREATE TABLE IF NOT EXISTS cash_movements (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 21. Facturación y Comprobantes Fiscales ARCA (A-04)
+-- 21. Facturación y Comprobantes Fiscales ARCA (A-04, A3-16)
 CREATE TABLE IF NOT EXISTS invoices (
     id VARCHAR(50) PRIMARY KEY,
     invoice_number VARCHAR(50) NOT NULL,
@@ -482,15 +482,17 @@ CREATE TABLE IF NOT EXISTS invoices (
     patient_id VARCHAR(50) REFERENCES patients(id) ON DELETE SET NULL,
     patient_name VARCHAR(200) NOT NULL,
     dni VARCHAR(20) NOT NULL,
-    total NUMERIC(12,2) NOT NULL DEFAULT 0,
-    subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
+    total NUMERIC(12,2) NOT NULL CHECK (total > 0),
+    subtotal NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (subtotal >= 0),
     concept VARCHAR(200) NOT NULL,
     payment_method VARCHAR(50) NOT NULL DEFAULT 'Efectivo',
     status VARCHAR(30) NOT NULL DEFAULT 'Cobrado',
-    arca_validated BOOLEAN NOT NULL DEFAULT true,
+    arca_validated BOOLEAN NOT NULL DEFAULT false,
     receipt_number VARCHAR(50),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_invoice_number ON invoices (pto_vta, tipo_cmp, invoice_number);
 
 -- 21. Helpers y Funciones de Seguridad
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
@@ -522,9 +524,6 @@ BEGIN
       );
 
     RETURN NEW;
-EXCEPTION
-    WHEN OTHERS THEN
-        RETURN NEW;
 END;
 $$;
 
@@ -533,9 +532,10 @@ CREATE TRIGGER on_auth_user_created
 AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE FUNCTION public.handle_new_auth_user();
 
+-- A3-05: El rol solo es válido si el usuario se encuentra activo
 CREATE OR REPLACE FUNCTION public.get_auth_role()
 RETURNS user_role AS $$
-    SELECT role FROM public.profiles WHERE id = auth.uid();
+    SELECT role FROM public.profiles WHERE id = auth.uid() AND is_active = TRUE;
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 CREATE OR REPLACE FUNCTION public.is_superadmin()
@@ -716,8 +716,31 @@ ALTER TABLE cash_shifts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cash_movements ENABLE ROW LEVEL SECURITY;
 
 -- 23. Políticas RLS Endurecidas (Sin duplicados y con status = 'cancelado')
+
+-- A3-05: Protección de ciclo de vida de perfiles (solo superadmin puede modificar roles o reactivar)
+CREATE OR REPLACE FUNCTION public.protect_profile_lifecycle()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'UPDATE' AND auth.uid() IS NOT NULL THEN
+        IF (NEW.role IS DISTINCT FROM OLD.role OR NEW.is_active IS DISTINCT FROM OLD.is_active) AND NOT public.is_superadmin() THEN
+            RAISE EXCEPTION 'Solo un superadministrador puede modificar el rol o el estado activo/inactivo de una cuenta.';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_protect_profile_lifecycle ON public.profiles;
+CREATE TRIGGER trg_protect_profile_lifecycle
+BEFORE UPDATE ON public.profiles
+FOR EACH ROW EXECUTE FUNCTION public.protect_profile_lifecycle();
+
 CREATE POLICY "profiles_select_policy" ON profiles FOR SELECT USING (id = auth.uid() OR public.is_administrative());
-CREATE POLICY "profiles_update_self_policy" ON profiles FOR UPDATE USING (id = auth.uid() OR public.is_superadmin()) WITH CHECK ((id = auth.uid() AND role = (SELECT role FROM profiles WHERE id = auth.uid())) OR public.is_superadmin());
+CREATE POLICY "profiles_update_self_policy" ON profiles FOR UPDATE USING (
+    id = auth.uid() OR public.is_superadmin()
+) WITH CHECK (
+    ((id = auth.uid() AND role = (SELECT role FROM profiles WHERE id = auth.uid()) AND is_active = (SELECT is_active FROM profiles WHERE id = auth.uid())) OR public.is_superadmin())
+);
 
 CREATE POLICY "specialties_public_select" ON specialties FOR SELECT USING (true);
 CREATE POLICY "specialties_admin_all" ON specialties FOR ALL USING (public.is_administrative());
@@ -728,16 +751,59 @@ CREATE POLICY "rooms_admin_all" ON rooms FOR ALL USING (public.is_administrative
 CREATE POLICY "health_insurances_public_select" ON health_insurances FOR SELECT USING (true);
 CREATE POLICY "insurances_admin_all" ON health_insurances FOR ALL USING (public.is_administrative());
 
--- MED-09: Restringir acceso directo a tabla doctors; terceros y pacientes consultan la vista public_doctors
+-- A3-14: Protección de datos profesionales médicos (solo superadmin puede modificar matrícula o especialidad)
+CREATE OR REPLACE FUNCTION public.protect_doctor_professional_data()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'UPDATE' AND auth.uid() IS NOT NULL AND NOT public.is_superadmin() THEN
+        IF NEW.license IS DISTINCT FROM OLD.license OR
+           NEW.sisa_refeps IS DISTINCT FROM OLD.sisa_refeps OR
+           NEW.specialty_id IS DISTINCT FROM OLD.specialty_id OR
+           NEW.specialty_name IS DISTINCT FROM OLD.specialty_name OR
+           NEW.user_id IS DISTINCT FROM OLD.user_id THEN
+            RAISE EXCEPTION 'Solo un superadministrador puede modificar la matrícula, REFEPS, especialidad o vinculación de cuenta de un profesional.';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_protect_doctor_professional_data ON public.doctors;
+CREATE TRIGGER trg_protect_doctor_professional_data
+BEFORE UPDATE ON public.doctors
+FOR EACH ROW EXECUTE FUNCTION public.protect_doctor_professional_data();
+
 DROP POLICY IF EXISTS "doctors_public_select" ON doctors;
 DROP POLICY IF EXISTS "doctors_select_policy" ON doctors;
 CREATE POLICY "doctors_select_policy" ON doctors FOR SELECT USING (public.is_administrative() OR user_id = auth.uid());
 CREATE POLICY "doctors_update_self" ON doctors FOR UPDATE USING (user_id = auth.uid() OR public.is_administrative());
 CREATE POLICY "doctors_admin_insert" ON doctors FOR INSERT WITH CHECK (public.is_administrative());
--- CRIT-02: Se elimina la política de DELETE físico para doctores; las bajas son lógicas (is_active = false)
 
 CREATE POLICY "schedules_public_select" ON clinic_schedules FOR SELECT USING (true);
 CREATE POLICY "schedules_admin_all" ON clinic_schedules FOR ALL USING (public.is_administrative());
+
+-- A3-06: Paciente autenticado solo puede registrar su propia ficha
+CREATE UNIQUE INDEX IF NOT EXISTS idx_patients_unique_user_id ON public.patients (user_id) WHERE user_id IS NOT NULL;
+
+CREATE OR REPLACE FUNCTION public.enforce_patient_insert_ownership()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF auth.uid() IS NOT NULL AND NOT public.is_administrative() THEN
+        IF NEW.user_id IS NULL OR NEW.user_id != auth.uid() THEN
+            RAISE EXCEPTION 'Un paciente solo puede registrar su propia ficha vinculada a su cuenta autenticada.';
+        END IF;
+        IF EXISTS (SELECT 1 FROM public.patients WHERE user_id = auth.uid() AND id != NEW.id) THEN
+            RAISE EXCEPTION 'El usuario ya posee una ficha de paciente registrada en el sistema.';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_enforce_patient_insert_ownership ON public.patients;
+CREATE TRIGGER trg_enforce_patient_insert_ownership
+BEFORE INSERT ON public.patients
+FOR EACH ROW EXECUTE FUNCTION public.enforce_patient_insert_ownership();
 
 CREATE POLICY "patients_select_policy" ON patients FOR SELECT USING (
     user_id = auth.uid() OR public.is_administrative() OR (public.is_doctor() AND public.doctor_treats_patient(patients.id, public.get_current_doctor_id()))
@@ -747,8 +813,30 @@ WITH CHECK (
     public.is_administrative() OR
     (user_id = auth.uid() AND user_id = (SELECT p.user_id FROM public.patients p WHERE p.id = patients.id))
 );
-CREATE POLICY "patients_insert_policy" ON patients FOR INSERT WITH CHECK (auth.uid() IS NOT NULL OR public.is_administrative());
--- CRIT-01: Se elimina la política de DELETE físico para pacientes; conservación obligatoria por 15 años (Ley 26.529)
+CREATE POLICY "patients_insert_policy" ON patients FOR INSERT WITH CHECK (
+    public.is_administrative() OR
+    (auth.uid() IS NOT NULL AND user_id = auth.uid())
+);
+
+-- A3-02: Bloqueo de mutación de patient_id y doctor_id en turnos
+CREATE OR REPLACE FUNCTION public.prevent_appointment_identity_mutation()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'UPDATE' AND auth.uid() IS NOT NULL THEN
+        IF (NEW.patient_id IS DISTINCT FROM OLD.patient_id OR NEW.doctor_id IS DISTINCT FROM OLD.doctor_id) THEN
+            IF NOT public.is_administrative() THEN
+                RAISE EXCEPTION 'No está permitido modificar el paciente o profesional de un turno existente.';
+            END IF;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_prevent_appointment_identity_mutation ON public.appointments;
+CREATE TRIGGER trg_prevent_appointment_identity_mutation
+BEFORE UPDATE ON public.appointments
+FOR EACH ROW EXECUTE FUNCTION public.prevent_appointment_identity_mutation();
 
 CREATE POLICY "appointments_select_policy" ON appointments FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative());
 CREATE POLICY "appointments_insert_policy" ON appointments FOR INSERT WITH CHECK (patient_id = public.get_current_patient_id() OR public.is_administrative());
@@ -757,7 +845,6 @@ CREATE POLICY "appointments_update_policy" ON appointments FOR UPDATE USING (
 ) WITH CHECK (
     (patient_id = public.get_current_patient_id() AND status = 'cancelado') OR doctor_id = public.get_current_doctor_id() OR public.is_administrative()
 );
--- CRIT-02: Se elimina appointments_delete_policy; los turnos se cancelan (status = 'cancelado'), no se borran físicamente
 
 CREATE POLICY "consultations_select_policy" ON consultations FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_superadmin());
 CREATE POLICY "consultations_insert_policy" ON consultations FOR INSERT WITH CHECK (
@@ -769,8 +856,53 @@ CREATE POLICY "consultations_update_policy" ON consultations FOR UPDATE USING (
     (public.is_doctor() AND doctor_id = public.get_current_doctor_id()) OR public.is_superadmin()
 );
 
+-- A3-10: Adendas restringidas a consultas propias del profesional o superadmin
 CREATE POLICY "adendas_select_policy" ON consultation_adendas FOR SELECT USING (EXISTS (SELECT 1 FROM consultations c WHERE c.id = consultation_adendas.consultation_id AND (c.patient_id = public.get_current_patient_id() OR c.doctor_id = public.get_current_doctor_id() OR public.is_superadmin())));
-CREATE POLICY "adendas_insert_policy" ON consultation_adendas FOR INSERT WITH CHECK (public.is_doctor() AND doctor_id = public.get_current_doctor_id());
+CREATE POLICY "adendas_insert_policy" ON consultation_adendas FOR INSERT WITH CHECK (
+    public.is_doctor() AND doctor_id = public.get_current_doctor_id()
+    AND EXISTS (
+        SELECT 1 FROM public.consultations c
+        WHERE c.id = consultation_adendas.consultation_id
+          AND (c.doctor_id = public.get_current_doctor_id() OR public.is_superadmin())
+    )
+);
+
+-- A3-11: Transición estricta de recetas médicas e inmutabilidad de prescripción
+CREATE OR REPLACE FUNCTION public.validate_prescription_transition()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.status = 'anulada' THEN
+        RAISE EXCEPTION 'No se pueden modificar recetas anuladas.';
+    END IF;
+    IF OLD.status = 'dispensada' AND NEW.status != 'dispensada' THEN
+        RAISE EXCEPTION 'No se pueden revertir recetas ya dispensadas.';
+    END IF;
+    IF NEW.status = 'dispensada' THEN
+        IF OLD.expiration_date < (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date THEN
+            RAISE EXCEPTION 'No se puede dispensar una receta médica vencida (fecha de expiración: %).', OLD.expiration_date;
+        END IF;
+    END IF;
+    IF NEW.status = 'anulada' THEN
+        IF NOT (public.get_current_doctor_id() = OLD.doctor_id OR public.is_superadmin()) THEN
+            RAISE EXCEPTION 'Solo el profesional emisor o un superadministrador puede anular una receta médica.';
+        END IF;
+    END IF;
+    IF NEW.cuir IS DISTINCT FROM OLD.cuir OR
+       NEW.patient_id IS DISTINCT FROM OLD.patient_id OR
+       NEW.doctor_id IS DISTINCT FROM OLD.doctor_id OR
+       NEW.medications IS DISTINCT FROM OLD.medications OR
+       NEW.issue_date IS DISTINCT FROM OLD.issue_date OR
+       NEW.expiration_date IS DISTINCT FROM OLD.expiration_date THEN
+        RAISE EXCEPTION 'Los datos farmacológicos y de prescripción de una receta médica son estrictamente inmutables (Ley 27.553).';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_validate_prescription_transition ON public.electronic_prescriptions;
+CREATE TRIGGER trg_validate_prescription_transition
+BEFORE UPDATE ON public.electronic_prescriptions
+FOR EACH ROW EXECUTE FUNCTION public.validate_prescription_transition();
 
 CREATE POLICY "prescriptions_select_policy" ON electronic_prescriptions FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative());
 CREATE POLICY "prescriptions_insert_policy" ON electronic_prescriptions FOR INSERT WITH CHECK (public.is_doctor() AND doctor_id = public.get_current_doctor_id());
@@ -779,6 +911,22 @@ CREATE POLICY "prescriptions_update_policy" ON electronic_prescriptions FOR UPDA
 ) WITH CHECK (
     status IN ('dispensada', 'anulada') AND (doctor_id = public.get_current_doctor_id() OR public.is_administrative())
 );
+
+-- A3-13: Inmutabilidad de paciente en estudios de imágenes
+CREATE OR REPLACE FUNCTION public.protect_imaging_patient_identity()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'UPDATE' AND NEW.patient_id IS DISTINCT FROM OLD.patient_id THEN
+        RAISE EXCEPTION 'No está permitido reasignar el paciente de un estudio de imágenes.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_protect_imaging_patient_identity ON public.imaging_studies;
+CREATE TRIGGER trg_protect_imaging_patient_identity
+BEFORE UPDATE ON public.imaging_studies
+FOR EACH ROW EXECUTE FUNCTION public.protect_imaging_patient_identity();
 
 CREATE POLICY "imaging_select_policy" ON imaging_studies FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative());
 CREATE POLICY "imaging_insert_policy" ON imaging_studies FOR INSERT WITH CHECK (public.is_doctor() OR public.is_administrative());
@@ -794,23 +942,98 @@ CREATE POLICY "consent_forms_select_policy" ON consent_forms FOR SELECT USING (p
 CREATE POLICY "consent_forms_insert_policy" ON consent_forms FOR INSERT WITH CHECK (public.is_doctor() AND doctor_id = public.get_current_doctor_id());
 CREATE POLICY "consent_forms_update_policy" ON consent_forms FOR UPDATE USING (doctor_id = public.get_current_doctor_id() OR patient_id = public.get_current_patient_id() OR public.is_superadmin());
 
-CREATE POLICY "rehab_plans_select_policy" ON rehab_plans FOR SELECT USING (patient_id = public.get_current_patient_id() OR public.is_doctor() OR public.is_administrative());
+-- A3-12: Planes de rehabilitación filtrados por médico tratante
+CREATE POLICY "rehab_plans_select_policy" ON rehab_plans FOR SELECT USING (
+    patient_id = public.get_current_patient_id()
+    OR (public.is_doctor() AND public.doctor_treats_patient(patient_id, public.get_current_doctor_id()))
+    OR public.is_administrative()
+);
 CREATE POLICY "rehab_plans_insert_policy" ON rehab_plans FOR INSERT WITH CHECK (public.is_doctor() AND doctor_id = public.get_current_doctor_id() AND public.doctor_treats_patient(patient_id, doctor_id));
 CREATE POLICY "rehab_plans_update_policy" ON rehab_plans FOR UPDATE USING (public.is_doctor() AND doctor_id = public.get_current_doctor_id()) WITH CHECK (public.is_doctor() AND doctor_id = public.get_current_doctor_id());
 CREATE POLICY "rehab_plans_delete_policy" ON rehab_plans FOR DELETE USING ((public.is_doctor() AND doctor_id = public.get_current_doctor_id()) OR public.is_superadmin());
 
-CREATE POLICY "rehab_sessions_select_policy" ON rehab_sessions FOR SELECT USING (patient_id = public.get_current_patient_id() OR public.is_doctor() OR public.is_administrative());
+CREATE POLICY "rehab_sessions_select_policy" ON rehab_sessions FOR SELECT USING (
+    patient_id = public.get_current_patient_id()
+    OR (public.is_doctor() AND public.doctor_treats_patient(patient_id, public.get_current_doctor_id()))
+    OR public.is_administrative()
+);
 CREATE POLICY "rehab_sessions_insert_policy" ON rehab_sessions FOR INSERT WITH CHECK ((public.is_doctor() AND therapist_id = public.get_current_doctor_id()) OR public.is_superadmin());
 CREATE POLICY "rehab_sessions_update_policy" ON rehab_sessions FOR UPDATE USING ((public.is_doctor() AND therapist_id = public.get_current_doctor_id()) OR public.is_superadmin());
 CREATE POLICY "rehab_sessions_delete_policy" ON rehab_sessions FOR DELETE USING ((public.is_doctor() AND therapist_id = public.get_current_doctor_id()) OR public.is_superadmin());
 
+-- A3-17: Auditoría append-only y sin user_id nulo para usuarios autenticados
+CREATE OR REPLACE FUNCTION public.protect_audit_logs()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        IF auth.uid() IS NOT NULL THEN
+            NEW.user_id := auth.uid()::text;
+        END IF;
+        NEW.timestamp := NOW();
+        RETURN NEW;
+    ELSIF TG_OP IN ('UPDATE', 'DELETE') THEN
+        RAISE EXCEPTION 'La tabla audit_logs es estrictamente append-only; no admite modificaciones ni eliminaciones.';
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_protect_audit_logs ON public.audit_logs;
+CREATE TRIGGER trg_protect_audit_logs
+BEFORE INSERT OR UPDATE OR DELETE ON public.audit_logs
+FOR EACH ROW EXECUTE FUNCTION public.protect_audit_logs();
+
 CREATE POLICY "audit_logs_select_policy" ON audit_logs FOR SELECT USING (public.is_superadmin());
-CREATE POLICY "audit_logs_insert_policy" ON audit_logs FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND (user_id IS NULL OR user_id = auth.uid()::text));
+CREATE POLICY "audit_logs_insert_policy" ON audit_logs FOR INSERT WITH CHECK (
+    auth.uid() IS NOT NULL AND user_id = auth.uid()::text
+);
 
 CREATE POLICY "clinic_settings_select_policy" ON clinic_settings FOR SELECT USING (true);
 CREATE POLICY "clinic_settings_admin_all" ON clinic_settings FOR ALL USING (public.is_administrative());
 
--- ALTA-02: Políticas granulares para caja y facturación (la administración no puede borrar registros fiscales/financieros)
+-- A3-15: Control de caja transaccional, bloqueo de movimientos en caja cerrada y protección de totales
+CREATE OR REPLACE FUNCTION public.check_cash_shift_open()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_status VARCHAR;
+BEGIN
+    SELECT status INTO v_status FROM public.cash_shifts WHERE id = NEW.shift_id;
+    IF v_status IS NULL THEN
+        RAISE EXCEPTION 'El turno de caja especificado (%) no existe.', NEW.shift_id;
+    END IF;
+    IF v_status = 'closed' THEN
+        RAISE EXCEPTION 'No se pueden registrar movimientos en un turno de caja cerrado (%).', NEW.shift_id;
+    END IF;
+    NEW.created_at := NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_check_cash_shift_open ON public.cash_movements;
+CREATE TRIGGER trg_check_cash_shift_open
+BEFORE INSERT ON public.cash_movements
+FOR EACH ROW EXECUTE FUNCTION public.check_cash_shift_open();
+
+CREATE OR REPLACE FUNCTION public.protect_cash_shift_totals()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        IF OLD.status = 'closed' AND NEW.status != 'closed' AND NOT public.is_superadmin() THEN
+            RAISE EXCEPTION 'No se permite reabrir un turno de caja cerrado.';
+        END IF;
+        IF OLD.status = 'closed' AND NOT public.is_superadmin() THEN
+            RAISE EXCEPTION 'Los datos de un turno de caja cerrado son inmutables.';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_protect_cash_shift_totals ON public.cash_shifts;
+CREATE TRIGGER trg_protect_cash_shift_totals
+BEFORE UPDATE ON public.cash_shifts
+FOR EACH ROW EXECUTE FUNCTION public.protect_cash_shift_totals();
+
 DROP POLICY IF EXISTS "cash_shifts_admin_all" ON cash_shifts;
 CREATE POLICY "cash_shifts_select_policy" ON cash_shifts FOR SELECT USING (public.is_administrative());
 CREATE POLICY "cash_shifts_insert_policy" ON cash_shifts FOR INSERT WITH CHECK (public.is_administrative());
@@ -823,12 +1046,38 @@ CREATE POLICY "cash_movements_insert_policy" ON cash_movements FOR INSERT WITH C
 CREATE POLICY "cash_movements_update_policy" ON cash_movements FOR UPDATE USING (public.is_superadmin());
 CREATE POLICY "cash_movements_delete_policy" ON cash_movements FOR DELETE USING (public.is_superadmin());
 
+-- A3-16: Inmutabilidad fiscal estricta de facturas
+CREATE OR REPLACE FUNCTION public.protect_invoice_immutability()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        IF NEW.invoice_number IS DISTINCT FROM OLD.invoice_number OR
+           NEW.cae IS DISTINCT FROM OLD.cae OR
+           NEW.total IS DISTINCT FROM OLD.total OR
+           NEW.subtotal IS DISTINCT FROM OLD.subtotal OR
+           NEW.patient_id IS DISTINCT FROM OLD.patient_id OR
+           NEW.date IS DISTINCT FROM OLD.date THEN
+            RAISE EXCEPTION 'Los datos fiscales de un comprobante de facturación son estrictamente inmutables.';
+        END IF;
+    END IF;
+    IF TG_OP = 'DELETE' THEN
+        RAISE EXCEPTION 'No se permite eliminar comprobantes de facturación (deben anularse mediante Nota de Crédito).';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_protect_invoice_immutability ON public.invoices;
+CREATE TRIGGER trg_protect_invoice_immutability
+BEFORE UPDATE OR DELETE ON public.invoices
+FOR EACH ROW EXECUTE FUNCTION public.protect_invoice_immutability();
+
 ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "invoices_admin_all" ON invoices;
 DROP POLICY IF EXISTS "invoices_select_policy" ON invoices;
 CREATE POLICY "invoices_select_policy" ON invoices FOR SELECT USING (patient_id = public.get_current_patient_id() OR public.is_administrative());
 CREATE POLICY "invoices_insert_policy" ON invoices FOR INSERT WITH CHECK (public.is_administrative());
-CREATE POLICY "invoices_update_policy" ON invoices FOR UPDATE USING (public.is_superadmin());
+CREATE POLICY "invoices_update_policy" ON invoices FOR UPDATE USING (false);
 -- Inmutabilidad fiscal: Las facturas emitidas no tienen política de DELETE para ningún rol de la app (se anulan mediante NC)
 CREATE INDEX IF NOT EXISTS idx_invoices_patient ON invoices (patient_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_date ON invoices (date);
@@ -1102,7 +1351,7 @@ CREATE TRIGGER trg_protect_imaging_report
 BEFORE UPDATE ON public.imaging_studies
 FOR EACH ROW EXECUTE FUNCTION public.protect_imaging_report();
 
--- 6b. Prevención de solapamiento de turnos y validación de disponibilidad del profesional (A-03)
+-- 6b. Prevención de solapamiento de turnos y validación de disponibilidad del profesional (A-03, A3-08)
 CREATE OR REPLACE FUNCTION public.check_appointment_overlap()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -1135,7 +1384,24 @@ BEGIN
             RAISE EXCEPTION 'Conflicto de turno: El paciente ya posee un turno asignado en este mismo horario.';
         END IF;
 
-        -- 3. Validación de disponibilidad, feriados y horarios del profesional en el servidor
+        -- Herencia de consultorio si no viene explícito
+        IF NEW.room_id IS NULL THEN
+            SELECT room_id INTO NEW.room_id FROM public.doctors WHERE id = NEW.doctor_id;
+        END IF;
+
+        -- 3. Conflicto de consultorio (Doble reserva de consultorio - A3-08)
+        IF NEW.room_id IS NOT NULL AND EXISTS (
+            SELECT 1 FROM public.appointments
+            WHERE room_id = NEW.room_id
+              AND date = NEW.date
+              AND time = NEW.time
+              AND id != COALESCE(NEW.id, '')
+              AND status != 'cancelado'
+        ) THEN
+            RAISE EXCEPTION 'Conflicto de consultorio (A3-08): El consultorio ya se encuentra ocupado en esa fecha y horario.';
+        END IF;
+
+        -- 4. Validación de disponibilidad, feriados y horarios del profesional en el servidor
         SELECT working_days, schedule_start, schedule_end, blocked_dates
         INTO v_doc
         FROM public.doctors
@@ -1183,30 +1449,65 @@ CREATE TRIGGER trg_check_appointment_overlap
 BEFORE INSERT OR UPDATE ON public.appointments
 FOR EACH ROW EXECUTE FUNCTION public.check_appointment_overlap();
 
--- 6c. Control estricto de cancelación de turnos por parte de pacientes (T10, C-01)
-CREATE OR REPLACE FUNCTION public.check_appointment_patient_cancellation()
+CREATE UNIQUE INDEX IF NOT EXISTS idx_room_active_slot
+ON public.appointments (room_id, date, time)
+WHERE status != 'cancelado' AND room_id IS NOT NULL;
+
+-- 6c. Máquina de estados estricta de turnos (A3-07, A3-08, T10, C-01)
+CREATE OR REPLACE FUNCTION public.validate_appointment_status_transition()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF public.get_auth_role() = 'patient' THEN
-        IF NEW.doctor_id IS DISTINCT FROM OLD.doctor_id OR
-           NEW.patient_id IS DISTINCT FROM OLD.patient_id OR
-           NEW.date IS DISTINCT FROM OLD.date OR
-           NEW.time IS DISTINCT FROM OLD.time THEN
-            RAISE EXCEPTION 'Operación denegada (T10): El paciente solo puede cancelar su turno sin modificar fecha, horario ni profesional asignado.';
+    IF TG_OP = 'UPDATE' AND OLD.status IS DISTINCT FROM NEW.status THEN
+        -- No se permite reactivar turnos cancelados (A3-08)
+        IF OLD.status = 'cancelado' THEN
+            RAISE EXCEPTION 'Transición de estado inválida (A3-08): Un turno cancelado no puede reactivarse a %.', NEW.status;
         END IF;
 
-        IF NEW.status != 'cancelado' THEN
-            RAISE EXCEPTION 'Operación denegada (T10): El paciente solo tiene permisos para cancelar turnos agendados (status = cancelado).';
+        -- Un turno ya atendido no puede revertirse a pendiente ni en sala (A3-08)
+        IF OLD.status = 'atendido' AND NEW.status IN ('pendiente', 'en_sala') THEN
+            RAISE EXCEPTION 'Transición de estado inválida (A3-08): Un turno con atención completada (atendido) no puede revertirse a pendiente ni en sala.';
+        END IF;
+
+        -- Regla de cancelación para pacientes (A3-07)
+        IF public.get_auth_role() = 'patient' THEN
+            IF OLD.status = 'atendido' THEN
+                RAISE EXCEPTION 'Operación denegada (A3-07): Un paciente no puede cancelar un turno ya atendido.';
+            END IF;
+            IF OLD.status NOT IN ('pendiente', 'confirmado') THEN
+                RAISE EXCEPTION 'Operación denegada (A3-07): Un paciente solo puede cancelar turnos en estado pendiente o confirmado (estado actual: %).', OLD.status;
+            END IF;
+            IF NEW.status != 'cancelado' THEN
+                RAISE EXCEPTION 'Operación denegada (A3-07): El paciente solo tiene permisos para cancelar turnos agendados.';
+            END IF;
+            IF NEW.doctor_id IS DISTINCT FROM OLD.doctor_id OR
+               NEW.patient_id IS DISTINCT FROM OLD.patient_id OR
+               NEW.date IS DISTINCT FROM OLD.date OR
+               NEW.time IS DISTINCT FROM OLD.time THEN
+                RAISE EXCEPTION 'Operación denegada (T10): El paciente solo puede cancelar su turno sin modificar fecha, horario ni profesional asignado.';
+            END IF;
         END IF;
     END IF;
+
+    -- En INSERT
+    IF TG_OP = 'INSERT' AND auth.uid() IS NOT NULL THEN
+        IF public.get_auth_role() = 'patient' AND NEW.status NOT IN ('pendiente', 'confirmado') THEN
+            RAISE EXCEPTION 'Un paciente solo puede agendar turnos en estado pendiente o confirmado.';
+        END IF;
+        IF NEW.status NOT IN ('pendiente', 'confirmado') AND NOT public.is_administrative() THEN
+            RAISE EXCEPTION 'Estado inicial de turno no autorizado: %.', NEW.status;
+        END IF;
+    END IF;
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_catalog;
 
+DROP TRIGGER IF EXISTS trg_validate_appointment_status_transition ON public.appointments;
+CREATE TRIGGER trg_validate_appointment_status_transition
+BEFORE INSERT OR UPDATE ON public.appointments
+FOR EACH ROW EXECUTE FUNCTION public.validate_appointment_status_transition();
+
 DROP TRIGGER IF EXISTS trg_appointment_patient_cancellation ON public.appointments;
-CREATE TRIGGER trg_appointment_patient_cancellation
-BEFORE UPDATE ON public.appointments
-FOR EACH ROW EXECUTE FUNCTION public.check_appointment_patient_cancellation();
 
 -- 7. Auditoría en Servidor con Diffs (A3)
 CREATE OR REPLACE FUNCTION public.audit_row_change()
@@ -1330,11 +1631,16 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_catalog;
 
--- 9. RPC: create_consultation_bundle (C02, C03, A05, A06 - Ley 26.529 y Ley 25.506)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_consultations_unique_appointment
+ON public.consultations (appointment_id)
+WHERE appointment_id IS NOT NULL;
+
+-- 9. RPC: create_consultation_bundle (C02, C03, A05, A06, A3-09 - Ley 26.529 y Ley 25.506)
 CREATE OR REPLACE FUNCTION public.create_consultation_bundle(
     p_consultation JSONB,
     p_prescription JSONB DEFAULT NULL,
-    p_medical_orders JSONB DEFAULT NULL
+    p_medical_orders JSONB DEFAULT NULL,
+    p_imaging_studies JSONB DEFAULT NULL
 )
 RETURNS JSONB AS $$
 DECLARE
@@ -1349,7 +1655,23 @@ DECLARE
     v_pat_dni VARCHAR;
     v_integrity_hash VARCHAR;
     v_order JSONB;
+    v_img JSONB;
+    v_app_record public.appointments%ROWTYPE;
 BEGIN
+    v_cons_id := p_consultation->>'id';
+    IF v_cons_id IS NULL OR TRIM(v_cons_id) = '' THEN
+        v_cons_id := 'cns-' || gen_random_uuid()::text;
+    END IF;
+
+    -- Idempotencia transaccional (A3-09)
+    IF EXISTS (SELECT 1 FROM public.consultations WHERE id = v_cons_id) THEN
+        RETURN jsonb_build_object(
+            'success', TRUE,
+            'consultation_id', v_cons_id,
+            'message', 'Consulta clínica ya registrada previamente.'
+        );
+    END IF;
+
     v_doc_id := public.get_current_doctor_id();
     IF v_doc_id IS NULL AND NOT public.is_superadmin() THEN
         RAISE EXCEPTION 'No se encuentra un perfil médico activo para el usuario autenticado.';
@@ -1414,7 +1736,32 @@ BEGIN
         END IF;
     END IF;
 
-    v_cons_id := p_consultation->>'id';
+    -- A3-09: Verificación estricta de turno asociado
+    IF (p_consultation->>'appointment_id') IS NOT NULL AND TRIM(p_consultation->>'appointment_id') <> '' THEN
+        SELECT * INTO v_app_record
+        FROM public.appointments
+        WHERE id = p_consultation->>'appointment_id';
+
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'El turno referenciado no existe: %', (p_consultation->>'appointment_id');
+        END IF;
+
+        IF v_app_record.status = 'cancelado' THEN
+            RAISE EXCEPTION 'Operación denegada (A3-09): No se puede registrar una consulta sobre un turno que ha sido cancelado.';
+        END IF;
+
+        IF v_app_record.patient_id != v_pat_id THEN
+            RAISE EXCEPTION 'Operación denegada (A3-09): El turno no corresponde al paciente indicado.';
+        END IF;
+
+        IF v_app_record.doctor_id != v_doc_id AND NOT public.is_superadmin() THEN
+            RAISE EXCEPTION 'Operación denegada (A3-09): El turno corresponde a otro profesional médico.';
+        END IF;
+
+        IF EXISTS (SELECT 1 FROM public.consultations WHERE appointment_id = (p_consultation->>'appointment_id') AND id != v_cons_id) THEN
+            RAISE EXCEPTION 'Operación denegada (A3-09): El turno ya cuenta con una consulta médica registrada.';
+        END IF;
+    END IF;
 
     -- Cálculo del Hash Criptográfico SHA-256 en Servidor (A-05, Ley 25.506)
     v_integrity_hash := encode(digest(
@@ -1428,6 +1775,7 @@ BEGIN
         'sha256'
     ), 'hex');
 
+    -- A3-09 / Ley 26.529: Fecha y hora fijadas en el servidor según huso horario de Argentina (no retrodatables)
     INSERT INTO public.consultations (
         id, appointment_id, patient_id, patient_name, patient_dni,
         doctor_id, doctor_name, doctor_license, sisa_refeps, specialty_name,
@@ -1445,8 +1793,8 @@ BEGIN
         v_doc_license,
         COALESCE(v_doc_refeps, p_consultation->>'sisa_refeps'),
         COALESCE(p_consultation->>'specialty_name', v_doc_specialty),
-        COALESCE((p_consultation->>'date')::date, CURRENT_DATE),
-        COALESCE((p_consultation->>'time')::time, CURRENT_TIME),
+        (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date,
+        (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::time,
         p_consultation->>'reason',
         p_consultation->>'symptoms',
         COALESCE(p_consultation->'vitals', '{}'::jsonb),
@@ -1481,8 +1829,8 @@ BEGIN
             COALESCE(v_doc_refeps, p_prescription->>'sisa_refeps'),
             p_prescription->>'diagnosis_presuntivo',
             COALESCE(p_prescription->'medications', '[]'::jsonb),
-            COALESCE((p_prescription->>'issue_date')::date, CURRENT_DATE),
-            (p_prescription->>'expiration_date')::date,
+            (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date,
+            COALESCE((p_prescription->>'expiration_date')::date, ((NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date + INTERVAL '30 days')::date),
             'activa',
             p_prescription->>'verification_url'
         );
@@ -1501,17 +1849,41 @@ BEGIN
                 v_doc_name,
                 v_order->>'type',
                 v_order->>'instructions',
-                COALESCE((v_order->>'date')::date, CURRENT_DATE)
+                (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date
             );
         END LOOP;
     END IF;
 
-    IF p_consultation->>'appointment_id' IS NOT NULL THEN
+    -- Inserción atómica de estudios de imágenes si se adjuntan (A3-09)
+    IF p_imaging_studies IS NOT NULL AND jsonb_array_length(p_imaging_studies) > 0 THEN
+        FOR v_img IN SELECT * FROM jsonb_array_elements(p_imaging_studies)
+        LOOP
+            INSERT INTO public.imaging_studies (
+                id, patient_id, patient_name, patient_dni, study_type, region,
+                date, doctor_id, referring_doctor, status, priority
+            ) VALUES (
+                COALESCE(v_img->>'id', 'img-' || gen_random_uuid()::text),
+                v_pat_id,
+                v_pat_name,
+                v_pat_dni,
+                COALESCE(v_img->>'study_type', v_img->>'modality', 'Estudio de Imágenes'),
+                COALESCE(v_img->>'region', v_img->>'body_part', 'Región Anatómica'),
+                (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date,
+                v_doc_id,
+                v_doc_name,
+                'solicitado',
+                COALESCE(v_img->>'priority', 'Normal')
+            );
+        END LOOP;
+    END IF;
+
+    IF (p_consultation->>'appointment_id') IS NOT NULL AND TRIM(p_consultation->>'appointment_id') <> '' THEN
         UPDATE public.appointments
         SET status = 'atendido', updated_at = NOW()
         WHERE id = p_consultation->>'appointment_id'
           AND (doctor_id = v_doc_id OR public.is_superadmin())
-          AND patient_id = v_pat_id;
+          AND patient_id = v_pat_id
+          AND status != 'cancelado';
     END IF;
 
     RETURN jsonb_build_object(
@@ -1607,7 +1979,7 @@ $$;
 GRANT EXECUTE ON FUNCTION public.open_cash_shift_rpc(NUMERIC, VARCHAR, VARCHAR) TO authenticated;
 REVOKE EXECUTE ON FUNCTION public.open_cash_shift_rpc(NUMERIC, VARCHAR, VARCHAR) FROM anon;
 
--- 10. RPC: Cierre de Turno de Caja (M08)
+-- 10. RPC: Cierre de Turno de Caja (M08, A3-15)
 CREATE OR REPLACE FUNCTION public.close_cash_shift_rpc(
     p_shift_id VARCHAR,
     p_observations TEXT
@@ -1637,10 +2009,15 @@ BEGIN
         RAISE EXCEPTION 'El turno de caja % ya fue cerrado previamente el %.', p_shift_id, v_shift.closed_at;
     END IF;
 
+    -- A3-15: Solo el operador que abrió el turno o un superadministrador puede cerrarlo
+    IF v_shift.user_id != auth.uid() AND NOT public.is_superadmin() THEN
+        RAISE EXCEPTION 'Operación denegada (A3-15): Solo el operador que abrió el turno de caja o un superadministrador puede cerrarlo.';
+    END IF;
+
     SELECT
-        COALESCE(SUM(CASE WHEN type = 'income' AND payment_method = 'Efectivo' THEN amount ELSE 0 END), 0),
-        COALESCE(SUM(CASE WHEN type = 'income' AND payment_method IN ('Tarjeta de Débito', 'Tarjeta de Crédito') THEN amount ELSE 0 END), 0),
-        COALESCE(SUM(CASE WHEN type = 'income' AND payment_method IN ('Transferencia', 'QR / Mercado Pago') THEN amount ELSE 0 END), 0),
+        COALESCE(SUM(CASE WHEN type = 'income' AND lower(payment_method) IN ('efectivo') THEN amount ELSE 0 END), 0),
+        COALESCE(SUM(CASE WHEN type = 'income' AND (lower(payment_method) LIKE '%tarjeta%' OR lower(payment_method) LIKE '%debito%' OR lower(payment_method) LIKE '%débito%' OR lower(payment_method) LIKE '%credito%' OR lower(payment_method) LIKE '%crédito%') THEN amount ELSE 0 END), 0),
+        COALESCE(SUM(CASE WHEN type = 'income' AND (lower(payment_method) LIKE '%transferencia%' OR lower(payment_method) LIKE '%qr%' OR lower(payment_method) LIKE '%mercado%') THEN amount ELSE 0 END), 0),
         COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0)
     INTO v_cash_in, v_card_in, v_trans_in, v_expenses
     FROM public.cash_movements
@@ -1747,7 +2124,7 @@ INSERT INTO patients (id, name, dni, email, phone, birth_date, gender, blood_typ
 ('pat-demo-1', 'Paciente Demostración 1', '10.000.001', 'paciente1@demo.citra.local', '3576 000001', '1990-01-01', 'Masculino', '0+', 'Contacto Emergencia', '3576 000002', 'hi-1', 'OSDE', '310', '310-000001', '2026-01-01')
 ON CONFLICT (id) DO NOTHING;
 
--- 24. Solicitudes de Acceso Clínico e Interconsultas (A-07)
+-- 24. Solicitudes de Acceso Clínico e Interconsultas (A-07, A3-01)
 CREATE TABLE IF NOT EXISTS public.clinical_access_grants (
     id VARCHAR(50) PRIMARY KEY,
     consultation_id VARCHAR(50) REFERENCES public.consultations(id) ON DELETE RESTRICT,
@@ -1764,7 +2141,8 @@ CREATE TABLE IF NOT EXISTS public.clinical_access_grants (
     requested_at TIMESTAMPTZ DEFAULT NOW(),
     approved_at TIMESTAMPTZ,
     expires_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT chk_grant_different_doctors CHECK (requester_doctor_id != target_doctor_id)
 );
 
 ALTER TABLE public.clinical_access_grants ENABLE ROW LEVEL SECURITY;
@@ -1798,13 +2176,89 @@ CREATE TRIGGER trg_force_access_grant_pending
 BEFORE INSERT ON public.clinical_access_grants
 FOR EACH ROW EXECUTE FUNCTION public.force_clinical_access_grant_pending();
 
+-- A3-01: Protección estricta contra autoaprobación y manipulación de solicitudes clínicas
+CREATE OR REPLACE FUNCTION public.protect_clinical_access_grant()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Inmutabilidad de claves de la solicitud
+    IF NEW.requester_doctor_id IS DISTINCT FROM OLD.requester_doctor_id OR
+       NEW.target_doctor_id IS DISTINCT FROM OLD.target_doctor_id OR
+       NEW.patient_id IS DISTINCT FROM OLD.patient_id THEN
+        RAISE EXCEPTION 'Los identificadores de médico y paciente en una solicitud de acceso clínico son inmutables.';
+    END IF;
+
+    -- Validación de aprobación
+    IF NEW.status = 'approved' AND OLD.status != 'approved' THEN
+        -- El solicitante jamás puede autoaprobarse su propia solicitud
+        IF public.get_current_doctor_id() = OLD.requester_doctor_id AND NOT public.is_superadmin() THEN
+            RAISE EXCEPTION 'El profesional solicitante no puede auto-aprobarse el acceso clínico.';
+        END IF;
+        -- Solo el target doctor o superadmin puede aprobar
+        IF public.get_current_doctor_id() != OLD.target_doctor_id AND NOT public.is_superadmin() THEN
+            RAISE EXCEPTION 'Solo el profesional destinatario o un superadministrador puede aprobar la solicitud de acceso clínico.';
+        END IF;
+        NEW.approved_at := NOW();
+        IF NEW.expires_at IS NULL OR NEW.expires_at <= NOW() THEN
+            NEW.expires_at := NOW() + INTERVAL '30 days';
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_protect_clinical_access_grant ON public.clinical_access_grants;
+CREATE TRIGGER trg_protect_clinical_access_grant
+BEFORE UPDATE ON public.clinical_access_grants
+FOR EACH ROW EXECUTE FUNCTION public.protect_clinical_access_grant();
+
 DROP POLICY IF EXISTS "access_grants_update_policy" ON public.clinical_access_grants;
 CREATE POLICY "access_grants_update_policy" ON public.clinical_access_grants
 FOR UPDATE USING (
-    target_doctor_id = public.get_current_doctor_id() OR public.is_superadmin()
+    (target_doctor_id = public.get_current_doctor_id() AND requester_doctor_id != public.get_current_doctor_id())
+    OR public.is_superadmin()
 ) WITH CHECK (
-    target_doctor_id = public.get_current_doctor_id() OR public.is_superadmin()
+    (target_doctor_id = public.get_current_doctor_id() AND requester_doctor_id != public.get_current_doctor_id())
+    OR public.is_superadmin()
 );
+
+-- RPC autoritativa para aprobación de interconsultas (A3-01)
+CREATE OR REPLACE FUNCTION public.approve_access_grant(p_grant_id VARCHAR)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_catalog
+AS $$
+DECLARE
+    v_grant public.clinical_access_grants%ROWTYPE;
+    v_curr_doc VARCHAR;
+BEGIN
+    v_curr_doc := public.get_current_doctor_id();
+    SELECT * INTO v_grant FROM public.clinical_access_grants WHERE id = p_grant_id;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Solicitud de acceso clínico % no encontrada.', p_grant_id;
+    END IF;
+
+    IF v_grant.requester_doctor_id = v_curr_doc AND NOT public.is_superadmin() THEN
+        RAISE EXCEPTION 'El profesional solicitante no puede auto-aprobarse el acceso clínico.';
+    END IF;
+
+    IF v_grant.target_doctor_id != v_curr_doc AND NOT public.is_superadmin() THEN
+        RAISE EXCEPTION 'Solo el profesional destinatario o un superadministrador puede aprobar la solicitud.';
+    END IF;
+
+    UPDATE public.clinical_access_grants
+    SET status = 'approved',
+        approved_at = NOW(),
+        expires_at = NOW() + INTERVAL '30 days'
+    WHERE id = p_grant_id;
+
+    RETURN jsonb_build_object('success', TRUE, 'grant_id', p_grant_id, 'status', 'approved');
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.approve_access_grant(VARCHAR) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.approve_access_grant(VARCHAR) FROM anon;
 
 -- 25. Vista Pública Reducida de Profesionales (A-01)
 DROP VIEW IF EXISTS public.public_doctors CASCADE;
@@ -1907,7 +2361,7 @@ GRANT SELECT ON public.public_doctors TO anon, authenticated;
 -- 28. RESERVA PÚBLICA DE TURNOS SEGURA (ALTA-07)
 -- Ejecutable por rol anon y authenticated con validaciones estrictas
 -- ====================================================================
--- Tabla para control de intentos y mitigación de abuso de reservas públicas (V2-A8)
+-- Tabla para control de intentos y mitigación de abuso de reservas públicas (V2-A8, A3-03)
 CREATE TABLE IF NOT EXISTS public.public_booking_attempts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     dni VARCHAR(30) NOT NULL,
@@ -1916,24 +2370,31 @@ CREATE TABLE IF NOT EXISTS public.public_booking_attempts (
 );
 CREATE INDEX IF NOT EXISTS idx_booking_attempts_dni_time ON public.public_booking_attempts(dni, attempted_at);
 
+-- A3-03: Bloqueo de acceso directo a la tabla de rate-limiting (solo accesible vía SECURITY DEFINER)
+ALTER TABLE public.public_booking_attempts ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.public_booking_attempts FROM anon, authenticated;
+
+-- A3-04: Reserva pública con validación de horarios, días laborales, duración acotada y respuesta uniforme
 CREATE OR REPLACE FUNCTION public.create_public_booking(
     p_booking JSONB
 )
 RETURNS JSONB AS $$
 DECLARE
     v_patient_id VARCHAR;
-    v_existing_email VARCHAR;
+    v_existing_pat RECORD;
     v_clean_dni VARCHAR;
     v_doctor_id VARCHAR;
     v_doctor_name VARCHAR;
     v_doctor_specialty VARCHAR;
+    v_doc RECORD;
     v_date DATE;
     v_time TIME;
+    v_duration INT;
     v_app_id VARCHAR;
     v_booking_code VARCHAR;
     v_collision_count INT;
-    v_status public.appointment_status := 'confirmado';
     v_attempts_count INT;
+    v_day_name TEXT;
 BEGIN
     v_clean_dni := regexp_replace(COALESCE(p_booking->>'patient_dni', ''), '\D', '', 'g');
     IF length(v_clean_dni) < 6 THEN
@@ -1953,24 +2414,56 @@ BEGIN
     VALUES (v_clean_dni, COALESCE(inet_client_addr()::text, '127.0.0.1'), NOW());
 
     v_doctor_id := p_booking->>'doctor_id';
-    SELECT id, name, specialty_name INTO v_doctor_id, v_doctor_name, v_doctor_specialty
+    SELECT * INTO v_doc
     FROM public.doctors
     WHERE id = v_doctor_id AND is_active = TRUE;
 
-    IF v_doctor_id IS NULL THEN
+    IF NOT FOUND THEN
         RAISE EXCEPTION 'El profesional solicitado no se encuentra activo o disponible.';
     END IF;
+
+    v_doctor_name := v_doc.name;
+    v_doctor_specialty := v_doc.specialty_name;
 
     v_date := (p_booking->>'date')::date;
     v_time := (p_booking->>'time')::time;
 
-    -- V2-A8: Validaciones de fecha: rechazar fechas pasadas y reservas a más de 90 días
+    -- Validaciones de fecha: rechazar fechas pasadas y reservas a más de 90 días
     IF v_date < (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date THEN
         RAISE EXCEPTION 'No se pueden agendar turnos para fechas pasadas.';
     END IF;
 
     IF v_date > ((NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date + INTERVAL '90 days') THEN
         RAISE EXCEPTION 'La fecha de reserva supera el límite permitido de 90 días de antelación.';
+    END IF;
+
+    -- A3-04: Validación de horario de atención del profesional
+    IF v_doc.schedule_start IS NOT NULL AND v_doc.schedule_end IS NOT NULL THEN
+        IF v_time < v_doc.schedule_start OR v_time > v_doc.schedule_end THEN
+            RAISE EXCEPTION 'Horario no disponible: El horario solicitado (%) está fuera del rango de atención del profesional (% a %).', 
+                v_time, v_doc.schedule_start, v_doc.schedule_end;
+        END IF;
+    END IF;
+
+    -- A3-04: Validación de días laborales del profesional
+    IF v_doc.working_days IS NOT NULL AND array_length(v_doc.working_days, 1) > 0 THEN
+        v_day_name := CASE EXTRACT(DOW FROM v_date)::INT
+            WHEN 0 THEN 'Domingo'
+            WHEN 1 THEN 'Lunes'
+            WHEN 2 THEN 'Martes'
+            WHEN 3 THEN 'Miércoles'
+            WHEN 4 THEN 'Jueves'
+            WHEN 5 THEN 'Viernes'
+            WHEN 6 THEN 'Sábado'
+        END;
+        IF NOT (v_day_name = ANY(v_doc.working_days)) THEN
+            RAISE EXCEPTION 'Día no laboral: El profesional no atiende los días %.', v_day_name;
+        END IF;
+    END IF;
+
+    -- A3-04: Validación de fechas bloqueadas
+    IF v_doc.blocked_dates IS NOT NULL AND v_date = ANY(v_doc.blocked_dates) THEN
+        RAISE EXCEPTION 'La fecha seleccionada se encuentra bloqueada por el profesional.';
     END IF;
 
     -- Validar colisión de turno activo
@@ -1985,23 +2478,19 @@ BEGIN
         RAISE EXCEPTION 'El profesional ya cuenta con un turno reservado para la fecha y horario seleccionados.';
     END IF;
 
-    -- Buscar o crear paciente en padrón (V2-A8: IDs no colisionables con gen_random_uuid())
-    SELECT id, email INTO v_patient_id, v_existing_email
+    -- Acotar duración del turno de forma segura (entre 15 y 60 minutos)
+    v_duration := LEAST(GREATEST(COALESCE((p_booking->>'duration')::int, v_doc.slot_duration, 30), 15), 60);
+
+    -- Buscar o crear paciente en padrón (previniendo oráculo de enumeración A3-04)
+    SELECT id, name, dni, email INTO v_existing_pat
     FROM public.patients
     WHERE regexp_replace(dni, '\D', '', 'g') = v_clean_dni
     LIMIT 1;
 
-    IF v_patient_id IS NOT NULL THEN
-        -- Si el paciente ya existe en el padrón, comprobar correo; si difiere, requiere confirmación de secretaría
-        IF p_booking->>'patient_email' IS NOT NULL AND v_existing_email IS NOT NULL AND
-           lower(trim(p_booking->>'patient_email')) <> lower(trim(v_existing_email)) THEN
-            v_status := 'pendiente';
-        ELSE
-            v_status := 'confirmado';
-        END IF;
+    IF v_existing_pat.id IS NOT NULL THEN
+        v_patient_id := v_existing_pat.id;
     ELSE
         v_patient_id := 'pat-' || gen_random_uuid()::text;
-        v_status := 'confirmado';
         INSERT INTO public.patients (
             id, name, dni, email, phone, insurance_name, insurance_number, registered_at
         ) VALUES (
@@ -2017,12 +2506,13 @@ BEGIN
     END IF;
 
     v_app_id := 'app-' || gen_random_uuid()::text;
-    v_booking_code := 'CITRA-' || floor(10000 + random() * 90000)::text;
+    -- Código de reserva seguro e impredecible (A3-30)
+    v_booking_code := 'CITRA-' || upper(substr(encode(gen_random_bytes(4), 'hex'), 1, 8));
 
     INSERT INTO public.appointments (
         id, patient_id, patient_name, patient_dni, patient_phone, patient_email,
         patient_insurance, patient_insurance_number, doctor_id, doctor_name,
-        doctor_specialty, date, time, duration, type, status, reason,
+        doctor_specialty, room_id, room_name, date, time, duration, type, status, reason,
         copay_amount, booked_online, booking_code
     ) VALUES (
         v_app_id,
@@ -2036,23 +2526,25 @@ BEGIN
         v_doctor_id,
         v_doctor_name,
         v_doctor_specialty,
+        v_doc.room_id,
+        v_doc.room_name,
         v_date,
         v_time,
-        COALESCE((p_booking->>'duration')::int, 30),
+        v_duration,
         'Consulta Presencial',
-        v_status,
+        'confirmado',
         COALESCE(p_booking->>'reason', 'Reserva online de turno'),
         COALESCE((p_booking->>'copay_amount')::numeric, 0),
         TRUE,
         v_booking_code
     );
 
-    -- V2-A8: Retorno seguro sin filtrar patient_id
+    -- Retorno seguro sin filtrar patient_id y uniforme
     RETURN jsonb_build_object(
         'success', TRUE,
         'appointment_id', v_app_id,
         'booking_code', v_booking_code,
-        'status', v_status,
+        'status', 'confirmado',
         'date', v_date,
         'time', v_time,
         'doctor_name', v_doctor_name

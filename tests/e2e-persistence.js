@@ -471,9 +471,19 @@ async function testAuditV2Remediations(db) {
   const saCheck = await query(db, `SELECT public.is_superadmin() AS is_sa`);
   assert(saCheck[0].is_sa === false, 'V2-A2: Email dr.blanco@citra.com.ar NO otorga superadmin sin rol en profiles');
 
-  // Asignar rol formal
+  // Asignar rol formal (como DB superadmin / service_role sin JWT de paciente impostor)
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', '', false),
+           set_config('request.jwt.claim.role', '', false),
+           set_config('request.jwt.claim.email', '', false)
+  `);
   await exec(db, `
     UPDATE public.profiles SET role = 'superadmin' WHERE id = $1
+  `, [testUserId]);
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', $1, false),
+           set_config('request.jwt.claim.role', 'authenticated', false),
+           set_config('request.jwt.claim.email', 'dr.blanco@citra.com.ar', false)
   `, [testUserId]);
   const saCheckAfter = await query(db, `SELECT public.is_superadmin() AS is_sa`);
   assert(saCheckAfter[0].is_sa === true, 'V2-A2: Rol formal superadmin en profiles habilita is_superadmin()');
@@ -641,6 +651,186 @@ async function testAuditV2Remediations(db) {
   assert(storageCheck[0].can_access_folder === true, 'V2-A4: Carpeta con patient.id autorizada para lectura del paciente autenticado');
 }
 
+// ─── SUITE 6: REMEDIACIONES AUDITORÍA CITRA V3 (A3-01..A3-18) ──────────────────
+async function testAuditV3Remediations(db) {
+  section('AUDITORÍA CITRA V3 — Pruebas Adversariales & Seguridad RLS');
+
+  // Reset contexto a superadmin / postgres
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', '', false),
+           set_config('request.jwt.claim.role', '', false),
+           set_config('request.jwt.claim.email', '', false)
+  `);
+
+  // Setup usuarios para A3-01: Dr. Solicitante vs Dr. Titular
+  const docReqAuth = '44444444-1111-2222-3333-444444444444';
+  const docTargetAuth = '55555555-1111-2222-3333-555555555555';
+  await exec(db, `
+    INSERT INTO auth.users (id, email) VALUES ($1, 'doc.req@citra.test'), ($2, 'doc.target@citra.test')
+    ON CONFLICT (id) DO NOTHING
+  `, [docReqAuth, docTargetAuth]);
+  await exec(db, `
+    INSERT INTO public.profiles (id, email, first_name, last_name, role)
+    VALUES ($1, 'doc.req@citra.test', 'Doc', 'Req', 'doctor'),
+           ($2, 'doc.target@citra.test', 'Doc', 'Target', 'doctor')
+    ON CONFLICT (id) DO UPDATE SET role = 'doctor'
+  `, [docReqAuth, docTargetAuth]);
+  await exec(db, `
+    INSERT INTO public.doctors (id, name, license, specialty_name, email, user_id)
+    VALUES ('doc-req-1', 'Dr Req', 'MP 101', 'Cardiología', 'doc.req@citra.test', $1),
+           ('doc-target-1', 'Dr Target', 'MP 102', 'Traumatología', 'doc.target@citra.test', $2)
+    ON CONFLICT (id) DO UPDATE SET user_id = EXCLUDED.user_id
+  `, [docReqAuth, docTargetAuth]);
+
+  // A3-01: Prevención de auto-aprobación en clinical_access_grants
+  const grantPatId = 'pat-grant-' + Date.now();
+  await exec(db, `
+    INSERT INTO public.patients (id, name, dni)
+    VALUES ($1, 'Paciente Interconsulta', '12345678')
+  `, [grantPatId]);
+
+  const grantId = 'grant-test-' + Date.now();
+  await exec(db, `
+    INSERT INTO public.clinical_access_grants (id, consultation_id, patient_id, patient_name, patient_dni, requester_doctor_id, requester_doctor_name, target_doctor_id, target_doctor_name, justification, status)
+    VALUES ($1, NULL, $2, 'Paciente Interconsulta', '12345678', 'doc-req-1', 'Dr Req', 'doc-target-1', 'Dr Target', 'Interconsulta urgente', 'pending')
+  `, [grantId, grantPatId]);
+
+  // Simular sesión del doctor solicitante (intento de auto-aprobación)
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', $1, false),
+           set_config('request.jwt.claim.role', 'authenticated', false),
+           set_config('request.jwt.claim.email', 'doc.req@citra.test', false)
+  `, [docReqAuth]);
+
+  let selfApproveBlocked = false;
+  try {
+    await exec(db, `
+      UPDATE public.clinical_access_grants
+      SET status = 'approved', approved_at = NOW()
+      WHERE id = $1
+    `, [grantId]);
+  } catch (e) {
+    selfApproveBlocked = true;
+  }
+  // Verificar que el estado no cambió
+  const grantRow = await query(db, `SELECT status FROM public.clinical_access_grants WHERE id = $1`, [grantId]);
+  assert(selfApproveBlocked || grantRow[0].status === 'pending', 'A3-01: Doctor solicitante NO puede auto-aprobarse acceso clínico');
+
+  // Reset contexto para inserción administrativa
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', '', false),
+           set_config('request.jwt.claim.role', '', false),
+           set_config('request.jwt.claim.email', '', false)
+  `);
+
+  // A3-02: Intento de paciente de mutar patient_id en un turno existente
+  const victimPatId = 'pat-victima-' + Date.now();
+  const victimApptId = 'app-victima-' + Date.now();
+  await exec(db, `
+    INSERT INTO public.patients (id, name, dni)
+    VALUES ($1, 'Victima Test', '33445566')
+  `, [victimPatId]);
+
+  // Miércoles futuro válido para doc-1
+  const apptDateRow = await query(db, `
+    SELECT (CURRENT_DATE + ((3 - EXTRACT(DOW FROM CURRENT_DATE)::int + 7) % 7 + 7)::int)::text AS fdate
+  `);
+  const apptDate = apptDateRow[0].fdate;
+
+  await exec(db, `
+    INSERT INTO public.appointments (id, patient_id, patient_name, patient_dni, doctor_id, doctor_name, doctor_specialty, date, time, status, duration)
+    VALUES ($1, $2, 'Victima Test', '33445566', 'doc-1', 'Dr. Alejandro Blanco', 'Traumatología', $3, '16:00:00', 'pendiente', 30)
+  `, [victimApptId, victimPatId, apptDate]);
+
+  const patAuth = '66666666-1111-2222-3333-666666666666';
+  await exec(db, `
+    INSERT INTO auth.users (id, email) VALUES ($1, 'paciente.atacante@citra.test')
+    ON CONFLICT (id) DO NOTHING
+  `, [patAuth]);
+  await exec(db, `
+    INSERT INTO public.profiles (id, email, first_name, last_name, role)
+    VALUES ($1, 'paciente.atacante@citra.test', 'Atacante', 'Test', 'patient')
+    ON CONFLICT (id) DO UPDATE SET role = 'patient'
+  `, [patAuth]);
+
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', $1, false),
+           set_config('request.jwt.claim.role', 'authenticated', false),
+           set_config('request.jwt.claim.email', 'paciente.atacante@citra.test', false)
+  `, [patAuth]);
+
+  let patMutationBlocked = false;
+  try {
+    await exec(db, `
+      UPDATE public.appointments
+      SET patient_id = 'pat-impostor'
+      WHERE id = $1
+    `, [victimApptId]);
+  } catch (e) {
+    patMutationBlocked = true;
+  }
+  assert(patMutationBlocked, 'A3-02: Trigger prevent_appointment_identity_mutation bloquea mutación de patient_id');
+
+  // A3-05: get_auth_role() ignora usuarios inactivos
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', '', false),
+           set_config('request.jwt.claim.role', '', false),
+           set_config('request.jwt.claim.email', '', false)
+  `);
+  const inactAuth = '77777777-1111-2222-3333-777777777777';
+  await exec(db, `
+    INSERT INTO auth.users (id, email) VALUES ($1, 'admin.despedido@citra.test')
+    ON CONFLICT (id) DO NOTHING
+  `, [inactAuth]);
+  await exec(db, `
+    INSERT INTO public.profiles (id, email, first_name, last_name, role, is_active)
+    VALUES ($1, 'admin.despedido@citra.test', 'Ex', 'Admin', 'superadmin', false)
+    ON CONFLICT (id) DO UPDATE SET role = 'superadmin', is_active = false
+  `, [inactAuth]);
+
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', $1, false),
+           set_config('request.jwt.claim.role', 'authenticated', false),
+           set_config('request.jwt.claim.email', 'admin.despedido@citra.test', false)
+  `, [inactAuth]);
+
+  const inactiveRole = await query(db, `SELECT public.get_auth_role() AS role, public.is_superadmin() AS is_sa`);
+  assert(inactiveRole[0].role === null && inactiveRole[0].is_sa === false, 'A3-05: Administrador inactivo (is_active=false) pierde inmediatamente privilegios');
+
+  // A3-16: Facturas no admiten total negativo o nulo
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', '', false),
+           set_config('request.jwt.claim.role', '', false),
+           set_config('request.jwt.claim.email', '', false)
+  `);
+  let negInvoiceBlocked = false;
+  try {
+    await exec(db, `
+      INSERT INTO public.invoices (id, invoice_number, total, subtotal, pto_vta, tipo_cmp, patient_name, concept)
+      VALUES ('inv-neg-1', 'FC-001', -500, -500, 1, 6, 'Test', 'Negativo')
+    `);
+  } catch (e) {
+    negInvoiceBlocked = true;
+  }
+  assert(negInvoiceBlocked, 'A3-16: invoices CHECK (total > 0) bloquea facturas con importe negativo o nulo');
+
+  // A3-17: Spoofing de user_id en audit_logs bloqueado o forzado a auth.uid()
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', $1, false),
+           set_config('request.jwt.claim.role', 'authenticated', false),
+           set_config('request.jwt.claim.email', 'doc.req@citra.test', false)
+  `, [docReqAuth]);
+
+  await exec(db, `
+    INSERT INTO public.audit_logs (action, resource, details, user_id, user_name, user_role)
+    VALUES ('SPOOF_TEST', 'Test', 'Intento de spoofing', 'victima-id', 'Victima', 'doctor')
+  `);
+  const auditEntry = await query(db, `
+    SELECT user_id FROM public.audit_logs WHERE action = 'SPOOF_TEST' ORDER BY id DESC LIMIT 1
+  `);
+  assert(auditEntry[0].user_id === docReqAuth, 'A3-17: Trigger protect_audit_logs fuerza user_id = auth.uid() impidiendo falsificación de autoría');
+}
+
 // ─── RUNNER PRINCIPAL ─────────────────────────────────────────────────────────
 async function main() {
   console.log(`\n${C.bold}${C.cyan}╔══════════════════════════════════════════════════╗${C.reset}`);
@@ -663,6 +853,7 @@ async function main() {
   await testConsultations(db);
   await testReferentialIntegrity(db);
   await testAuditV2Remediations(db);
+  await testAuditV3Remediations(db);
 
   // Resumen final
   const total = passed + failed;
