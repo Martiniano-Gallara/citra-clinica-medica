@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { WhatsAppIcon } from '../common/WhatsAppIcon';
 import {
   Lock,
   Mail,
@@ -148,20 +149,27 @@ export const AdminLoginView = () => {
 
   const handleRecoverySubmit = async (e) => {
     e.preventDefault();
-    if (!recoveryEmail.trim()) {
+    const cleanEmail = recoveryEmail.trim();
+    if (!cleanEmail) {
       setRecoveryMsg('Por favor ingrese su correo institucional.');
       return;
     }
+
+    // Enviar automáticamente a WhatsApp al número 3576445504
+    const targetPhone = '5493576445504';
+    const msg = `Hola, solicito el restablecimiento de clave para el correo institucional en CITRA: ${cleanEmail}`;
+    const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
+
     setRecoveryLoading(true);
-    const res = await resetUserPassword(recoveryEmail.trim());
-    setRecoveryLoading(false);
-    if (res.success) {
-      setRecoverySuccess(true);
-      setRecoveryMsg(`Se ha generado la solicitud de restablecimiento para ${recoveryEmail}. Si el usuario existe en la nómina oficial, recibirá la clave temporal.`);
-    } else {
-      setRecoverySuccess(false);
-      setRecoveryMsg('No se encontró personal registrado con ese correo institucional.');
+    try {
+      await resetUserPassword(cleanEmail);
+    } catch (err) {
+      console.warn('Notice', err);
     }
+    setRecoveryLoading(false);
+    setRecoverySuccess(true);
+    setRecoveryMsg(`Solicitud generada para ${cleanEmail}. Se abrió WhatsApp hacia el 3576-445504.`);
   };
 
   return (
@@ -536,7 +544,7 @@ export const AdminLoginView = () => {
                   gap: '2px'
                 }}
               >
-                <span style={{ fontSize: '0.8rem', fontWeight: 800 }}>👨‍⚕️ Dr. Blanco</span>
+                <span style={{ fontSize: '0.8rem', fontWeight: 800 }}>👨‍⚕️ Dr. Blanco · Traumatólogo</span>
                 <span style={{ fontSize: '0.67rem', opacity: 0.8 }}>blanco2026</span>
               </button>
             </div>
@@ -867,7 +875,7 @@ export const AdminLoginView = () => {
               Recuperación de Contraseña
             </h3>
             <p style={{ margin: '0 0 1.25rem', color: '#64748b', fontSize: '0.85rem', lineHeight: 1.5 }}>
-              Ingrese su correo institucional registrado. Se validará su identidad contra la nómina oficial de CITRA y se enviarán las instrucciones para restablecer su clave.
+              Ingrese su correo institucional registrado. Al presionar <strong>Solicitar Clave</strong>, se enviará automáticamente la solicitud por WhatsApp a la administración (3576-445504).
             </p>
 
             {recoveryMsg && (
@@ -934,14 +942,23 @@ export const AdminLoginView = () => {
                     borderRadius: '10px',
                     fontWeight: 800,
                     fontSize: '0.88rem',
-                    cursor: recoveryLoading ? 'not-allowed' : 'pointer'
+                    cursor: recoveryLoading ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.45rem'
                   }}
                 >
-                  {recoveryLoading ? 'Enviando...' : 'Solicitar Clave'}
+                  <WhatsAppIcon size={16} color="#ffffff" />
+                  <span>{recoveryLoading ? 'Enviando...' : 'Solicitar Clave'}</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setIsRecovering(false)}
+                  onClick={() => {
+                    setIsRecovering(false);
+                    setRecoveryMsg('');
+                    setRecoverySuccess(false);
+                  }}
                   style={{
                     background: '#f1f5f9',
                     border: 'none',
@@ -956,6 +973,34 @@ export const AdminLoginView = () => {
                   Cancelar
                 </button>
               </div>
+
+              {recoverySuccess && (
+                <div style={{ marginTop: '0.85rem' }}>
+                  <a
+                    href={`https://wa.me/5493576445504?text=${encodeURIComponent(`Hola, solicito el restablecimiento de clave para el correo institucional en CITRA: ${recoveryEmail.trim()}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.45rem',
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+                      color: '#ffffff',
+                      padding: '0.65rem',
+                      borderRadius: '10px',
+                      fontWeight: 800,
+                      fontSize: '0.82rem',
+                      textDecoration: 'none'
+                    }}
+                  >
+                    <WhatsAppIcon size={16} color="#ffffff" />
+                    <span>Reenviar a WhatsApp (3576-445504)</span>
+                  </a>
+                </div>
+              )}
             </form>
           </div>
         </div>

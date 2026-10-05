@@ -35,9 +35,9 @@ export const InsurancesPage = () => {
   };
 
   const getCategoryLabel = (name) => {
-    const n = name.toLowerCase();
+    const n = (name || '').toLowerCase();
     if (n.includes('particular')) return 'Particular';
-    if (n.includes('apross') || n.includes('pami')) return 'Obra Social';
+    if (n.includes('apross') || n.includes('pami') || n.includes('obra social') || n.includes('sindical') || n.includes('provincial')) return 'Obra Social';
     return 'Prepaga Nacional';
   };
 
@@ -53,17 +53,13 @@ export const InsurancesPage = () => {
     const matchesSearch = !q || hi.name.toLowerCase().includes(q);
 
     if (!matchesSearch) return false;
+    if (hi.status === 'Inactiva') return false;
 
+    const cat = getCategoryLabel(hi.name);
     if (selectedCategory === 'todos') return true;
-    if (selectedCategory === 'prepagas') {
-      return ['OSDE', 'Swiss Medical', 'Galeno', 'Medicus'].some((n) => hi.name.includes(n));
-    }
-    if (selectedCategory === 'sociales') {
-      return ['Apross', 'PAMI'].some((n) => hi.name.includes(n));
-    }
-    if (selectedCategory === 'particular') {
-      return hi.name.toLowerCase().includes('particular');
-    }
+    if (selectedCategory === 'prepagas') return cat === 'Prepaga Nacional';
+    if (selectedCategory === 'sociales') return cat === 'Obra Social';
+    if (selectedCategory === 'particular') return cat === 'Particular';
     return true;
   });
 
@@ -278,7 +274,6 @@ export const InsurancesPage = () => {
           ) : (
             filteredInsurances.map((hi) => {
               const logoSrc = getResolvedLogo(hi);
-              const category = getCategoryLabel(hi.name);
 
               return (
                 <div
@@ -304,7 +299,7 @@ export const InsurancesPage = () => {
                     e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 33, 130, 0.03)';
                   }}
                 >
-                  {/* Foto / Logo + Nombre + Categoría */}
+                  {/* Foto / Logo + Nombre */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: 1, minWidth: 0 }}>
                     <div
                       style={{
@@ -348,24 +343,9 @@ export const InsurancesPage = () => {
                     </div>
 
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
-                        <h3 style={{ margin: 0, fontSize: '1.12rem', fontWeight: 900, color: '#002182', letterSpacing: '-0.01em' }}>
-                          {hi.name}
-                        </h3>
-                        <span
-                          style={{
-                            fontSize: '0.68rem',
-                            fontWeight: 800,
-                            background: '#EBF3FD',
-                            color: '#076ABC',
-                            padding: '0.15rem 0.5rem',
-                            borderRadius: '100px',
-                            border: '1px solid #D2E3FC'
-                          }}
-                        >
-                          {category}
-                        </span>
-                      </div>
+                      <h3 style={{ margin: 0, fontSize: '1.12rem', fontWeight: 900, color: '#002182', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {hi.name}
+                      </h3>
                     </div>
                   </div>
 

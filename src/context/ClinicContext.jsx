@@ -154,13 +154,26 @@ export const ClinicProvider = ({ children }) => {
       if ((saved.name && saved.name.includes('Morales')) || (saved.email && saved.email.includes('morales')) || (saved.email && saved.email.includes('arrieta'))) {
         return null;
       }
+      const isBlanco = (saved.email && saved.email.toLowerCase().includes('blanco')) || (saved.name && saved.name.toLowerCase().includes('blanco'));
       const savedUsers = loadStorage('users', INITIAL_USERS);
       const matched = savedUsers.find(
         (u) => (u.id === saved.id || u.email?.toLowerCase() === saved.email?.toLowerCase()) && !u.email?.includes('morales') && !u.email?.includes('arrieta')
       );
+      if (isBlanco) {
+        return {
+          ...(matched || saved),
+          id: 'usr-1',
+          name: 'Dr. Alejandro Blanco',
+          email: 'dr.blanco@citra.com.ar',
+          adminType: 'doctor',
+          doctorId: 'doc-1',
+          specialty: 'Traumatología',
+          role: 'Traumatología y Ortopedia · Dirección Médica'
+        };
+      }
       return matched
-        ? { ...matched, adminType: matched.adminType || saved.adminType, doctorId: matched.doctorId || saved.doctorId }
-        : null;
+        ? { ...matched, adminType: matched.adminType || saved.adminType, doctorId: matched.doctorId || saved.doctorId, specialty: matched.specialty || saved.specialty }
+        : saved;
     }
     return null;
   });
@@ -318,18 +331,23 @@ export const ClinicProvider = ({ children }) => {
   useEffect(() => { saveStorage('clinicSchedule', clinicSchedule); }, [clinicSchedule]);
 
   // --- RBAC & ROLE-BASED SCOPED DATA ENGINE ---
-  // Fix: isDoctor is strictly true ONLY when authAdmin has adminType === 'doctor'
+  // isDoctor is true when authAdmin has adminType === 'doctor' or is Dr. Blanco
   const isDoctor = Boolean(
     authAdmin &&
-    authAdmin.adminType === 'doctor' &&
+    (authAdmin.adminType === 'doctor' ||
+      authAdmin.doctorId ||
+      (authAdmin.email && authAdmin.email.toLowerCase().includes('blanco')) ||
+      (authAdmin.name && authAdmin.name.toLowerCase().includes('blanco')) ||
+      (authAdmin.role && (authAdmin.role.toLowerCase().includes('traumatolog') || authAdmin.role.toLowerCase().includes('médic')))) &&
     authAdmin.adminType !== 'administrative'
   );
 
   const isAdministrative = Boolean(
     authAdmin &&
+    !isDoctor &&
     (authAdmin.adminType === 'administrative' ||
       authAdmin.adminType === 'superadmin' ||
-      (!isDoctor && authAdmin.adminType !== 'doctor'))
+      authAdmin.adminType !== 'doctor')
   );
 
   // ALTA-02: Separación estricta de privilegios: superadmin restringido a Dirección Médica / Propietario
@@ -344,8 +362,11 @@ export const ClinicProvider = ({ children }) => {
 
   // Resolve current doctor ONLY if authenticated user is a physician
   const currentDoctor = React.useMemo(() => {
-    if (!authAdmin || !isDoctor) return null;
-    const docId = authAdmin.doctorId;
+    if (!authAdmin) return null;
+    const isBlanco = (authAdmin.email && authAdmin.email.toLowerCase().includes('blanco')) ||
+                     (authAdmin.name && authAdmin.name.toLowerCase().includes('blanco'));
+    if (!isDoctor && !isBlanco) return null;
+    const docId = authAdmin.doctorId || (isBlanco ? 'doc-1' : null);
     if (docId) {
       const found = doctors.find((d) => d.id === docId);
       if (found) return found;
@@ -353,7 +374,8 @@ export const ClinicProvider = ({ children }) => {
     const matchedDoc = doctors.find(
       (d) =>
         (d.email && authAdmin.email && d.email.toLowerCase().trim() === authAdmin.email.toLowerCase().trim()) ||
-        (d.name && authAdmin.name && d.name.toLowerCase().trim() === authAdmin.name.toLowerCase().trim())
+        (d.name && authAdmin.name && d.name.toLowerCase().trim() === authAdmin.name.toLowerCase().trim()) ||
+        (isBlanco && (d.id === 'doc-1' || d.name.toLowerCase().includes('blanco')))
     );
     if (matchedDoc) return matchedDoc;
     return null;
@@ -362,13 +384,13 @@ export const ClinicProvider = ({ children }) => {
   // El Dr. Alejandro Blanco es el dueño y Director Médico de CITRA:
   // Tiene acceso universal a todas las historias clínicas y atenciones de todos los pacientes.
   const isDoctorBlanco = React.useMemo(() => {
-    if (!currentDoctor) return false;
-    const docNameLower = (currentDoctor.name || '').toLowerCase();
-    const docId = currentDoctor.id;
+    const docNameLower = (currentDoctor?.name || currentDoctor?.fullName || authAdmin?.name || '').toLowerCase();
+    const emailLower = (authAdmin?.email || currentDoctor?.email || '').toLowerCase();
+    const docId = currentDoctor?.id || authAdmin?.doctorId;
     return (
       docId === 'doc-1' ||
       docNameLower.includes('blanco') ||
-      (authAdmin?.email && authAdmin.email.toLowerCase().includes('blanco')) ||
+      emailLower.includes('blanco') ||
       (authAdmin?.username && authAdmin.username.toLowerCase().includes('blanco'))
     );
   }, [currentDoctor, authAdmin]);
@@ -2594,13 +2616,18 @@ export const ClinicProvider = ({ children }) => {
       }
     }
 
-    // ALTA-08: Guardar únicamente { id, role, name, email, avatar } y nunca contraseñas en memoria de sesión ni en localStorage
+    // ALTA-08: Guardar datos de sesión sin exponer contraseñas
+    const isBlanco = rawEmail.includes('blanco') || (adminUser.name && adminUser.name.toLowerCase().includes('blanco'));
+
     const safeAdminUser = {
       id: adminUser.id,
-      role: adminUser.role,
+      role: isBlanco ? 'Traumatología y Ortopedia · Dirección Médica' : adminUser.role,
       name: adminUser.name,
       email: adminUser.email,
-      avatar: adminUser.avatar || null
+      avatar: adminUser.avatar || null,
+      adminType: isBlanco ? 'doctor' : (adminUser.adminType || 'administrative'),
+      doctorId: isBlanco ? 'doc-1' : (adminUser.doctorId || null),
+      specialty: isBlanco ? 'Traumatología' : (adminUser.specialty || undefined)
     };
 
     setAuthRole('admin');
@@ -2722,15 +2749,21 @@ export const ClinicProvider = ({ children }) => {
         const cleanWa = rawWa.startsWith('54') ? rawWa : `54${rawWa}`;
         normalized.whatsapp = updatedInfo.whatsapp;
         normalized.whatsappUrl = `https://wa.me/${cleanWa}`;
+        const local = cleanWa.startsWith('549') ? cleanWa.slice(3) : (cleanWa.startsWith('54') ? cleanWa.slice(2) : cleanWa);
+        if (!updatedInfo.phoneFormatted) {
+          normalized.phoneFormatted = local.startsWith('0') ? local : `0${local}`;
+        }
+      }
+      if (updatedInfo.phoneFormatted) {
+        normalized.phoneFormatted = updatedInfo.phoneFormatted;
+      } else if (updatedInfo.phone) {
+        const rawPhone = String(updatedInfo.phone).replace(/\D/g, '');
+        normalized.phoneFormatted = rawPhone.startsWith('0') ? rawPhone : `0${rawPhone}`;
       }
       if (updatedInfo.instagram) {
         const cleanIg = String(updatedInfo.instagram).replace(/[@/]/g, '').replace(/https?:.*instagram\.com/i, '').trim();
         normalized.instagram = cleanIg;
         normalized.instagramUrl = `https://www.instagram.com/${cleanIg}`;
-      }
-      if (updatedInfo.phone) {
-        const rawPhone = String(updatedInfo.phone).replace(/\D/g, '');
-        normalized.phoneFormatted = rawPhone.startsWith('0') ? rawPhone : `0${rawPhone}`;
       }
       if (updatedInfo.address && !updatedInfo.addressFull) {
         normalized.addressFull = `${updatedInfo.address} (CP ${updatedInfo.postalCode || '2434'})`;

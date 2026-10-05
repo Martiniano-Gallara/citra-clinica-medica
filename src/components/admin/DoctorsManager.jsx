@@ -24,7 +24,8 @@ import {
   Layers,
   Sparkles,
   Tag,
-  Mail
+  Mail,
+  BadgeCheck
 } from 'lucide-react';
 import { generateSecureTempPassword } from '../../utils/cryptoAudit';
 
@@ -111,6 +112,9 @@ export const DoctorsManager = ({ initialTab }) => {
   const [insuranceCopay, setInsuranceCopay] = useState(0);
   const [insurancePlansInput, setInsurancePlansInput] = useState('');
   const [insuranceStatus, setInsuranceStatus] = useState('Activa');
+  const [insuranceBadge, setInsuranceBadge] = useState('Consultar a secretaría');
+  const [insuranceLogo, setInsuranceLogo] = useState('');
+  const [insuranceLogoColor, setInsuranceLogoColor] = useState('#076ABC');
 
   // --- MODAL DE USUARIO ADMINISTRATIVO (CABECERA) ---
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
@@ -648,6 +652,9 @@ export const DoctorsManager = ({ initialTab }) => {
     setInsuranceCopay(0);
     setInsurancePlansInput('Planes Generales');
     setInsuranceStatus('Activa');
+    setInsuranceBadge('Consultar a secretaría');
+    setInsuranceLogo('');
+    setInsuranceLogoColor('#076ABC');
     setIsInsuranceModalOpen(true);
   };
 
@@ -657,6 +664,9 @@ export const DoctorsManager = ({ initialTab }) => {
     setInsuranceCopay(hi.copay || 0);
     setInsurancePlansInput((hi.plans || []).join(', '));
     setInsuranceStatus(hi.status || 'Activa');
+    setInsuranceBadge(hi.badge || (hi.copay > 0 ? 'Planes Adheridos' : 'Consultar a secretaría'));
+    setInsuranceLogo(hi.logo || '');
+    setInsuranceLogoColor(hi.logoColor || '#076ABC');
     setIsInsuranceModalOpen(true);
   };
 
@@ -674,7 +684,10 @@ export const DoctorsManager = ({ initialTab }) => {
       name: cleanName,
       copay: Number(insuranceCopay) || 0,
       plans: plansArray.length > 0 ? plansArray : ['General'],
-      status: insuranceStatus
+      status: insuranceStatus,
+      badge: insuranceBadge.trim() || 'Consultar a secretaría',
+      logo: insuranceLogo.trim(),
+      logoColor: insuranceLogoColor || '#076ABC'
     };
 
     if (editingInsurance) {
@@ -1153,7 +1166,10 @@ export const DoctorsManager = ({ initialTab }) => {
                             </span>
                           </div>
 
-                          <div style={{ fontSize: '0.66rem', color: '#496386', display: 'flex', gap: '0.5rem', marginTop: '2px' }}>
+                          <div style={{ fontSize: '0.66rem', color: '#496386', display: 'flex', gap: '0.5rem', marginTop: '2px', flexWrap: 'wrap' }}>
+                            <span style={{ color: '#16a34a', fontWeight: 700 }}>
+                              {hi.badge || (hi.copay > 0 ? 'Planes Adheridos' : 'Consultar a secretaría')}
+                            </span>
                             <span>
                               <strong>Copago:</strong> {hi.copay > 0 ? `$${hi.copay.toLocaleString('es-AR')}` : 'Sin copago'}
                             </span>
@@ -3537,23 +3553,137 @@ export const DoctorsManager = ({ initialTab }) => {
                   })()}
                 </div>
 
+                {/* Etiqueta / Subtexto Institucional en el Sitio Web */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', fontWeight: 700, color: '#1E293B' }}>
+                      <BadgeCheck size={14} color="#16a34a" />
+                      <span>Etiqueta / Subtexto en el Sitio Web</span>
+                    </label>
+                    <span style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                      Visible para pacientes
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={insuranceBadge}
+                    onChange={(e) => setInsuranceBadge(e.target.value)}
+                    placeholder="Ej: Consultar a secretaría, Planes Adheridos..."
+                    style={{
+                      width: '100%',
+                      padding: '0.7rem 0.85rem',
+                      borderRadius: '12px',
+                      border: '1.5px solid #CBD5E1',
+                      fontSize: '0.88rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      background: '#FAFAFC',
+                      fontWeight: 600,
+                      color: '#0F172A'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#076ABC';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(7, 106, 188, 0.12)';
+                      e.target.style.background = '#FFFFFF';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#CBD5E1';
+                      e.target.style.boxShadow = 'none';
+                      e.target.style.background = '#FAFAFC';
+                    }}
+                  />
+                  {/* Atajos de etiquetas */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.45rem' }}>
+                    <span style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 600 }}>Atajos:</span>
+                    {['Consultar a secretaría', 'Planes Adheridos', 'Convenio Provincial', '100% Cobertura'].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setInsuranceBadge(preset)}
+                        style={{
+                          background: insuranceBadge === preset ? '#DCFCE7' : '#FFFFFF',
+                          border: insuranceBadge === preset ? '1px solid #86EFAC' : '1px solid #D2E3FC',
+                          color: insuranceBadge === preset ? '#15803D' : '#076ABC',
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          padding: '0.15rem 0.45rem',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          transition: 'all 0.12s ease'
+                        }}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Color Corporativo */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', fontWeight: 700, color: '#1E293B' }}>
+                      <Sparkles size={14} color="#076ABC" />
+                      <span>Color Corporativo / Identidad</span>
+                    </label>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    {['#00529B', '#E11D48', '#2563EB', '#00A896', '#002B49', '#076ABC', '#475569'].map((col) => (
+                      <button
+                        key={col}
+                        type="button"
+                        onClick={() => setInsuranceLogoColor(col)}
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '50%',
+                          background: col,
+                          border: insuranceLogoColor === col ? '3px solid #002182' : '2px solid #ffffff',
+                          boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'transform 0.1s ease'
+                        }}
+                      >
+                        {insuranceLogoColor === col && <Check size={14} color="#ffffff" />}
+                      </button>
+                    ))}
+                    <input
+                      type="color"
+                      value={insuranceLogoColor}
+                      onChange={(e) => setInsuranceLogoColor(e.target.value)}
+                      title="Elegir color personalizado"
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        padding: 0,
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        background: 'transparent'
+                      }}
+                    />
+                  </div>
+                </div>
+
                 {/* Nota de Integración */}
                 <div
                   style={{
-                    background: '#F0F9FF',
-                    border: '1px solid #BAE6FD',
+                    background: '#F0FDF4',
+                    border: '1px solid #BBF7D0',
                     borderRadius: '12px',
                     padding: '0.75rem 0.9rem',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.6rem',
                     fontSize: '0.76rem',
-                    color: '#0369A1'
+                    color: '#15803D'
                   }}
                 >
-                  <CheckCircle2 size={16} color="#0284C7" style={{ flexShrink: 0 }} />
+                  <CheckCircle2 size={16} color="#16A34A" style={{ flexShrink: 0 }} />
                   <span>
-                    Los planes definidos aquí estarán disponibles automáticamente para los recepcionistas y médicos en la agenda de turnos.
+                    Sincronización 100% activa: esta obra social se refleja en tiempo real en la página principal (Coberturas Adheridas), la vista de convenios y la agenda de turnos.
                   </span>
                 </div>
               </div>

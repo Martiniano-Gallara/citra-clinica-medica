@@ -30,12 +30,13 @@ export const HomeDirectContact = () => {
 
   const rawWa = (clinicInfo?.whatsapp || '543576450214').replace(/\D/g, '');
   const cleanWa = rawWa.startsWith('54') ? rawWa : `54${rawWa}`;
-  const phoneDisplay = clinicInfo?.phoneFormatted || clinicInfo?.phone || '3576 450214';
-  const addressDisplay = clinicInfo?.address || 'Av. Carlos Pontin 556';
+  const phoneDisplay = clinicInfo?.phoneFormatted || clinicInfo?.phone || (rawWa.startsWith('54') ? `0${rawWa.slice(2)}` : `0${rawWa}`) || '03576 450214';
+  const addressDisplay = clinicInfo?.address || 'Av. Carlos Pontin 556, Arroyito, Córdoba';
   const scheduleDisplay = clinicInfo?.scheduleShort || clinicInfo?.schedule || 'Lunes a Viernes 8 a 20 hs';
   const mapsUrl = clinicInfo?.mapsUrl || 'https://maps.app.goo.gl/FJhLndjvgSAWb2Si6';
-  const instagram = clinicInfo?.instagram || 'citra.arroyito';
-  const instagramUrl = clinicInfo?.instagramUrl || `https://www.instagram.com/${instagram.replace('@', '')}`;
+  const rawIg = clinicInfo?.instagram || 'citra.arroyito';
+  const instagram = String(rawIg).replace(/[@/]/g, '').replace(/https?:.*instagram\.com/i, '').trim();
+  const instagramUrl = clinicInfo?.instagramUrl || `https://www.instagram.com/${instagram}`;
   const clinicName = clinicInfo?.name || 'CITRA';
   const whatsappUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(`Hola ${clinicName}, quisiera consultar por turnos y especialidades.`)}`;
 

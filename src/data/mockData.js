@@ -82,13 +82,13 @@ export const INITIAL_ROOMS = [
 ];
 
 export const INITIAL_HEALTH_INSURANCES = [
-  { id: 'hi-1', name: 'OSDE', logo: '/logos/logo-osde.png', plans: ['210', '310', '410', '450', '510'], copay: 0, status: 'Activa', logoColor: '#00529b' },
-  { id: 'hi-2', name: 'Swiss Medical', logo: '/logos/logo-swiss-medical.png', plans: ['SMG20', 'SMG30', 'SMG40', 'SMG50'], copay: 1500, status: 'Activa', logoColor: '#e11d48' },
-  { id: 'hi-3', name: 'Galeno', logo: '/logos/logo-galeno.png', plans: ['Plata', 'Oro', 'Azul'], copay: 2000, status: 'Activa', logoColor: '#2563eb' },
-  { id: 'hi-4', name: 'Apross', logo: '/logos/logo-apross.png', plans: ['Obligatorio', 'Voluntario'], copay: 1200, status: 'Activa', logoColor: '#00A896' },
-  { id: 'hi-5', name: 'PAMI', logo: '/logos/logo-pami.png', plans: ['General', 'Veteranos'], copay: 0, status: 'Activa', logoColor: '#002B49' },
-  { id: 'hi-6', name: 'Medicus', logo: '/logos/logo-medicus.svg', plans: ['Celeste', 'Azul'], copay: 1800, status: 'Activa', logoColor: '#0A2C5C' },
-  { id: 'hi-7', name: 'Particular / Privado', logo: '', plans: ['Arancel Pleno'], copay: 22000, status: 'Activa', logoColor: '#475569' }
+  { id: 'hi-1', name: 'OSDE', logo: './logos/logo-osde.png', plans: ['210', '310', '410', '450', '510'], copay: 0, status: 'Activa', logoColor: '#00529b', badge: 'Consultar a secretaría' },
+  { id: 'hi-2', name: 'Swiss Medical', logo: './logos/logo-swiss-medical.png', plans: ['SMG20', 'SMG30', 'SMG40', 'SMG50'], copay: 1500, status: 'Activa', logoColor: '#e11d48', badge: 'Planes Adheridos' },
+  { id: 'hi-3', name: 'Galeno', logo: './logos/logo-galeno.png', plans: ['Plata', 'Oro', 'Azul'], copay: 2000, status: 'Activa', logoColor: '#2563eb', badge: 'Planes Adheridos' },
+  { id: 'hi-4', name: 'Apross', logo: './logos/logo-apross.png', plans: ['Obligatorio', 'Voluntario'], copay: 1200, status: 'Activa', logoColor: '#00A896', badge: 'Convenio Provincial' },
+  { id: 'hi-5', name: 'PAMI', logo: './logos/logo-pami.png', plans: ['General', 'Veteranos'], copay: 0, status: 'Activa', logoColor: '#002B49', badge: 'Consultar a secretaría' },
+  { id: 'hi-6', name: 'Medicus', logo: './logos/logo-medicus.svg', plans: ['Celeste', 'Azul'], copay: 1800, status: 'Activa', logoColor: '#0A2C5C', badge: 'Planes Adheridos' },
+  { id: 'hi-7', name: 'Particular / Privado', logo: '', plans: ['Arancel Pleno'], copay: 22000, status: 'Activa', logoColor: '#475569', badge: 'Particular' }
 ];
 
 export const INITIAL_DOCTORS = [

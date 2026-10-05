@@ -278,7 +278,7 @@ export const ServicesSection = () => {
                       style={{
                         minWidth: 0,
                         flex: 1,
-                        fontSize: '0.88rem',
+                        fontSize: '0.92rem',
                         fontWeight: 700,
                         color: isSelected ? '#002182' : '#1E293B',
                         whiteSpace: 'nowrap',
@@ -287,9 +287,6 @@ export const ServicesSection = () => {
                       }}
                     >
                       {item.name}
-                      <span style={{ fontWeight: 500, color: '#496386', marginLeft: '0.35rem' }}>
-                        · {item.detail}
-                      </span>
                     </div>
                   </div>
 

@@ -66,9 +66,7 @@ export const supabaseConfigDiagnostics = {
         : !supabaseAnonKey || supabaseAnonKey.includes('placeholder')
           ? 'VITE_SUPABASE_ANON_KEY ausente o inválida en el archivo .env'
           : 'Configuración de Supabase incompleta')
-    : (isPublishableKey
-        ? 'VITE_SUPABASE_ANON_KEY utiliza formato publishable en lugar de JWT anon public'
-        : null)
+    : null
 };
 
 if (!isSupabaseConfigured) {
@@ -78,8 +76,6 @@ if (!isSupabaseConfigured) {
   } else {
     console.warn(errMsg);
   }
-} else if (isPublishableKey) {
-  console.warn('[CITRA SUPABASE AVISO] La variable VITE_SUPABASE_ANON_KEY inicia con "sb_publishable_". Los servicios REST y Realtime de Supabase requieren la clave pública anónima en formato JWT ("anon public" en Supabase > Project Settings > API, que comienza con "eyJ...").');
 }
 
 export const supabase = isSupabaseConfigured

@@ -164,7 +164,8 @@ import {
   Menu,
   X,
   MapPin,
-  CheckCircle2
+  CheckCircle2,
+  Phone
 } from 'lucide-react';
 
 export const AdminManagementHub = () => {
@@ -286,6 +287,8 @@ export const AdminManagementHub = () => {
         title: 'ADMINISTRACIÓN Y FACTURACIÓN',
         items: [
           { id: 'doctors', label: 'Cuerpo Médico & Servicios', icon: Users, badge: activeDoctors },
+          { id: 'insurances', label: 'Obras Sociales & Prepagas', icon: Shield, badge: healthInsurances.filter((h) => (h.status || 'Activa') !== 'Inactiva').length },
+          { id: 'contact', label: 'Canales de Contacto Web', icon: Phone, badge: null },
           { id: 'billing', label: 'Facturación / Caja', icon: CreditCard, badge: null },
           { id: 'reports', label: 'Métricas Operativas', icon: BarChart3, badge: null }
         ]
@@ -409,17 +412,23 @@ export const AdminManagementHub = () => {
     navSections.flatMap((s) => s.items).find((i) => i.id === activeTab)?.label || 'Inicio';
 
   const doctorAdminName = (() => {
-    if (!isDoctor) return authAdmin?.name || 'Secretaría CITRA';
     const raw = currentDoctor?.name || authAdmin?.name || 'Dr. Alejandro Blanco';
     const clean = raw.includes('Morales') ? 'Dr. Alejandro Blanco' : raw;
     return clean;
   })();
 
   const doctorSpecialtyLabel = (() => {
-    if (!isDoctor) return 'Secretaría';
-    const spec = currentDoctor?.specialty || authAdmin?.specialty || 'Traumatología';
-    if (spec.toLowerCase().includes('traumatolog')) return 'Traumatólogo';
-    return spec;
+    const nameLower = (authAdmin?.name || currentDoctor?.name || '').toLowerCase();
+    const emailLower = (authAdmin?.email || currentDoctor?.email || '').toLowerCase();
+    if (nameLower.includes('blanco') || emailLower.includes('blanco')) {
+      return 'Traumatólogo';
+    }
+    if (isDoctor || authAdmin?.adminType === 'doctor' || authAdmin?.doctorId) {
+      const spec = currentDoctor?.specialty || authAdmin?.specialty || 'Traumatología';
+      if (spec.toLowerCase().includes('traumatolog')) return 'Traumatólogo';
+      return spec;
+    }
+    return authAdmin?.role || 'Secretaría';
   })();
 
   return (
@@ -614,7 +623,7 @@ export const AdminManagementHub = () => {
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
-              {isDoctor ? (
+              {isDoctor || (authAdmin?.name || '').toLowerCase().includes('blanco') || (authAdmin?.email || '').toLowerCase().includes('blanco') ? (
                 <div
                   style={{
                     width: '38px',
@@ -629,7 +638,7 @@ export const AdminManagementHub = () => {
                     color: '#93c5fd',
                     flexShrink: 0
                   }}
-                  title="Profesional Médico CITRA"
+                  title="Profesional Médico CITRA · Traumatólogo"
                 >
                   <Stethoscope size={18} />
                 </div>
@@ -657,7 +666,7 @@ export const AdminManagementHub = () => {
                 <div style={{ fontSize: '0.83rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.01em' }}>
                   {doctorAdminName}
                 </div>
-                <div style={{ fontSize: '0.7rem', color: isDoctor ? '#86efac' : '#93c5fd', fontWeight: 700, marginTop: '2px' }}>
+                <div style={{ fontSize: '0.7rem', color: (isDoctor || (authAdmin?.name || '').toLowerCase().includes('blanco') || (authAdmin?.email || '').toLowerCase().includes('blanco')) ? '#86efac' : '#93c5fd', fontWeight: 700, marginTop: '2px' }}>
                   {doctorSpecialtyLabel}
                 </div>
               </div>
@@ -1609,8 +1618,10 @@ export const AdminManagementHub = () => {
           {/* TAB 13: REPORTES & ESTADÍSTICAS */}
           {activeTab === 'reports' && <ReportsView />}
 
-          {/* TAB 16: CONFIGURACIÓN DE LA CLÍNICA / MI PERFIL */}
-          {activeTab === 'settings' && <SettingsView />}
+          {/* TAB 16: CONFIGURACIÓN DE LA CLÍNICA / CANALES DE CONTACTO / MI PERFIL */}
+          {(activeTab === 'settings' || activeTab === 'contact') && (
+            <SettingsView initialTab={activeTab === 'contact' ? 'contact' : 'general'} />
+          )}
 
           {/* TAB 17: AUDITORÍA Y SEGURIDAD (Secretaría) */}
           {activeTab === 'audit' && !isDoctor && <AuditLogsView />}

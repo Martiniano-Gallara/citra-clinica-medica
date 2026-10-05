@@ -44,7 +44,7 @@ export const ServicesPage = () => {
       category: 'especialidades',
       name: 'Neurología',
       icon: Brain,
-      badge: 'Médica',
+      badge: '',
       shortDesc: 'Cefaleas, migrañas y sistema nervioso',
       description: 'Abordaje integral y diagnóstico de afecciones del sistema nervioso central y periférico, cefaleas crónicas, neuropatías y trastornos motores.',
       features: [
@@ -60,7 +60,7 @@ export const ServicesPage = () => {
       category: 'especialidades',
       name: 'Reumatología',
       icon: Activity,
-      badge: 'Médica',
+      badge: '',
       shortDesc: 'Artritis y dolor articular',
       description: 'Tratamiento especializado de patologías inflamatorias y autoinmunes que afectan articulaciones, tendones y músculos, preservando la movilidad.',
       features: [
@@ -76,7 +76,7 @@ export const ServicesPage = () => {
       category: 'especialidades',
       name: 'Traumatología',
       icon: Bone,
-      badge: 'Médica',
+      badge: '',
       shortDesc: 'Huesos, fracturas y lesiones',
       description: 'Diagnóstico, tratamiento y seguimiento médico y quirúrgico de patologías óseas, articulares, fracturas, esguinces, artrosis y lesiones deportivas.',
       features: [
@@ -92,7 +92,7 @@ export const ServicesPage = () => {
       category: 'especialidades',
       name: 'Nutrición',
       icon: Apple,
-      badge: 'Médica',
+      badge: '',
       shortDesc: 'Planes a medida y nutrición',
       description: 'Planes alimentarios personalizados orientados a modular la inflamación sistémica, favorecer la recuperación de tejidos y optimizar el rendimiento físico.',
       features: [
@@ -349,24 +349,10 @@ export const ServicesPage = () => {
         </div>
 
         {/* Services Count Banner */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem', padding: '0 0.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.85rem', padding: '0 0.25rem' }}>
           <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#496386' }}>
             Mostrando {filteredCards.length} {filteredCards.length === 1 ? 'servicio' : 'servicios'}
           </span>
-          <button
-            onClick={() => setExpandedId(expandedId ? null : (filteredCards[0]?.id || null))}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#076ABC',
-              fontSize: '0.76rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              padding: 0
-            }}
-          >
-            {expandedId ? 'Colapsar detalles' : 'Ver detalle'}
-          </button>
         </div>
 
         {/* Services List — ACORDEONES COMPACTOS PARA MÓVILES */}
@@ -435,20 +421,22 @@ export const ServicesPage = () => {
                         <span style={{ fontSize: '0.94rem', fontWeight: 800, color: '#002182', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {service.name}
                         </span>
-                        <span
-                          style={{
-                            fontSize: '0.66rem',
-                            fontWeight: 800,
-                            background: isExpanded ? '#076ABC' : '#EBF3FD',
-                            color: isExpanded ? '#ffffff' : '#002182',
-                            padding: '0.12rem 0.45rem',
-                            borderRadius: '100px',
-                            whiteSpace: 'nowrap',
-                            flexShrink: 0
-                          }}
-                        >
-                          {service.badge}
-                        </span>
+                        {service.badge && service.badge.toLowerCase() !== 'médica' && service.badge.toLowerCase() !== 'medica' && (
+                          <span
+                            style={{
+                              fontSize: '0.66rem',
+                              fontWeight: 800,
+                              background: isExpanded ? '#076ABC' : '#EBF3FD',
+                              color: isExpanded ? '#ffffff' : '#002182',
+                              padding: '0.12rem 0.45rem',
+                              borderRadius: '100px',
+                              whiteSpace: 'nowrap',
+                              flexShrink: 0
+                            }}
+                          >
+                            {service.badge}
+                          </span>
+                        )}
                       </div>
                       <div style={{ fontSize: '0.75rem', color: '#496386', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {service.shortDesc}

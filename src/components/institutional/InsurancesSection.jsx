@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useClinic } from '../../context/ClinicContext';
+import { INITIAL_HEALTH_INSURANCES } from '../../data/mockData';
 import {
   ShieldCheck,
   ArrowRight,
@@ -7,46 +8,48 @@ import {
 } from 'lucide-react';
 import { WhatsAppIcon } from '../common/WhatsAppIcon';
 
-const PRIMARY_INSURANCES = [
-  {
-    id: 'hi-1',
-    name: 'OSDE',
-    logo: './logos/logo-osde.png',
-    badge: 'Consultar a secretaría',
-    copay: 0
-  },
-  {
-    id: 'hi-2',
-    name: 'Swiss Medical',
-    logo: './logos/logo-swiss-medical.png',
-    badge: 'Planes Adheridos',
-    copay: 1500
-  },
-  {
-    id: 'hi-3',
-    name: 'Galeno',
-    logo: './logos/logo-galeno.png',
-    badge: 'Planes Adheridos',
-    copay: 2000
-  },
-  {
-    id: 'hi-4',
-    name: 'Apross',
-    logo: './logos/logo-apross.png',
-    badge: 'Convenio Provincial',
-    copay: 1200
-  },
-  {
-    id: 'hi-5',
-    name: 'PAMI',
-    logo: './logos/logo-pami.png',
-    badge: 'Consultar a secretaría',
-    copay: 0
+const INSURANCE_LOGOS = {
+  'osde': './logos/logo-osde.png',
+  'swiss': './logos/logo-swiss-medical.png',
+  'galeno': './logos/logo-galeno.png',
+  'apross': './logos/logo-apross.png',
+  'pami': './logos/logo-pami.png',
+  'medicus': './logos/logo-medicus.svg'
+};
+
+const getResolvedLogo = (hi) => {
+  if (hi.logo && typeof hi.logo === 'string' && hi.logo.trim() !== '') return hi.logo;
+  const nameLower = (hi.name || '').toLowerCase();
+  for (const [key, path] of Object.entries(INSURANCE_LOGOS)) {
+    if (nameLower.includes(key)) return path;
   }
-];
+  return null;
+};
+
+const getInsuranceBadge = (hi) => {
+  if (hi.badge && typeof hi.badge === 'string' && hi.badge.trim() !== '') return hi.badge;
+  const n = (hi.name || '').toLowerCase();
+  if (n.includes('pami') || n.includes('osde')) return 'Consultar a secretaría';
+  if (n.includes('apross')) return 'Convenio Provincial';
+  if (hi.copay > 0) return 'Planes Adheridos';
+  return 'Planes Adheridos';
+};
 
 export const InsurancesSection = () => {
-  const { setCurrentView, clinicInfo } = useClinic();
+  const { healthInsurances, setCurrentView, clinicInfo } = useClinic();
+
+  // Coberturas activas 100% dinámicas vinculadas al panel de administración de secretaría
+  const activeInsurances = useMemo(() => {
+    const list = Array.isArray(healthInsurances) && healthInsurances.length > 0
+      ? healthInsurances
+      : INITIAL_HEALTH_INSURANCES;
+
+    return list.filter((hi) => {
+      const isInactive = hi.status === 'Inactiva' || hi.status === 'Deshabilitada';
+      const isParticular = (hi.name || '').toLowerCase().includes('particular');
+      return !isInactive && !isParticular;
+    });
+  }, [healthInsurances]);
 
   const handleViewAll = () => {
     setCurrentView('insurances');
@@ -143,7 +146,7 @@ export const InsurancesSection = () => {
           </button>
         </div>
 
-        {/* HORIZONTAL SCROLL RUNNER (Corredor deslizable con logos reales en orden exacto) */}
+        {/* HORIZONTAL SCROLL RUNNER (Corredor dinámico 100% sincronizado con Secretaría) */}
         <div
           style={{
             display: 'flex',
@@ -156,119 +159,156 @@ export const InsurancesSection = () => {
             scrollbarWidth: 'none'
           }}
         >
-          {PRIMARY_INSURANCES.map((hi) => (
-            <div
-              key={hi.id}
-              style={{
-                flex: '0 0 248px',
-                scrollSnapAlign: 'start',
-                background: '#ffffff',
-                border: '1.5px solid #E1EDFC',
-                borderRadius: '16px',
-                padding: '1.1rem 1rem',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                gap: '0.85rem',
-                boxShadow: '0 2px 8px rgba(0, 33, 130, 0.03)',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.borderColor = '#076ABC';
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 33, 130, 0.08)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.borderColor = '#E1EDFC';
-                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 33, 130, 0.03)';
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {activeInsurances.length === 0 ? (
+            <div style={{ padding: '1rem', color: '#496386', fontSize: '0.85rem' }}>
+              No hay coberturas activas en este momento. Consultá a secretaría por WhatsApp.
+            </div>
+          ) : (
+            activeInsurances.map((hi) => {
+              const logo = getResolvedLogo(hi);
+              const badge = getInsuranceBadge(hi);
+              const initials = (hi.name || 'OS').substring(0, 3).toUpperCase();
+              const logoColor = hi.logoColor || '#076ABC';
+
+              return (
                 <div
+                  key={hi.id}
                   style={{
-                    width: '46px',
-                    height: '46px',
-                    borderRadius: '12px',
+                    flex: '0 0 248px',
+                    scrollSnapAlign: 'start',
                     background: '#ffffff',
-                    border: '1.5px solid #EDF3FD',
+                    border: '1.5px solid #E1EDFC',
+                    borderRadius: '16px',
+                    padding: '1.1rem 1rem',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '3px',
-                    flexShrink: 0,
-                    boxShadow: '0 2px 6px rgba(0, 33, 130, 0.04)',
-                    overflow: 'hidden'
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '0.85rem',
+                    boxShadow: '0 2px 8px rgba(0, 33, 130, 0.03)',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.borderColor = '#076ABC';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 33, 130, 0.08)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.borderColor = '#E1EDFC';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 33, 130, 0.03)';
                   }}
                 >
-                  <img
-                    src={hi.logo}
-                    alt={hi.name}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div
+                      style={{
+                        width: '46px',
+                        height: '46px',
+                        borderRadius: '12px',
+                        background: '#ffffff',
+                        border: '1.5px solid #EDF3FD',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '3px',
+                        flexShrink: 0,
+                        boxShadow: '0 2px 6px rgba(0, 33, 130, 0.04)',
+                        overflow: 'hidden'
+                      }}
+                    >
+                      {logo ? (
+                        <img
+                          src={logo}
+                          alt={hi.name}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'contain'
+                          }}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.nextSibling) {
+                              e.currentTarget.nextSibling.style.display = 'flex';
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        style={{
+                          display: logo ? 'none' : 'flex',
+                          width: '100%',
+                          height: '100%',
+                          borderRadius: '8px',
+                          background: 'linear-gradient(135deg, #EBF3FD 0%, #D2E3FC 100%)',
+                          color: logoColor,
+                          fontWeight: 900,
+                          fontSize: '0.82rem',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        {initials}
+                      </div>
+                    </div>
+
+                    <div style={{ overflow: 'hidden', minWidth: 0 }}>
+                      <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.94rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                        {hi.name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '0.73rem',
+                          color: '#16a34a',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          marginTop: '0.15rem',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        <BadgeCheck size={13} style={{ flexShrink: 0 }} />
+                        <span style={{ whiteSpace: 'nowrap' }}>{badge}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Botón Consultar → WhatsApp con logo oficial */}
+                  <button
+                    onClick={() => handleWhatsApp(hi.name)}
                     style={{
                       width: '100%',
-                      height: '100%',
-                      objectFit: 'contain'
-                    }}
-                  />
-                </div>
-
-                <div style={{ overflow: 'hidden', minWidth: 0 }}>
-                  <div style={{ fontWeight: 800, color: '#002182', fontSize: '0.94rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                    {hi.name}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: '0.73rem',
-                      color: '#16a34a',
-                      fontWeight: 700,
+                      background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+                      border: 'none',
+                      color: '#ffffff',
+                      padding: '0.55rem 0.75rem',
+                      borderRadius: '10px',
+                      fontSize: '0.82rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.25rem',
-                      marginTop: '0.15rem',
-                      whiteSpace: 'nowrap'
+                      justifyContent: 'center',
+                      gap: '0.45rem',
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 2px 8px rgba(37, 211, 102, 0.25)',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.35)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(37, 211, 102, 0.25)';
                     }}
                   >
-                    <BadgeCheck size={13} style={{ flexShrink: 0 }} />
-                    <span style={{ whiteSpace: 'nowrap' }}>{hi.badge}</span>
-                  </div>
+                    <WhatsAppIcon size={15} color="#ffffff" style={{ flexShrink: 0 }} />
+                    <span>Consultar</span>
+                  </button>
                 </div>
-              </div>
-
-              {/* Botón Consultar → WhatsApp con logo oficial */}
-              <button
-                onClick={() => handleWhatsApp(hi.name)}
-                style={{
-                  width: '100%',
-                  background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
-                  border: 'none',
-                  color: '#ffffff',
-                  padding: '0.55rem 0.75rem',
-                  borderRadius: '10px',
-                  fontSize: '0.82rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.45rem',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 2px 8px rgba(37, 211, 102, 0.25)',
-                  transition: 'all 0.15s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.35)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(37, 211, 102, 0.25)';
-                }}
-              >
-                <WhatsAppIcon size={15} color="#ffffff" style={{ flexShrink: 0 }} />
-                <span>Consultar</span>
-              </button>
-            </div>
-          ))}
+              );
+            })
+          )}
         </div>
       </div>
     </section>

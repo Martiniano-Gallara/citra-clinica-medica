@@ -22,15 +22,22 @@ export const Sidebar = () => {
     activeTab,
     setActiveTab,
     currentUser,
+    authAdmin,
+    isDoctor: clinicIsDoctor,
+    currentDoctor,
     appointments,
     setIsPatientPortalMode
   } = useClinic();
 
-  const pendingAppointmentsCount = appointments.filter(
-    (a) => a.date === '2026-08-28' && (a.status === 'pendiente' || a.status === 'en_sala')
-  ).length;
+  const userObj = authAdmin || currentUser || {};
+  const isDoctorUser =
+    clinicIsDoctor ||
+    userObj.adminType === 'doctor' ||
+    userObj.doctorId ||
+    (userObj.name && userObj.name.toLowerCase().includes('blanco')) ||
+    (userObj.email && userObj.email.toLowerCase().includes('blanco'));
 
-  const isDoctor = currentUser?.role === 'doctor';
+  const isDoctor = isDoctorUser;
 
   const navSections = [
     {
@@ -161,19 +168,36 @@ export const Sidebar = () => {
             >
               <Stethoscope size={18} />
             </div>
-          ) : (
+          ) : userObj.avatar ? (
             <img
-              src={currentUser.avatar}
-              alt={currentUser.name}
+              src={userObj.avatar}
+              alt={userObj.name || 'Usuario'}
               className="user-avatar"
             />
+          ) : (
+            <div
+              style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '10px',
+                background: 'rgba(37, 124, 230, 0.25)',
+                border: '1.5px solid #257CE6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#93c5fd',
+                flexShrink: 0
+              }}
+            >
+              <UserSquare2 size={18} />
+            </div>
           )}
           <div className="user-info">
-            <span className="user-name">{currentUser.name}</span>
+            <span className="user-name">{userObj.name || (isDoctor ? 'Dr. Alejandro Blanco' : 'Secretaría CITRA')}</span>
             <span className="user-role">
               {isDoctor
-                ? (currentUser.specialty?.toLowerCase().includes('traumatolog') ? 'Traumatólogo' : (currentUser.specialty || 'Traumatólogo'))
-                : currentUser.role}
+                ? ((userObj.specialty || currentDoctor?.specialty || '').toLowerCase().includes('traumatolog') || (userObj.name || '').toLowerCase().includes('blanco') ? 'Traumatólogo' : (userObj.specialty || currentDoctor?.specialty || 'Traumatólogo'))
+                : (userObj.role || 'Secretaría')}
             </span>
           </div>
         </div>
