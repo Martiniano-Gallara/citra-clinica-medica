@@ -19,7 +19,10 @@ import {
   ShieldCheck,
   UserCheck,
   Check,
-  Stethoscope
+  Stethoscope,
+  AlertCircle,
+  X,
+  FileText
 } from 'lucide-react';
 import { PaymentModal } from './PaymentModal';
 import { ArcaInvoiceModal } from './ArcaInvoiceModal';
@@ -37,13 +40,48 @@ export const BillingView = () => {
     setIsArcaInvoiceModalOpen,
     setArcaInvoicePreloadData,
     clinicInfo,
-    addToast
+    addToast,
+    issueCreditNote
   } = useClinic();
 
   const [activeSubTab, setActiveSubTab] = useState('invoices'); // 'invoices' or 'honorarios'
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMethod, setFilterMethod] = useState('all');
   const [isClosingShift, setIsClosingShift] = useState(false);
+
+  // V3-M3: Estado para emisión de Notas de Crédito / Anulaciones
+  const [isCreditNoteModalOpen, setIsCreditNoteModalOpen] = useState(false);
+  const [selectedInvoiceForNC, setSelectedInvoiceForNC] = useState(null);
+  const [creditNoteReason, setCreditNoteReason] = useState('');
+  const [isIssuingNC, setIsIssuingNC] = useState(false);
+
+  const handleOpenCreditNoteModal = (inv) => {
+    setSelectedInvoiceForNC(inv);
+    setCreditNoteReason('Error de facturación / anulación solicitada por el paciente');
+    setIsCreditNoteModalOpen(true);
+  };
+
+  const handleConfirmCreditNote = async (e) => {
+    e.preventDefault();
+    if (!selectedInvoiceForNC) return;
+    if (!creditNoteReason.trim()) {
+      addToast('Motivo Requerido', 'Debe detallar el motivo de la emisión de la Nota de Crédito.', 'warning');
+      return;
+    }
+    setIsIssuingNC(true);
+    try {
+      if (typeof issueCreditNote === 'function') {
+        await issueCreditNote(selectedInvoiceForNC.id, creditNoteReason.trim());
+      }
+      setIsCreditNoteModalOpen(false);
+      setSelectedInvoiceForNC(null);
+      setCreditNoteReason('');
+    } catch (err) {
+      console.error('Error al emitir nota de crédito:', err);
+    } finally {
+      setIsIssuingNC(false);
+    }
+  };
 
   const handleOpenShift = async () => {
     const balanceStr = prompt('Monto de Apertura de Caja (Fondo Fijo $):', '10000');
@@ -266,55 +304,101 @@ export const BillingView = () => {
                   <th>Honorario Médico</th>
                   <th>Medio de Pago</th>
                   <th>Estado</th>
+                  <th style={{ textAlign: 'center' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredInvoices.map((inv) => (
-                  <tr key={inv.id}>
-                    <td>
-                      <div style={{ fontWeight: 800, color: '#002182' }}>{inv.invoiceNumber}</div>
-                      <div style={{ fontSize: '0.74rem', color: '#496386' }}>Pto Vta 0001 · CUIT {clinicInfo?.cuit || '30-71829304-8'}</div>
-                    </td>
-                    <td>
-                      <div style={{ fontFamily: 'monospace', fontWeight: 700, color: '#076ABC' }}>
-                        {inv.cae || '74291823901248'}
-                      </div>
-                      <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-                        Vto: {inv.caeVto || '2026-09-07'}
-                      </div>
-                    </td>
-                    <td style={{ whiteSpace: 'nowrap' }}>{inv.date}</td>
-                    <td>
-                      <div style={{ fontWeight: 700, color: '#002182' }}>{inv.patientName}</div>
-                      <div style={{ fontSize: '0.76rem', color: '#496386' }}>DNI: {inv.dni || '-'}</div>
-                    </td>
-                    <td style={{ fontSize: '0.85rem' }}>{inv.concept}</td>
-                    <td>
-                      <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{inv.doctorName || 'Clínica CITRA'}</div>
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: 900, color: '#002182', fontSize: '1.05rem' }}>
-                        ${getInvTotal(inv).toLocaleString()}
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: 700, color: '#065f46' }}>
-                        ${(inv.doctorHonorario || Math.round(getInvTotal(inv) * 0.75)).toLocaleString()}
-                      </div>
-                    </td>
-                    <td>
-                      <span style={{ fontSize: '0.8rem', background: '#F5F8FE', border: '1px solid #D2E3FC', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
-                        {inv.paymentMethod}
-                      </span>
-                    </td>
-                    <td>
-                      <span style={{ background: '#d1fae5', color: '#065f46', padding: '0.2rem 0.55rem', borderRadius: '4px', fontSize: '0.76rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                        <Check size={12} />
-                        <span>{inv.status}</span>
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {filteredInvoices.map((inv) => {
+                  const isCreditNote = Boolean(inv.relatedInvoiceId || [3, 8, 13].includes(inv.tipoCmp));
+                  const isVoided = inv.status === 'Anulada';
+
+                  return (
+                    <tr key={inv.id}>
+                      <td>
+                        <div style={{ fontWeight: 800, color: '#002182' }}>{inv.invoiceNumber}</div>
+                        <div style={{ fontSize: '0.74rem', color: '#496386' }}>
+                          {isCreditNote ? (
+                            <span style={{ color: '#b45309', fontWeight: 600 }}>NC Vinculada a {inv.relatedInvoiceId || 'comprobante'}</span>
+                          ) : (
+                            `Pto Vta 0001 · CUIT ${clinicInfo?.cuit || '30-71829304-8'}`
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ fontFamily: 'monospace', fontWeight: 700, color: isCreditNote ? '#b45309' : '#076ABC' }}>
+                          {inv.cae || '74291823901248'}
+                        </div>
+                        <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
+                          Vto: {inv.caeVto || '2026-09-07'}
+                        </div>
+                      </td>
+                      <td style={{ whiteSpace: 'nowrap' }}>{inv.date}</td>
+                      <td>
+                        <div style={{ fontWeight: 700, color: '#002182' }}>{inv.patientName}</div>
+                        <div style={{ fontSize: '0.76rem', color: '#496386' }}>DNI: {inv.dni || '-'}</div>
+                      </td>
+                      <td style={{ fontSize: '0.85rem' }}>{inv.concept}</td>
+                      <td>
+                        <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{inv.doctorName || 'Clínica CITRA'}</div>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 900, color: isCreditNote ? '#b45309' : '#002182', fontSize: '1.05rem' }}>
+                          {isCreditNote ? `-$${getInvTotal(inv).toLocaleString()}` : `$${getInvTotal(inv).toLocaleString()}`}
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 700, color: isCreditNote ? '#b45309' : '#065f46' }}>
+                          ${(inv.doctorHonorario || Math.round(getInvTotal(inv) * 0.75)).toLocaleString()}
+                        </div>
+                      </td>
+                      <td>
+                        <span style={{ fontSize: '0.8rem', background: '#F5F8FE', border: '1px solid #D2E3FC', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
+                          {inv.paymentMethod}
+                        </span>
+                      </td>
+                      <td>
+                        {isCreditNote ? (
+                          <span style={{ background: '#fef3c7', color: '#92400e', padding: '0.2rem 0.55rem', borderRadius: '4px', fontSize: '0.76rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                            <AlertCircle size={12} />
+                            <span>Nota de Crédito</span>
+                          </span>
+                        ) : isVoided ? (
+                          <span style={{ background: '#fee2e2', color: '#991b1b', padding: '0.2rem 0.55rem', borderRadius: '4px', fontSize: '0.76rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                            <X size={12} />
+                            <span>Anulada (NC)</span>
+                          </span>
+                        ) : (
+                          <span style={{ background: '#d1fae5', color: '#065f46', padding: '0.2rem 0.55rem', borderRadius: '4px', fontSize: '0.76rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                            <Check size={12} />
+                            <span>{inv.status}</span>
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        {!isCreditNote && !isVoided && (
+                          <button
+                            type="button"
+                            className="btn btn-outline"
+                            onClick={() => handleOpenCreditNoteModal(inv)}
+                            style={{
+                              padding: '0.25rem 0.55rem',
+                              fontSize: '0.74rem',
+                              color: '#b91c1c',
+                              borderColor: '#fca5a5',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                            title="Emitir Nota de Crédito en ARCA para anular este comprobante (V3-M3)"
+                          >
+                            <FileText size={12} />
+                            <span>Emitir NC</span>
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -522,6 +606,77 @@ export const BillingView = () => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Modal Emisión de Nota de Crédito (V3-M3) */}
+      {isCreditNoteModalOpen && selectedInvoiceForNC && (
+        <div className="modal-overlay" style={{ zIndex: 1100 }}>
+          <div className="modal-content" style={{ maxWidth: '520px', width: '90%' }}>
+            <div className="modal-header" style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Receipt size={22} color="#b91c1c" />
+                <h3 style={{ margin: 0, color: '#002182', fontSize: '1.2rem', fontWeight: 800 }}>
+                  Emitir Nota de Crédito ARCA
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCreditNoteModalOpen(false)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmCreditNote} style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.85rem' }}>
+                <div><strong>Comprobante Original:</strong> {selectedInvoiceForNC.invoiceNumber} (CAE: {selectedInvoiceForNC.cae || 'Simulado'})</div>
+                <div style={{ marginTop: '0.25rem' }}><strong>Paciente:</strong> {selectedInvoiceForNC.patientName} (DNI: {selectedInvoiceForNC.dni || '-'})</div>
+                <div style={{ marginTop: '0.25rem' }}><strong>Importe a Anular:</strong> ${getInvTotal(selectedInvoiceForNC).toLocaleString()}</div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', color: '#1e293b', marginBottom: '0.4rem' }}>
+                  Motivo de Emisión / Justificación Fiscal:
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={creditNoteReason}
+                  onChange={(e) => setCreditNoteReason(e.target.value)}
+                  placeholder="Detalle el motivo fiscal o administrativo por el cual se emite la Nota de Crédito..."
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.88rem',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setIsCreditNoteModalOpen(false)}
+                  disabled={isIssuingNC}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ background: '#b91c1c', borderColor: '#b91c1c' }}
+                  disabled={isIssuingNC}
+                >
+                  {isIssuingNC ? 'Emitiendo en ARCA...' : 'Confirmar Emisión de NC'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

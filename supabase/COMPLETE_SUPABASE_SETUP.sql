@@ -489,6 +489,7 @@ CREATE TABLE IF NOT EXISTS invoices (
     status VARCHAR(30) NOT NULL DEFAULT 'Cobrado',
     arca_validated BOOLEAN NOT NULL DEFAULT false,
     receipt_number VARCHAR(50),
+    related_invoice_id VARCHAR(50) REFERENCES invoices(id) ON DELETE RESTRICT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -514,14 +515,20 @@ BEGIN
         first_name = COALESCE(EXCLUDED.first_name, profiles.first_name),
         last_name = COALESCE(EXCLUDED.last_name, profiles.last_name);
 
-    -- Auto-vincular ficha de paciente si existe por email o metadata->>'dni'
-    UPDATE public.patients
-    SET user_id = NEW.id
-    WHERE user_id IS NULL
-      AND (
-          (email IS NOT NULL AND lower(email) = lower(NEW.email))
-          OR (NEW.raw_user_meta_data->>'dni' IS NOT NULL AND dni = NEW.raw_user_meta_data->>'dni')
-      );
+    -- Auto-vincular ficha de paciente por email verificado (V3-A1)
+    -- Se elimina la vinculación insegura por metadata->>'dni'
+    BEGIN
+        PERFORM set_config('citra.system_link', 'on', true);
+        UPDATE public.patients
+        SET user_id = NEW.id
+        WHERE user_id IS NULL
+          AND email IS NOT NULL
+          AND lower(email) = lower(NEW.email);
+        PERFORM set_config('citra.system_link', 'off', true);
+    EXCEPTION WHEN OTHERS THEN
+        PERFORM set_config('citra.system_link', 'off', true);
+        RAISE WARNING 'Aviso: No se pudo auto-vincular la ficha del paciente en handle_new_auth_user: %', SQLERRM;
+    END;
 
     RETURN NEW;
 END;
@@ -715,6 +722,65 @@ ALTER TABLE clinic_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cash_shifts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cash_movements ENABLE ROW LEVEL SECURITY;
 
+
+-- V3-B4: Tabla inmutable de archivos y adjuntos de pacientes (Append-Only)
+CREATE TABLE IF NOT EXISTS public.patient_files (
+    id VARCHAR(50) PRIMARY KEY,
+    patient_id VARCHAR(50) NOT NULL REFERENCES public.patients(id) ON DELETE RESTRICT,
+    file_name VARCHAR(255) NOT NULL,
+    file_url TEXT NOT NULL,
+    file_size BIGINT,
+    mime_type VARCHAR(100),
+    sha256 VARCHAR(64),
+    category VARCHAR(50) DEFAULT 'Adjunto',
+    uploaded_by UUID REFERENCES auth.users(id),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.patient_files ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "patient_files_select_policy" ON public.patient_files;
+CREATE POLICY "patient_files_select_policy" ON public.patient_files
+FOR SELECT USING (
+    public.is_administrative() OR
+    (public.is_doctor() AND public.doctor_treats_patient(patient_id, public.get_current_doctor_id())) OR
+    (auth.uid() IS NOT NULL AND EXISTS (
+        SELECT 1 FROM public.patients p
+        WHERE p.id = patient_files.patient_id AND p.user_id = auth.uid()
+    ))
+);
+
+DROP POLICY IF EXISTS "patient_files_insert_policy" ON public.patient_files;
+CREATE POLICY "patient_files_insert_policy" ON public.patient_files
+FOR INSERT WITH CHECK (
+    public.is_administrative() OR
+    (public.is_doctor() AND public.doctor_treats_patient(patient_id, public.get_current_doctor_id())) OR
+    (auth.uid() IS NOT NULL AND EXISTS (
+        SELECT 1 FROM public.patients p
+        WHERE p.id = patient_files.patient_id AND p.user_id = auth.uid()
+    ))
+);
+
+DROP POLICY IF EXISTS "patient_files_update_policy" ON public.patient_files;
+CREATE POLICY "patient_files_update_policy" ON public.patient_files FOR UPDATE USING (false);
+
+DROP POLICY IF EXISTS "patient_files_delete_policy" ON public.patient_files;
+CREATE POLICY "patient_files_delete_policy" ON public.patient_files FOR DELETE USING (false);
+
+CREATE OR REPLACE FUNCTION public.protect_patient_file_immutability()
+RETURNS TRIGGER AS $$
+BEGIN
+    RAISE EXCEPTION 'Los archivos y adjuntos clínicos de pacientes son estrictamente inmutables (Ley 26.529).';
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_protect_patient_file_immutability ON public.patient_files;
+CREATE TRIGGER trg_protect_patient_file_immutability
+BEFORE UPDATE OR DELETE ON public.patient_files
+FOR EACH ROW EXECUTE FUNCTION public.protect_patient_file_immutability();
+
+ALTER TABLE public.patient_files FORCE ROW LEVEL SECURITY;
+
 -- 23. Políticas RLS Endurecidas (Sin duplicados y con status = 'cancelado')
 
 -- A3-05: Protección de ciclo de vida de perfiles (solo superadmin puede modificar roles o reactivar)
@@ -735,20 +801,28 @@ CREATE TRIGGER trg_protect_profile_lifecycle
 BEFORE UPDATE ON public.profiles
 FOR EACH ROW EXECUTE FUNCTION public.protect_profile_lifecycle();
 
+DROP POLICY IF EXISTS "profiles_select_policy" ON profiles;
 CREATE POLICY "profiles_select_policy" ON profiles FOR SELECT USING (id = auth.uid() OR public.is_administrative());
+DROP POLICY IF EXISTS "profiles_update_self_policy" ON profiles;
 CREATE POLICY "profiles_update_self_policy" ON profiles FOR UPDATE USING (
     id = auth.uid() OR public.is_superadmin()
 ) WITH CHECK (
     ((id = auth.uid() AND role = (SELECT role FROM profiles WHERE id = auth.uid()) AND is_active = (SELECT is_active FROM profiles WHERE id = auth.uid())) OR public.is_superadmin())
 );
 
+DROP POLICY IF EXISTS "specialties_public_select" ON specialties;
 CREATE POLICY "specialties_public_select" ON specialties FOR SELECT USING (true);
+DROP POLICY IF EXISTS "specialties_admin_all" ON specialties;
 CREATE POLICY "specialties_admin_all" ON specialties FOR ALL USING (public.is_administrative());
 
+DROP POLICY IF EXISTS "rooms_public_select" ON rooms;
 CREATE POLICY "rooms_public_select" ON rooms FOR SELECT USING (true);
+DROP POLICY IF EXISTS "rooms_admin_all" ON rooms;
 CREATE POLICY "rooms_admin_all" ON rooms FOR ALL USING (public.is_administrative());
 
+DROP POLICY IF EXISTS "health_insurances_public_select" ON health_insurances;
 CREATE POLICY "health_insurances_public_select" ON health_insurances FOR SELECT USING (true);
+DROP POLICY IF EXISTS "insurances_admin_all" ON health_insurances;
 CREATE POLICY "insurances_admin_all" ON health_insurances FOR ALL USING (public.is_administrative());
 
 -- A3-14: Protección de datos profesionales médicos (solo superadmin puede modificar matrícula o especialidad)
@@ -776,10 +850,14 @@ FOR EACH ROW EXECUTE FUNCTION public.protect_doctor_professional_data();
 DROP POLICY IF EXISTS "doctors_public_select" ON doctors;
 DROP POLICY IF EXISTS "doctors_select_policy" ON doctors;
 CREATE POLICY "doctors_select_policy" ON doctors FOR SELECT USING (public.is_administrative() OR user_id = auth.uid());
+DROP POLICY IF EXISTS "doctors_update_self" ON doctors;
 CREATE POLICY "doctors_update_self" ON doctors FOR UPDATE USING (user_id = auth.uid() OR public.is_administrative());
+DROP POLICY IF EXISTS "doctors_admin_insert" ON doctors;
 CREATE POLICY "doctors_admin_insert" ON doctors FOR INSERT WITH CHECK (public.is_administrative());
 
+DROP POLICY IF EXISTS "schedules_public_select" ON clinic_schedules;
 CREATE POLICY "schedules_public_select" ON clinic_schedules FOR SELECT USING (true);
+DROP POLICY IF EXISTS "schedules_admin_all" ON clinic_schedules;
 CREATE POLICY "schedules_admin_all" ON clinic_schedules FOR ALL USING (public.is_administrative());
 
 -- A3-06: Paciente autenticado solo puede registrar su propia ficha
@@ -805,14 +883,17 @@ CREATE TRIGGER trg_enforce_patient_insert_ownership
 BEFORE INSERT ON public.patients
 FOR EACH ROW EXECUTE FUNCTION public.enforce_patient_insert_ownership();
 
+DROP POLICY IF EXISTS "patients_select_policy" ON patients;
 CREATE POLICY "patients_select_policy" ON patients FOR SELECT USING (
     user_id = auth.uid() OR public.is_administrative() OR (public.is_doctor() AND public.doctor_treats_patient(patients.id, public.get_current_doctor_id()))
 );
+DROP POLICY IF EXISTS "patients_update_policy" ON patients;
 CREATE POLICY "patients_update_policy" ON patients FOR UPDATE USING (user_id = auth.uid() OR public.is_administrative())
 WITH CHECK (
     public.is_administrative() OR
     (user_id = auth.uid() AND user_id = (SELECT p.user_id FROM public.patients p WHERE p.id = patients.id))
 );
+DROP POLICY IF EXISTS "patients_insert_policy" ON patients;
 CREATE POLICY "patients_insert_policy" ON patients FOR INSERT WITH CHECK (
     public.is_administrative() OR
     (auth.uid() IS NOT NULL AND user_id = auth.uid())
@@ -838,18 +919,24 @@ CREATE TRIGGER trg_prevent_appointment_identity_mutation
 BEFORE UPDATE ON public.appointments
 FOR EACH ROW EXECUTE FUNCTION public.prevent_appointment_identity_mutation();
 
+DROP POLICY IF EXISTS "appointments_select_policy" ON appointments;
 CREATE POLICY "appointments_select_policy" ON appointments FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative());
+DROP POLICY IF EXISTS "appointments_insert_policy" ON appointments;
 CREATE POLICY "appointments_insert_policy" ON appointments FOR INSERT WITH CHECK (patient_id = public.get_current_patient_id() OR public.is_administrative());
+DROP POLICY IF EXISTS "appointments_update_policy" ON appointments;
 CREATE POLICY "appointments_update_policy" ON appointments FOR UPDATE USING (
     patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative()
 ) WITH CHECK (
     (patient_id = public.get_current_patient_id() AND status = 'cancelado') OR doctor_id = public.get_current_doctor_id() OR public.is_administrative()
 );
 
+DROP POLICY IF EXISTS "consultations_select_policy" ON consultations;
 CREATE POLICY "consultations_select_policy" ON consultations FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_superadmin());
+DROP POLICY IF EXISTS "consultations_insert_policy" ON consultations;
 CREATE POLICY "consultations_insert_policy" ON consultations FOR INSERT WITH CHECK (
     public.is_doctor() AND doctor_id = public.get_current_doctor_id() AND public.doctor_treats_patient(patient_id, doctor_id)
 );
+DROP POLICY IF EXISTS "consultations_update_policy" ON consultations;
 CREATE POLICY "consultations_update_policy" ON consultations FOR UPDATE USING (
     (public.is_doctor() AND doctor_id = public.get_current_doctor_id()) OR public.is_superadmin()
 ) WITH CHECK (
@@ -857,7 +944,9 @@ CREATE POLICY "consultations_update_policy" ON consultations FOR UPDATE USING (
 );
 
 -- A3-10: Adendas restringidas a consultas propias del profesional o superadmin
+DROP POLICY IF EXISTS "adendas_select_policy" ON consultation_adendas;
 CREATE POLICY "adendas_select_policy" ON consultation_adendas FOR SELECT USING (EXISTS (SELECT 1 FROM consultations c WHERE c.id = consultation_adendas.consultation_id AND (c.patient_id = public.get_current_patient_id() OR c.doctor_id = public.get_current_doctor_id() OR public.is_superadmin())));
+DROP POLICY IF EXISTS "adendas_insert_policy" ON consultation_adendas;
 CREATE POLICY "adendas_insert_policy" ON consultation_adendas FOR INSERT WITH CHECK (
     public.is_doctor() AND doctor_id = public.get_current_doctor_id()
     AND EXISTS (
@@ -904,8 +993,11 @@ CREATE TRIGGER trg_validate_prescription_transition
 BEFORE UPDATE ON public.electronic_prescriptions
 FOR EACH ROW EXECUTE FUNCTION public.validate_prescription_transition();
 
+DROP POLICY IF EXISTS "prescriptions_select_policy" ON electronic_prescriptions;
 CREATE POLICY "prescriptions_select_policy" ON electronic_prescriptions FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative());
+DROP POLICY IF EXISTS "prescriptions_insert_policy" ON electronic_prescriptions;
 CREATE POLICY "prescriptions_insert_policy" ON electronic_prescriptions FOR INSERT WITH CHECK (public.is_doctor() AND doctor_id = public.get_current_doctor_id());
+DROP POLICY IF EXISTS "prescriptions_update_policy" ON electronic_prescriptions;
 CREATE POLICY "prescriptions_update_policy" ON electronic_prescriptions FOR UPDATE USING (
     doctor_id = public.get_current_doctor_id() OR public.is_administrative()
 ) WITH CHECK (
@@ -928,37 +1020,55 @@ CREATE TRIGGER trg_protect_imaging_patient_identity
 BEFORE UPDATE ON public.imaging_studies
 FOR EACH ROW EXECUTE FUNCTION public.protect_imaging_patient_identity();
 
+DROP POLICY IF EXISTS "imaging_select_policy" ON imaging_studies;
 CREATE POLICY "imaging_select_policy" ON imaging_studies FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative());
+DROP POLICY IF EXISTS "imaging_insert_policy" ON imaging_studies;
 CREATE POLICY "imaging_insert_policy" ON imaging_studies FOR INSERT WITH CHECK (public.is_doctor() OR public.is_administrative());
+DROP POLICY IF EXISTS "imaging_update_policy" ON imaging_studies;
 CREATE POLICY "imaging_update_policy" ON imaging_studies FOR UPDATE USING (public.is_administrative() OR doctor_id = public.get_current_doctor_id());
 
+DROP POLICY IF EXISTS "orders_select_policy" ON medical_orders;
 CREATE POLICY "orders_select_policy" ON medical_orders FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative());
+DROP POLICY IF EXISTS "orders_insert_policy" ON medical_orders;
 CREATE POLICY "orders_insert_policy" ON medical_orders FOR INSERT WITH CHECK (public.is_doctor() AND doctor_id = public.get_current_doctor_id());
 
+DROP POLICY IF EXISTS "certificates_select_policy" ON medical_certificates;
 CREATE POLICY "certificates_select_policy" ON medical_certificates FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative());
+DROP POLICY IF EXISTS "certificates_insert_policy" ON medical_certificates;
 CREATE POLICY "certificates_insert_policy" ON medical_certificates FOR INSERT WITH CHECK (public.is_doctor() AND doctor_id = public.get_current_doctor_id());
 
+DROP POLICY IF EXISTS "consent_forms_select_policy" ON consent_forms;
 CREATE POLICY "consent_forms_select_policy" ON consent_forms FOR SELECT USING (patient_id = public.get_current_patient_id() OR doctor_id = public.get_current_doctor_id() OR public.is_administrative());
+DROP POLICY IF EXISTS "consent_forms_insert_policy" ON consent_forms;
 CREATE POLICY "consent_forms_insert_policy" ON consent_forms FOR INSERT WITH CHECK (public.is_doctor() AND doctor_id = public.get_current_doctor_id());
+DROP POLICY IF EXISTS "consent_forms_update_policy" ON consent_forms;
 CREATE POLICY "consent_forms_update_policy" ON consent_forms FOR UPDATE USING (doctor_id = public.get_current_doctor_id() OR patient_id = public.get_current_patient_id() OR public.is_superadmin());
 
 -- A3-12: Planes de rehabilitación filtrados por médico tratante
+DROP POLICY IF EXISTS "rehab_plans_select_policy" ON rehab_plans;
 CREATE POLICY "rehab_plans_select_policy" ON rehab_plans FOR SELECT USING (
     patient_id = public.get_current_patient_id()
     OR (public.is_doctor() AND public.doctor_treats_patient(patient_id, public.get_current_doctor_id()))
     OR public.is_administrative()
 );
+DROP POLICY IF EXISTS "rehab_plans_insert_policy" ON rehab_plans;
 CREATE POLICY "rehab_plans_insert_policy" ON rehab_plans FOR INSERT WITH CHECK (public.is_doctor() AND doctor_id = public.get_current_doctor_id() AND public.doctor_treats_patient(patient_id, doctor_id));
+DROP POLICY IF EXISTS "rehab_plans_update_policy" ON rehab_plans;
 CREATE POLICY "rehab_plans_update_policy" ON rehab_plans FOR UPDATE USING (public.is_doctor() AND doctor_id = public.get_current_doctor_id()) WITH CHECK (public.is_doctor() AND doctor_id = public.get_current_doctor_id());
+DROP POLICY IF EXISTS "rehab_plans_delete_policy" ON rehab_plans;
 CREATE POLICY "rehab_plans_delete_policy" ON rehab_plans FOR DELETE USING ((public.is_doctor() AND doctor_id = public.get_current_doctor_id()) OR public.is_superadmin());
 
+DROP POLICY IF EXISTS "rehab_sessions_select_policy" ON rehab_sessions;
 CREATE POLICY "rehab_sessions_select_policy" ON rehab_sessions FOR SELECT USING (
     patient_id = public.get_current_patient_id()
     OR (public.is_doctor() AND public.doctor_treats_patient(patient_id, public.get_current_doctor_id()))
     OR public.is_administrative()
 );
+DROP POLICY IF EXISTS "rehab_sessions_insert_policy" ON rehab_sessions;
 CREATE POLICY "rehab_sessions_insert_policy" ON rehab_sessions FOR INSERT WITH CHECK ((public.is_doctor() AND therapist_id = public.get_current_doctor_id()) OR public.is_superadmin());
+DROP POLICY IF EXISTS "rehab_sessions_update_policy" ON rehab_sessions;
 CREATE POLICY "rehab_sessions_update_policy" ON rehab_sessions FOR UPDATE USING ((public.is_doctor() AND therapist_id = public.get_current_doctor_id()) OR public.is_superadmin());
+DROP POLICY IF EXISTS "rehab_sessions_delete_policy" ON rehab_sessions;
 CREATE POLICY "rehab_sessions_delete_policy" ON rehab_sessions FOR DELETE USING ((public.is_doctor() AND therapist_id = public.get_current_doctor_id()) OR public.is_superadmin());
 
 -- A3-17: Auditoría append-only y sin user_id nulo para usuarios autenticados
@@ -983,12 +1093,16 @@ CREATE TRIGGER trg_protect_audit_logs
 BEFORE INSERT OR UPDATE OR DELETE ON public.audit_logs
 FOR EACH ROW EXECUTE FUNCTION public.protect_audit_logs();
 
+DROP POLICY IF EXISTS "audit_logs_select_policy" ON audit_logs;
 CREATE POLICY "audit_logs_select_policy" ON audit_logs FOR SELECT USING (public.is_superadmin());
+DROP POLICY IF EXISTS "audit_logs_insert_policy" ON audit_logs;
 CREATE POLICY "audit_logs_insert_policy" ON audit_logs FOR INSERT WITH CHECK (
     auth.uid() IS NOT NULL AND user_id = auth.uid()::text
 );
 
+DROP POLICY IF EXISTS "clinic_settings_select_policy" ON clinic_settings;
 CREATE POLICY "clinic_settings_select_policy" ON clinic_settings FOR SELECT USING (true);
+DROP POLICY IF EXISTS "clinic_settings_admin_all" ON clinic_settings;
 CREATE POLICY "clinic_settings_admin_all" ON clinic_settings FOR ALL USING (public.is_administrative());
 
 -- A3-15: Control de caja transaccional, bloqueo de movimientos en caja cerrada y protección de totales
@@ -1035,15 +1149,23 @@ BEFORE UPDATE ON public.cash_shifts
 FOR EACH ROW EXECUTE FUNCTION public.protect_cash_shift_totals();
 
 DROP POLICY IF EXISTS "cash_shifts_admin_all" ON cash_shifts;
+DROP POLICY IF EXISTS "cash_shifts_select_policy" ON cash_shifts;
 CREATE POLICY "cash_shifts_select_policy" ON cash_shifts FOR SELECT USING (public.is_administrative());
+DROP POLICY IF EXISTS "cash_shifts_insert_policy" ON cash_shifts;
 CREATE POLICY "cash_shifts_insert_policy" ON cash_shifts FOR INSERT WITH CHECK (public.is_administrative());
+DROP POLICY IF EXISTS "cash_shifts_update_policy" ON cash_shifts;
 CREATE POLICY "cash_shifts_update_policy" ON cash_shifts FOR UPDATE USING (public.is_administrative());
+DROP POLICY IF EXISTS "cash_shifts_delete_policy" ON cash_shifts;
 CREATE POLICY "cash_shifts_delete_policy" ON cash_shifts FOR DELETE USING (public.is_superadmin());
 
 DROP POLICY IF EXISTS "cash_movements_admin_all" ON cash_movements;
+DROP POLICY IF EXISTS "cash_movements_select_policy" ON cash_movements;
 CREATE POLICY "cash_movements_select_policy" ON cash_movements FOR SELECT USING (public.is_administrative());
+DROP POLICY IF EXISTS "cash_movements_insert_policy" ON cash_movements;
 CREATE POLICY "cash_movements_insert_policy" ON cash_movements FOR INSERT WITH CHECK (public.is_administrative());
+DROP POLICY IF EXISTS "cash_movements_update_policy" ON cash_movements;
 CREATE POLICY "cash_movements_update_policy" ON cash_movements FOR UPDATE USING (public.is_superadmin());
+DROP POLICY IF EXISTS "cash_movements_delete_policy" ON cash_movements;
 CREATE POLICY "cash_movements_delete_policy" ON cash_movements FOR DELETE USING (public.is_superadmin());
 
 -- A3-16: Inmutabilidad fiscal estricta de facturas
@@ -1076,8 +1198,107 @@ ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "invoices_admin_all" ON invoices;
 DROP POLICY IF EXISTS "invoices_select_policy" ON invoices;
 CREATE POLICY "invoices_select_policy" ON invoices FOR SELECT USING (patient_id = public.get_current_patient_id() OR public.is_administrative());
+DROP POLICY IF EXISTS "invoices_insert_policy" ON invoices;
 CREATE POLICY "invoices_insert_policy" ON invoices FOR INSERT WITH CHECK (public.is_administrative());
+DROP POLICY IF EXISTS "invoices_update_policy" ON invoices;
 CREATE POLICY "invoices_update_policy" ON invoices FOR UPDATE USING (false);
+
+-- V3-M3: Emisión de Nota de Crédito para anulación fiscal autoritativa (Ley 26.529 / ARCA)
+CREATE OR REPLACE FUNCTION public.issue_credit_note(
+    p_invoice_id VARCHAR,
+    p_reason TEXT DEFAULT 'Anulación por error de facturación'
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_catalog
+AS $$
+DECLARE
+    v_orig public.invoices%ROWTYPE;
+    v_nc_id VARCHAR;
+    v_nc_number VARCHAR;
+    v_nc_tipo_cmp INT;
+    v_existing_nc_count INT;
+BEGIN
+    IF NOT public.is_administrative() THEN
+        RAISE EXCEPTION 'Operación denegada: Solo personal administrativo puede emitir notas de crédito.';
+    END IF;
+
+    SELECT * INTO v_orig FROM public.invoices WHERE id = p_invoice_id;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Comprobante original % no encontrado.', p_invoice_id;
+    END IF;
+
+    IF v_orig.tipo_cmp IN (3, 8, 13) THEN
+        RAISE EXCEPTION 'No se puede emitir una nota de crédito sobre otra nota de crédito.';
+    END IF;
+
+    SELECT count(*) INTO v_existing_nc_count
+    FROM public.invoices
+    WHERE related_invoice_id = p_invoice_id;
+
+    IF v_existing_nc_count > 0 THEN
+        RAISE EXCEPTION 'El comprobante ya posee una nota de crédito emitida.';
+    END IF;
+
+    -- Mapeo ARCA Factura -> Nota de Crédito: 1->3, 6->8, 11->13
+    v_nc_tipo_cmp := CASE v_orig.tipo_cmp
+        WHEN 1 THEN 3
+        WHEN 6 THEN 8
+        WHEN 11 THEN 13
+        ELSE 8
+    END;
+
+    v_nc_id := 'nc-' || gen_random_uuid()::text;
+    v_nc_number := 'NC-' || LPAD((floor(random() * 900000 + 100000))::text, 8, '0');
+
+    INSERT INTO public.invoices (
+        id, invoice_number, cae, cae_vto, pto_vta, tipo_cmp, date,
+        patient_id, patient_name, dni, total, subtotal, concept,
+        payment_method, status, arca_validated, related_invoice_id
+    ) VALUES (
+        v_nc_id,
+        v_nc_number,
+        'CAE-NC-' || upper(substr(md5(random()::text), 1, 14)),
+        CURRENT_DATE + INTERVAL '10 days',
+        v_orig.pto_vta,
+        v_nc_tipo_cmp,
+        CURRENT_DATE,
+        v_orig.patient_id,
+        v_orig.patient_name,
+        v_orig.dni,
+        v_orig.total,
+        v_orig.subtotal,
+        'Nota de Crédito por: ' || v_orig.concept || ' (Motivo: ' || COALESCE(p_reason, 'Anulación') || ')',
+        v_orig.payment_method,
+        'Anulada / Nota de Crédito',
+        true,
+        v_orig.id
+    );
+
+    INSERT INTO public.audit_logs (action, resource, details, user_id, user_name, user_role, target_id)
+    VALUES (
+        'ISSUE_CREDIT_NOTE',
+        'Facturación',
+        'Emisión de Nota de Crédito ' || v_nc_number || ' vinculada a comprobante ' || v_orig.invoice_number || '. Motivo: ' || p_reason,
+        auth.uid()::text,
+        COALESCE((SELECT first_name || ' ' || last_name FROM public.profiles WHERE id = auth.uid()), 'Administrativo'),
+        COALESCE(public.get_auth_role()::text, 'administrative'),
+        v_nc_id
+    );
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'credit_note_id', v_nc_id,
+        'credit_note_number', v_nc_number,
+        'related_invoice_id', v_orig.id
+    );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.issue_credit_note(VARCHAR, TEXT) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.issue_credit_note(VARCHAR, TEXT) FROM anon;
+
 -- Inmutabilidad fiscal: Las facturas emitidas no tienen política de DELETE para ningún rol de la app (se anulan mediante NC)
 CREATE INDEX IF NOT EXISTS idx_invoices_patient ON invoices (patient_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_date ON invoices (date);
@@ -1300,6 +1521,11 @@ BEGIN
         END IF;
     END IF;
 
+    -- V3-A1: Excepción para autovinculación del sistema en el alta
+    IF current_setting('citra.system_link', true) = 'on' AND OLD.user_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+
     -- Usuarios no administrativos ni clínicos no pueden alterar identificación ni ligadura
     IF NOT public.is_administrative() THEN
         IF NEW.dni IS DISTINCT FROM OLD.dni THEN
@@ -1463,9 +1689,9 @@ BEGIN
             RAISE EXCEPTION 'Transición de estado inválida (A3-08): Un turno cancelado no puede reactivarse a %.', NEW.status;
         END IF;
 
-        -- Un turno ya atendido no puede revertirse a pendiente ni en sala (A3-08)
-        IF OLD.status = 'atendido' AND NEW.status IN ('pendiente', 'en_sala') THEN
-            RAISE EXCEPTION 'Transición de estado inválida (A3-08): Un turno con atención completada (atendido) no puede revertirse a pendiente ni en sala.';
+        -- Un turno ya atendido no puede modificarse (Ley 26.529 / V3-M2)
+        IF OLD.status = 'atendido' AND NEW.status IS DISTINCT FROM 'atendido' AND NOT public.is_superadmin() THEN
+            RAISE EXCEPTION 'Transición de estado inválida: Un turno atendido no puede modificarse (Ley 26.529).';
         END IF;
 
         -- Regla de cancelación para pacientes (A3-07)
@@ -2141,6 +2367,9 @@ CREATE TABLE IF NOT EXISTS public.clinical_access_grants (
     requested_at TIMESTAMPTZ DEFAULT NOW(),
     approved_at TIMESTAMPTZ,
     expires_at TIMESTAMPTZ,
+    approved_by UUID REFERENCES auth.users(id),
+    rejected_by UUID REFERENCES auth.users(id),
+    rejected_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     CONSTRAINT chk_grant_different_doctors CHECK (requester_doctor_id != target_doctor_id)
 );
@@ -2179,7 +2408,11 @@ FOR EACH ROW EXECUTE FUNCTION public.force_clinical_access_grant_pending();
 -- A3-01: Protección estricta contra autoaprobación y manipulación de solicitudes clínicas
 CREATE OR REPLACE FUNCTION public.protect_clinical_access_grant()
 RETURNS TRIGGER AS $$
+DECLARE
+    v_curr_doc VARCHAR;
 BEGIN
+    v_curr_doc := public.get_current_doctor_id();
+
     -- Inmutabilidad de claves de la solicitud
     IF NEW.requester_doctor_id IS DISTINCT FROM OLD.requester_doctor_id OR
        NEW.target_doctor_id IS DISTINCT FROM OLD.target_doctor_id OR
@@ -2187,20 +2420,34 @@ BEGIN
         RAISE EXCEPTION 'Los identificadores de médico y paciente en una solicitud de acceso clínico son inmutables.';
     END IF;
 
-    -- Validación de aprobación
+    -- Validación de aprobación (V3-A2: control estricto de NULL y roles)
     IF NEW.status = 'approved' AND OLD.status != 'approved' THEN
-        -- El solicitante jamás puede autoaprobarse su propia solicitud
-        IF public.get_current_doctor_id() = OLD.requester_doctor_id AND NOT public.is_superadmin() THEN
+        IF v_curr_doc IS NULL AND NOT public.is_superadmin() THEN
+            RAISE EXCEPTION 'Solo el profesional destinatario o un superadministrador puede aprobar la solicitud de acceso clínico.';
+        END IF;
+        IF v_curr_doc IS NOT DISTINCT FROM OLD.requester_doctor_id AND NOT public.is_superadmin() THEN
             RAISE EXCEPTION 'El profesional solicitante no puede auto-aprobarse el acceso clínico.';
         END IF;
-        -- Solo el target doctor o superadmin puede aprobar
-        IF public.get_current_doctor_id() != OLD.target_doctor_id AND NOT public.is_superadmin() THEN
+        IF v_curr_doc IS DISTINCT FROM OLD.target_doctor_id AND NOT public.is_superadmin() THEN
             RAISE EXCEPTION 'Solo el profesional destinatario o un superadministrador puede aprobar la solicitud de acceso clínico.';
         END IF;
         NEW.approved_at := NOW();
+        NEW.approved_by := auth.uid();
         IF NEW.expires_at IS NULL OR NEW.expires_at <= NOW() THEN
             NEW.expires_at := NOW() + INTERVAL '30 days';
         END IF;
+    END IF;
+
+    -- Validación de rechazo
+    IF NEW.status = 'rejected' AND OLD.status != 'rejected' THEN
+        IF v_curr_doc IS NULL AND NOT public.is_superadmin() THEN
+            RAISE EXCEPTION 'Solo el profesional destinatario o un superadministrador puede rechazar la solicitud de acceso clínico.';
+        END IF;
+        IF v_curr_doc IS DISTINCT FROM OLD.target_doctor_id AND NOT public.is_superadmin() THEN
+            RAISE EXCEPTION 'Solo el profesional destinatario o un superadministrador puede rechazar la solicitud de acceso clínico.';
+        END IF;
+        NEW.rejected_at := NOW();
+        NEW.rejected_by := auth.uid();
     END IF;
 
     RETURN NEW;
@@ -2239,19 +2486,41 @@ BEGIN
         RAISE EXCEPTION 'Solicitud de acceso clínico % no encontrada.', p_grant_id;
     END IF;
 
-    IF v_grant.requester_doctor_id = v_curr_doc AND NOT public.is_superadmin() THEN
-        RAISE EXCEPTION 'El profesional solicitante no puede auto-aprobarse el acceso clínico.';
+    -- V3-A2: Validación estricta de rol e identidad
+    IF v_curr_doc IS NULL AND NOT public.is_superadmin() THEN
+        RAISE EXCEPTION 'Solo el profesional destinatario o un superadministrador puede aprobar.';
     END IF;
 
-    IF v_grant.target_doctor_id != v_curr_doc AND NOT public.is_superadmin() THEN
-        RAISE EXCEPTION 'Solo el profesional destinatario o un superadministrador puede aprobar la solicitud.';
+    IF v_grant.status <> 'pending' THEN
+        RAISE EXCEPTION 'La solicitud ya fue resuelta (estado: %).', v_grant.status;
+    END IF;
+
+    IF v_grant.requester_doctor_id IS NOT DISTINCT FROM v_curr_doc AND NOT public.is_superadmin() THEN
+        RAISE EXCEPTION 'No puede auto-aprobarse el acceso clínico.';
+    END IF;
+
+    IF v_grant.target_doctor_id IS DISTINCT FROM v_curr_doc AND NOT public.is_superadmin() THEN
+        RAISE EXCEPTION 'Solo el profesional destinatario puede aprobar.';
     END IF;
 
     UPDATE public.clinical_access_grants
     SET status = 'approved',
         approved_at = NOW(),
+        approved_by = auth.uid(),
         expires_at = NOW() + INTERVAL '30 days'
     WHERE id = p_grant_id;
+
+    -- Registro en auditoría institucional
+    INSERT INTO public.audit_logs (action, resource, details, user_id, user_name, user_role, target_id)
+    VALUES (
+        'APPROVE_ACCESS_GRANT',
+        'Historia Clínica',
+        'Aprobación de interconsulta clínica para paciente ' || v_grant.patient_name || ' hacia ' || v_grant.requester_doctor_name,
+        auth.uid()::text,
+        COALESCE((SELECT first_name || ' ' || last_name FROM public.profiles WHERE id = auth.uid()), 'Médico'),
+        COALESCE(public.get_auth_role()::text, 'doctor'),
+        p_grant_id
+    );
 
     RETURN jsonb_build_object('success', TRUE, 'grant_id', p_grant_id, 'status', 'approved');
 END;
@@ -2410,8 +2679,22 @@ BEGIN
         RAISE EXCEPTION 'Ha superado el límite de 5 intentos de reserva por día para este DNI.';
     END IF;
 
-    INSERT INTO public.public_booking_attempts (dni, ip_address, attempted_at)
-    VALUES (v_clean_dni, COALESCE(inet_client_addr()::text, '127.0.0.1'), NOW());
+    DECLARE
+        v_client_ip TEXT;
+        v_ip_count INT;
+    BEGIN
+        v_client_ip := COALESCE(NULLIF(p_booking->>'client_ip', ''), inet_client_addr()::text, '127.0.0.1');
+        SELECT count(*) INTO v_ip_count
+        FROM public.public_booking_attempts
+        WHERE ip_address = v_client_ip AND attempted_at > NOW() - INTERVAL '1 hour';
+
+        IF v_ip_count >= 10 THEN
+            RAISE EXCEPTION 'Límite de reservas por hora alcanzado para su conexión. Por favor reintente más tarde.';
+        END IF;
+
+        INSERT INTO public.public_booking_attempts (dni, ip_address, attempted_at)
+        VALUES (v_clean_dni, v_client_ip, NOW());
+    END;
 
     v_doctor_id := p_booking->>'doctor_id';
     SELECT * INTO v_doc
@@ -2481,13 +2764,20 @@ BEGIN
     -- Acotar duración del turno de forma segura (entre 15 y 60 minutos)
     v_duration := LEAST(GREATEST(COALESCE((p_booking->>'duration')::int, v_doc.slot_duration, 30), 15), 60);
 
-    -- Buscar o crear paciente en padrón (previniendo oráculo de enumeración A3-04)
-    SELECT id, name, dni, email INTO v_existing_pat
+    -- Buscar o crear paciente en padrón con segundo factor (V3-A4)
+    SELECT id, name, dni, email, birth_date INTO v_existing_pat
     FROM public.patients
     WHERE regexp_replace(dni, '\D', '', 'g') = v_clean_dni
     LIMIT 1;
 
     IF v_existing_pat.id IS NOT NULL THEN
+        -- V3-A4: Si la ficha ya existe, verificar que coincida la fecha de nacimiento para evitar usurpación
+        IF v_existing_pat.birth_date IS NOT NULL THEN
+            IF p_booking->>'patient_birth_date' IS NULL 
+               OR (p_booking->>'patient_birth_date')::date != v_existing_pat.birth_date THEN
+                RAISE EXCEPTION 'Los datos no coinciden con la ficha registrada. Verifique su fecha de nacimiento o comuníquese con secretaría.';
+            END IF;
+        END IF;
         v_patient_id := v_existing_pat.id;
     ELSE
         v_patient_id := 'pat-' || gen_random_uuid()::text;
@@ -2598,7 +2888,13 @@ FOR INSERT WITH CHECK (
     bucket_id = 'medical_records' AND (
         public.is_superadmin() OR
         public.is_administrative() OR
-        public.is_doctor() OR
+        (
+            public.is_doctor() AND
+            public.doctor_treats_patient(
+                (storage.foldername(name))[1],
+                public.get_current_doctor_id()
+            )
+        ) OR
         (
             auth.uid() IS NOT NULL AND
             EXISTS (
@@ -2622,20 +2918,25 @@ ALTER TABLE public.cash_shifts REPLICA IDENTITY FULL;
 ALTER TABLE public.cash_movements REPLICA IDENTITY FULL;
 
 DO $$
+DECLARE
+    tbl text;
+    tables text[] := ARRAY[
+        'patients', 'appointments', 'consultations',
+        'electronic_prescriptions', 'imaging_studies',
+        'cash_shifts', 'cash_movements', 'patient_files'
+    ];
 BEGIN
     IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
-        ALTER PUBLICATION supabase_realtime ADD TABLE public.patients;
-        ALTER PUBLICATION supabase_realtime ADD TABLE public.appointments;
-        ALTER PUBLICATION supabase_realtime ADD TABLE public.consultations;
-        ALTER PUBLICATION supabase_realtime ADD TABLE public.electronic_prescriptions;
-        ALTER PUBLICATION supabase_realtime ADD TABLE public.imaging_studies;
-        ALTER PUBLICATION supabase_realtime ADD TABLE public.cash_shifts;
-        ALTER PUBLICATION supabase_realtime ADD TABLE public.cash_movements;
+        FOREACH tbl IN ARRAY tables LOOP
+            BEGIN
+                EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I', tbl);
+            EXCEPTION
+                WHEN duplicate_object THEN NULL;
+                WHEN undefined_object THEN NULL;
+                WHEN OTHERS THEN NULL;
+            END;
+        END LOOP;
     END IF;
-EXCEPTION
-    WHEN duplicate_object THEN NULL;
-    WHEN undefined_object THEN NULL;
-    WHEN OTHERS THEN NULL;
 END $$;
 
 -- ====================================================================

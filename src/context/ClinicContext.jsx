@@ -629,7 +629,8 @@ export const ClinicProvider = ({ children }) => {
           remoteRehabPlans,
           remoteRehabSessions,
           remoteInvoices,
-          remoteCashShifts
+          remoteCashShifts,
+          remoteProfiles
         ] = await Promise.allSettled([
           dataService.fetchAppointments(),
           dataService.fetchPatients(),
@@ -648,7 +649,8 @@ export const ClinicProvider = ({ children }) => {
           dataService.fetchRehabPlans(),
           dataService.fetchRehabSessions(),
           dataService.fetchInvoices(),
-          dataService.fetchCashShifts()
+          dataService.fetchCashShifts(),
+          dataService.fetchProfiles()
         ]);
 
         if (!isMounted) return;
@@ -701,6 +703,40 @@ export const ClinicProvider = ({ children }) => {
         }
         if (remoteCashShifts.status === 'fulfilled' && Array.isArray(remoteCashShifts.value) && remoteCashShifts.value.length > 0) {
           setCashClosures(remoteCashShifts.value);
+        }
+        if (remoteProfiles.status === 'fulfilled' && Array.isArray(remoteProfiles.value) && remoteProfiles.value.length > 0) {
+          const docsList = (remoteDocs.status === 'fulfilled' && Array.isArray(remoteDocs.value)) ? remoteDocs.value : [];
+          const mappedUsers = remoteProfiles.value.map((prof) => {
+            const role = prof.role || 'administrative';
+            const isDoc = role === 'doctor';
+            const isSuper = role === 'superadmin';
+            const matchedDoc = docsList.find(
+              (d) => d.userId === prof.id || (d.email && prof.email && d.email.toLowerCase() === prof.email.toLowerCase())
+            );
+            return {
+              id: prof.id,
+              authUserId: prof.id,
+              name: `${prof.firstName || ''} ${prof.lastName || ''}`.trim() || prof.email,
+              fullName: `${prof.firstName || ''} ${prof.lastName || ''}`.trim() || prof.email,
+              email: prof.email,
+              role: isDoc
+                ? (matchedDoc?.specialty ? `Médico ${matchedDoc.specialty}` : 'Profesional Médico')
+                : isSuper
+                  ? 'Dirección Médica / Superadmin'
+                  : 'Secretaría / Administración',
+              adminType: role,
+              doctorId: matchedDoc?.id || null,
+              specialty: matchedDoc?.specialty || '',
+              sisaLicense: matchedDoc?.sisaLicense || '',
+              mfaEnabled: true,
+              status: prof.isActive !== false ? 'Activo' : 'Inactivo',
+              lastAccess: 'Registrado en Supabase',
+              avatar: isDoc
+                ? 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80'
+                : 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80'
+            };
+          });
+          setUsers(mappedUsers);
         }
       } catch (err) {
         console.warn('Supabase initial hydration notice:', err);
@@ -1325,6 +1361,48 @@ export const ClinicProvider = ({ children }) => {
   // Alias for PaymentModal compatibility
   const addInvoice = addArcaInvoice;
 
+  // V3-M3: Emisión de Nota de Crédito / Anulación de Facturas conforme normativa fiscal y Ley 26.529
+  const issueCreditNote = async (invoiceId, reason) => {
+    try {
+      let ncRecord = null;
+      if (dataService.isLive()) {
+        ncRecord = await dataService.issueCreditNote(invoiceId, reason);
+      } else {
+        const orig = invoices.find((i) => i.id === invoiceId);
+        ncRecord = {
+          id: `nc-${Date.now()}`,
+          invoiceNumber: `NC-B0001-${Date.now().toString().slice(-6)}`,
+          cae: `7429${Date.now().toString().slice(-10)}`,
+          caeVto: getTodayArgentina(),
+          ptoVta: orig?.ptoVta || 1,
+          tipoCmp: orig?.tipoCmp === 1 ? 3 : orig?.tipoCmp === 6 ? 8 : 13,
+          date: getTodayArgentina(),
+          patientId: orig?.patientId || null,
+          patientName: orig?.patientName || 'Paciente',
+          dni: orig?.dni || '-',
+          total: orig?.total || 0,
+          subtotal: orig?.subtotal || 0,
+          concept: `Nota de Crédito por anulación de comprobante ${orig?.invoiceNumber || invoiceId}: ${reason}`,
+          paymentMethod: orig?.paymentMethod || 'Efectivo',
+          status: 'Emitida',
+          relatedInvoiceId: invoiceId,
+          arcaValidated: true
+        };
+      }
+      setInvoices((prev) => [
+        ncRecord,
+        ...prev.map((i) => (i.id === invoiceId ? { ...i, status: 'Anulada' } : i))
+      ]);
+      logAudit('CREATE', 'Facturación ARCA', invoiceId, `Emisión de Nota de Crédito vinculada a comprobante ${invoiceId}: ${reason}`);
+      addToast('Nota de Crédito Emitida', `Comprobante ${ncRecord.invoiceNumber || 'emitido'} registrado con éxito.`, 'success');
+      return ncRecord;
+    } catch (err) {
+      console.error('Error al emitir nota de crédito:', err);
+      addToast('Error al Emitir Nota de Crédito', err?.message || 'No se pudo anular el comprobante.', 'error');
+      throw err;
+    }
+  };
+
   // --- PACIENTES & TURNOS ---
   const addAppointment = async (appData) => {
     const newId = `app-${Date.now()}`;
@@ -1505,7 +1583,18 @@ export const ClinicProvider = ({ children }) => {
     );
     if (dataService.isLive()) {
       try {
-        await dataService.updatePatient(patientId, { files: updatedFiles });
+        // V3-B4: Registrar en tabla inmutable patient_files (Ley 26.529 / Art. 18)
+        await dataService.addPatientFileRecord({
+          patientId,
+          fileName: fileObj.name || fileObj.fileName,
+          fileUrl: fileObj.storagePath || fileObj.url || '',
+          fileType: fileObj.type || fileObj.fileType || null,
+          fileSize: fileObj.size || fileObj.fileSize || null,
+          category: fileObj.category || 'general',
+          sha256Hash: fileObj.hashSha256 || fileObj.hash || null,
+          uploadedBy: currentDoctor?.id || authAdmin?.id || null
+        });
+        await dataService.updatePatient(patientId, { files: updatedFiles }).catch(() => {});
       } catch (err) {
         console.error('Error al persistir adjunto en Supabase:', err);
         setPatients(previousPatients);
@@ -2415,11 +2504,45 @@ export const ClinicProvider = ({ children }) => {
     addToast('Usuario Actualizado', 'Los datos y credenciales fueron actualizados correctamente.', 'success');
   };
 
-  const addUser = (userData) => {
-    const newId = `usr-${Date.now()}`;
+  const addUser = async (userData) => {
+    let createdAuthId = null;
+    if (dataService.isLive()) {
+      try {
+        const nameParts = (userData.fullName || userData.name || '').trim().split(' ');
+        const firstName = nameParts[0] || 'Usuario';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        const role = userData.adminType === 'superadmin' ? 'superadmin' : userData.adminType === 'doctor' ? 'doctor' : 'administrative';
+
+        const res = await dataService.adminCreateUser({
+          email: userData.email,
+          password: userData.password,
+          firstName,
+          lastName,
+          role,
+          doctorId: userData.doctorId || null
+        });
+        if (res?.user_id) {
+          createdAuthId = res.user_id;
+        }
+        if (role === 'doctor' && userData.doctorId && createdAuthId) {
+          try {
+            await dataService.linkDoctorAccount(userData.doctorId, createdAuthId);
+          } catch (linkErr) {
+            console.warn('Aviso al vincular médico:', linkErr);
+          }
+        }
+      } catch (err) {
+        console.error('Error al crear usuario en Supabase Auth:', err);
+        addToast('Error de Autenticación', 'No se pudo crear la cuenta en Supabase Auth: ' + (err.message || ''), 'error');
+        throw err;
+      }
+    }
+
+    const newId = createdAuthId || `usr-${Date.now()}`;
     const { password, ...safeUserData } = userData;
     const newUser = {
       id: newId,
+      authUserId: createdAuthId || newId,
       status: 'Activo',
       mfaEnabled: true,
       lastAccess: 'Nunca',
@@ -2441,7 +2564,7 @@ export const ClinicProvider = ({ children }) => {
     console.warn('Cambio de usuario deshabilitado por seguridad (CITRA-003). Se requiere iniciar sesión formalmente.');
   };
 
-  // --- AUTENTICACIÓN PACIENTES Y ADMINISTRADORES (V2-A6) ---
+  // --- AUTENTICACIÓN PACIENTES Y ADMINISTRADORES (V2-A6 / V3-M4) ---
   const loginPatient = async (dniOrEmail, password) => {
     const cleanInput = (dniOrEmail || '').trim().toLowerCase();
     if (!cleanInput) {
@@ -2454,6 +2577,10 @@ export const ClinicProvider = ({ children }) => {
     }
 
     if (dataService.isLive()) {
+      if (!cleanInput.includes('@')) {
+        addToast('Ingreso con Correo Electrónico', 'En el portal conectado a Supabase Auth debe ingresar con su correo electrónico registrado.', 'warning');
+        return { success: false, message: 'Debe ingresar con su correo electrónico registrado.' };
+      }
       try {
         const { session, user } = await dataService.signInWithPassword(cleanInput, password);
         if (!session && !user) {
@@ -2503,21 +2630,39 @@ export const ClinicProvider = ({ children }) => {
 
   const registerPatient = async (patientData) => {
     try {
-      const newPat = await addPatient({
-        ...patientData,
-        registeredAt: patientData.registeredAt || getTodayArgentina()
-      });
-      if (!newPat) {
+      if (dataService.isLive() && patientData.email && patientData.password) {
+        const nameParts = (patientData.name || '').trim().split(' ');
+        const firstName = nameParts[0] || patientData.name;
+        const lastName = nameParts.slice(1).join(' ') || '';
+        await dataService.signUp(patientData.email.trim(), patientData.password, {
+          first_name: firstName,
+          last_name: lastName
+        });
+      }
+
+      // V3-A1: Si ya existe una ficha cargada por Secretaría, reutilizarla para el portal
+      const cleanDni = (patientData.dni || '').replace(/\./g, '').trim();
+      const existingPat = patients.find((p) => (p.dni || '').replace(/\./g, '').trim() === cleanDni);
+
+      let effectivePat = existingPat;
+      if (!existingPat) {
+        effectivePat = await addPatient({
+          ...patientData,
+          registeredAt: patientData.registeredAt || getTodayArgentina()
+        });
+      }
+
+      if (!effectivePat) {
         addToast('Error de Registro', 'No se pudo completar el registro del paciente.', 'error');
         return null;
       }
       setAuthRole('patient');
-      setAuthPatient(newPat);
-      setCurrentPortalPatient(newPat);
+      setAuthPatient(effectivePat);
+      setCurrentPortalPatient(effectivePat);
       setIsAuthModalOpen(false);
-      logAudit('REGISTER', 'Portal Pacientes', newPat.dni, `Registro de nuevo paciente: ${newPat.name}`);
-      addToast('Registro Exitoso', `¡Bienvenido/a a CITRA, ${newPat.name}! Tu cuenta está lista.`, 'success');
-      return newPat;
+      logAudit('REGISTER', 'Portal Pacientes', effectivePat.dni, `Registro de nuevo paciente: ${effectivePat.name}`);
+      addToast('Registro Exitoso', `¡Bienvenido/a a CITRA, ${effectivePat.name}! Tu cuenta ha sido registrada.`, 'success');
+      return effectivePat;
     } catch (err) {
       console.error('Error en registerPatient:', err);
       addToast('Error de Registro', err?.message || 'No se pudo registrar el paciente.', 'error');
@@ -3031,6 +3176,7 @@ export const ClinicProvider = ({ children }) => {
         revokeConsentForm,
         addArcaInvoice,
         addInvoice,
+        issueCreditNote,
         addRehabPlan,
         updateRehabPlan,
         addRehabSession,

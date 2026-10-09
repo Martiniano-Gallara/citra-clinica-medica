@@ -471,11 +471,17 @@ export const DoctorsManager = ({ initialTab }) => {
           doctorId: effectiveDocId,
           status: effectiveActive ? 'Activo' : 'Inactivo'
         });
-        if (effectiveDocId && matchedUser.authUserId) {
-          dataService.linkDoctorAccount(effectiveDocId, matchedUser.authUserId).catch(e => console.warn('linkDoctorAccount error:', e));
+        const targetUserId = matchedUser.authUserId || (matchedUser.id && matchedUser.id.length > 20 ? matchedUser.id : null);
+        if (effectiveDocId && targetUserId) {
+          try {
+            await dataService.linkDoctorAccount(effectiveDocId, targetUserId);
+            addToast('Cuenta Vinculada', 'Profesional vinculado formalmente en Supabase con su cuenta de Auth.', 'success');
+          } catch (linkErr) {
+            console.warn('Aviso al vincular médico existente:', linkErr);
+          }
         }
       } else if (addUser) {
-        addUser({
+        const createdUser = await addUser({
           name: docName.trim(),
           fullName: docName.trim(),
           email: cleanEmail,
@@ -486,9 +492,19 @@ export const DoctorsManager = ({ initialTab }) => {
           specialty: finalSpecialty,
           status: effectiveActive ? 'Activo' : 'Inactivo'
         });
+        const targetUserId = createdUser?.authUserId || (createdUser?.id && createdUser.id.length > 20 ? createdUser.id : null);
+        if (effectiveDocId && targetUserId) {
+          try {
+            await dataService.linkDoctorAccount(effectiveDocId, targetUserId);
+            addToast('Cuenta Vinculada', 'Profesional registrado y vinculado con Supabase Auth.', 'success');
+          } catch (linkErr) {
+            console.warn('Aviso al vincular nuevo médico:', linkErr);
+          }
+        }
       }
     } catch (uErr) {
       console.error('Error al sincronizar usuario de médico:', uErr);
+      addToast('Aviso de Cuenta', 'Error al sincronizar la cuenta de acceso del profesional: ' + (uErr.message || ''), 'warning');
     }
 
     addToast(

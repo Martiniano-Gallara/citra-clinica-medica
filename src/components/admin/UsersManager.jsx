@@ -111,7 +111,7 @@ export const UsersManager = () => {
     setIsAddModalOpen(true);
   };
 
-  const handleCreateUser = (e) => {
+  const handleCreateUser = async (e) => {
     e.preventDefault();
     if (!newUserData.name || !newUserData.email) {
       if (addToast) addToast('Datos Incompletos', 'Ingrese el nombre y correo institucional.', 'warning');
@@ -120,27 +120,31 @@ export const UsersManager = () => {
 
     const secureInitialPassword = newUserData.password?.trim() || generateSecureTempPassword();
 
-    if (typeof addUser === 'function') {
-      addUser({
-        ...newUserData,
-        password: secureInitialPassword,
-        fullName: newUserData.fullName || newUserData.name,
-        avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80'
-      });
-    }
+    try {
+      if (typeof addUser === 'function') {
+        await addUser({
+          ...newUserData,
+          password: secureInitialPassword,
+          fullName: newUserData.fullName || newUserData.name,
+          avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80'
+        });
+      }
 
-    setIsAddModalOpen(false);
-    setNewUserData({
-      name: '',
-      fullName: '',
-      email: '',
-      role: '',
-      specialty: '',
-      adminType: 'doctor',
-      sisaLicense: '',
-      password: ''
-    });
-    if (addToast) addToast('Usuario Creado', `Usuario creado exitosamente con clave provisoria segura.`, 'success');
+      setIsAddModalOpen(false);
+      setNewUserData({
+        name: '',
+        fullName: '',
+        email: '',
+        role: '',
+        specialty: '',
+        adminType: 'doctor',
+        sisaLicense: '',
+        password: ''
+      });
+      if (addToast) addToast('Usuario Creado', `Usuario creado exitosamente con clave provisoria segura.`, 'success');
+    } catch (err) {
+      console.error('Error al crear usuario:', err);
+    }
   };
 
   const handleOpenPasswordModal = (u) => {
@@ -158,7 +162,8 @@ export const UsersManager = () => {
     }
     try {
       if (typeof updateUser === 'function') {
-        await updateUser(passwordUser.id, { password: newPasswordValue.trim() });
+        const targetId = passwordUser.authUserId || passwordUser.id;
+        await updateUser(targetId, { password: newPasswordValue.trim() });
       }
       setIsPasswordModalOpen(false);
       setPasswordUser(null);

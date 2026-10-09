@@ -245,9 +245,25 @@ async function testAppointments(db) {
   assert(rows[0].paciente_nombre === 'Pedro Turno Test', 'JOIN: datos del paciente coherentes');
   assert(rows[0].doctor_nombre === doc.name,      'JOIN: datos del profesional coherentes');
 
-  // 5. Cancelación de turno
-  await exec(db, `UPDATE appointments SET status = 'cancelado', cancel_reason = 'Reprogramación solicitada' WHERE id = $1`, [apptId]);
-  rows = await query(db, `SELECT status, cancel_reason FROM appointments WHERE id = $1`, [apptId]);
+  // 5. Inmutabilidad de turno atendido (V3-M2 / Ley 26.529)
+  let attendedCancelBlocked = false;
+  try {
+    await exec(db, `UPDATE appointments SET status = 'cancelado', cancel_reason = 'Intento ilegal' WHERE id = $1`, [apptId]);
+  } catch (err) {
+    attendedCancelBlocked = err.message.includes('Un turno atendido no puede modificarse');
+  }
+  assert(attendedCancelBlocked, 'V3-M2: Trigger bloquea cancelación de un turno ya atendido (Ley 26.529)');
+
+  // 5b. Cancelación válida de turno pendiente
+  const apptCancelId = 'appt-e2e-cancel-' + Date.now();
+  await exec(db, `
+    INSERT INTO appointments
+      (id, patient_id, patient_name, patient_dni, doctor_id, doctor_name, doctor_specialty, date, time, status, reason)
+    VALUES ($1, $2, 'Pedro Turno Test', $3, $4, $5, $6, $7, '17:00:00', 'pendiente', 'Consulta a cancelar')
+  `, [apptCancelId, patId, patDni, doc.id, doc.name, doc.specialty_name, apptDate]);
+
+  await exec(db, `UPDATE appointments SET status = 'cancelado', cancel_reason = 'Reprogramación solicitada' WHERE id = $1`, [apptCancelId]);
+  rows = await query(db, `SELECT status, cancel_reason FROM appointments WHERE id = $1`, [apptCancelId]);
   assert(rows[0].status === 'cancelado' && rows[0].cancel_reason === 'Reprogramación solicitada', 'Cancelación con motivo persiste');
 
   // 6. Test de Doble Reserva (A-03 / idx_unique_active_appointment)
@@ -829,6 +845,218 @@ async function testAuditV3Remediations(db) {
     SELECT user_id FROM public.audit_logs WHERE action = 'SPOOF_TEST' ORDER BY id DESC LIMIT 1
   `);
   assert(auditEntry[0].user_id === docReqAuth, 'A3-17: Trigger protect_audit_logs fuerza user_id = auth.uid() impidiendo falsificación de autoría');
+
+  // ─── V3-A1: Alta de usuario con ficha existente y prevención de usurpación por DNI ───
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', '', false),
+           set_config('request.jwt.claim.role', '', false),
+           set_config('request.jwt.claim.email', '', false)
+  `);
+  const patExistId = 'pat-existing-' + Date.now();
+  const patExistEmail = 'mariana.existente@citra.test';
+  await exec(db, `
+    INSERT INTO public.patients (id, name, dni, email, phone)
+    VALUES ($1, 'Mariana Existente', '28999888', $2, '3576112233')
+  `, [patExistId, patExistEmail]);
+
+  // Simular creación en auth.users con el mismo email
+  const newAuthUserUid = '88888888-1111-2222-3333-888888888888';
+  let authInsertOk = false;
+  try {
+    await exec(db, `
+      INSERT INTO auth.users (id, email) VALUES ($1, $2)
+    `, [newAuthUserUid, patExistEmail]);
+    authInsertOk = true;
+  } catch (err) {
+    authInsertOk = false;
+  }
+  assert(authInsertOk, 'V3-A1: handle_new_auth_user no bloquea el alta cuando coincide con paciente existente');
+
+  const linkedPat = await query(db, `SELECT user_id FROM public.patients WHERE id = $1`, [patExistId]);
+  assert(linkedPat[0]?.user_id === newAuthUserUid, 'V3-A1: Ficha de paciente se auto-vincula correctamente por email');
+
+  // Intento de apropiación solo por DNI en metadata: NO debe vincular
+  const victimPatDni = '19888777';
+  const spoofPatId = 'pat-victim-dni-' + Date.now();
+  await exec(db, `
+    INSERT INTO public.patients (id, name, dni, email, phone)
+    VALUES ($1, 'Carlos Victima', $2, 'carlos.original@citra.test', '3576000000')
+  `, [spoofPatId, victimPatDni]);
+
+  const attackerAuthUid = '99999999-1111-2222-3333-999999999999';
+  await exec(db, `
+    INSERT INTO auth.users (id, email, raw_user_meta_data)
+    VALUES ($1, 'atacante.dni@otro.com', jsonb_build_object('dni', $2::text))
+  `, [attackerAuthUid, victimPatDni]);
+
+  const victimCheck = await query(db, `SELECT user_id FROM public.patients WHERE id = $1`, [spoofPatId]);
+  assert(victimCheck[0]?.user_id === null, 'V3-A1: Metadata DNI en auth.users no vincula ficha ajena (prevención usurpación)');
+
+  // ─── V3-A2: approve_access_grant autorización estricta ───
+  const grantV3Id = 'grant-v3-' + Date.now();
+  await exec(db, `
+    INSERT INTO public.clinical_access_grants
+      (id, patient_id, patient_name, patient_dni, requester_doctor_id, requester_doctor_name, target_doctor_id, target_doctor_name, justification, status)
+    VALUES
+      ($1, $2, 'Carlos Victima', $3, 'doc-2', 'Dr. Solicitante', 'doc-1', 'Dr. Blanco', 'Interconsulta traumatología', 'pending')
+  `, [grantV3Id, spoofPatId, victimPatDni]);
+
+  // Paciente intenta aprobar
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', $1, false),
+           set_config('request.jwt.claim.role', 'authenticated', false),
+           set_config('request.jwt.claim.email', 'paciente@citra.test', false)
+  `, [newAuthUserUid]);
+
+  let patientApproveBlocked = false;
+  try {
+    await exec(db, `SELECT public.approve_access_grant($1)`, [grantV3Id]);
+  } catch (err) {
+    patientApproveBlocked = err.message.includes('Solo el profesional destinatario o un superadministrador');
+  }
+  assert(patientApproveBlocked, 'V3-A2: approve_access_grant rechaza invocación por usuario no médico (rol paciente)');
+
+  // Reset claims para configuración de Dr. Blanco
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', '', false),
+           set_config('request.jwt.claim.role', '', false),
+           set_config('request.jwt.claim.email', '', false)
+  `);
+
+  // Target doctor legítimo (Dr. Blanco) aprueba
+  const blancoUser = await query(db, `SELECT user_id FROM public.doctors WHERE id = 'doc-1'`);
+  const blancoUid = blancoUser[0].user_id;
+
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', $1, false),
+           set_config('request.jwt.claim.role', 'authenticated', false),
+           set_config('request.jwt.claim.email', 'dr.blanco@citra.com.ar', false)
+  `, [blancoUid]);
+
+  let blancoApproveSuccess = false;
+  try {
+    const res = await query(db, `SELECT public.approve_access_grant($1) AS res`, [grantV3Id]);
+    blancoApproveSuccess = res[0]?.res?.status === 'approved';
+  } catch (err) {
+    blancoApproveSuccess = false;
+  }
+  assert(blancoApproveSuccess, 'V3-A2: Profesional destinatario (doc-1) aprueba válidamente el acceso clínico');
+
+  // Re-aprobación de solicitud ya resuelta es rechazada
+  let reApproveBlocked = false;
+  try {
+    await exec(db, `SELECT public.approve_access_grant($1)`, [grantV3Id]);
+  } catch (err) {
+    reApproveBlocked = err.message.includes('ya fue resuelta');
+  }
+  assert(reApproveBlocked, 'V3-A2: Re-aprobación de solicitud no pendiente es rechazada');
+
+  // ─── V3-A4: Reserva pública con segundo factor en DNI existente ───
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', '', false),
+           set_config('request.jwt.claim.role', 'anon', false),
+           set_config('request.jwt.claim.email', '', false)
+  `);
+
+  const bookedPatId = 'pat-booked-' + Date.now();
+  const bookedDni = '35123456';
+  await exec(db, `
+    INSERT INTO public.patients (id, name, dni, birth_date, email, phone)
+    VALUES ($1, 'Elena Registrada', $2, '1990-05-15', 'elena@citra.test', '3576123456')
+  `, [bookedPatId, bookedDni]);
+
+  // Intento de reserva pública con DNI de Elena pero sin fecha de nacimiento
+  let spoofBookingBlocked = false;
+  try {
+    await query(db, `
+      SELECT public.create_public_booking($1::jsonb) AS res
+    `, [JSON.stringify({
+      patient_name: 'Impostor',
+      patient_dni: bookedDni,
+      doctor_id: 'doc-1',
+      date: apptDate,
+      time: '16:30:00'
+    })]);
+  } catch (err) {
+    spoofBookingBlocked = err.message.includes('Los datos no coinciden con la ficha registrada');
+  }
+  assert(spoofBookingBlocked, 'V3-A4: create_public_booking rechaza colgar turnos en DNI existente sin fecha de nacimiento');
+
+  // Reserva pública con fecha de nacimiento correcta: permitida
+  let legitimateBookingOk = false;
+  try {
+    const bRes = await query(db, `
+      SELECT public.create_public_booking($1::jsonb) AS res
+    `, [JSON.stringify({
+      patient_name: 'Elena Registrada',
+      patient_dni: bookedDni,
+      patient_birth_date: '1990-05-15',
+      doctor_id: 'doc-1',
+      date: apptDate,
+      time: '16:30:00'
+    })]);
+    legitimateBookingOk = bRes[0]?.res?.success === true;
+  } catch (err) {
+    legitimateBookingOk = false;
+  }
+  assert(legitimateBookingOk, 'V3-A4: create_public_booking con segundo factor correcto valida y genera el turno');
+
+  // ─── V3-M3: issue_credit_note para anulación fiscal ───
+  const testInvId = 'inv-test-nc-' + Date.now();
+  await exec(db, `
+    INSERT INTO public.invoices (id, invoice_number, cae, cae_vto, pto_vta, tipo_cmp, patient_name, dni, total, subtotal, concept)
+    VALUES ($1, 'FC-00012345', 'CAE12345678901', CURRENT_DATE + 10, 1, 6, 'Paciente Test', '11223344', 15000, 15000, 'Consulta Especializada')
+  `, [testInvId]);
+
+  // Usuario administrativo emite nota de crédito
+  const adminAuth = 'aaaaaaaa-1111-2222-3333-aaaaaaaaaaaa';
+  await exec(db, `
+    INSERT INTO auth.users (id, email) VALUES ($1, 'admin@citra.test') ON CONFLICT (id) DO NOTHING
+  `, [adminAuth]);
+  await exec(db, `
+    INSERT INTO public.profiles (id, email, first_name, last_name, role)
+    VALUES ($1, 'admin@citra.test', 'Admin', 'CITRA', 'administrative')
+    ON CONFLICT (id) DO UPDATE SET role = 'administrative'
+  `, [adminAuth]);
+
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', $1, false),
+           set_config('request.jwt.claim.role', 'authenticated', false),
+           set_config('request.jwt.claim.email', 'admin@citra.test', false)
+  `, [adminAuth]);
+
+  const ncRes = await query(db, `SELECT public.issue_credit_note($1, 'Error en el cobro') AS res`, [testInvId]);
+  assert(ncRes[0]?.res?.success === true, 'V3-M3: issue_credit_note emite exitosamente nota de crédito vinculada');
+
+  // Intento de re-emitir NC sobre la misma factura es bloqueado
+  let doubleNcBlocked = false;
+  try {
+    await exec(db, `SELECT public.issue_credit_note($1, 'Segundo intento')`, [testInvId]);
+  } catch (err) {
+    doubleNcBlocked = err.message.includes('ya posee una nota de crédito');
+  }
+  assert(doubleNcBlocked, 'V3-M3: Bloqueo de duplicación de notas de crédito sobre un mismo comprobante');
+
+  // ─── V3-B4: patient_files inmutable (Append-Only) ───
+  const fileId = 'file-v3-' + Date.now();
+  await exec(db, `
+    INSERT INTO public.patient_files (id, patient_id, file_name, file_url, file_size, mime_type, sha256)
+    VALUES ($1, $2, 'radiografia_rodilla.jpg', 'https://storage/rodilla.jpg', 1048576, 'image/jpeg', 'a1b2c3d4e5')
+  `, [fileId, patExistId]);
+
+  const fileRows = await query(db, `SELECT * FROM public.patient_files WHERE id = $1`, [fileId]);
+  assert(fileRows.length === 1 && fileRows[0].file_name === 'radiografia_rodilla.jpg', 'V3-B4: patient_files almacena adjunto de forma persistente');
+
+  // Intento de UPDATE en patient_files
+  let fileUpdateBlocked = false;
+  try {
+    await exec(db, `UPDATE public.patient_files SET file_name = 'alterado.jpg' WHERE id = $1`, [fileId]);
+    const updatedCheck = await query(db, `SELECT file_name FROM public.patient_files WHERE id = $1`, [fileId]);
+    fileUpdateBlocked = updatedCheck[0].file_name === 'radiografia_rodilla.jpg';
+  } catch (err) {
+    fileUpdateBlocked = true;
+  }
+  assert(fileUpdateBlocked, 'V3-B4: patient_files es inmutable (UPDATE bloqueado)');
 }
 
 // ─── RUNNER PRINCIPAL ─────────────────────────────────────────────────────────

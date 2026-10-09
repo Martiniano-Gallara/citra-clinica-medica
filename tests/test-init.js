@@ -80,9 +80,13 @@ async function testSql() {
   let sql = fs.readFileSync(path.join(process.cwd(), 'supabase', 'COMPLETE_SUPABASE_SETUP.sql'), 'utf8');
   sql = sql.replace(/CREATE EXTENSION IF NOT EXISTS "uuid-ossp";/g, '-- uuid-ossp native in PG16');
 
-  console.log('Executing setup SQL...');
+  console.log('Executing setup SQL (Pass 1)...');
   await db.exec(sql);
-  console.log('Setup SQL executed successfully!');
+  console.log('Setup SQL Pass 1 executed successfully!');
+
+  console.log('Executing setup SQL (Pass 2 - Testing V3-B1 Idempotency)...');
+  await db.exec(sql);
+  console.log('Setup SQL Pass 2 executed successfully! Idempotency confirmed.');
 }
 
 testSql().catch(err => {

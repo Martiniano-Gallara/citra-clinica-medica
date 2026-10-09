@@ -1,6 +1,6 @@
-// Supabase Edge Function: admin-set-password (V2-A9 / V3-B2)
-// Permite a los superadministradores modificar credenciales de otros usuarios
-// utilizando la clave de servicio (service_role) resguardada en el backend.
+// Supabase Edge Function: admin-create-user (V3-A3)
+// Permite a superadministradores crear usuarios formales en Supabase Auth
+// y asignarles sus roles institucionales mediante la clave service_role.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
@@ -45,8 +45,8 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
-    if (userError || !user) {
+    const { data: { user: callerUser }, error: userError } = await userClient.auth.getUser();
+    if (userError || !callerUser) {
       return new Response(JSON.stringify({ error: "Usuario no autenticado" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -57,7 +57,7 @@ serve(async (req) => {
     const { data: profile, error: profileErr } = await userClient
       .from("profiles")
       .select("role, first_name, last_name")
-      .eq("id", user.id)
+      .eq("id", callerUser.id)
       .single();
 
     if (profileErr || profile?.role !== "superadmin") {
@@ -67,23 +67,19 @@ serve(async (req) => {
       });
     }
 
-    const { user_id, password } = await req.json();
-    if (!user_id || !password) {
-      return new Response(JSON.stringify({ error: "user_id y password son requeridos" }), {
+    const { email, password, first_name, last_name, role, doctor_id } = await req.json();
+    if (!email || !password) {
+      return new Response(JSON.stringify({ error: "email y password son requeridos" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // V3-B2: Longitud mínima de contraseña obligatoria
-    if (typeof password !== "string" || password.trim().length < 12) {
-      return new Response(
-        JSON.stringify({ error: "La contraseña institucional debe contener al menos 12 caracteres." }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+    if (typeof password !== "string" || password.trim().length < 8) {
+      return new Response(JSON.stringify({ error: "La contraseña debe tener al menos 8 caracteres" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Cliente admin con clave service_role
@@ -91,31 +87,66 @@ serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: updatedUser, error: updateError } = await adminClient.auth.admin.updateUserById(
-      user_id,
-      { password }
-    );
+    // Crear usuario en GoTrue
+    const { data: created, error: createError } = await adminClient.auth.admin.createUser({
+      email: email.trim().toLowerCase(),
+      password: password.trim(),
+      email_confirm: true,
+      user_metadata: {
+        first_name: first_name || "",
+        last_name: last_name || "",
+        role: role || "patient",
+      },
+    });
 
-    if (updateError) {
-      return new Response(JSON.stringify({ error: updateError.message }), {
+    if (createError || !created?.user) {
+      return new Response(JSON.stringify({ error: createError?.message || "Error al crear usuario" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // V3-B2: Registro formal e inmutable en audit_logs
+    const newUserId = created.user.id;
+    const assignedRole = ["superadmin", "doctor", "administrative", "patient"].includes(role)
+      ? role
+      : "doctor";
+
+    // Actualizar rol en profiles
+    await adminClient.from("profiles").upsert({
+      id: newUserId,
+      email: email.trim().toLowerCase(),
+      first_name: first_name || split_part(email, "@", 1),
+      last_name: last_name || "",
+      role: assignedRole,
+      is_active: true,
+    });
+
+    // Si viene doctor_id, vincularlo
+    if (doctor_id) {
+      await adminClient.rpc("link_doctor_account", {
+        p_doctor_id: doctor_id,
+        p_user_id: newUserId,
+      });
+    }
+
+    // Registro en auditoría
     await adminClient.from("audit_logs").insert({
-      action: "ADMIN_SET_PASSWORD",
+      action: "ADMIN_CREATE_USER",
       resource: "Usuarios & Roles",
-      target_id: user_id,
-      user_id: user.id,
-      user_name: `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || user.email,
+      target_id: newUserId,
+      user_id: callerUser.id,
+      user_name: `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || callerUser.email,
       user_role: "superadmin",
-      details: `Modificación de credenciales para usuario destino ID ${user_id}`,
+      details: `Alta de cuenta institucional para ${email} con rol ${assignedRole}${doctor_id ? ` vinculado a ${doctor_id}` : ""}`,
     });
 
     return new Response(
-      JSON.stringify({ success: true, message: "Contraseña actualizada exitosamente", user_id: updatedUser.user.id }),
+      JSON.stringify({
+        success: true,
+        user_id: newUserId,
+        email: email.trim().toLowerCase(),
+        role: assignedRole,
+      }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

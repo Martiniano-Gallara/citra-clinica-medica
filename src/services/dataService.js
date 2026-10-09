@@ -154,6 +154,37 @@ export const dataService = {
     return true;
   },
 
+  async adminCreateUser(userData) {
+    if (isSupabaseConfigured && supabase) {
+      const { email, password, firstName, lastName, role, doctorId } = userData;
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: {
+          email,
+          password,
+          first_name: firstName,
+          last_name: lastName,
+          role,
+          doctor_id: doctorId
+        }
+      });
+      if (error) throw error;
+      return data;
+    }
+    return { success: true, user_id: `usr-${Date.now()}` };
+  },
+
+  async fetchProfiles() {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email, first_name, last_name, role, is_active')
+        .order('first_name', { ascending: true });
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return [];
+  },
+
   // --- TURNOS (APPOINTMENTS) ---
   async fetchAppointments(filterDoctorId = null, limit = 500) {
     if (isSupabaseConfigured && supabase) {
@@ -501,7 +532,7 @@ export const dataService = {
     if (isSupabaseConfigured && supabase) {
       let query = supabase.from('patients').select('*', { count: 'exact' });
       if (searchTerm && typeof searchTerm === 'string' && searchTerm.trim()) {
-        const cleanTerm = searchTerm.trim().replace(/[,()]/g, '');
+        const cleanTerm = searchTerm.trim().replace(/[,()\\%_.]/g, '');
         if (cleanTerm) {
           query = query.or(`name.ilike.%${cleanTerm}%,dni.ilike.%${cleanTerm}%,email.ilike.%${cleanTerm}%`);
         }
@@ -1583,6 +1614,58 @@ export const dataService = {
       return toCamelCase(data);
     }
     return null;
+  },
+
+  // V3-M3: Emisión autorizada de Notas de Crédito / Anulaciones en ARCA
+  async issueCreditNote(invoiceId, reason) {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.rpc('issue_credit_note', {
+        p_invoice_id: invoiceId,
+        p_reason: reason
+      });
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return {
+      id: `nc-${Date.now()}`,
+      invoiceNumber: `NC-B0001-${Date.now().toString().slice(-6)}`,
+      relatedInvoiceId: invoiceId,
+      status: 'Emitida',
+      concept: `Nota de Crédito: ${reason}`
+    };
+  },
+
+  // V3-B4: Registro inmutable de adjuntos en patient_files (Ley 26.529)
+  async addPatientFileRecord(fileData) {
+    if (isSupabaseConfigured && supabase) {
+      const payload = {
+        patient_id: fileData.patientId,
+        file_name: fileData.fileName || fileData.name,
+        file_url: fileData.fileUrl || fileData.url || '',
+        file_type: fileData.fileType || fileData.type || null,
+        file_size: fileData.fileSize || fileData.size || null,
+        category: fileData.category || 'general',
+        sha256_hash: fileData.sha256Hash || fileData.hash || null,
+        uploaded_by: fileData.uploadedBy || null
+      };
+      const { data, error } = await supabase.from('patient_files').insert([payload]).select().single();
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return fileData;
+  },
+
+  async fetchPatientFiles(patientId) {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('patient_files')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('uploaded_at', { ascending: false });
+      if (error) throw error;
+      return toCamelCase(data);
+    }
+    return [];
   },
 
   // --- STORAGE / ARCHIVOS MÉDICOS (A-09 / ALTA-09 / V2-A4: Bucket canónico medical_records) ---
