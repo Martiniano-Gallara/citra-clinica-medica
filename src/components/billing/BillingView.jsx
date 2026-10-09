@@ -101,10 +101,27 @@ export const BillingView = () => {
     }
   };
 
-  // KPI Calculations (Soporta total de Supabase y amount de mocks)
+  // V4-M1: Identificar comprobantes anulados mediante Notas de Crédito emitidas
+  const voidedInvoiceIds = useMemo(() => {
+    const set = new Set();
+    invoices.forEach((inv) => {
+      if (inv.relatedInvoiceId) {
+        set.add(inv.relatedInvoiceId);
+      }
+    });
+    return set;
+  }, [invoices]);
+
+  const isCreditNoteCheck = (inv) => Boolean(inv.relatedInvoiceId || [3, 8, 13].includes(Number(inv.tipoCmp)));
+  const getInvSign = (inv) => (isCreditNoteCheck(inv) ? -1 : 1);
   const getInvTotal = (inv) => Number(inv.total ?? inv.amount ?? 0);
-  const totalFacturado = invoices.reduce((acc, curr) => acc + getInvTotal(curr), 0);
-  const totalHonorariosMedicos = invoices.reduce((acc, curr) => acc + (curr.doctorHonorario || Math.round(getInvTotal(curr) * 0.75)), 0);
+
+  // V4-M1: Las Notas de Crédito restan del total facturado y honorarios médicos
+  const totalFacturado = invoices.reduce((acc, curr) => acc + (getInvSign(curr) * getInvTotal(curr)), 0);
+  const totalHonorariosMedicos = invoices.reduce((acc, curr) => {
+    const hon = curr.doctorHonorario || Math.round(getInvTotal(curr) * 0.75);
+    return acc + (getInvSign(curr) * hon);
+  }, 0);
   const totalRetencionClinica = totalFacturado - totalHonorariosMedicos;
 
   const filteredInvoices = invoices.filter((inv) => {
@@ -124,17 +141,17 @@ export const BillingView = () => {
     const headers = ['Nro Comprobante', 'CAE ARCA', 'Vto CAE', 'Fecha', 'Paciente', 'DNI', 'Concepto', 'Médico', 'Importe ($)', 'Honorario Médico ($)', 'Metodo Pago', 'Estado'];
     const rows = filteredInvoices.map((i) => [
       sanitizeCsvCell(i.invoiceNumber),
-      sanitizeCsvCell(i.cae || '74291823901248'),
-      sanitizeCsvCell(i.caeVto || '2026-09-07'),
+      sanitizeCsvCell(i.cae || (isCreditNoteCheck(i) ? 'Pendiente de CAE' : 'Sin CAE')),
+      sanitizeCsvCell(i.caeVto || '-'),
       sanitizeCsvCell(i.date),
       sanitizeCsvCell(i.patientName),
       sanitizeCsvCell(i.dni || '-'),
       sanitizeCsvCell(i.concept),
       sanitizeCsvCell(i.doctorName || '-'),
-      sanitizeCsvCell(getInvTotal(i)),
-      sanitizeCsvCell(i.doctorHonorario || Math.round(getInvTotal(i) * 0.75)),
+      sanitizeCsvCell(getInvSign(i) * getInvTotal(i)),
+      sanitizeCsvCell(getInvSign(i) * (i.doctorHonorario || Math.round(getInvTotal(i) * 0.75))),
       sanitizeCsvCell(i.paymentMethod),
-      sanitizeCsvCell(i.status)
+      sanitizeCsvCell(voidedInvoiceIds.has(i.id) ? 'Anulada' : i.status)
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.map(sanitizeCsvCell).join(','), ...rows.map((e) => e.join(','))].join('\n');
@@ -309,8 +326,8 @@ export const BillingView = () => {
               </thead>
               <tbody>
                 {filteredInvoices.map((inv) => {
-                  const isCreditNote = Boolean(inv.relatedInvoiceId || [3, 8, 13].includes(inv.tipoCmp));
-                  const isVoided = inv.status === 'Anulada';
+                  const isCreditNote = isCreditNoteCheck(inv);
+                  const isVoided = inv.status === 'Anulada' || voidedInvoiceIds.has(inv.id);
 
                   return (
                     <tr key={inv.id}>
@@ -325,11 +342,11 @@ export const BillingView = () => {
                         </div>
                       </td>
                       <td>
-                        <div style={{ fontFamily: 'monospace', fontWeight: 700, color: isCreditNote ? '#b45309' : '#076ABC' }}>
-                          {inv.cae || '74291823901248'}
+                        <div style={{ fontFamily: 'monospace', fontWeight: 700, color: isCreditNote ? '#b45309' : (inv.cae ? '#076ABC' : '#64748b') }}>
+                          {inv.cae ? inv.cae : (isCreditNote ? 'Pendiente de CAE' : 'Sin CAE')}
                         </div>
                         <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-                          Vto: {inv.caeVto || '2026-09-07'}
+                          {inv.caeVto ? `Vto: ${inv.caeVto}` : 'Vto: —'}
                         </div>
                       </td>
                       <td style={{ whiteSpace: 'nowrap' }}>{inv.date}</td>
@@ -348,7 +365,7 @@ export const BillingView = () => {
                       </td>
                       <td>
                         <div style={{ fontWeight: 700, color: isCreditNote ? '#b45309' : '#065f46' }}>
-                          ${(inv.doctorHonorario || Math.round(getInvTotal(inv) * 0.75)).toLocaleString()}
+                          {isCreditNote ? `-$${(inv.doctorHonorario || Math.round(getInvTotal(inv) * 0.75)).toLocaleString()}` : `$${(inv.doctorHonorario || Math.round(getInvTotal(inv) * 0.75)).toLocaleString()}`}
                         </div>
                       </td>
                       <td>

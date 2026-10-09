@@ -477,7 +477,8 @@ export const DoctorsManager = ({ initialTab }) => {
             await dataService.linkDoctorAccount(effectiveDocId, targetUserId);
             addToast('Cuenta Vinculada', 'Profesional vinculado formalmente en Supabase con su cuenta de Auth.', 'success');
           } catch (linkErr) {
-            console.warn('Aviso al vincular médico existente:', linkErr);
+            console.error('Error al vincular médico existente:', linkErr);
+            addToast('Error de Vinculación', 'No se pudo vincular la cuenta en el servidor: ' + (linkErr.message || ''), 'error');
           }
         }
       } else if (addUser) {

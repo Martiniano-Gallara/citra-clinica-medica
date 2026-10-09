@@ -470,12 +470,12 @@ CREATE TABLE IF NOT EXISTS cash_movements (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 21. Facturación y Comprobantes Fiscales ARCA (A-04, A3-16)
+-- 21. Facturación y Comprobantes Fiscales ARCA (A-04, A3-16, V4-A4)
 CREATE TABLE IF NOT EXISTS invoices (
     id VARCHAR(50) PRIMARY KEY,
     invoice_number VARCHAR(50) NOT NULL,
-    cae VARCHAR(30) NOT NULL,
-    cae_vto DATE NOT NULL,
+    cae VARCHAR(30),
+    cae_vto DATE,
     pto_vta INTEGER NOT NULL DEFAULT 1,
     tipo_cmp INTEGER NOT NULL DEFAULT 6,
     date DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -492,6 +492,10 @@ CREATE TABLE IF NOT EXISTS invoices (
     related_invoice_id VARCHAR(50) REFERENCES invoices(id) ON DELETE RESTRICT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.invoices ALTER COLUMN cae DROP NOT NULL;
+ALTER TABLE public.invoices ALTER COLUMN cae_vto DROP NOT NULL;
+CREATE SEQUENCE IF NOT EXISTS public.seq_credit_note_number START 1;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_invoice_number ON invoices (pto_vta, tipo_cmp, invoice_number);
 
@@ -515,20 +519,22 @@ BEGIN
         first_name = COALESCE(EXCLUDED.first_name, profiles.first_name),
         last_name = COALESCE(EXCLUDED.last_name, profiles.last_name);
 
-    -- Auto-vincular ficha de paciente por email verificado (V3-A1)
-    -- Se elimina la vinculación insegura por metadata->>'dni'
-    BEGIN
-        PERFORM set_config('citra.system_link', 'on', true);
-        UPDATE public.patients
-        SET user_id = NEW.id
-        WHERE user_id IS NULL
-          AND email IS NOT NULL
-          AND lower(email) = lower(NEW.email);
-        PERFORM set_config('citra.system_link', 'off', true);
-    EXCEPTION WHEN OTHERS THEN
-        PERFORM set_config('citra.system_link', 'off', true);
-        RAISE WARNING 'Aviso: No se pudo auto-vincular la ficha del paciente en handle_new_auth_user: %', SQLERRM;
-    END;
+    -- V4-A1: Auto-vincular ficha de paciente SOLO SI el email ya fue confirmado
+    -- (e.g. cuentas creadas por admin-create-user con email_confirm: true)
+    IF NEW.email_confirmed_at IS NOT NULL THEN
+        BEGIN
+            PERFORM set_config('citra.system_link', 'on', true);
+            UPDATE public.patients
+            SET user_id = NEW.id
+            WHERE user_id IS NULL
+              AND email IS NOT NULL
+              AND lower(email) = lower(NEW.email);
+            PERFORM set_config('citra.system_link', 'off', true);
+        EXCEPTION WHEN OTHERS THEN
+            PERFORM set_config('citra.system_link', 'off', true);
+            RAISE WARNING 'Aviso: No se pudo auto-vincular la ficha del paciente en handle_new_auth_user: %', SQLERRM;
+        END;
+    END IF;
 
     RETURN NEW;
 END;
@@ -538,6 +544,38 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
 AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE FUNCTION public.handle_new_auth_user();
+
+-- V4-A1: Auto-vincular ficha al confirmar el correo (AFTER UPDATE OF email_confirmed_at)
+CREATE OR REPLACE FUNCTION public.link_patient_on_confirm()
+RETURNS TRIGGER
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF OLD.email_confirmed_at IS NULL AND NEW.email_confirmed_at IS NOT NULL THEN
+        BEGIN
+            PERFORM set_config('citra.system_link', 'on', true);
+            UPDATE public.patients
+            SET user_id = NEW.id
+            WHERE user_id IS NULL
+              AND email IS NOT NULL
+              AND lower(email) = lower(NEW.email);
+            PERFORM set_config('citra.system_link', 'off', true);
+        EXCEPTION WHEN OTHERS THEN
+            PERFORM set_config('citra.system_link', 'off', true);
+            RAISE WARNING 'Aviso: No se pudo auto-vincular la ficha del paciente en link_patient_on_confirm: %', SQLERRM;
+        END;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_auth_user_confirmed ON auth.users;
+CREATE TRIGGER on_auth_user_confirmed
+AFTER UPDATE OF email_confirmed_at ON auth.users
+FOR EACH ROW
+WHEN (OLD.email_confirmed_at IS NULL AND NEW.email_confirmed_at IS NOT NULL)
+EXECUTE FUNCTION public.link_patient_on_confirm();
 
 -- A3-05: El rol solo es válido si el usuario se encuentra activo
 CREATE OR REPLACE FUNCTION public.get_auth_role()
@@ -633,7 +671,7 @@ REVOKE EXECUTE ON FUNCTION public.get_current_patient_id() FROM anon;
 REVOKE EXECUTE ON FUNCTION public.doctor_treats_patient(VARCHAR, VARCHAR) FROM anon, public;
 GRANT EXECUTE ON FUNCTION public.doctor_treats_patient(VARCHAR, VARCHAR) TO authenticated;
 
--- V2-A3: Vinculación formal de credenciales de auth a profesionales médicos por Superadmin
+-- V2-A3 / V4-M2: Vinculación formal de credenciales de auth a profesionales médicos por Superadmin o service_role
 CREATE OR REPLACE FUNCTION public.link_doctor_account(
     p_doctor_id VARCHAR,
     p_user_id UUID
@@ -644,7 +682,7 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 BEGIN
-    IF NOT public.is_superadmin() THEN
+    IF NOT (public.is_superadmin() OR auth.role() = 'service_role' OR current_setting('request.jwt.claim.role', true) = 'service_role') THEN
         RAISE EXCEPTION 'Solo un superadministrador puede vincular cuentas de profesionales';
     END IF;
 
@@ -672,7 +710,7 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.link_doctor_account(VARCHAR, UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.link_doctor_account(VARCHAR, UUID) TO authenticated, service_role;
 REVOKE EXECUTE ON FUNCTION public.link_doctor_account(VARCHAR, UUID) FROM anon;
 
 -- T9: Vista segura de catálogo público de profesionales (oculta datos confidenciales y honorarios)
@@ -723,9 +761,9 @@ ALTER TABLE cash_shifts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cash_movements ENABLE ROW LEVEL SECURITY;
 
 
--- V3-B4: Tabla inmutable de archivos y adjuntos de pacientes (Append-Only)
+-- V3-B4 / V4-A2: Tabla inmutable de archivos y adjuntos de pacientes (Append-Only)
 CREATE TABLE IF NOT EXISTS public.patient_files (
-    id VARCHAR(50) PRIMARY KEY,
+    id VARCHAR(50) PRIMARY KEY DEFAULT ('pf-' || gen_random_uuid()::text),
     patient_id VARCHAR(50) NOT NULL REFERENCES public.patients(id) ON DELETE RESTRICT,
     file_name VARCHAR(255) NOT NULL,
     file_url TEXT NOT NULL,
@@ -733,9 +771,12 @@ CREATE TABLE IF NOT EXISTS public.patient_files (
     mime_type VARCHAR(100),
     sha256 VARCHAR(64),
     category VARCHAR(50) DEFAULT 'Adjunto',
-    uploaded_by UUID REFERENCES auth.users(id),
+    uploaded_by UUID DEFAULT auth.uid() REFERENCES auth.users(id),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.patient_files ALTER COLUMN id SET DEFAULT ('pf-' || gen_random_uuid()::text);
+ALTER TABLE public.patient_files ALTER COLUMN uploaded_by SET DEFAULT auth.uid();
 
 ALTER TABLE public.patient_files ENABLE ROW LEVEL SECURITY;
 
@@ -750,15 +791,19 @@ FOR SELECT USING (
     ))
 );
 
+-- V4-B1: uploaded_by IS NOT DISTINCT FROM auth.uid() impide falsificar autoría del archivo adjunto
 DROP POLICY IF EXISTS "patient_files_insert_policy" ON public.patient_files;
 CREATE POLICY "patient_files_insert_policy" ON public.patient_files
 FOR INSERT WITH CHECK (
-    public.is_administrative() OR
-    (public.is_doctor() AND public.doctor_treats_patient(patient_id, public.get_current_doctor_id())) OR
-    (auth.uid() IS NOT NULL AND EXISTS (
-        SELECT 1 FROM public.patients p
-        WHERE p.id = patient_files.patient_id AND p.user_id = auth.uid()
-    ))
+    (
+        public.is_administrative() OR
+        (public.is_doctor() AND public.doctor_treats_patient(patient_id, public.get_current_doctor_id())) OR
+        (auth.uid() IS NOT NULL AND EXISTS (
+            SELECT 1 FROM public.patients p
+            WHERE p.id = patient_files.patient_id AND p.user_id = auth.uid()
+        ))
+    )
+    AND uploaded_by IS NOT DISTINCT FROM auth.uid()
 );
 
 DROP POLICY IF EXISTS "patient_files_update_policy" ON public.patient_files;
@@ -781,15 +826,43 @@ FOR EACH ROW EXECUTE FUNCTION public.protect_patient_file_immutability();
 
 ALTER TABLE public.patient_files FORCE ROW LEVEL SECURITY;
 
+-- V4-A2: Migración idempotente de archivos históricos almacenados en patients.files
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'patients' AND column_name = 'files'
+    ) THEN
+        INSERT INTO public.patient_files (id, patient_id, file_name, file_url, file_size, mime_type, sha256, category, created_at)
+        SELECT 
+            COALESCE(elem->>'id', 'pf-' || gen_random_uuid()::text),
+            p.id,
+            COALESCE(elem->>'name', elem->>'fileName', 'archivo'),
+            COALESCE(elem->>'storagePath', elem->>'url', ''),
+            (elem->>'size')::bigint,
+            COALESCE(elem->>'type', elem->>'mimeType'),
+            COALESCE(elem->>'sha256', elem->>'hashSha256', elem->>'hash'),
+            COALESCE(elem->>'category', 'Adjunto'),
+            NOW()
+        FROM public.patients p,
+             jsonb_array_elements(CASE WHEN jsonb_typeof(p.files::jsonb) = 'array' THEN p.files::jsonb ELSE '[]'::jsonb END) AS elem
+        ON CONFLICT (id) DO NOTHING;
+    END IF;
+EXCEPTION WHEN OTHERS THEN
+    NULL;
+END $$;
+
 -- 23. Políticas RLS Endurecidas (Sin duplicados y con status = 'cancelado')
 
--- A3-05: Protección de ciclo de vida de perfiles (solo superadmin puede modificar roles o reactivar)
+-- A3-05: Protección de ciclo de vida de perfiles (solo superadmin o service_role puede modificar roles o reactivar)
 CREATE OR REPLACE FUNCTION public.protect_profile_lifecycle()
 RETURNS TRIGGER AS $$
 BEGIN
     IF TG_OP = 'UPDATE' AND auth.uid() IS NOT NULL THEN
-        IF (NEW.role IS DISTINCT FROM OLD.role OR NEW.is_active IS DISTINCT FROM OLD.is_active) AND NOT public.is_superadmin() THEN
-            RAISE EXCEPTION 'Solo un superadministrador puede modificar el rol o el estado activo/inactivo de una cuenta.';
+        IF (NEW.role IS DISTINCT FROM OLD.role OR NEW.is_active IS DISTINCT FROM OLD.is_active) THEN
+            IF NOT (public.is_superadmin() OR auth.role() = 'service_role' OR current_setting('request.jwt.claim.role', true) = 'service_role' OR current_setting('citra.system_link', true) = 'on') THEN
+                RAISE EXCEPTION 'Solo un superadministrador puede modificar el rol o el estado activo/inactivo de una cuenta.';
+            END IF;
         END IF;
     END IF;
     RETURN NEW;
@@ -1250,7 +1323,7 @@ BEGIN
     END;
 
     v_nc_id := 'nc-' || gen_random_uuid()::text;
-    v_nc_number := 'NC-' || LPAD((floor(random() * 900000 + 100000))::text, 8, '0');
+    v_nc_number := 'NC-' || LPAD(nextval('public.seq_credit_note_number')::text, 8, '0');
 
     INSERT INTO public.invoices (
         id, invoice_number, cae, cae_vto, pto_vta, tipo_cmp, date,
@@ -1259,8 +1332,8 @@ BEGIN
     ) VALUES (
         v_nc_id,
         v_nc_number,
-        'CAE-NC-' || upper(substr(md5(random()::text), 1, 14)),
-        CURRENT_DATE + INTERVAL '10 days',
+        NULL,
+        NULL,
         v_orig.pto_vta,
         v_nc_tipo_cmp,
         CURRENT_DATE,
@@ -1271,8 +1344,8 @@ BEGIN
         v_orig.subtotal,
         'Nota de Crédito por: ' || v_orig.concept || ' (Motivo: ' || COALESCE(p_reason, 'Anulación') || ')',
         v_orig.payment_method,
-        'Anulada / Nota de Crédito',
-        true,
+        'Pendiente de CAE',
+        false,
         v_orig.id
     );
 
@@ -1291,7 +1364,10 @@ BEGIN
         'success', true,
         'credit_note_id', v_nc_id,
         'credit_note_number', v_nc_number,
-        'related_invoice_id', v_orig.id
+        'related_invoice_id', v_orig.id,
+        'status', 'Pendiente de CAE',
+        'cae', NULL,
+        'arca_validated', false
     );
 END;
 $$;
@@ -2643,6 +2719,25 @@ CREATE INDEX IF NOT EXISTS idx_booking_attempts_dni_time ON public.public_bookin
 ALTER TABLE public.public_booking_attempts ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.public_booking_attempts FROM anon, authenticated;
 
+-- V4-A3: Solicitudes de reserva pública que requieren validación presencial/telefónica por Secretaría
+CREATE TABLE IF NOT EXISTS public.booking_requests (
+    id VARCHAR(50) PRIMARY KEY DEFAULT ('req-' || gen_random_uuid()::text),
+    dni VARCHAR(20) NOT NULL,
+    patient_name VARCHAR(200) NOT NULL,
+    phone VARCHAR(50),
+    email VARCHAR(150),
+    doctor_id VARCHAR(50) REFERENCES public.doctors(id) ON DELETE SET NULL,
+    doctor_name VARCHAR(150),
+    date DATE NOT NULL,
+    time TIME NOT NULL,
+    status VARCHAR(30) DEFAULT 'Pendiente de confirmación',
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE public.booking_requests ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "booking_requests_admin_policy" ON public.booking_requests;
+CREATE POLICY "booking_requests_admin_policy" ON public.booking_requests FOR ALL USING (public.is_administrative());
+
 -- A3-04: Reserva pública con validación de horarios, días laborales, duración acotada y respuesta uniforme
 CREATE OR REPLACE FUNCTION public.create_public_booking(
     p_booking JSONB
@@ -2680,10 +2775,28 @@ BEGIN
     END IF;
 
     DECLARE
+        v_headers JSONB;
         v_client_ip TEXT;
         v_ip_count INT;
     BEGIN
-        v_client_ip := COALESCE(NULLIF(p_booking->>'client_ip', ''), inet_client_addr()::text, '127.0.0.1');
+        BEGIN
+            v_headers := NULLIF(current_setting('request.headers', true), '')::jsonb;
+        EXCEPTION WHEN OTHERS THEN
+            v_headers := NULL;
+        END;
+
+        -- V4-A3: Leer IP de cabeceras seguras del gateway o socket, ignorando client_ip del JSON
+        v_client_ip := COALESCE(
+            v_headers->>'cf-connecting-ip',
+            v_headers->>'x-forwarded-for',
+            v_headers->>'x-real-ip',
+            inet_client_addr()::text,
+            '127.0.0.1'
+        );
+        IF position(',' IN v_client_ip) > 0 THEN
+            v_client_ip := trim(split_part(v_client_ip, ',', 1));
+        END IF;
+
         SELECT count(*) INTO v_ip_count
         FROM public.public_booking_attempts
         WHERE ip_address = v_client_ip AND attempted_at > NOW() - INTERVAL '1 hour';
@@ -2764,19 +2877,18 @@ BEGIN
     -- Acotar duración del turno de forma segura (entre 15 y 60 minutos)
     v_duration := LEAST(GREATEST(COALESCE((p_booking->>'duration')::int, v_doc.slot_duration, 30), 15), 60);
 
-    -- Buscar o crear paciente en padrón con segundo factor (V3-A4)
+    -- Buscar o crear paciente en padrón con segundo factor (V3-A4 / V4-A3)
     SELECT id, name, dni, email, birth_date INTO v_existing_pat
     FROM public.patients
     WHERE regexp_replace(dni, '\D', '', 'g') = v_clean_dni
     LIMIT 1;
 
     IF v_existing_pat.id IS NOT NULL THEN
-        -- V3-A4: Si la ficha ya existe, verificar que coincida la fecha de nacimiento para evitar usurpación
-        IF v_existing_pat.birth_date IS NOT NULL THEN
-            IF p_booking->>'patient_birth_date' IS NULL 
-               OR (p_booking->>'patient_birth_date')::date != v_existing_pat.birth_date THEN
-                RAISE EXCEPTION 'Los datos no coinciden con la ficha registrada. Verifique su fecha de nacimiento o comuníquese con secretaría.';
-            END IF;
+        -- V4-A3: Si la ficha ya existe, verificar que coincida la fecha de nacimiento obligatoriamente
+        IF v_existing_pat.birth_date IS NULL 
+           OR p_booking->>'patient_birth_date' IS NULL 
+           OR (p_booking->>'patient_birth_date')::date != v_existing_pat.birth_date THEN
+            RAISE EXCEPTION 'Los datos no coinciden con la ficha registrada. Verifique su fecha de nacimiento o comuníquese con secretaría.';
         END IF;
         v_patient_id := v_existing_pat.id;
     ELSE

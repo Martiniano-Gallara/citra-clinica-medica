@@ -13,7 +13,8 @@ function getCorsHeaders(req: Request) {
     "http://localhost:5173",
     "http://localhost:3000",
   ];
-  const isAllowed = allowed.includes(origin) || origin.endsWith(".vercel.app");
+  // V4-B2: Restringir orígenes permitidos evitando comodines genéricos
+  const isAllowed = allowed.includes(origin) || /^https:\/\/citra(-[a-z0-9-]+)?\.vercel\.app$/.test(origin);
   return {
     "Access-Control-Allow-Origin": isAllowed ? origin : (allowed[0] ?? "*"),
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -75,12 +76,23 @@ serve(async (req) => {
       });
     }
 
-    if (typeof password !== "string" || password.trim().length < 8) {
-      return new Response(JSON.stringify({ error: "La contraseña debe tener al menos 8 caracteres" }), {
+    // V4-B2: Clave mínima homogénea de 12 caracteres
+    if (typeof password !== "string" || password.trim().length < 12) {
+      return new Response(JSON.stringify({ error: "La contraseña institucional debe contener al menos 12 caracteres" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // V4-M2: Validación estricta de roles institucionales (no asignar 'doctor' por omisión)
+    const validRoles = ["superadmin", "doctor", "administrative", "patient"];
+    if (role && !validRoles.includes(role)) {
+      return new Response(JSON.stringify({ error: `Rol inválido. Debe ser uno de: ${validRoles.join(", ")}` }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const assignedRole = role || "patient";
 
     // Cliente admin con clave service_role
     const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
@@ -95,7 +107,7 @@ serve(async (req) => {
       user_metadata: {
         first_name: first_name || "",
         last_name: last_name || "",
-        role: role || "patient",
+        role: assignedRole,
       },
     });
 
@@ -107,26 +119,38 @@ serve(async (req) => {
     }
 
     const newUserId = created.user.id;
-    const assignedRole = ["superadmin", "doctor", "administrative", "patient"].includes(role)
-      ? role
-      : "doctor";
+
+    // V4-M2: JavaScript nativo email.split("@")[0] en lugar de SQL split_part
+    const defaultFirstName = first_name || (email.includes("@") ? email.split("@")[0] : email);
 
     // Actualizar rol en profiles
-    await adminClient.from("profiles").upsert({
+    const { error: profileUpsertError } = await adminClient.from("profiles").upsert({
       id: newUserId,
       email: email.trim().toLowerCase(),
-      first_name: first_name || split_part(email, "@", 1),
+      first_name: defaultFirstName,
       last_name: last_name || "",
       role: assignedRole,
       is_active: true,
     });
 
-    // Si viene doctor_id, vincularlo
+    if (profileUpsertError) {
+      console.error("Error al actualizar perfil:", profileUpsertError);
+      await adminClient.auth.admin.deleteUser(newUserId);
+      return new Response(JSON.stringify({ error: "Error al actualizar perfil: " + profileUpsertError.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Si viene doctor_id, vincularlo mediante service_role
     if (doctor_id) {
-      await adminClient.rpc("link_doctor_account", {
+      const { error: linkErr } = await adminClient.rpc("link_doctor_account", {
         p_doctor_id: doctor_id,
         p_user_id: newUserId,
       });
+      if (linkErr) {
+        console.warn("Aviso al vincular cuenta de profesional en admin-create-user:", linkErr);
+      }
     }
 
     // Registro en auditoría

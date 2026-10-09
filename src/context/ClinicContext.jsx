@@ -1361,19 +1361,24 @@ export const ClinicProvider = ({ children }) => {
   // Alias for PaymentModal compatibility
   const addInvoice = addArcaInvoice;
 
-  // V3-M3: Emisión de Nota de Crédito / Anulación de Facturas conforme normativa fiscal y Ley 26.529
+  // V3-M3 / V4-M1: Emisión de Nota de Crédito / Anulación de Facturas conforme normativa fiscal y Ley 26.529
   const issueCreditNote = async (invoiceId, reason) => {
     try {
       let ncRecord = null;
       if (dataService.isLive()) {
         ncRecord = await dataService.issueCreditNote(invoiceId, reason);
+        // V4-M1: Recargar las facturas autoritativas desde el servidor
+        const liveInvoices = await dataService.fetchInvoices();
+        if (liveInvoices) {
+          setInvoices(liveInvoices);
+        }
       } else {
         const orig = invoices.find((i) => i.id === invoiceId);
         ncRecord = {
           id: `nc-${Date.now()}`,
-          invoiceNumber: `NC-B0001-${Date.now().toString().slice(-6)}`,
-          cae: `7429${Date.now().toString().slice(-10)}`,
-          caeVto: getTodayArgentina(),
+          invoiceNumber: `NC-0000000${(invoices.length + 1).toString().slice(-2)}`,
+          cae: null,
+          caeVto: null,
           ptoVta: orig?.ptoVta || 1,
           tipoCmp: orig?.tipoCmp === 1 ? 3 : orig?.tipoCmp === 6 ? 8 : 13,
           date: getTodayArgentina(),
@@ -1384,17 +1389,17 @@ export const ClinicProvider = ({ children }) => {
           subtotal: orig?.subtotal || 0,
           concept: `Nota de Crédito por anulación de comprobante ${orig?.invoiceNumber || invoiceId}: ${reason}`,
           paymentMethod: orig?.paymentMethod || 'Efectivo',
-          status: 'Emitida',
+          status: 'Pendiente de CAE',
           relatedInvoiceId: invoiceId,
-          arcaValidated: true
+          arcaValidated: false
         };
+        setInvoices((prev) => [
+          ncRecord,
+          ...prev.map((i) => (i.id === invoiceId ? { ...i, status: 'Anulada' } : i))
+        ]);
       }
-      setInvoices((prev) => [
-        ncRecord,
-        ...prev.map((i) => (i.id === invoiceId ? { ...i, status: 'Anulada' } : i))
-      ]);
       logAudit('CREATE', 'Facturación ARCA', invoiceId, `Emisión de Nota de Crédito vinculada a comprobante ${invoiceId}: ${reason}`);
-      addToast('Nota de Crédito Emitida', `Comprobante ${ncRecord.invoiceNumber || 'emitido'} registrado con éxito.`, 'success');
+      addToast('Nota de Crédito Emitida', `Comprobante ${ncRecord?.creditNoteNumber || ncRecord?.invoiceNumber || 'emitido'} registrado con éxito.`, 'success');
       return ncRecord;
     } catch (err) {
       console.error('Error al emitir nota de crédito:', err);
@@ -1583,18 +1588,16 @@ export const ClinicProvider = ({ children }) => {
     );
     if (dataService.isLive()) {
       try {
-        // V3-B4: Registrar en tabla inmutable patient_files (Ley 26.529 / Art. 18)
+        // V3-B4 / V4-A2: Registrar en tabla inmutable patient_files (Ley 26.529 / Art. 18)
         await dataService.addPatientFileRecord({
           patientId,
           fileName: fileObj.name || fileObj.fileName,
           fileUrl: fileObj.storagePath || fileObj.url || '',
-          fileType: fileObj.type || fileObj.fileType || null,
+          mimeType: fileObj.type || fileObj.fileType || null,
           fileSize: fileObj.size || fileObj.fileSize || null,
-          category: fileObj.category || 'general',
-          sha256Hash: fileObj.hashSha256 || fileObj.hash || null,
-          uploadedBy: currentDoctor?.id || authAdmin?.id || null
+          category: fileObj.category || 'Adjunto',
+          sha256: fileObj.hashSha256 || fileObj.hash || null
         });
-        await dataService.updatePatient(patientId, { files: updatedFiles }).catch(() => {});
       } catch (err) {
         console.error('Error al persistir adjunto en Supabase:', err);
         setPatients(previousPatients);
@@ -2628,45 +2631,58 @@ export const ClinicProvider = ({ children }) => {
     }
   };
 
+  // V4-M3: Registro seguro de pacientes en el Portal
   const registerPatient = async (patientData) => {
     try {
       if (dataService.isLive() && patientData.email && patientData.password) {
         const nameParts = (patientData.name || '').trim().split(' ');
         const firstName = nameParts[0] || patientData.name;
         const lastName = nameParts.slice(1).join(' ') || '';
-        await dataService.signUp(patientData.email.trim(), patientData.password, {
+        const signUpRes = await dataService.signUp(patientData.email.trim(), patientData.password, {
           first_name: firstName,
-          last_name: lastName
+          last_name: lastName,
+          dni: patientData.dni
         });
+
+        // V4-M3: Si no hay sesión inmediata (requiere confirmar email), no abrir portal visual ni alterar authRole
+        if (!signUpRes?.session) {
+          addToast('Confirmación Pendiente', 'Registro exitoso. Por favor revisá tu casilla de correo para confirmar tu cuenta antes de ingresar al portal.', 'info');
+          return { success: true, requiresEmailConfirmation: true };
+        }
+
+        // Si se devolvió sesión (confirmación desactivada o automática), obtener la ficha
+        const user = signUpRes.user;
+        const patientRecord = user?.id ? await dataService.fetchCurrentPatient(user.id) : null;
+        if (patientRecord) {
+          setAuthRole('patient');
+          setAuthPatient(patientRecord);
+          setCurrentPortalPatient(patientRecord);
+          setIsAuthModalOpen(false);
+          logAudit('REGISTER', 'Portal Pacientes', patientRecord.dni, `Registro de paciente: ${patientRecord.name}`);
+          addToast('Bienvenido a CITRA', `Hola, ${patientRecord.name}. Tu cuenta ha sido activada.`, 'success');
+          return { success: true, patient: patientRecord };
+        } else {
+          addToast('Registro Exitoso', 'Tu cuenta fue registrada. Ya podés iniciar sesión con tus credenciales.', 'success');
+          return { success: true };
+        }
       }
 
-      // V3-A1: Si ya existe una ficha cargada por Secretaría, reutilizarla para el portal
-      const cleanDni = (patientData.dni || '').replace(/\./g, '').trim();
-      const existingPat = patients.find((p) => (p.dni || '').replace(/\./g, '').trim() === cleanDni);
-
-      let effectivePat = existingPat;
-      if (!existingPat) {
-        effectivePat = await addPatient({
-          ...patientData,
-          registeredAt: patientData.registeredAt || getTodayArgentina()
-        });
-      }
-
-      if (!effectivePat) {
-        addToast('Error de Registro', 'No se pudo completar el registro del paciente.', 'error');
-        return null;
-      }
+      // Mock fallback cuando dataService no está conectado
+      const newPat = await addPatient({
+        ...patientData,
+        registeredAt: patientData.registeredAt || getTodayArgentina()
+      });
       setAuthRole('patient');
-      setAuthPatient(effectivePat);
-      setCurrentPortalPatient(effectivePat);
+      setAuthPatient(newPat);
+      setCurrentPortalPatient(newPat);
       setIsAuthModalOpen(false);
-      logAudit('REGISTER', 'Portal Pacientes', effectivePat.dni, `Registro de nuevo paciente: ${effectivePat.name}`);
-      addToast('Registro Exitoso', `¡Bienvenido/a a CITRA, ${effectivePat.name}! Tu cuenta ha sido registrada.`, 'success');
-      return effectivePat;
+      logAudit('REGISTER', 'Portal Pacientes', newPat.dni, `Registro de nuevo paciente: ${newPat.name}`);
+      addToast('Registro Exitoso', `¡Bienvenido/a a CITRA, ${newPat.name}! Tu cuenta ha sido registrada.`, 'success');
+      return { success: true, patient: newPat };
     } catch (err) {
       console.error('Error en registerPatient:', err);
       addToast('Error de Registro', err?.message || 'No se pudo registrar el paciente.', 'error');
-      return null;
+      return { success: false, message: err?.message };
     }
   };
 

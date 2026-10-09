@@ -68,7 +68,8 @@ async function bootstrapDB() {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       email TEXT,
       raw_user_meta_data JSONB DEFAULT '{}'::jsonb,
-      created_at TIMESTAMPTZ DEFAULT NOW()
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      email_confirmed_at TIMESTAMPTZ
     );
     CREATE OR REPLACE FUNCTION auth.uid() RETURNS UUID AS $$
       SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::UUID;
@@ -643,8 +644,8 @@ async function testAuditV2Remediations(db) {
 
   const newAuthPatUserId = '33333333-4444-5555-6666-777777777777';
   await exec(db, `
-    INSERT INTO auth.users (id, email, raw_user_meta_data)
-    VALUES ($1, $2, '{"dni":"45678912","first_name":"Paciente"}'::jsonb)
+    INSERT INTO auth.users (id, email, email_confirmed_at, raw_user_meta_data)
+    VALUES ($1, $2, NOW(), '{"dni":"45678912","first_name":"Paciente"}'::jsonb)
   `, [newAuthPatUserId, autolinkEmail]);
 
   const linkedPatCheck = await query(db, `SELECT user_id FROM patients WHERE id = $1`, [autolinkPatId]);
@@ -859,12 +860,12 @@ async function testAuditV3Remediations(db) {
     VALUES ($1, 'Mariana Existente', '28999888', $2, '3576112233')
   `, [patExistId, patExistEmail]);
 
-  // Simular creación en auth.users con el mismo email
+  // Simular creación en auth.users con el mismo email (V4-A1: sin confirmar email aún)
   const newAuthUserUid = '88888888-1111-2222-3333-888888888888';
   let authInsertOk = false;
   try {
     await exec(db, `
-      INSERT INTO auth.users (id, email) VALUES ($1, $2)
+      INSERT INTO auth.users (id, email, email_confirmed_at) VALUES ($1, $2, NULL)
     `, [newAuthUserUid, patExistEmail]);
     authInsertOk = true;
   } catch (err) {
@@ -872,8 +873,14 @@ async function testAuditV3Remediations(db) {
   }
   assert(authInsertOk, 'V3-A1: handle_new_auth_user no bloquea el alta cuando coincide con paciente existente');
 
+  // V4-A1: Ficha NO se vincula antes de confirmar el email
+  const unconfirmedPat = await query(db, `SELECT user_id FROM public.patients WHERE id = $1`, [patExistId]);
+  assert(unconfirmedPat[0]?.user_id === null, 'V4-A1: Ficha NO se vincula antes de confirmar el email');
+
+  // V4-A1: Confirmación de email vincula formalmente la ficha
+  await exec(db, `UPDATE auth.users SET email_confirmed_at = NOW() WHERE id = $1`, [newAuthUserUid]);
   const linkedPat = await query(db, `SELECT user_id FROM public.patients WHERE id = $1`, [patExistId]);
-  assert(linkedPat[0]?.user_id === newAuthUserUid, 'V3-A1: Ficha de paciente se auto-vincula correctamente por email');
+  assert(linkedPat[0]?.user_id === newAuthUserUid, 'V4-A1: Ficha de paciente se auto-vincula correctamente al confirmar el email');
 
   // Intento de apropiación solo por DNI en metadata: NO debe vincular
   const victimPatDni = '19888777';
@@ -1059,6 +1066,118 @@ async function testAuditV3Remediations(db) {
   assert(fileUpdateBlocked, 'V3-B4: patient_files es inmutable (UPDATE bloqueado)');
 }
 
+// ─── SUITE 7: REMEDIACIONES AUDITORÍA CITRA V4 (V4-A1..V4-B2) ──────────────────
+async function testAuditV4Remediations(db) {
+  section('AUDITORÍA CITRA V4 — Pruebas de Cumplimiento & Remediación Integral');
+
+  // Reset contexto a postgres / admin
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', '', false),
+           set_config('request.jwt.claim.role', '', false),
+           set_config('request.jwt.claim.email', '', false)
+  `);
+
+  const adminV4Auth = 'bbbbbbbb-4444-4444-4444-bbbbbbbbbbbb';
+  await exec(db, `
+    INSERT INTO auth.users (id, email, email_confirmed_at) VALUES ($1, 'admin.v4@citra.test', NOW()) ON CONFLICT (id) DO NOTHING
+  `, [adminV4Auth]);
+  await exec(db, `
+    INSERT INTO public.profiles (id, email, first_name, last_name, role)
+    VALUES ($1, 'admin.v4@citra.test', 'Admin', 'V4', 'administrative')
+    ON CONFLICT (id) DO UPDATE SET role = 'administrative'
+  `, [adminV4Auth]);
+
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', $1, false),
+           set_config('request.jwt.claim.role', 'authenticated', false),
+           set_config('request.jwt.claim.email', 'admin.v4@citra.test', false)
+  `, [adminV4Auth]);
+
+  // V4-A4: Emisión de NC con CAE NULL, status Pendiente de CAE y número secuencial
+  const invoiceV4Id = 'inv-v4-' + Date.now();
+  await exec(db, `
+    INSERT INTO public.invoices (id, invoice_number, cae, cae_vto, pto_vta, tipo_cmp, patient_name, dni, total, subtotal, concept)
+    VALUES ($1, 'FC-00099887', 'CAE99887766554', CURRENT_DATE + 10, 1, 6, 'Paciente Fiscal V4', '22334455', 25000, 25000, 'Cirugía Ambulatoria')
+  `, [invoiceV4Id]);
+
+  const ncV4Res = await query(db, `SELECT public.issue_credit_note($1, 'Anulación por error en concepto') AS res`, [invoiceV4Id]);
+  const ncId = ncV4Res[0]?.res?.credit_note_id;
+
+  const ncRow = await query(db, `SELECT * FROM public.invoices WHERE id = $1`, [ncId]);
+  assert(
+    ncRow.length === 1 &&
+    ncRow[0].cae === null &&
+    ncRow[0].cae_vto === null &&
+    ncRow[0].arca_validated === false &&
+    ncRow[0].status === 'Pendiente de CAE',
+    'V4-A4: issue_credit_note no inventa CAE y deja la NC como "Pendiente de CAE"'
+  );
+  assert(
+    ncRow[0].invoice_number.startsWith('NC-') && !isNaN(Number(ncRow[0].invoice_number.replace('NC-', ''))),
+    'V4-A4: Número de Nota de Crédito generado a partir de secuencia'
+  );
+
+  // V4-A2: patient_files autogenera ID por defecto y uploaded_by con auth.uid()
+  const patV4Id = 'pat-v4-files-' + Date.now();
+  await exec(db, `
+    INSERT INTO public.patients (id, name, dni, email)
+    VALUES ($1, 'Paciente Archivos V4', '33445588', 'paciente.v4@citra.test')
+  `, [patV4Id]);
+
+  await exec(db, `
+    INSERT INTO public.patient_files (patient_id, file_name, file_url, file_size, mime_type, sha256)
+    VALUES ($1, 'resonancia_columna.pdf', 'https://storage/columna.pdf', 5242880, 'application/pdf', 'hash-v4-sha256')
+  `, [patV4Id]);
+
+  const createdFileRows = await query(db, `SELECT * FROM public.patient_files WHERE patient_id = $1`, [patV4Id]);
+  assert(
+    createdFileRows.length === 1 &&
+    createdFileRows[0].id.startsWith('pf-') &&
+    createdFileRows[0].uploaded_by === adminV4Auth &&
+    createdFileRows[0].mime_type === 'application/pdf' &&
+    createdFileRows[0].sha256 === 'hash-v4-sha256',
+    'V4-A2: patient_files persiste con ID autogenerado, uploaded_by por defecto y columnas canónicas'
+  );
+
+  // V4-B1: Intento de falsificar uploaded_by es bloqueado por RLS
+  const impostorUid = 'cccccccc-5555-5555-5555-cccccccccccc';
+  let spoofFileBlocked = false;
+  try {
+    await exec(db, `
+      INSERT INTO public.patient_files (patient_id, file_name, file_url, uploaded_by)
+      VALUES ($1, 'estudio_falsificado.pdf', 'https://storage/fake.pdf', $2)
+    `, [patV4Id, impostorUid]);
+  } catch (err) {
+    spoofFileBlocked = true;
+  }
+  assert(spoofFileBlocked, 'V4-B1: Política RLS bloquea falsificación de uploaded_by en patient_files');
+
+  // V4-M2: service_role puede invocar link_doctor_account
+  await exec(db, `
+    SELECT set_config('request.jwt.claim.sub', '', false),
+           set_config('request.jwt.claim.role', 'service_role', false),
+           set_config('request.jwt.claim.email', '', false)
+  `);
+  const docServiceUserId = 'dddddddd-6666-6666-6666-dddddddddddd';
+  await exec(db, `
+    INSERT INTO auth.users (id, email, email_confirmed_at) VALUES ($1, 'doc.service@citra.test', NOW()) ON CONFLICT (id) DO NOTHING
+  `, [docServiceUserId]);
+  await exec(db, `
+    INSERT INTO public.profiles (id, email, first_name, last_name, role)
+    VALUES ($1, 'doc.service@citra.test', 'Doc', 'Service', 'patient')
+    ON CONFLICT (id) DO NOTHING
+  `, [docServiceUserId]);
+
+  let serviceLinkOk = false;
+  try {
+    const sLinkRes = await query(db, `SELECT public.link_doctor_account('doc-1', $1) AS res`, [docServiceUserId]);
+    serviceLinkOk = sLinkRes[0]?.res?.success === true;
+  } catch (err) {
+    serviceLinkOk = false;
+  }
+  assert(serviceLinkOk, 'V4-M2: link_doctor_account permite vinculación ejecutada por service_role');
+}
+
 // ─── RUNNER PRINCIPAL ─────────────────────────────────────────────────────────
 async function main() {
   console.log(`\n${C.bold}${C.cyan}╔══════════════════════════════════════════════════╗${C.reset}`);
@@ -1082,6 +1201,7 @@ async function main() {
   await testReferentialIntegrity(db);
   await testAuditV2Remediations(db);
   await testAuditV3Remediations(db);
+  await testAuditV4Remediations(db);
 
   // Resumen final
   const total = passed + failed;

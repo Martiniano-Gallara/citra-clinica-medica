@@ -29,7 +29,8 @@ async function testSql() {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       email TEXT,
       raw_user_meta_data JSONB DEFAULT '{}'::jsonb,
-      created_at TIMESTAMPTZ DEFAULT NOW()
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      email_confirmed_at TIMESTAMPTZ
     );
     CREATE OR REPLACE FUNCTION auth.uid() RETURNS UUID AS $$
       SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::UUID;

@@ -13,7 +13,8 @@ function getCorsHeaders(req: Request) {
     "http://localhost:5173",
     "http://localhost:3000",
   ];
-  const isAllowed = allowed.includes(origin) || origin.endsWith(".vercel.app");
+  // V4-B2: Restringir orígenes permitidos evitando comodines genéricos
+  const isAllowed = allowed.includes(origin) || /^https:\/\/citra(-[a-z0-9-]+)?\.vercel\.app$/.test(origin);
   return {
     "Access-Control-Allow-Origin": isAllowed ? origin : (allowed[0] ?? "*"),
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",

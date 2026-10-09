@@ -37,12 +37,20 @@ export const PatientPortalView = () => {
     addToast,
     logAudit,
     loginPatient,
+    registerPatient,
     logoutPatient
   } = useClinic();
 
   const [portalTab, setPortalTab] = useState('appointments'); // 'appointments', 'prescriptions', 'files', 'hce_request'
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
   const [loginDniOrEmail, setLoginDniOrEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [regName, setRegName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regDni, setRegDni] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regNotice, setRegNotice] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLoginSubmit = async (e) => {
@@ -63,6 +71,37 @@ export const PatientPortalView = () => {
     }
   };
 
+  const handleRegisterSubmit = async (e) => {
+    e.preventDefault();
+    if (!regName.trim() || !regEmail.trim() || !regDni.trim() || !regPassword.trim()) {
+      addToast('Campos Requeridos', 'Por favor complete todos los campos obligatorios.', 'warning');
+      return;
+    }
+    if (regPassword.length < 8) {
+      addToast('Contraseña Corta', 'La contraseña debe contener al menos 8 caracteres.', 'warning');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await registerPatient({
+        name: regName.trim(),
+        email: regEmail.trim(),
+        dni: regDni.trim(),
+        phone: regPhone.trim(),
+        password: regPassword
+      });
+      setIsSubmitting(false);
+      if (res?.success) {
+        if (res.requiresEmailConfirmation) {
+          setRegNotice('¡Cuenta creada exitosamente! Por favor revisá tu bandeja de entrada para confirmar el correo antes de iniciar sesión.');
+          setAuthMode('login');
+        }
+      }
+    } catch (err) {
+      setIsSubmitting(false);
+    }
+  };
+
   if (!currentPortalPatient) {
     return (
       <div style={{ maxWidth: '480px', margin: '3rem auto', padding: '0 1rem' }}>
@@ -75,7 +114,7 @@ export const PatientPortalView = () => {
             border: '1px solid #D2E3FC'
           }}
         >
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
             <div
               style={{
                 width: '64px',
@@ -100,74 +139,232 @@ export const PatientPortalView = () => {
             </p>
           </div>
 
-          <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, color: '#002182', marginBottom: '0.4rem' }}>
-                DNI o Correo Electrónico
-              </label>
-              <input
-                type="text"
-                required
-                className="form-control"
-                placeholder="Ej. 34892110 o paciente@email.com"
-                value={loginDniOrEmail}
-                onChange={(e) => setLoginDniOrEmail(e.target.value)}
-                style={{ padding: '0.75rem 1rem', fontSize: '0.95rem' }}
-              />
+          {regNotice && (
+            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', padding: '0.85rem 1rem', marginBottom: '1.25rem', fontSize: '0.85rem', color: '#1e40af' }}>
+              {regNotice}
             </div>
+          )}
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, color: '#002182', marginBottom: '0.4rem' }}>
-                Contraseña de Acceso
-              </label>
-              <input
-                type="password"
-                required
-                className="form-control"
-                placeholder="••••••••••••"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                style={{ padding: '0.75rem 1rem', fontSize: '0.95rem' }}
-              />
-            </div>
-
+          {/* Toggle entre Ingreso y Registro */}
+          <div style={{ display: 'flex', background: '#F1F5F9', borderRadius: '10px', padding: '4px', marginBottom: '1.5rem' }}>
             <button
-              type="submit"
-              className="btn btn-primary"
+              type="button"
+              onClick={() => { setAuthMode('login'); setRegNotice(''); }}
               style={{
-                width: '100%',
-                padding: '0.85rem',
-                fontSize: '0.95rem',
-                fontWeight: 800,
-                marginTop: '0.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
+                flex: 1,
+                padding: '0.5rem',
+                borderRadius: '8px',
+                border: 'none',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                background: authMode === 'login' ? '#ffffff' : 'transparent',
+                color: authMode === 'login' ? '#002182' : '#64748b',
+                boxShadow: authMode === 'login' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
               }}
-              disabled={isSubmitting}
             >
-              <Lock size={16} />
-              <span>{isSubmitting ? 'Verificando credenciales...' : 'Ingresar a Mi Portal'}</span>
+              Iniciar Sesión
             </button>
+            <button
+              type="button"
+              onClick={() => { setAuthMode('register'); setRegNotice(''); }}
+              style={{
+                flex: 1,
+                padding: '0.5rem',
+                borderRadius: '8px',
+                border: 'none',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                background: authMode === 'register' ? '#ffffff' : 'transparent',
+                color: authMode === 'register' ? '#002182' : '#64748b',
+                boxShadow: authMode === 'register' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+              }}
+            >
+              Registrarme
+            </button>
+          </div>
 
-            <div style={{ textAlign: 'center', marginTop: '1rem', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
+          {authMode === 'login' ? (
+            <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, color: '#002182', marginBottom: '0.4rem' }}>
+                  DNI o Correo Electrónico
+                </label>
+                <input
+                  type="text"
+                  required
+                  className="form-control"
+                  placeholder="Ej. 34892110 o paciente@email.com"
+                  value={loginDniOrEmail}
+                  onChange={(e) => setLoginDniOrEmail(e.target.value)}
+                  style={{ padding: '0.75rem 1rem', fontSize: '0.95rem' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, color: '#002182', marginBottom: '0.4rem' }}>
+                  Contraseña de Acceso
+                </label>
+                <input
+                  type="password"
+                  required
+                  className="form-control"
+                  placeholder="••••••••••••"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  style={{ padding: '0.75rem 1rem', fontSize: '0.95rem' }}
+                />
+              </div>
+
               <button
-                type="button"
-                onClick={() => setIsPatientPortalMode(false)}
+                type="submit"
+                className="btn btn-primary"
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#496386',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  fontWeight: 600
+                  width: '100%',
+                  padding: '0.85rem',
+                  fontSize: '0.95rem',
+                  fontWeight: 800,
+                  marginTop: '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
                 }}
+                disabled={isSubmitting}
               >
-                ← Volver al Modo Clínica
+                <Lock size={16} />
+                <span>{isSubmitting ? 'Verificando credenciales...' : 'Ingresar a Mi Portal'}</span>
               </button>
-            </div>
-          </form>
+
+              <div style={{ textAlign: 'center', marginTop: '1rem', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsPatientPortalMode(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#496386',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  ← Volver al Modo Clínica
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleRegisterSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, color: '#002182', marginBottom: '0.3rem' }}>
+                  Nombre y Apellido Completo *
+                </label>
+                <input
+                  type="text"
+                  required
+                  className="form-control"
+                  placeholder="Ej. Juan Manuel Pérez"
+                  value={regName}
+                  onChange={(e) => setRegName(e.target.value)}
+                  style={{ padding: '0.65rem 0.9rem', fontSize: '0.92rem' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, color: '#002182', marginBottom: '0.3rem' }}>
+                  Correo Electrónico *
+                </label>
+                <input
+                  type="email"
+                  required
+                  className="form-control"
+                  placeholder="paciente@correo.com"
+                  value={regEmail}
+                  onChange={(e) => setRegEmail(e.target.value)}
+                  style={{ padding: '0.65rem 0.9rem', fontSize: '0.92rem' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, color: '#002182', marginBottom: '0.3rem' }}>
+                    DNI *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className="form-control"
+                    placeholder="Sin puntos"
+                    value={regDni}
+                    onChange={(e) => setRegDni(e.target.value)}
+                    style={{ padding: '0.65rem 0.9rem', fontSize: '0.92rem' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, color: '#002182', marginBottom: '0.3rem' }}>
+                    Teléfono
+                  </label>
+                  <input
+                    type="tel"
+                    className="form-control"
+                    placeholder="Cod. área + nro"
+                    value={regPhone}
+                    onChange={(e) => setRegPhone(e.target.value)}
+                    style={{ padding: '0.65rem 0.9rem', fontSize: '0.92rem' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, color: '#002182', marginBottom: '0.3rem' }}>
+                  Contraseña (mínimo 8 caracteres) *
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={8}
+                  className="form-control"
+                  placeholder="••••••••••••"
+                  value={regPassword}
+                  onChange={(e) => setRegPassword(e.target.value)}
+                  style={{ padding: '0.65rem 0.9rem', fontSize: '0.92rem' }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary"
+                style={{
+                  width: '100%',
+                  padding: '0.85rem',
+                  fontSize: '0.95rem',
+                  fontWeight: 800,
+                  marginTop: '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+                disabled={isSubmitting}
+              >
+                <span>{isSubmitting ? 'Creando cuenta...' : 'Crear Mi Cuenta en CITRA'}</span>
+              </button>
+
+              <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+                <span style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                  ¿Ya estás registrado?{' '}
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode('login')}
+                    style={{ background: 'none', border: 'none', color: '#076ABC', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                  >
+                    Iniciá sesión aquí
+                  </button>
+                </span>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     );

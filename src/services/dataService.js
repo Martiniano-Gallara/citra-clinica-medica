@@ -1635,19 +1635,22 @@ export const dataService = {
     };
   },
 
-  // V3-B4: Registro inmutable de adjuntos en patient_files (Ley 26.529)
+  // V3-B4 / V4-A2: Registro inmutable de adjuntos en patient_files (Ley 26.529)
   async addPatientFileRecord(fileData) {
     if (isSupabaseConfigured && supabase) {
       const payload = {
         patient_id: fileData.patientId,
         file_name: fileData.fileName || fileData.name,
         file_url: fileData.fileUrl || fileData.url || '',
-        file_type: fileData.fileType || fileData.type || null,
+        mime_type: fileData.mimeType || fileData.fileType || fileData.type || null,
         file_size: fileData.fileSize || fileData.size || null,
-        category: fileData.category || 'general',
-        sha256_hash: fileData.sha256Hash || fileData.hash || null,
-        uploaded_by: fileData.uploadedBy || null
+        category: fileData.category || 'Adjunto',
+        sha256: fileData.sha256 || fileData.sha256Hash || fileData.hash || null
       };
+      // V4-A2 / V4-B1: Solo enviar uploaded_by si es un UUID válido de auth; de lo contrario se asigna DEFAULT auth.uid()
+      if (fileData.uploadedBy && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fileData.uploadedBy)) {
+        payload.uploaded_by = fileData.uploadedBy;
+      }
       const { data, error } = await supabase.from('patient_files').insert([payload]).select().single();
       if (error) throw error;
       return toCamelCase(data);
@@ -1661,7 +1664,7 @@ export const dataService = {
         .from('patient_files')
         .select('*')
         .eq('patient_id', patientId)
-        .order('uploaded_at', { ascending: false });
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return toCamelCase(data);
     }
